@@ -1,0 +1,15 @@
+[package]
+name = "civil3drust"
+version = "0.1.0"
+edition = "2021"
+license = "MPL-2.0"
+description = "Cleanroom implementation of Civil 3D (AECC) DWG objects, built on acadrust"
+repository = "https://github.com/felixmatveev/civil3drust"
+readme = "README.md"
+keywords = ["civil3d", "dwg", "cad", "alignment", "landxml"]
+categories = ["parser-implementations", "science"]
+
+[dependencies]
+acadrust = "0.6.5"
+
+[dev-dependencies]

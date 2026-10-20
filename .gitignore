@@ -1,0 +1,17 @@
+/target
+Cargo.lock.bak
+*.bak
+*.dwl
+*.dwl2
+*.sv$
+*.swp
+.DS_Store
+.vscode/
+.idea/
+
+# Keep client/project drawings out of the repo; only purpose-made samples
+# in samples/ are tracked.
+*.dwg
+*.dxf
+!samples/*.dwg
+!samples/*.dxf
