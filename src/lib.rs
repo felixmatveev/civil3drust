@@ -20,12 +20,17 @@
 //!   reverse-engineering object layouts from sample files.
 //! - [`aecc_alignment`] — decodes tangent-only `AECC_ALIGNMENT` records
 //!   into [`Alignment`] geometry.
+//! - [`aecc_alignment_edit`] — writes changed tangent geometry back into an
+//!   `AECC_ALIGNMENT` record as same-size patches.
+//! - [`proxy_graphics`] — the display cache embedded in AECC entity records.
 //! - [`raw`] — the stored bytes of AECC records (kept opaque by acadrust)
 //!   and bit-level helpers for comparing sample files.
 
 pub mod aecc_alignment;
+pub mod aecc_alignment_edit;
 pub mod alignment;
 pub mod inventory;
+pub mod proxy_graphics;
 pub mod raw;
 
 pub use alignment::{Alignment, AlignmentError, Point2, Tangent};

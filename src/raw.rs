@@ -69,6 +69,26 @@ pub fn records(doc: &CadDocument, class: &str) -> Vec<RawRecord> {
     out
 }
 
+/// Mutable bytes of the AECC record with this handle (entity or object).
+///
+/// Changing their length is not supported by the rest of this crate; edits
+/// should keep the record size.
+pub fn record_data_mut(doc: &mut CadDocument, handle: u64) -> Option<&mut Vec<u8>> {
+    let is_entity = doc
+        .entities()
+        .any(|e| matches!(e, EntityType::Unknown(u) if u.common.handle.value() == handle));
+    if is_entity {
+        return doc.entities_mut().find_map(|e| match e {
+            EntityType::Unknown(u) if u.common.handle.value() == handle => u.raw_dwg_data.as_mut(),
+            _ => None,
+        });
+    }
+    doc.objects.iter_mut().find_map(|(h, o)| match o {
+        ObjectType::Unknown { raw_dwg_data, .. } if h.value() == handle => raw_dwg_data.as_mut(),
+        _ => None,
+    })
+}
+
 /// Result of opening a DWG for study.
 pub struct Opened {
     pub doc: CadDocument,

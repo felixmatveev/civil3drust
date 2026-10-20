@@ -21,7 +21,9 @@ owner for this study. Not yet committed to `samples/`.
 | S2 | `TEST-LINE1.dwg` | New drawing (drawing units: meters); a 2-vertex polyline (0,0)–(100,0) brought in from DXF; *Create Alignment from Objects*; saved. |
 | S3 | `TEST-LINE1_L150.dwg` | S2 with the tangent changed to 150 by the prototype editor (same-size patch of four doubles, written back through acadrust). |
 | S4 | `TEST-LINE1_L150_civil.dwg` | S3 opened in Civil 3D, checked, saved. |
-| S5 | `100-200-300.dwg` | Alignment `Alignment - (2)` with three tangents (0,0)–(100,0)–(200,50)–(300,50); saved before Civil 3D drew it (placeholder graphics). First of the planned 10 ft pair (sample A). |
+| S5 | `100-200-300.dwg` | Alignment `Alignment - (2)` with three tangents (0,0)–(100,0)–(200,50)–(300,50); saved before Civil 3D drew it (placeholder graphics). Sample A of the 10 ft pair. |
+| S6 | `100-200-30010.dwg` | Same as S5 but segment 2 is 10 ft longer (121.8034 instead of 111.8034); later PIs moved with it: (208.9443, 54.4721), (308.9443, 54.4721). Saved the same way as S5. Sample B of the pair. |
+| S7 | `A_seg2plus10.dwg` (generated) | S5 with segment 2 set to 121.80339887498948 by `examples/set_length` (civil3drust). |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -142,10 +144,49 @@ not required for loading.
 by Civil 3D in the same way, or style/settings noise will hide the real
 differences.
 
+## Controlled pair: S5 → S6 (segment 2 + 10 ft, both from Civil 3D)
+
+`rawdiff S5 S6`: only six AECC classes differ.
+
+| Class | What changed |
+|-------|--------------|
+| `AECC_ALIGNMENT` | Same size (706 bytes). Placeholder box corners (300→308.9443, 50→54.4721); tangent 2 end; tangent 3 start and end; and bits 2730–2789 (see below). Tangent 1, the cache record (it refers to tangent 1) and everything else identical. |
+| `AECC_ALIGNMENT_STATION_LABEL_GROUP`, `…_MINOR_STATION_LABEL_GROUP`, `…_GEOMPOINT_LABEL_GROUP` | Only the corners of each label group's own placeholder box (label extents, e.g. 307.24, 59 → 316.56, 63.47). Depends on label text size, so not derivable from the geometry alone. |
+| `AECC_FEATURE_STYLE` (one record) | Size changed; holds values 300/200/50. Not understood; treated as save-time noise for now. |
+| `AECC_NETWORK_PART_CATALOG_DEF_NODE` | Values around 526–542 and −6.5 → −6.75; catalog metadata, unrelated to the alignment. |
+
+No length, end station, or midpoint is stored: searching both records for
+the old and new total length (311.80/321.80), segment-2 length
+(111.80/121.80) and midpoint found nothing. Only coordinates are stored.
+
+**Volatile field (bits 2730–2789 in S5/S6, section 2).** About 60 bits that
+differ between every pair of samples compared (S1, S5, S6) with no visible
+structure. Not a double, not a bit-coded long long, not any length or
+coordinate. Probably an ID, hash or modification stamp. The 44-bit growth
+Civil 3D wrote into S4 (bit 5463) is likely the same field. S3 opened in
+Civil 3D with this field left stale, so it is not checked on load.
+
+## Generated vs Civil 3D: S7 vs S6
+
+`examples/set_length S5 S7 8C5C 2 121.80339887498948` patched two tangent
+records and the placeholder box (the cache record is on tangent 1, which
+did not change). `rawdiff S7 S6 AECC_ALIGNMENT`:
+
+```
+[8C5C] Alignment - (2): 706 bytes, 1 changed bit range(s)
+    bits    2730..2789     (no plausible double)
+```
+
+So civil3drust's edit reproduces Civil 3D's own record **bit for bit**,
+except the volatile field. The coordinates civil3drust computed are
+identical to the bit to Civil 3D's. The whole-file comparison leaves only
+the three label groups, the feature style and the catalog node, the same
+records that differ between S5 and S6.
+
 ## Open questions
 
-1. The 44-bit insertion in section 2 (S4 bit 5463): what field, and why it
-   appears after Civil 3D regenerates the alignment.
+1. The volatile ~64-bit field in section 2 (S5/S6 bits 2730–2789; the S4
+   growth at bit 5463 is probably the same field): what it is.
 2. Where the start station is stored (a bit-coded double in section 2 is
    suspected; 0 encodes in 2 bits, so S1/S2 can't show it).
 3. Whether lengths, end station, or extents are cached anywhere else (none
@@ -161,18 +202,12 @@ differences.
    fields with a different header; needs a sample with one curve.
 8. How offset alignments store their geometry (no tangent records).
 
-## Next sample pair
+## Next samples
 
-Two drawings, both created and saved in Civil 3D 2024 the same way:
-
-- **A**: alignment from a 3-segment polyline, e.g. (0,0)–(100,0)–(200,50)–(300,50),
-  start station 0+00, a profile view or station labels present.
-- **B**: identical, but segment 2 is 10 ft longer (built from a polyline with
-  that change, not edited in Civil 3D, to keep everything else equal).
-
-Then `rawdiff A B` and `rawdiff A B AECC_ALIGNMENT`. **A** is S5; **B** is
-still needed. Save B the same way as S5 (S5 was saved before the alignment
-was drawn, so B should be too, or both should be regenerated before saving).
+- Open S7 in Civil 3D: no errors, length 321.80, then save it (S8) and
+  compare S8 with S6.
+- Start station: S5 with the start station set to 1+00, saved the same way.
+- One arc: S5 with a curve added at PI 2, to find the arc element record.
 
 ## Template note
 

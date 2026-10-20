@@ -118,3 +118,21 @@ only so plain AutoCAD shows the change (Civil 3D redraws it).
 **Alternatives.** Reading the display cache: fails on placeholder graphics,
 shows only what the alignment style draws, and can't tell elements apart
 (one polyline per tangent, but also arrow shafts and other primitives).
+
+## D-008: Edits leave the volatile header field and label groups alone
+Date: 2026-10-20 · Status: accepted
+
+**Context.** When Civil 3D lengthens a segment (S5 → S6) it changes the
+tangent records, the display cache, an unidentified ~64-bit field in the
+record header, and the placeholder boxes of three label-group records
+(docs/alignment-object.md).
+
+**Decision.** `aecc_alignment_edit::apply` patches the tangent records,
+cache records and the alignment's display cache, and leaves the volatile
+field and label groups unchanged. Evidence: a file edited this way (S3)
+opened, worked and was re-saved by Civil 3D, which regenerated both; and
+the edited S5 (S7) matches Civil 3D's S6 bit for bit apart from that field.
+
+**Alternatives.** Guess a new value for the volatile field: no basis yet,
+and a wrong guess could be worse than a stale one. Recompute label-group
+boxes: depends on label text metrics we don't model; Civil 3D redraws them.

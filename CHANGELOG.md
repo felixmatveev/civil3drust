@@ -38,3 +38,15 @@ versions follow [Semantic Versioning](https://semver.org/).
   coordinates and bit offsets.
 - `docs/alignment-object.md`: sample S5 (three tangents), tangent element
   record layout and linkage, template `3DSOLID` note; decision D-007.
+- `proxy_graphics` module: finds and walks the display-cache chunk stream
+  (polyline/polygon vertices, circle centers, placeholder detection).
+- `raw::record_data_mut`: mutable record bytes by handle.
+- `aecc_alignment_edit` module: `apply` writes a changed `Alignment` back
+  into the record as same-size patches (tangent element records,
+  station-reference cache records, display-cache polylines/markers or
+  placeholder box). Three unit tests.
+- `set_length` example: change one tangent's length, save, read back and
+  verify.
+- `docs/alignment-object.md`: controlled pair S5/S6 (segment 2 + 10 ft),
+  volatile header field, and S7 (civil3drust's edit of S5) matching
+  Civil 3D's S6 bit for bit apart from that field; decision D-008.

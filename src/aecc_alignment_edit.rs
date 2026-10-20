@@ -1,0 +1,340 @@
+//! Writing changed tangent geometry back into an `AECC_ALIGNMENT` record.
+//!
+//! Edits are same-size, in-place patches of doubles whose meaning is known
+//! (docs/alignment-object.md), so the record's size, strings and handles
+//! never change:
+//!
+//! 1. **Tangent element records**: start/end coordinates of every tangent.
+//! 2. **Station-reference cache**: each record repeats a tangent's
+//!    coordinates followed by a point on it. The tangent is replaced and the
+//!    point keeps its distance from the tangent start (clamped to the new
+//!    length).
+//! 3. **Display cache**: centerline polylines and circle markers at PIs are
+//!    moved; for a placeholder image the extents box is moved. The direction
+//!    arrow is left alone; Civil 3D redraws the display cache.
+//!
+//! Not touched: the unidentified 64-bit field in the record header that
+//! changes on every Civil 3D save, and label-group records. A file edited
+//! without them has been opened, used and re-saved by Civil 3D 2024.
+
+use crate::aecc_alignment::DecodedAlignment;
+use crate::alignment::{Alignment, Point2};
+use crate::proxy_graphics as pg;
+use crate::raw;
+use std::fmt;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum EditError {
+    /// The new geometry must have the same number of PIs.
+    PiCountChanged { old: usize, new: usize },
+}
+
+impl fmt::Display for EditError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::PiCountChanged { old, new } => write!(
+                f,
+                "new geometry has {new} PIs, record has {old}; adding or removing tangents is not supported"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for EditError {}
+
+/// What an edit changed.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct EditReport {
+    pub tangent_records: usize,
+    pub cache_records: usize,
+    pub graphics_vertices: usize,
+    pub graphics_markers: usize,
+    pub placeholder_box: bool,
+}
+
+fn same(a: Point2, b: Point2) -> bool {
+    a.distance_to(b) <= 1e-9 * (1.0 + a.x.abs().max(a.y.abs()))
+}
+
+fn write_tangent(data: &mut [u8], bit: usize, a: Point2, b: Point2) {
+    raw::set_f64(data, bit, a.x);
+    raw::set_f64(data, bit + 64, a.y);
+    raw::set_f64(data, bit + 128, b.x);
+    raw::set_f64(data, bit + 192, b.y);
+}
+
+/// Patch `data` (the record `old` was decoded from) so it stores `new`.
+pub fn apply(
+    data: &mut [u8],
+    old: &DecodedAlignment,
+    new: &Alignment,
+) -> Result<EditReport, EditError> {
+    let old_pis = old.alignment.pis().to_vec();
+    let new_pis = new.pis().to_vec();
+    if old_pis.len() != new_pis.len() {
+        return Err(EditError::PiCountChanged {
+            old: old_pis.len(),
+            new: new_pis.len(),
+        });
+    }
+    let mut rep = EditReport::default();
+    let element_coords: Vec<usize> = old.tangents.iter().map(|t| t.coords_bit).collect();
+
+    for (i, t) in old.tangents.iter().enumerate() {
+        let (oa, ob) = (old_pis[i], old_pis[i + 1]);
+        let (na, nb) = (new_pis[i], new_pis[i + 1]);
+        if same(oa, na) && same(ob, nb) {
+            continue;
+        }
+        // 1. The element record itself.
+        write_tangent(data, t.coords_bit, na, nb);
+        rep.tangent_records += 1;
+
+        // 2. Cache records: same four doubles elsewhere, then a point.
+        let hits = raw::find_f64s(data, &[oa.x, oa.y, ob.x, ob.y], 0, raw::bit_len(data));
+        let old_len = oa.distance_to(ob);
+        let new_len = na.distance_to(nb);
+        for bit in hits.into_iter().filter(|b| !element_coords.contains(b)) {
+            write_tangent(data, bit, na, nb);
+            rep.cache_records += 1;
+            let pb = bit + 256;
+            if pb + 128 > raw::bit_len(data) {
+                continue;
+            }
+            let p = Point2::new(raw::get_f64(data, pb), raw::get_f64(data, pb + 64));
+            let (dx, dy) = ((ob.x - oa.x) / old_len, (ob.y - oa.y) / old_len);
+            let (wx, wy) = (p.x - oa.x, p.y - oa.y);
+            let along = wx * dx + wy * dy;
+            let off = wx * dy - wy * dx;
+            let tol = 1e-6 * (1.0 + old_len);
+            if p.x.is_finite()
+                && p.y.is_finite()
+                && off.abs() < tol
+                && along > -tol
+                && along < old_len + tol
+            {
+                let s = along.clamp(0.0, new_len);
+                let (ux, uy) = ((nb.x - na.x) / new_len, (nb.y - na.y) / new_len);
+                raw::set_f64(data, pb, na.x + ux * s);
+                raw::set_f64(data, pb + 64, na.y + uy * s);
+            }
+        }
+    }
+
+    // 3. Display cache.
+    if let Some(g) = pg::find(data, 4096) {
+        if g.is_placeholder() {
+            rep.placeholder_box = patch_placeholder_box(data, &g, &old_pis, &new_pis);
+        } else {
+            for c in &g.chunks {
+                match c.opcode {
+                    pg::OP_POLYLINE => {
+                        for (bit, v) in pg::poly_vertices(data, c) {
+                            if let Some(i) = old_pis
+                                .iter()
+                                .position(|p| same(*p, Point2::new(v[0], v[1])))
+                            {
+                                if !same(old_pis[i], new_pis[i]) {
+                                    raw::set_f64(data, bit, new_pis[i].x);
+                                    raw::set_f64(data, bit + 64, new_pis[i].y);
+                                    rep.graphics_vertices += 1;
+                                }
+                            }
+                        }
+                    }
+                    pg::OP_CIRCLE => {
+                        let (bit, v) = pg::circle_center(data, c);
+                        if let Some(i) = old_pis
+                            .iter()
+                            .position(|p| same(*p, Point2::new(v[0], v[1])))
+                        {
+                            if !same(old_pis[i], new_pis[i]) {
+                                raw::set_f64(data, bit, new_pis[i].x);
+                                raw::set_f64(data, bit + 64, new_pis[i].y);
+                                rep.graphics_markers += 1;
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+    Ok(rep)
+}
+
+fn extents(pts: &[Point2]) -> (f64, f64, f64, f64) {
+    pts.iter().fold(
+        (f64::MAX, f64::MAX, f64::MIN, f64::MIN),
+        |(a, b, c, d), p| (a.min(p.x), b.min(p.y), c.max(p.x), d.max(p.y)),
+    )
+}
+
+/// Move the corners of the placeholder's extents box to the new extents.
+fn patch_placeholder_box(
+    data: &mut [u8],
+    g: &pg::Graphics,
+    old: &[Point2],
+    new: &[Point2],
+) -> bool {
+    let (ox0, oy0, ox1, oy1) = extents(old);
+    let (nx0, ny0, nx1, ny1) = extents(new);
+    let map = |v: f64, lo: f64, hi: f64, nlo: f64, nhi: f64| {
+        if v == lo {
+            Some(nlo)
+        } else if v == hi {
+            Some(nhi)
+        } else {
+            None
+        }
+    };
+    let mut changed = false;
+    for c in g.chunks.iter().filter(|c| c.opcode == pg::OP_POLYLINE) {
+        let verts = pg::poly_vertices(data, c);
+        // Only a box whose corners are all on the old extents.
+        let mapped: Option<Vec<(usize, f64, f64)>> = verts
+            .iter()
+            .map(|(bit, v)| {
+                Some((
+                    *bit,
+                    map(v[0], ox0, ox1, nx0, nx1)?,
+                    map(v[1], oy0, oy1, ny0, ny1)?,
+                ))
+            })
+            .collect();
+        if let Some(m) = mapped {
+            for (bit, x, y) in m {
+                raw::set_f64(data, bit, x);
+                raw::set_f64(data, bit + 64, y);
+            }
+            changed = true;
+        }
+    }
+    changed
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::aecc_alignment::{decode, TANGENT_HEADER};
+    use crate::raw::RawRecord;
+
+    struct Bits(Vec<u8>, usize);
+    impl Bits {
+        fn bit(&mut self, b: u8) {
+            if self.1.is_multiple_of(8) {
+                self.0.push(0);
+            }
+            if b != 0 {
+                let i = self.1 / 8;
+                self.0[i] |= 1 << (7 - self.1 % 8);
+            }
+            self.1 += 1;
+        }
+        fn byte(&mut self, v: u8) {
+            for i in (0..8).rev() {
+                self.bit((v >> i) & 1);
+            }
+        }
+        fn bl(&mut self, v: i32) {
+            if v == 0 {
+                self.bit(1);
+                self.bit(0);
+            } else if (1..256).contains(&v) {
+                self.bit(0);
+                self.bit(1);
+                self.byte(v as u8);
+            } else {
+                self.bit(0);
+                self.bit(0);
+                v.to_le_bytes().iter().for_each(|b| self.byte(*b));
+            }
+        }
+        fn rd(&mut self, v: f64) {
+            v.to_le_bytes().iter().for_each(|b| self.byte(*b));
+        }
+        fn tangent(&mut self, id: i32, before: i32, after: i32, a: (f64, f64), b: (f64, f64)) {
+            for v in [TANGENT_HEADER, 0, id, before, after] {
+                self.bl(v);
+            }
+            for v in [a.0, a.1, b.0, b.1] {
+                self.rd(v);
+            }
+        }
+    }
+
+    /// S5-like record: three tangents plus one cache record on tangent 2
+    /// whose point is 50 along it.
+    fn sample() -> RawRecord {
+        let mut w = Bits(Vec::new(), 0);
+        w.bit(1);
+        w.tangent(1, 0, 2, (0.0, 0.0), (100.0, 0.0));
+        w.tangent(2, 1, 3, (100.0, 0.0), (200.0, 0.0));
+        w.tangent(3, 2, 0, (200.0, 0.0), (300.0, 50.0));
+        w.bit(1);
+        w.bit(1);
+        for v in [100.0, 0.0, 200.0, 0.0, 150.0, 0.0] {
+            w.rd(v);
+        }
+        w.byte(0);
+        RawRecord {
+            handle: 1,
+            class: "AECC_ALIGNMENT".into(),
+            is_entity: true,
+            data: w.0,
+        }
+    }
+
+    #[test]
+    fn lengthening_segment_2_moves_downstream_and_cache() {
+        let mut rec = sample();
+        let before = decode(&rec).unwrap();
+        let mut target = before.alignment.clone();
+        target.set_segment_length(1, 110.0).unwrap();
+        let rep = apply(&mut rec.data, &before, &target).unwrap();
+        assert_eq!(rep.tangent_records, 2);
+        assert_eq!(rep.cache_records, 1);
+
+        let after = decode(&rec).unwrap();
+        assert_eq!(
+            after.alignment.pis(),
+            &[
+                Point2::new(0.0, 0.0),
+                Point2::new(100.0, 0.0),
+                Point2::new(210.0, 0.0),
+                Point2::new(310.0, 50.0)
+            ]
+        );
+        // Cache record now holds the new tangent 2 and the same point (50 along).
+        let hits = raw::find_f64s(
+            &rec.data,
+            &[100.0, 0.0, 210.0, 0.0, 150.0, 0.0],
+            0,
+            raw::bit_len(&rec.data),
+        );
+        assert_eq!(hits.len(), 1);
+        // Size unchanged.
+        assert_eq!(rec.data.len(), sample().data.len());
+    }
+
+    #[test]
+    fn unchanged_geometry_is_a_no_op() {
+        let mut rec = sample();
+        let before = decode(&rec).unwrap();
+        let rep = apply(&mut rec.data, &before, &before.alignment).unwrap();
+        assert_eq!(rep, EditReport::default());
+        assert_eq!(rec.data, sample().data);
+    }
+
+    #[test]
+    fn rejects_pi_count_change() {
+        let mut rec = sample();
+        let before = decode(&rec).unwrap();
+        let fewer =
+            Alignment::new("x", 0.0, vec![Point2::new(0.0, 0.0), Point2::new(1.0, 0.0)]).unwrap();
+        assert_eq!(
+            apply(&mut rec.data, &before, &fewer),
+            Err(EditError::PiCountChanged { old: 4, new: 2 })
+        );
+    }
+}
