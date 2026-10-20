@@ -1,9 +1,11 @@
 # AECC_ALIGNMENT record
 
-Status: **partly decoded**. Tangent-only geometry decodes from its own
-element records (`aecc_alignment::decode`), independent of the display
-cache. One change made by patching those values has been opened, used and
-re-saved by Civil 3D 2024 (see *Round trip* below).
+Status: **partly decoded; first milestone reached.** Tangent-only geometry
+decodes from its own element records (`aecc_alignment::decode`),
+independent of the display cache. A segment-length edit written by
+civil3drust (S7) opened in Civil 3D 2024 with zero AUDIT errors, showed the
+change, and was re-saved by Civil 3D with civil3drust's geometry unchanged
+(S8, below).
 
 All offsets are **bit offsets into the record bytes as acadrust 0.6.5 stores
 them** (`raw::RawRecord::data`: the merged data/string/handle streams,
@@ -24,6 +26,7 @@ owner for this study. Not yet committed to `samples/`.
 | S5 | `100-200-300.dwg` | Alignment `Alignment - (2)` with three tangents (0,0)–(100,0)–(200,50)–(300,50); saved before Civil 3D drew it (placeholder graphics). Sample A of the 10 ft pair. |
 | S6 | `100-200-30010.dwg` | Same as S5 but segment 2 is 10 ft longer (121.8034 instead of 111.8034); later PIs moved with it: (208.9443, 54.4721), (308.9443, 54.4721). Saved the same way as S5. Sample B of the pair. |
 | S7 | `A_seg2plus10.dwg` (generated) | S5 with segment 2 set to 121.80339887498948 by `examples/set_length` (civil3drust). |
+| S8 | `A_seg2plus10_civ3d_resaved.dwg` | S7 opened in Civil 3D 2024 (AUDIT: 0 errors; geometry correct), then saved. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -183,10 +186,33 @@ identical to the bit to Civil 3D's. The whole-file comparison leaves only
 the three label groups, the feature style and the catalog node, the same
 records that differ between S5 and S6.
 
+## Civil 3D re-save of the generated file: S8
+
+S7 opened in Civil 3D 2024; AUDIT reported zero errors and the alignment
+showed the new length. Saved as S8.
+
+- `alignments S8`: same three tangents, coordinates bit-identical to S6
+  (Civil 3D's own B) and S7.
+- `rawdiff S7 S8 AECC_ALIGNMENT`: Civil 3D changed only two things in the
+  record: 2 bits at bit 2677 (a flag; meaning unknown) and the volatile
+  field, which grew from 62 to 106 bits (record 706 → 711 bytes). That is
+  the same +44-bit growth seen when S3 was re-saved as S4, so the volatile
+  field is variable-length. Everything after it is unchanged apart from the
+  shift.
+- `rawdiff S8 S6`: tangent geometry identical; many style and settings
+  records differ because S6 was saved in a different Civil 3D session (save
+  noise, see D-006).
+- `PRESSUREPARTERRORBLOCK`: acadrust dropped its unparseable `3DSOLID`
+  (7F72) when writing S7. Civil 3D did not recreate it and AUDIT did not
+  flag it; the block still holds its two hatches and two polylines, and S8
+  reads in acadrust without failsafe mode.
+
 ## Open questions
 
-1. The volatile ~64-bit field in section 2 (S5/S6 bits 2730–2789; the S4
-   growth at bit 5463 is probably the same field): what it is.
+1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
+   (62 bits in S5–S7, 106 after a Civil 3D re-save in S8; +44 bits also in
+   S3→S4); what it holds.
+9. The 2-bit flag at bit 2677 that Civil 3D changed when re-saving S7.
 2. Where the start station is stored (a bit-coded double in section 2 is
    suspected; 0 encodes in 2 bits, so S1/S2 can't show it).
 3. Whether lengths, end station, or extents are cached anywhere else (none
@@ -204,8 +230,6 @@ records that differ between S5 and S6.
 
 ## Next samples
 
-- Open S7 in Civil 3D: no errors, length 321.80, then save it (S8) and
-  compare S8 with S6.
 - Start station: S5 with the start station set to 1+00, saved the same way.
 - One arc: S5 with a curve added at PI 2, to find the arc element record.
 

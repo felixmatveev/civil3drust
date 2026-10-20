@@ -3,7 +3,7 @@
 Cleanroom implementation of Civil 3D (AECC) DWG objects in Rust, built on
 [acadrust](https://github.com/hakanaktt/acadrust).
 
-> **Status:** early skeleton. Not affiliated with or endorsed by Autodesk.
+> **Status:** first milestone reached (tangent-only alignments). Not affiliated with or endorsed by Autodesk.
 > "Civil 3D" and "AutoCAD" are trademarks of Autodesk, Inc., used here only
 > to describe file compatibility.
 
@@ -21,6 +21,18 @@ Tangent-only horizontal alignments (no curves, no spirals):
 2. Change the length of one alignment segment.
 3. Save it back.
 4. Open the result in Civil 3D with no errors and the change visible.
+
+**Reached 2026-10-20** on a three-tangent sample: `examples/set_length`
+lengthened segment 2 by 10 ft, Civil 3D 2024 opened the file with zero
+AUDIT errors and the change visible, and re-saved it with the geometry
+unchanged. civil3drust's edited record matched Civil 3D's own version of the
+same edit bit for bit, apart from one unidentified volatile field. Details:
+[`docs/alignment-object.md`](docs/alignment-object.md).
+
+Known limitation: acadrust 0.6.5 can't parse a `3DSOLID` in Civil 3D's
+internal `PRESSUREPARTERRORBLOCK`; reading falls back to failsafe mode and
+that solid is dropped on save. Civil 3D accepted the result, but a lossless
+round trip needs that fixed in acadrust.
 
 ## What's here now
 

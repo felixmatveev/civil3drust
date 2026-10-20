@@ -50,3 +50,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 - `docs/alignment-object.md`: controlled pair S5/S6 (segment 2 + 10 ft),
   volatile header field, and S7 (civil3drust's edit of S5) matching
   Civil 3D's S6 bit for bit apart from that field; decision D-008.
+- First milestone reached: S7 opened in Civil 3D 2024 with zero AUDIT errors
+  and was re-saved (S8) with the edited geometry unchanged; findings in
+  `docs/alignment-object.md` and README.
+
+### Known issues
+- acadrust 0.6.5 cannot parse the `3DSOLID` in Civil 3D's
+  `PRESSUREPARTERRORBLOCK`; failsafe reading drops it and saved copies lack
+  it (Civil 3D accepted such a file without AUDIT errors).
