@@ -156,6 +156,29 @@ pub fn get_i32(buf: &[u8], bit: usize) -> i32 {
     i32::from_le_bytes(b)
 }
 
+/// One bit at offset `bit` (0 past the end).
+pub fn get_bit(buf: &[u8], bit: usize) -> u8 {
+    buf.get(bit / 8).map_or(0, |b| (b >> (7 - bit % 8)) & 1)
+}
+
+/// Read a bit-coded long ("BL" in the public ODA specification) at `bit`.
+///
+/// A 2-bit code selects the form: `00` a raw 32-bit long follows, `01` an
+/// unsigned byte follows, `10` the value is 0, `11` is not used for BL.
+/// Returns the value and the bit offset after it, or `None` for code `11`
+/// or a read past the end.
+pub fn read_bl(buf: &[u8], bit: usize) -> Option<(i32, usize)> {
+    if bit + 2 > bit_len(buf) {
+        return None;
+    }
+    match (get_bit(buf, bit), get_bit(buf, bit + 1)) {
+        (0, 0) if bit + 34 <= bit_len(buf) => Some((get_i32(buf, bit + 2), bit + 34)),
+        (0, 1) if bit + 10 <= bit_len(buf) => Some((get_byte(buf, bit + 2) as i32, bit + 10)),
+        (1, 0) => Some((0, bit + 2)),
+        _ => None,
+    }
+}
+
 /// Bit offsets in `[from, to)` where the doubles `vals` occur back to back.
 pub fn find_f64s(buf: &[u8], vals: &[f64], from: usize, to: usize) -> Vec<usize> {
     let pat: Vec<u8> = vals.iter().flat_map(|v| v.to_le_bytes()).collect();

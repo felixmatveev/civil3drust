@@ -100,3 +100,21 @@ not with the original, to see what Civil 3D adds or corrects.
 
 **Alternatives.** Comparing a Civil 3D file with a civil3drust-written file
 directly: mixes our edits with Civil 3D's save-time rewrites.
+
+## D-007: Decode alignment geometry from element records, not the display cache
+Date: 2026-10-20 · Status: accepted
+
+**Context.** Two ways to read a tangent alignment were found: the polylines
+in the proxy-graphics display cache, and the tangent element records in the
+data section (docs/alignment-object.md). Samples S1 and S5 were saved before
+Civil 3D drew the alignment, so their display cache is only a placeholder
+text and box.
+
+**Decision.** `aecc_alignment::decode` reads the tangent element records and
+orders them by their before/after links. The display cache is treated as
+derived data: it is not used for decoding, and an editor will update it
+only so plain AutoCAD shows the change (Civil 3D redraws it).
+
+**Alternatives.** Reading the display cache: fails on placeholder graphics,
+shows only what the alignment style draws, and can't tell elements apart
+(one polyline per tangent, but also arrow shafts and other primitives).

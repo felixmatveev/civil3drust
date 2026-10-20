@@ -28,3 +28,13 @@ versions follow [Semantic Versioning](https://semver.org/).
 - Decisions D-005 (study via acadrust raw bytes) and D-006 (controlled pairs
   both saved by Civil 3D).
 - Dev-dependency `similar` 2 (MIT/Apache-2.0) for the bit-level diff.
+- `raw::get_bit` and `raw::read_bl` (bit-coded long, ODA specification).
+- `aecc_alignment` module: finds tangent element records
+  (`tangent_records`), orders them by before/after links (`chain`), and
+  decodes a tangent-only `AECC_ALIGNMENT` into an `Alignment` (`decode`).
+  Start station is not decoded yet and is set to 0. Five unit tests on
+  synthetic records.
+- `alignments` example: lists decoded alignments with element IDs, links,
+  coordinates and bit offsets.
+- `docs/alignment-object.md`: sample S5 (three tangents), tangent element
+  record layout and linkage, template `3DSOLID` note; decision D-007.

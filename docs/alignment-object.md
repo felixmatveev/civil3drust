@@ -1,8 +1,9 @@
 # AECC_ALIGNMENT record
 
-Status: **partly decoded**. Enough is known to locate and change the geometry
-of a tangent-only alignment; one change made this way has been opened,
-used and re-saved by Civil 3D 2024 (see *Round trip* below).
+Status: **partly decoded**. Tangent-only geometry decodes from its own
+element records (`aecc_alignment::decode`), independent of the display
+cache. One change made by patching those values has been opened, used and
+re-saved by Civil 3D 2024 (see *Round trip* below).
 
 All offsets are **bit offsets into the record bytes as acadrust 0.6.5 stores
 them** (`raw::RawRecord::data`: the merged data/string/handle streams,
@@ -20,23 +21,24 @@ owner for this study. Not yet committed to `samples/`.
 | S2 | `TEST-LINE1.dwg` | New drawing (drawing units: meters); a 2-vertex polyline (0,0)–(100,0) brought in from DXF; *Create Alignment from Objects*; saved. |
 | S3 | `TEST-LINE1_L150.dwg` | S2 with the tangent changed to 150 by the prototype editor (same-size patch of four doubles, written back through acadrust). |
 | S4 | `TEST-LINE1_L150_civil.dwg` | S3 opened in Civil 3D, checked, saved. |
+| S5 | `100-200-300.dwg` | Alignment `Alignment - (2)` with three tangents (0,0)–(100,0)–(200,50)–(300,50); saved before Civil 3D drew it (placeholder graphics). First of the planned 10 ft pair (sample A). |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
-`examples/dumprec.rs`.
+`examples/dumprec.rs`, `examples/alignments.rs`.
 
 ## Record layout
 
-Observed order of sections (S1, S2, S4):
+Observed order of sections (S1, S2, S4, S5):
 
-| # | Section | Encoding | S2 (handle D90, 955 bytes) | S1 (handle 8C45, 508 bytes) |
-|---|---------|----------|----------------------------|-----------------------------|
-| 0 | Record prefix | not studied | bits 0–63 | bits 0–63 |
-| 1 | Proxy graphics (display cache) | raw LE, see below | bits 64–5247 (648 bytes, 26 chunks) | bits 64–2559 (312 bytes, 3 chunks) |
-| 2 | Entity common data and alignment fields | DWG bit codes; mostly undecoded | 5248–5731 | 2560–3043 |
-| 3 | Design tangent | 4 raw doubles: start X, start Y, end X, end Y | **5732** | **3044** |
-| 4 | Station-reference cache | per record: 4 raw doubles (tangent start/end) + 2 raw doubles (a point) | **6229**: tangent (100,0)→(0,0), point (100,0) | none |
-| 5 | String stream | UTF-16LE | `AeccImpAlignment`, name `Alignment - (1)` | `AeccImpAlignment`, `TEST LINE` |
-| 6 | Handle stream | not studied | | |
+| # | Section | Encoding | S2 (handle D90, 955 bytes) | S1 (handle 8C45, 508 bytes) | S5 (handle 8C5C, 706 bytes) |
+|---|---------|----------|----------------------------|-----------------------------|-----------------------------|
+| 0 | Record prefix | not studied | bits 0–63 | 0–63 | 0–63 |
+| 1 | Proxy graphics (display cache) | raw LE, see below | 64–5247 (648 bytes, 26 chunks) | 64–2559 (312 bytes, 3 chunks) | 64–2559 (312 bytes, 3 chunks) |
+| 2 | Entity common data and alignment fields | DWG bit codes; mostly undecoded | 5248–5681 | 2560–2993 | 2560–2993 |
+| 3 | Tangent element records | see below | 1 record, header **5682**, coords 5732 | 1 record, header **2994**, coords 3044 | 3 records, headers **2994, 3319, 3652** |
+| 4 | Station-reference cache | per record: 4 raw doubles (tangent start/end) + 2 raw doubles (a point) | **6229**: tangent (100,0)→(0,0), point (100,0) | none | **4215**: tangent 1, point (0,0) |
+| 5 | String stream | UTF-16LE | `AeccImpAlignment`, name `Alignment - (1)` | `AeccImpAlignment`, `TEST LINE` | `AeccImpAlignment`, `Alignment - (2)` |
+| 6 | Handle stream | not studied | | | |
 
 ### 1. Proxy graphics
 
@@ -58,22 +60,60 @@ Opcodes seen and their use in alignments:
 | 21, 34 | not identified | |
 | 36 | unicode text | S1 only: placeholder image (see below) |
 
-**Placeholder image (S1).** An alignment imported from LandXML and saved
-without being drawn has no real graphics: a text chunk reading
-`AeccDbAlignment (AeccLand130)` (text height/width 0.1) and a closed
-100 × 0.4 rectangle around the tangent. The design tangent (section 3) is
-still present and correct.
+**Placeholder image (S1, S5).** An alignment saved before Civil 3D has drawn
+it has no real graphics: a text chunk reading `AeccDbAlignment (AeccLand130)`
+(text height/width 0.1) and a closed rectangle around the alignment's
+extents (100 × 0.4 in S1, 300 × 50 in S5). The tangent element records
+(section 3) are still present and correct, so decoding must not depend on
+the display cache.
 
-### 3. Design tangent
+### 3. Tangent element records
 
-The tangent's endpoints as four raw little-endian doubles at an arbitrary
-bit offset. In S2 the alignment runs (100,0)→(0,0), i.e. opposite to the
-drawn polyline; Civil 3D chose the direction when the alignment was created.
+One record per tangent. In BL = bit-coded long and RD = raw double, as
+defined in the public ODA specification:
+
+```text
+BL 0x04020008    header; identical in every record of every sample (meaning unknown)
+BL 0
+BL id            element ID, 1-based
+BL before        ID of the previous element, 0 if none
+BL after         ID of the next element, 0 if none
+RD start X  RD start Y  RD end X  RD end Y
+```
+
+| Sample | Record | id, before, after | Start → end |
+|--------|--------|-------------------|-------------|
+| S1 | 1 | 1, 0, 0 | (0,0) → (100,0) |
+| S2 | 1 | 1, 0, 0 | (100,0) → (0,0) |
+| S4 | 1 | 1, 0, 0 | (100,0) → (−50,0) |
+| S5 | 1 | 1, 0, 2 | (0,0) → (100,0) |
+| S5 | 2 | 2, 1, 3 | (100,0) → (200,50) |
+| S5 | 3 | 3, 2, 0 | (200,50) → (300,50) |
+
+The before/after chain matches the `EntityBefore` / `EntityAfter`
+properties that Autodesk's public Civil 3D API documentation describes for
+alignment entities. In S5 the records follow each other, separated by the
+same 11 bits (`00000000010`, not decoded). What follows the last record
+differs between samples and is not decoded.
+
+In S2 the alignment runs (100,0)→(0,0), i.e. opposite to the drawn polyline;
+Civil 3D chose the direction when the alignment was created.
+
+**Check against a production drawing** (not shared, not in the repo):
+`examples/alignments` decoded all 21 of its tangent-only alignments,
+including ones with 3, 7, 11, 12 and 262 tangents, with the same geometry as
+an independent extraction from the display cache. Alignments containing arcs
+fail cleanly (a tangent's `after` points to an element with no tangent
+record, i.e. the arc uses a different record type), and an offset alignment
+has no tangent element records at all.
 
 ### 4. Station-reference cache
 
 In S2 one record: the tangent again, followed by the point (100,0) — the
-alignment start. S1 (nothing referencing the alignment) has none. A
+alignment start. In S5 one record: tangent 1, followed by (0,0) — again the
+alignment start. S1 (nothing referencing the alignment) has none. Cache
+records have no element header, so the decoder never mistakes them for
+tangents. A
 production drawing (not shared) showed hundreds of records on alignments
 used by corridors, profiles and labels, all with points on the tangent, which
 suggests one record per referencing object or station. Not confirmed.
@@ -111,8 +151,15 @@ differences.
 3. Whether lengths, end station, or extents are cached anywhere else (none
    found for single tangents: the only coordinate copies are sections 1, 3
    and 4).
-4. Multi-tangent layout: expected one 4-double design record per tangent;
-   to be confirmed with a purpose-made sample.
+4. ~~Multi-tangent layout~~ — answered by S5: one element record per
+   tangent, linked by before/after IDs.
+5. Meaning of the header value `0x04020008` and of the BL 0 after it
+   (candidates: element type, constraint type, version).
+6. The 11 bits between consecutive element records, and the data after the
+   last one.
+7. Arc and spiral element records: expected to share the id/before/after
+   fields with a different header; needs a sample with one curve.
+8. How offset alignments store their geometry (no tangent records).
 
 ## Next sample pair
 
@@ -123,7 +170,18 @@ Two drawings, both created and saved in Civil 3D 2024 the same way:
 - **B**: identical, but segment 2 is 10 ft longer (built from a polyline with
   that change, not edited in Civil 3D, to keep everything else equal).
 
-Then `rawdiff A B` and `rawdiff A B AECC_ALIGNMENT`.
+Then `rawdiff A B` and `rawdiff A B AECC_ALIGNMENT`. **A** is S5; **B** is
+still needed. Save B the same way as S5 (S5 was saved before the alignment
+was drawn, so B should be too, or both should be regenerated before saving).
+
+## Template note
+
+S1 and S5 contain a `3DSOLID` in Civil 3D's internal block
+`PRESSUREPARTERRORBLOCK` (handle 7F72 in both) that acadrust 0.6.5 cannot
+parse. Reading falls back to failsafe mode and the solid is dropped, so a
+copy written by acadrust would lose it. S2 (a different, smaller drawing)
+does not have it. A lossless round trip of drawings from this template needs
+that acadrust issue fixed first.
 
 ## Provenance
 
