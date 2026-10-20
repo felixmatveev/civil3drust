@@ -28,12 +28,24 @@ Tangent-only horizontal alignments (no curves, no spirals):
 |---|---|
 | `alignment` | Format-independent tangent-alignment geometry: stationing, point at station, editing a segment length. Fully unit-tested. |
 | `inventory` | Lists the AECC classes in a DWG's class table via acadrust. Starting point for studying object layouts. |
+| `raw` | The stored bytes of AECC records (acadrust keeps them opaque) and bit-level helpers for studying them. |
 
 Try the inventory on a drawing:
 
 ```
 cargo run --example inventory -- path/to/drawing.dwg
 ```
+
+Compare two sample drawings (all AECC classes, then one class in detail),
+and dump one class's record bytes:
+
+```
+cargo run --release --example rawdiff -- a.dwg b.dwg
+cargo run --release --example rawdiff -- a.dwg b.dwg AECC_ALIGNMENT
+cargo run --release --example dumprec -- a.dwg AECC_ALIGNMENT out/a
+```
+
+Findings so far: [`docs/alignment-object.md`](docs/alignment-object.md).
 
 ## Cleanroom rules
 

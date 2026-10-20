@@ -13,3 +13,4 @@ categories = ["parser-implementations", "science"]
 acadrust = "0.6.5"
 
 [dev-dependencies]
+similar = "2"

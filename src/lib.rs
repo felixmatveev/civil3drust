@@ -18,9 +18,12 @@
 //! - [`inventory`] — reports which AECC classes and objects a DWG contains,
 //!   using acadrust's class table. This is the starting point for
 //!   reverse-engineering object layouts from sample files.
+//! - [`raw`] — the stored bytes of AECC records (kept opaque by acadrust)
+//!   and bit-level helpers for comparing sample files.
 
 pub mod alignment;
 pub mod inventory;
+pub mod raw;
 
 pub use alignment::{Alignment, AlignmentError, Point2, Tangent};
 pub use inventory::{aecc_classes, AeccClassInfo};

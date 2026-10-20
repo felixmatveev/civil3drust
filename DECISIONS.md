@@ -67,3 +67,36 @@ as we learn more. Geometry rules (stationing, editing) are stable.
 **Decision.** `alignment` holds pure geometry with no acadrust types. DWG
 decode/encode code will convert to and from it in a separate module. This
 also lets the same model back a LandXML reader/writer later.
+
+## D-005: Study AECC records through acadrust's raw bytes only
+Date: 2026-10-20 · Status: accepted
+
+**Context.** acadrust keeps records of unknown classes as opaque bytes and
+writes them back verbatim. Format study needs those bytes, and the cleanroom
+rules limit which tools and sources may inform the decoding.
+
+**Decision.** All byte-level study uses acadrust's stored record bytes
+(`raw::records`) and tools in this repository (`rawdiff`, `dumprec`).
+Offsets in `docs/` are bit offsets into those bytes. Edits are same-size
+in-place patches of decoded fields until the surrounding encoding is
+understood, so record sizes, strings and handles do not change.
+
+**Alternatives.** Dumping with LibreDWG's `dwgread` (used once for early
+exploration before this repo existed, as a byte dumper only): it adds a GPL
+tool to the workflow and its bit offsets don't match acadrust's record
+framing. The ODA SDK: excluded by the cleanroom rules.
+
+## D-006: Controlled sample pairs are both saved by Civil 3D
+Date: 2026-10-20 · Status: accepted
+
+**Context.** Opening and saving a drawing in Civil 3D 2024 rewrote about 150
+unrelated AECC records (styles, settings) in addition to the edited
+alignment (docs/alignment-object.md, S2 vs S4).
+
+**Decision.** Each pair of samples compared with `rawdiff` must be made the
+same way and both saved by Civil 3D, differing only in the controlled
+change. A file written by civil3drust is compared with its Civil 3D re-save,
+not with the original, to see what Civil 3D adds or corrects.
+
+**Alternatives.** Comparing a Civil 3D file with a civil3drust-written file
+directly: mixes our edits with Civil 3D's save-time rewrites.
