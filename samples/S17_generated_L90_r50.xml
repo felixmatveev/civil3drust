@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<LandXML xmlns="http://www.landxml.org/schema/LandXML-1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.landxml.org/schema/LandXML-1.2 http://www.landxml.org/schema/LandXML-1.2/LandXML-1.2.xsd" date="2026-10-21" time="13:25:27" version="1.2" language="English" readOnly="false">
+	<Units>
+		<Imperial areaUnit="squareFoot" linearUnit="foot" volumeUnit="cubicYard" temperatureUnit="fahrenheit" pressureUnit="inchHG" diameterUnit="inch" angularUnit="decimal degrees" directionUnit="decimal degrees"></Imperial>
+	</Units>
+	<Project name="C:\Users\felix\Downloads\S17_generated_L90_r50.dwg"></Project>
+	<Application name="Autodesk Civil 3D" desc="Civil 3D" manufacturer="Autodesk, Inc." version="2024" manufacturerURL="www.autodesk.com/civil" timeStamp="2026-10-21T13:25:27"></Application>
+	<Alignments name="">
+		<Alignment name="Alignment - (2)" length="178.539816339745" staStart="0." desc="">
+			<CoordGeom>
+				<Line dir="0." length="50.">
+					<Start>0. 0.</Start>
+					<End>-0. 50.</End>
+				</Line>
+				<Curve rot="ccw" chord="70.710678118655" crvType="arc" delta="90." dirEnd="90." dirStart="0." external="20.710678118655" length="78.539816339745" midOrd="14.644660940673" radius="50." tangent="50.">
+					<Start>-0. 50.</Start>
+					<Center>50. 50.</Center>
+					<End>50. 100.</End>
+					<PI>-0. 100.</PI>
+				</Curve>
+				<Line dir="90." length="25.">
+					<Start>50. 100.</Start>
+					<End>75. 100.</End>
+				</Line>
+				<Line dir="90." length="25.">
+					<Start>75. 100.</Start>
+					<End>100. 100.</End>
+				</Line>
+			</CoordGeom>
+			<Feature name="SpeedStation" code="0" source="Autodesk Civil 3D">
+				<Property label="station" value="0.00000000"></Property>
+				<Property label="speed" value="60.00000000"></Property>
+			</Feature>
+		</Alignment>
+	</Alignments>
+</LandXML>

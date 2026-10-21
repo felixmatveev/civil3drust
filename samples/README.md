@@ -28,6 +28,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S15 | `S15_100-200-300_r50_seg3plus100.xml` | Civil 3D 2024 | LandXML 1.2 export of S15 by Civil 3D (reference geometry). | 2038 | `485fd5e19f8bdaab` |
 | S16 | `S16_S11_seg3plus100_generated.dwg` | generated | S11 with tangent 3 set to 200 by `examples/set_length`; acadrust dropped the `3DSOLID` in `PRESSUREPARTERRORBLOCK`. | 946198 | `e4f0d63dc40fd267` |
 | S17 | `S17_generated_L90_r50.dwg` | generated | S11 used as a template: all PIs set to (0,0), (100,0), (100,75), (100,100) by `examples/set_pis`, keeping the R = 50 free curve (now a 90° turn). The PI at (100,75) has zero deflection because the template has four PIs. | 946198 | `975ae1ab1d1a77b5` |
+| S17 | `S17_generated_L90_r50.xml` | Civil 3D 2024 | LandXML 1.2 export by Civil 3D after opening S17 (AUDIT 0 errors). | 1882 | `532024616a90db2d` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

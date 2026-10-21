@@ -32,7 +32,10 @@ same edit bit for bit, apart from one unidentified volatile field. Details:
 Also confirmed in Civil 3D since: changing a free curve's radius
 (`examples/set_radius`, S13) opened with zero AUDIT errors, and Civil 3D's
 re-save (S14) differs from Civil 3D's own version of the same edit by a
-single flag bit.
+single flag bit. A tangent-length edit past a fillet (S16) and an alignment
+generated from a template (S17, 0,0 → 100,0 → 100,100 with an R = 50
+fillet) have also been produced; S17 opened with zero AUDIT errors and
+Civil 3D's LandXML export of it matches the intended geometry.
 
 Known limitation: acadrust 0.6.5 can't parse a `3DSOLID` in Civil 3D's
 internal `PRESSUREPARTERRORBLOCK`; reading falls back to failsafe mode and

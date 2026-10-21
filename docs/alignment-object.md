@@ -37,7 +37,7 @@ owner for this study, or generated from them. All are in
 | S14 | `S13_civ3d_resaved.dwg` | S13 opened in Civil 3D (AUDIT 0 errors, radius 75 and stationing correct), saved. |
 | S15 | `100-200-300_r50_seg3plus100.dwg` + `.xml` | S11 with tangent 3 lengthened by 100 ft in Civil 3D; saved, and exported to LandXML 1.2 by Civil 3D. |
 | S16 | `S11_seg3plus100_generated.dwg` (generated) | S11 with tangent 3 set to 200 by `examples/set_length`. |
-| S17 | `generated_L90_r50.dwg` (generated) | S11 as a template, PIs set to (0,0), (100,0), (100,75), (100,100) by `examples/set_pis`. |
+| S17 | `generated_L90_r50.dwg` (generated) + `.xml` | S11 as a template, PIs set to (0,0), (100,0), (100,75), (100,100) by `examples/set_pis`; opened in Civil 3D (AUDIT 0 errors) and exported to LandXML. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -423,7 +423,14 @@ PI on the second leg. Result: tangent 50.0000, R = 50 left 90° curve
 total 178.5398. Changes against S11: tangent records 2 and 3, the
 placeholder box corners (300 → 100, 50 → 100), and both PC-station copies
 (88.1966 → 50.00000000000001; the last digit is floating-point rounding
-of T = R·tan 45°). Not yet opened in Civil 3D.
+of T = R·tan 45°).
+
+**Verified in Civil 3D.** S17 opened with zero AUDIT errors. Civil 3D's
+LandXML export of it lists exactly the intended alignment: line 50; curve
+radius 50, ccw, delta 90, start (50,0), centre (50,50), end (100,50), PI
+(100,0), length 78.539816339745; lines 25 and 25 at 90°; length
+178.539816339745. The zero-deflection PI was kept as two separate lines,
+so Civil 3D accepts it.
 
 An exact three-PI version needs a template with two tangents and one free
 curve, or support for removing elements (which changes the record size and
@@ -463,7 +470,6 @@ probably element counts in section 2).
 
 ## Next samples
 
-- Open S17 in Civil 3D; check whether the zero-deflection PI is accepted.
 - A template with two tangents and one free curve (e.g. 0,0 → 100,0 →
   100,100, R = 50), for exact generation of that shape.
 

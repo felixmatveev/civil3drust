@@ -112,6 +112,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   them. One new test. `set_pis` example.
 - Sample S17: 0,0 → 100,0 → 100,100 with an R = 50 fillet generated from
   S11 (with an extra zero-deflection PI at 100,75); decision D-014.
+  Opened in Civil 3D with zero AUDIT errors; Civil 3D's LandXML export of
+  it (added to `samples/`) matches the intended geometry exactly.
 
 ### Fixed
 - Free arcs whose flag bit is set (S14) failed to decode; the arc layout is
