@@ -118,6 +118,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 - Decision D-015 (no Autodesk-provided styles in civil3drust; reference or
   copy from the user's drawing). CLAUDE.md priorities: LandXML export low,
   focus on alignment creation.
+- Decision D-016 (decode styles from the owner's own minimal styles, one
+  option per sample); sample plan in `docs/alignment-object.md`.
 
 ### Fixed
 - Free arcs whose flag bit is set (S14) failed to decode; the arc layout is

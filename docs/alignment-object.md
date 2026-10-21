@@ -480,6 +480,15 @@ way):
 - **C**: as A, but with the "No Labels" label set — whether label-group
   objects are required.
 
+For styles (D-015): the owner creates **own** minimal styles in Civil 3D with
+*New* (not *Copy*), own names, generic values — e.g. alignment style
+`CR-Empty` with every component off, label set `CR-NoLabels` with no
+labels. These are the owner's output and the baseline for decoding style
+records. Then one change per sample (line component on, its colour, its
+layer, arc component on, …), each compared with the previous. Sample B can
+use `CR-Empty` as its "different style", which also locates the style
+handle in the alignment record.
+
 - A template with two tangents and one free curve (e.g. 0,0 → 100,0 →
   100,100, R = 50), for exact generation of that shape.
 

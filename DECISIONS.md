@@ -270,3 +270,19 @@ from samples. Sample drawings are not mined for style libraries.
 Autodesk content. Create Civil 3D drawings from plain AutoCAD drawings:
 needs the whole settings tree (about 1,500 settings nodes and hundreds of
 styles per drawing); out of scope.
+
+## D-016: Decode styles from the owner's own minimal styles
+Date: 2026-10-21 · Status: accepted (extends D-015)
+
+**Context.** Style records must be understood to create alignments that
+use a chosen style, and eventually to author styles. Template styles are
+Autodesk content (D-015).
+
+**Decision.** Style records are studied from styles the owner creates in
+Civil 3D with *New* (not *Copy*), with own names and generic values
+(starting from a "nothing" style such as `CR-Empty`), changing one option
+per sample. Only format knowledge goes into civil3drust; it writes style
+records from decoded fields, never from copied bytes.
+
+**Alternatives.** Study the template's default styles: works technically,
+but mixes Autodesk content into the baseline and invites copying it.
