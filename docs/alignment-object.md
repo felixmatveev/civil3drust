@@ -15,7 +15,9 @@ generalizes is the order and encoding of the sections, not the numbers.
 ## Samples
 
 Made in Autodesk Civil 3D 2024 (build U.202, version 24.3) by the project
-owner for this study. Not yet committed to `samples/`.
+owner for this study, or generated from them. All are in
+[`samples/`](../samples/) as `S<n>_<name>.dwg`; see
+[`samples/README.md`](../samples/README.md) for sizes and checksums.
 
 | ID | File | How it was made |
 |----|------|-----------------|

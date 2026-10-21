@@ -64,6 +64,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 - `docs/alignment-object.md`: sample S9 (start station 1+00), station field,
   cache rebuilt by Civil 3D, optional user string, arc-element lead.
 
+- `samples/`: the nine study drawings S1–S9 with a manifest
+  (`samples/README.md`: how each was made, size, SHA-256).
+- `CLAUDE.md`: working rules for this repository (commit straight to
+  `main`, checks before commit, cleanroom and sample rules).
+
 ### Fixed
 - Alignment names were wrong when the string stream holds a user name
   before the name (S9) or text-like noise after it.
