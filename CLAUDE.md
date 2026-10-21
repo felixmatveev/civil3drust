@@ -23,6 +23,11 @@ samples and steps that produced it.
 - Never commit client or production drawings. A production drawing may be
   used locally as a sanity check, described only generically in docs.
 
+## Priorities
+- The acadrust 0.6.5 `3DSOLID` parsing problem (solids in
+  `PRESSUREPARTERRORBLOCK` dropped on save) is **extremely low priority**.
+  Don't work on it unless the owner asks; just keep warning about it.
+
 ## Tools
 - `cargo run --release --example rawdiff -- a.dwg b.dwg [AECC_CLASS]`
 - `cargo run --release --example alignments -- file.dwg`

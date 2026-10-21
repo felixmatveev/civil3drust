@@ -24,10 +24,13 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S12 | `S12_100-200-300_r75.dwg` | Civil 3D 2024 | S11 with the free curve radius changed from 50 to 75 ft in Civil 3D; saved. | 981895 | `014ba663499648c3` |
 | S13 | `S13_S11_r75_generated.dwg` | generated | S11 with the free curve radius set to 75 by `examples/set_radius`; acadrust dropped the `3DSOLID` in `PRESSUREPARTERRORBLOCK`. | 946198 | `752fe2a788491712` |
 | S14 | `S14_S13_civ3d_resaved.dwg` | Civil 3D 2024 | S13 opened in Civil 3D (AUDIT 0 errors, geometry correct), saved. | 971048 | `31c382f345c851fb` |
+| S15 | `S15_100-200-300_r50_seg3plus100.dwg` | Civil 3D 2024 | S11 with tangent 3 lengthened by 100 ft (PI-to-PI 100 → 200) in Civil 3D; saved. | 980908 | `2ca95b85944e46f0` |
+| S15 | `S15_100-200-300_r50_seg3plus100.xml` | Civil 3D 2024 | LandXML 1.2 export of S15 by Civil 3D (reference geometry). | 2038 | `485fd5e19f8bdaab` |
+| S16 | `S16_S11_seg3plus100_generated.dwg` | generated | S11 with tangent 3 set to 200 by `examples/set_length`; acadrust dropped the `3DSOLID` in `PRESSUREPARTERRORBLOCK`. | 946198 | `e4f0d63dc40fd267` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8
-(Civil 3D re-save), S8→S9 (start station). S10 is a single-arc reference. S5→S11 (free curve added at PI 1), S11→S12 (radius 50→75), S13 vs S12 (generated vs Civil 3D), S13→S14 (Civil 3D re-save), S14 vs S12.
+(Civil 3D re-save), S8→S9 (start station). S10 is a single-arc reference. S5→S11 (free curve added at PI 1), S11→S12 (radius 50→75), S13 vs S12 (generated vs Civil 3D), S13→S14 (Civil 3D re-save), S14 vs S12, S11→S15 (tangent 3 +100 ft past a fillet), S16 vs S15 (generated vs Civil 3D). S15's LandXML is Civil 3D's own export of the same geometry.
 
-S1, S5–S14 come from a template whose `PRESSUREPARTERRORBLOCK` holds a
-`3DSOLID` acadrust 0.6.5 cannot parse (S7–S9, S13 and S14 no longer have it).
+S1, S5–S16 come from a template whose `PRESSUREPARTERRORBLOCK` holds a
+`3DSOLID` acadrust 0.6.5 cannot parse (S7–S9, S13, S14 and S16 no longer have it).

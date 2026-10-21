@@ -210,3 +210,23 @@ free, then three points, each fully validated. Keep the bit as
 
 **Alternatives.** Keep using the bit and treat S14 as an exception: wrong,
 since Civil 3D itself writes it this way.
+
+## D-013: Tangent edits work on the PI polyline when curves are free
+Date: 2026-10-21 · Status: accepted
+
+**Context.** With free arcs, tangent records keep PI-to-PI coordinates
+(S11), and lengthening a tangent in Civil 3D (S11 → S15) changed only that
+tangent's record, the placeholder box and two unexplained values.
+
+**Decision.** `aecc_alignment_edit::set_tangent_length` takes a decoded
+element chain, treats the tangent records as the PI polyline, applies the
+D-003 PI edit through the existing `apply`, updates cached PC stations of
+free arcs whose station changes, and refuses the edit if a curve would no
+longer fit. Segments are numbered by tangent (curves not counted), as in
+Civil 3D's PI-based view. Alignments containing arcs by three points are
+refused until editing around fixed arcs is studied. The `set_length`
+example uses this path for all alignments.
+
+**Alternatives.** Keep separate editors for tangent-only and curved
+alignments: duplicate logic; the PI view covers both. Shift fixed arcs
+rigidly: plausible, but not yet observed in a sample.

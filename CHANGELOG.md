@@ -96,6 +96,16 @@ versions follow [Semantic Versioning](https://semver.org/).
 - Sample S14 (S13 re-saved by Civil 3D: AUDIT 0 errors, differs from
   Civil 3D's own S12 by one flag bit); `ArcRecord::flag`; decision D-012.
 
+- `aecc_alignment_edit::set_tangent_length`: tangent-length edits on
+  alignments with free arcs (fillets), updating cached PC stations and
+  refusing edits that squeeze a curve (three unit tests).
+  `aecc_arc_edit` station helpers shared. `set_length` example now uses it
+  and prints the resolved alignment.
+- Samples S15 (Civil 3D: tangent 3 +100 ft past a fillet, with Civil 3D's
+  LandXML export, which matches the decoder to 12 decimals) and S16 (same
+  edit by civil3drust, differing from S15 only in the volatile field and the
+  arc flag bit); decision D-013.
+
 ### Fixed
 - Free arcs whose flag bit is set (S14) failed to decode; the arc layout is
   now chosen from the parameter block.

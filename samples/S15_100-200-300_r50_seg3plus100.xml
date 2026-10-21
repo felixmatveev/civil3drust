@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<LandXML xmlns="http://www.landxml.org/schema/LandXML-1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.landxml.org/schema/LandXML-1.2 http://www.landxml.org/schema/LandXML-1.2/LandXML-1.2.xsd" date="2026-10-21" time="13:01:34" version="1.2" language="English" readOnly="false">
+	<Units>
+		<Imperial areaUnit="squareFoot" linearUnit="foot" volumeUnit="cubicYard" temperatureUnit="fahrenheit" pressureUnit="inchHG" diameterUnit="inch" angularUnit="decimal degrees" directionUnit="decimal degrees"></Imperial>
+	</Units>
+	<Project name="C:\Users\felix\OneDrive\Desktop\Civil3D-deco\100-200-300_r_50_100.dwg"></Project>
+	<Application name="Autodesk Civil 3D" desc="Civil 3D" manufacturer="Autodesk, Inc." version="2024" manufacturerURL="www.autodesk.com/civil" timeStamp="2026-10-21T13:01:34"></Application>
+	<Alignments name="">
+		<Alignment name="Alignment - (2)" length="411.378981575051" staStart="0." desc="">
+			<CoordGeom>
+				<Line dir="0." length="88.196601125011">
+					<Start>0. 0.</Start>
+					<End>0. 88.196601125011</End>
+				</Line>
+				<Curve rot="ccw" chord="22.975292054736" crvType="arc" delta="26.565051177078" dirEnd="26.565051177078" dirStart="0." external="1.374314837301" length="23.18238045004" midOrd="1.337550526613" radius="50." tangent="11.803398874989">
+					<Start>0. 88.196601125011</Start>
+					<Center>50. 88.196601125011</Center>
+					<End>5.278640450004 110.557280900008</End>
+					<PI>-0. 100.</PI>
+				</Curve>
+				<Line dir="26.565051177078" length="100.">
+					<Start>5.278640450004 110.557280900008</Start>
+					<End>50. 200.</End>
+				</Line>
+				<Line dir="0." length="200.">
+					<Start>50. 200.</Start>
+					<End>50. 400.</End>
+				</Line>
+			</CoordGeom>
+			<Feature name="SpeedStation" code="0" source="Autodesk Civil 3D">
+				<Property label="station" value="0.00000000"></Property>
+				<Property label="speed" value="60.00000000"></Property>
+			</Feature>
+		</Alignment>
+	</Alignments>
+</LandXML>

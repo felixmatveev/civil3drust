@@ -3,12 +3,15 @@
 //! Usage:
 //!   cargo run --release --example set_length -- in.dwg out.dwg <alignment> <segment> <length>
 //!
-//! `<alignment>` is the alignment name or its hex handle; `<segment>` is
-//! 1-based. The segment keeps its start PI and direction; every later PI
-//! moves with it (D-003). The output is read back and decoded to verify.
+//! `<alignment>` is the alignment name or its hex handle; `<segment>` is the
+//! 1-based tangent number in stationing order (curves are not counted), and
+//! `<length>` its PI-to-PI length. The tangent keeps its start PI and
+//! direction; every later PI moves with it (D-003), and free curves
+//! (fillets) follow. Alignments with arcs defined by three points are
+//! refused. The output is read back and decoded to verify.
 
-use civil3drust::aecc_alignment::{decode, DecodedAlignment};
-use civil3drust::aecc_alignment_edit::apply;
+use civil3drust::aecc_alignment_edit::set_tangent_length;
+use civil3drust::aecc_elements::{decode_elements, DecodedElements, Segment};
 use civil3drust::raw;
 
 fn fail(msg: impl std::fmt::Display) -> ! {
@@ -16,20 +19,41 @@ fn fail(msg: impl std::fmt::Display) -> ! {
     std::process::exit(1);
 }
 
-fn find(doc: &acadrust::document::CadDocument, key: &str) -> DecodedAlignment {
+fn find(doc: &acadrust::document::CadDocument, key: &str) -> DecodedElements {
     let want = u64::from_str_radix(key.trim_start_matches("0x"), 16).ok();
     for rec in raw::records(doc, "AECC_ALIGNMENT") {
-        match decode(&rec) {
-            Ok(d) if d.alignment.name == key || Some(d.handle) == want => return d,
-            Err(e) if Some(rec.handle) == want => {
-                fail(format!("alignment {key} can't be edited: {e}"))
-            }
+        match decode_elements(&rec) {
+            Ok(d) if d.name.as_deref() == Some(key) || Some(d.handle) == want => return d,
+            Err(e) if Some(rec.handle) == want => fail(format!("alignment {key}: {e}")),
             _ => {}
         }
     }
     fail(format!(
         "no decodable alignment named or with handle '{key}'"
     ))
+}
+
+fn print(d: &DecodedElements) {
+    let mut sta = d.stored_start_station.unwrap_or(0.0);
+    for e in &d.elements {
+        let (s, t) = (e.segment.start(), e.segment.end());
+        let kind = match e.segment {
+            Segment::Line { .. } => "tangent",
+            Segment::Arc { .. } => "arc    ",
+        };
+        let len = e.segment.length();
+        println!(
+            "  {kind} ({:.4}, {:.4}) -> ({:.4}, {:.4})  L={:.4}  sta {:.2}-{:.2}",
+            s.x,
+            s.y,
+            t.x,
+            t.y,
+            len,
+            sta,
+            sta + len
+        );
+        sta += len;
+    }
 }
 
 fn main() {
@@ -56,44 +80,32 @@ fn main() {
         );
     }
     let before = find(&opened.doc, &a[3]);
-    let mut target = before.alignment.clone();
-    target
-        .set_segment_length(seg - 1, len)
-        .unwrap_or_else(|e| fail(e));
-
     let data = raw::record_data_mut(&mut opened.doc, before.handle)
         .unwrap_or_else(|| fail("record bytes missing"));
-    let rep = apply(data, &before, &target).unwrap_or_else(|e| fail(e));
+    let rep = set_tangent_length(data, &before, seg - 1, len).unwrap_or_else(|e| fail(e));
+    let p = &rep.patches;
     println!(
-        "patched [{:X}] {}: {} tangent record(s), {} cache record(s), {} graphics vertex(es), {} marker(s){}",
+        "patched [{:X}] {}: {} tangent record(s), {} cache record(s), {} graphics vertex(es), {} marker(s){}; {} curve(s) restationed ({} cached station(s))",
         before.handle,
-        before.alignment.name,
-        rep.tangent_records,
-        rep.cache_records,
-        rep.graphics_vertices,
-        rep.graphics_markers,
-        if rep.placeholder_box { ", placeholder box" } else { "" }
+        before.name.as_deref().unwrap_or("?"),
+        p.tangent_records,
+        p.cache_records,
+        p.graphics_vertices,
+        p.graphics_markers,
+        if p.placeholder_box { ", placeholder box" } else { "" },
+        rep.arcs_restationed,
+        rep.station_copies
     );
 
     acadrust::DwgWriter::write_to_file(&a[2], &opened.doc).unwrap_or_else(|e| fail(e));
-
     let reread =
         raw::open(&a[2]).unwrap_or_else(|e| fail(format!("written file does not read back: {e}")));
     let after = find(&reread.doc, &format!("{:X}", before.handle));
     println!(
         "verify {}: length {:.4} -> {:.4}",
         a[2],
-        before.alignment.length(),
-        after.alignment.length()
+        before.length(),
+        after.length()
     );
-    for t in after.alignment.tangents() {
-        println!(
-            "  ({:.4}, {:.4}) -> ({:.4}, {:.4})  L={:.4}",
-            t.start.x,
-            t.start.y,
-            t.end.x,
-            t.end.y,
-            t.length()
-        );
-    }
+    print(&after);
 }

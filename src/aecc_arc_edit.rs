@@ -70,7 +70,45 @@ pub struct RadiusReport {
     pub graphics_stale: bool,
 }
 
-fn station_of(elements: &[crate::aecc_elements::ResolvedElement], idx: usize, start: f64) -> f64 {
+/// First bit after the last element record.
+pub(crate) fn elements_end_bit(decoded: &DecodedElements) -> usize {
+    decoded
+        .elements
+        .iter()
+        .map(|e| match &e.record {
+            Element::Tangent(t) => t.coords_bit + 256,
+            Element::Arc(a) => a.end_bit,
+        })
+        .max()
+        .unwrap_or(0)
+}
+
+/// Bit offsets of the raw doubles of cached station copies: bit-coded
+/// doubles (code `00`) after `from` whose value equals `station` to 1e-9
+/// relative (Civil 3D's value can differ from ours in the last bits).
+pub(crate) fn find_station_copies(data: &[u8], from: usize, station: f64) -> Vec<usize> {
+    let tol = 1e-9 * station.abs().max(1.0);
+    let mut hits = Vec::new();
+    let mut bit = from;
+    while bit + 66 <= raw::bit_len(data) {
+        if raw::get_bit(data, bit) == 0
+            && raw::get_bit(data, bit + 1) == 0
+            && (raw::get_f64(data, bit + 2) - station).abs() <= tol
+        {
+            hits.push(bit + 2);
+            bit += 66;
+        } else {
+            bit += 1;
+        }
+    }
+    hits
+}
+
+pub(crate) fn station_of(
+    elements: &[crate::aecc_elements::ResolvedElement],
+    idx: usize,
+    start: f64,
+) -> f64 {
     start
         + elements[..idx]
             .iter()
@@ -137,33 +175,12 @@ pub fn set_free_arc_radius(
     // 1. The radius.
     raw::set_f64(data, radius_bit + 2, new_radius);
 
-    // 2. Cached PC stations: bit-coded doubles (code 00) after the element
-    //    records whose value equals the old PC station (to 1e-9 relative;
-    //    Civil 3D's value differs from ours in the last bits).
-    let after_elements = decoded
-        .elements
-        .iter()
-        .map(|e| match &e.record {
-            Element::Tangent(t) => t.coords_bit + 256,
-            Element::Arc(a) => a.end_bit,
-        })
-        .max()
-        .unwrap_or(0);
-    let tol = 1e-9 * old_pc_station.abs().max(1.0);
-    let mut copies = 0;
-    let mut bit = after_elements;
-    while bit + 66 <= raw::bit_len(data) {
-        if raw::get_bit(data, bit) == 0
-            && raw::get_bit(data, bit + 1) == 0
-            && (raw::get_f64(data, bit + 2) - old_pc_station).abs() <= tol
-        {
-            raw::set_f64(data, bit + 2, new_pc_station);
-            copies += 1;
-            bit += 66;
-        } else {
-            bit += 1;
-        }
+    // 2. Cached PC stations (see `find_station_copies`).
+    let hits = find_station_copies(data, elements_end_bit(decoded), old_pc_station);
+    for &b in &hits {
+        raw::set_f64(data, b, new_pc_station);
     }
+    let copies = hits.len();
 
     let graphics_stale = pg::find(data, 4096).is_some_and(|g| !g.is_placeholder());
     Ok(RadiusReport {

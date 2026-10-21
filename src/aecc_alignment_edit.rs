@@ -17,7 +17,9 @@
 //! changes on every Civil 3D save, and label-group records. A file edited
 //! without them has been opened, used and re-saved by Civil 3D 2024.
 
-use crate::aecc_alignment::DecodedAlignment;
+use crate::aecc_alignment::{DecodedAlignment, TangentRecord};
+use crate::aecc_arc_edit::{elements_end_bit, find_station_copies, station_of};
+use crate::aecc_elements::{resolve, ArcDef, DecodedElements, Element, Segment};
 use crate::alignment::{Alignment, Point2};
 use crate::proxy_graphics as pg;
 use crate::raw;
@@ -27,6 +29,15 @@ use std::fmt;
 pub enum EditError {
     /// The new geometry must have the same number of PIs.
     PiCountChanged { old: usize, new: usize },
+    /// Arcs by three points are fixed in place; editing around them is not
+    /// supported yet.
+    FixedArcs,
+    /// Consecutive tangents don't share a PI.
+    TangentsNotConnected,
+    /// The edit leaves a free arc without room on a tangent.
+    DoesNotFit(String),
+    /// Invalid segment number or length.
+    Geometry(String),
 }
 
 impl fmt::Display for EditError {
@@ -36,6 +47,13 @@ impl fmt::Display for EditError {
                 f,
                 "new geometry has {new} PIs, record has {old}; adding or removing tangents is not supported"
             ),
+            Self::FixedArcs => write!(
+                f,
+                "alignment has arcs defined by three points; only tangents and free arcs can be edited"
+            ),
+            Self::TangentsNotConnected => write!(f, "consecutive tangents don't share a PI"),
+            Self::DoesNotFit(why) => write!(f, "edit doesn't fit: {why}"),
+            Self::Geometry(why) => write!(f, "{why}"),
         }
     }
 }
@@ -163,6 +181,124 @@ pub fn apply(
     Ok(rep)
 }
 
+/// What an edit on an alignment with free arcs changed.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ElementsEditReport {
+    pub patches: EditReport,
+    /// Free arcs whose cached PC station moved, and copies updated.
+    pub arcs_restationed: usize,
+    pub station_copies: usize,
+}
+
+/// Change the PI-to-PI length of tangent `segment` (0-based, in chain
+/// order) of an alignment made of tangents and free arcs (fillets).
+///
+/// Free arcs store only a radius and their tangents keep PI-to-PI
+/// coordinates (docs/alignment-object.md), so the edit is the same PI edit
+/// as for a tangent-only alignment (D-003): the tangent records, cache
+/// records and display cache are patched by [`apply`]. In addition the
+/// cached PC station of every free arc whose station changes is updated.
+/// The edit is refused if a free arc would no longer fit.
+pub fn set_tangent_length(
+    data: &mut [u8],
+    decoded: &DecodedElements,
+    segment: usize,
+    new_length: f64,
+) -> Result<ElementsEditReport, EditError> {
+    if decoded
+        .elements
+        .iter()
+        .any(|e| matches!(&e.record, Element::Arc(a) if matches!(a.def, ArcDef::ThreePoint { .. })))
+    {
+        return Err(EditError::FixedArcs);
+    }
+    let tangents: Vec<TangentRecord> = decoded
+        .elements
+        .iter()
+        .filter_map(|e| match &e.record {
+            Element::Tangent(t) => Some(t.clone()),
+            Element::Arc(_) => None,
+        })
+        .collect();
+    if tangents.windows(2).any(|w| !same(w[0].end, w[1].start)) {
+        return Err(EditError::TangentsNotConnected);
+    }
+    let mut pis: Vec<Point2> = tangents.iter().map(|t| t.start).collect();
+    pis.push(tangents.last().ok_or(EditError::TangentsNotConnected)?.end);
+    let start = decoded.stored_start_station.unwrap_or(0.0);
+    let name = decoded.name.clone().unwrap_or_default();
+    let old_alignment =
+        Alignment::new(name, start, pis).map_err(|e| EditError::Geometry(e.to_string()))?;
+    let mut new_alignment = old_alignment.clone();
+    new_alignment
+        .set_segment_length(segment, new_length)
+        .map_err(|e| EditError::Geometry(e.to_string()))?;
+
+    // Resolve the edited chain and check every tangent still has room.
+    let new_pis = new_alignment.pis();
+    let mut k = 0;
+    let records: Vec<Element> = decoded
+        .elements
+        .iter()
+        .map(|e| match &e.record {
+            Element::Tangent(t) => {
+                let mut t = t.clone();
+                t.start = new_pis[k];
+                t.end = new_pis[k + 1];
+                k += 1;
+                Element::Tangent(t)
+            }
+            other => other.clone(),
+        })
+        .collect();
+    let resolved = resolve(&records).map_err(|e| EditError::DoesNotFit(e.to_string()))?;
+    for (rec, seg) in records.iter().zip(&resolved) {
+        if let (Element::Tangent(t), Segment::Line { start: s0, end: e0 }) = (rec, seg.segment) {
+            let (dx, dy) = (t.end.x - t.start.x, t.end.y - t.start.y);
+            if (e0.x - s0.x) * dx + (e0.y - s0.y) * dy < -1e-9 * (dx * dx + dy * dy) {
+                return Err(EditError::DoesNotFit(format!(
+                    "tangent {} would be shorter than its curves need",
+                    t.id
+                )));
+            }
+        }
+    }
+
+    // Stations of free arcs before and after; find all copies first so one
+    // arc's new value is never mistaken for another's old one.
+    let from = elements_end_bit(decoded);
+    let mut station_patches = Vec::new();
+    let mut arcs_restationed = 0;
+    for (j, e) in decoded.elements.iter().enumerate() {
+        if matches!(&e.record, Element::Arc(a) if matches!(a.def, ArcDef::Free { .. })) {
+            let old = station_of(&decoded.elements, j, start);
+            let new = station_of(&resolved, j, start);
+            if (old - new).abs() > 1e-12 * old.abs().max(1.0) {
+                arcs_restationed += 1;
+                for b in find_station_copies(data, from, old) {
+                    station_patches.push((b, new));
+                }
+            }
+        }
+    }
+
+    let old = DecodedAlignment {
+        handle: decoded.handle,
+        tangents,
+        stored_start_station: decoded.stored_start_station,
+        alignment: old_alignment,
+    };
+    let patches = apply(data, &old, &new_alignment)?;
+    for &(b, v) in &station_patches {
+        raw::set_f64(data, b, v);
+    }
+    Ok(ElementsEditReport {
+        patches,
+        arcs_restationed,
+        station_copies: station_patches.len(),
+    })
+}
+
 fn extents(pts: &[Point2]) -> (f64, f64, f64, f64) {
     pts.iter().fold(
         (f64::MAX, f64::MAX, f64::MIN, f64::MIN),
@@ -261,6 +397,86 @@ mod tests {
                 self.rd(v);
             }
         }
+        fn bd(&mut self, v: f64) {
+            self.bit(0);
+            self.bit(0);
+            self.rd(v);
+        }
+        fn free_arc(&mut self, ids: (i32, i32, i32), radius: f64) {
+            self.bl(TANGENT_HEADER);
+            self.bit(0);
+            self.bd(-1.0);
+            self.bd(-1.0);
+            self.bl(1);
+            self.bd(-1.0);
+            self.bl(29);
+            self.bit(0);
+            self.bl(ids.0);
+            self.bl(ids.1);
+            self.bl(ids.2);
+            self.bd(radius);
+        }
+    }
+
+    /// S11-like: S5's tangents with a free R=50 arc at PI (100,0) and two
+    /// cached PC-station copies.
+    fn s11_like() -> RawRecord {
+        let mut w = Bits(Vec::new(), 0);
+        w.tangent(1, 0, 4, (0.0, 0.0), (100.0, 0.0));
+        w.tangent(2, 4, 3, (100.0, 0.0), (200.0, 50.0));
+        w.tangent(3, 2, 0, (200.0, 50.0), (300.0, 50.0));
+        w.free_arc((4, 1, 2), 50.0);
+        w.bit(1);
+        w.bd(88.1966011250105);
+        w.byte(0x3C);
+        w.bd(88.1966011250105);
+        w.byte(0);
+        RawRecord {
+            handle: 1,
+            class: "AECC_ALIGNMENT".into(),
+            is_entity: true,
+            data: w.0,
+        }
+    }
+
+    #[test]
+    fn s15_edit_downstream_of_fillet_keeps_pc_station() {
+        use crate::aecc_elements::decode_elements;
+        let mut rec = s11_like();
+        let before = decode_elements(&rec).unwrap();
+        let rep = set_tangent_length(&mut rec.data, &before, 2, 200.0).unwrap();
+        assert_eq!(rep.patches.tangent_records, 1);
+        assert_eq!((rep.arcs_restationed, rep.station_copies), (0, 0));
+        let after = decode_elements(&rec).unwrap();
+        assert!((after.length() - 411.378981575051).abs() < 1e-9);
+        assert_eq!(after.elements[3].segment.end(), Point2::new(400.0, 50.0));
+    }
+
+    #[test]
+    fn edit_upstream_of_fillet_restations_it() {
+        use crate::aecc_elements::decode_elements;
+        let mut rec = s11_like();
+        let before = decode_elements(&rec).unwrap();
+        let rep = set_tangent_length(&mut rec.data, &before, 0, 120.0).unwrap();
+        assert_eq!((rep.arcs_restationed, rep.station_copies), (1, 2));
+        let t = 50.0 * (0.5f64.atan() / 2.0).tan();
+        let new_pc = 120.0 - t;
+        assert_eq!(find_station_copies(&rec.data, 0, new_pc).len(), 2);
+        let after = decode_elements(&rec).unwrap();
+        assert!((after.elements[0].segment.length() - new_pc).abs() < 1e-9);
+    }
+
+    #[test]
+    fn edit_that_squeezes_a_fillet_is_refused() {
+        use crate::aecc_elements::decode_elements;
+        let mut rec = s11_like();
+        let before = decode_elements(&rec).unwrap();
+        // T = 11.80 needs tangent 1 to be at least that long.
+        assert!(matches!(
+            set_tangent_length(&mut rec.data, &before, 0, 5.0),
+            Err(EditError::DoesNotFit(_))
+        ));
+        assert_eq!(rec.data, s11_like().data);
     }
 
     /// S5-like record: three tangents plus one cache record on tangent 2

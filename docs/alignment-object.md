@@ -35,6 +35,8 @@ owner for this study, or generated from them. All are in
 | S12 | `100-200-300_r75.dwg` | S11 with the curve radius changed to 75 ft in Civil 3D; saved. |
 | S13 | `S11_r75_generated.dwg` (generated) | S11 with the radius set to 75 by `examples/set_radius`. |
 | S14 | `S13_civ3d_resaved.dwg` | S13 opened in Civil 3D (AUDIT 0 errors, radius 75 and stationing correct), saved. |
+| S15 | `100-200-300_r50_seg3plus100.dwg` + `.xml` | S11 with tangent 3 lengthened by 100 ft in Civil 3D; saved, and exported to LandXML 1.2 by Civil 3D. |
+| S16 | `S11_seg3plus100_generated.dwg` (generated) | S11 with tangent 3 set to 200 by `examples/set_length`. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -375,6 +377,33 @@ three points) and in S14 (still a free arc: p1 = −1, n2 = 29, radius only),
 and 0 in S11–S13. Its meaning is unknown; the decoder now picks the layout
 from p1/n2 (D-012).
 
+## Tangent edit past a fillet: S11 → S15, LandXML check, and S16
+
+**What Civil 3D changed** (`rawdiff S11 S15 AECC_ALIGNMENT`, record size
+unchanged): tangent 3's end X (300 → 400), two corners of the placeholder
+box (x 300 → 400), the volatile header field, and the arc's flag bit
+(0 → 1, as in S14). Nothing else: the edit is downstream of the curve, so
+the arc and its cached PC station are untouched.
+
+**Decoder vs Civil 3D's LandXML.** S15's LandXML export lists the same
+alignment. Every value matches the decoder's output to all 12 decimals
+LandXML gives: length 411.378981575051; tangent 1 length 88.196601125011;
+curve start (88.196601125011, 0), centre (88.196601125011, 50), end
+(110.557280900008, 5.278640450004), PI (100, 0), radius 50, delta
+26.565051177078°, length 23.18238045004, rotation ccw; tangents 2 and 3
+lengths 100 and 200. (LandXML lists coordinates as northing, easting.)
+LandXML also carries `<Feature name="SpeedStation">` with speed 60 at
+station 0; whether p1 = 60 in arcs by points is a design speed is not
+established (free arcs have p1 = −1 in the same drawing).
+
+**Generated edit (S16).** `examples/set_length S11 S16 8C5C 3 200` now
+handles alignments with free arcs: the tangent records form a PI-to-PI
+polyline, so the PI edit from D-003 applies unchanged; free arcs follow,
+and cached PC stations are updated when they move (none here). It patched
+tangent 3 and the placeholder box. `rawdiff S16 S15 AECC_ALIGNMENT` leaves
+only the volatile field and the arc's flag bit. Re-running the S5 edit with
+the new code reproduces S7 byte for byte.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
@@ -383,7 +412,9 @@ from p1/n2 (D-012).
 9. The 2-bit flag at bit 2677 that Civil 3D changed when re-saving S7.
 10. The block of BDs (2.0, 3.0, 4.0) Civil 3D added in S12 after the radius
     change (and again in S14).
-11. The flag bit after the arc header (1 in S10, S14; 0 in S11–S13).
+11. The flag bit after the arc header (1 in S10, S14, S15; 0 in S11–S13).
+    Civil 3D set it after geometry edits it saved (S14, S15) but not after
+    its own radius edit (S12).
 12. The volatile header field: identical in S12 and S14 (same content,
     different save sessions), so probably computed from the content.
 2. ~~Where the start station is stored~~ — answered by S9: a BD ending 41
