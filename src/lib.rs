@@ -20,6 +20,7 @@
 //!   reverse-engineering object layouts from sample files.
 //! - [`aecc_alignment`] — decodes tangent-only `AECC_ALIGNMENT` records
 //!   into [`Alignment`] geometry.
+//! - [`aecc_arc_edit`] — changes the radius of a free arc (fillet).
 //! - [`aecc_elements`] — tangent and arc element records, read-only.
 //! - [`aecc_alignment_edit`] — writes changed tangent geometry back into an
 //!   `AECC_ALIGNMENT` record as same-size patches.
@@ -29,6 +30,7 @@
 
 pub mod aecc_alignment;
 pub mod aecc_alignment_edit;
+pub mod aecc_arc_edit;
 pub mod aecc_elements;
 pub mod alignment;
 pub mod inventory;

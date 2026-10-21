@@ -32,6 +32,8 @@ owner for this study, or generated from them. All are in
 | S9 | `A_seg2plus10_civ3d_resaved_sta100.dwg` | S8 with the alignment's start station changed from 0+00 to 1+00 in Civil 3D, saved. |
 | S10 | `arc_civ3d.dwg` | Alignment `Alignment - (3)`: a single arc, R = 100 ft, from (0,0) to (100,100); saved before being drawn. |
 | S11 | `100-200-300_r50.dwg` | S5 with a 50 ft free curve (fillet) added at the first PI (100,0) in Civil 3D; saved before being drawn. |
+| S12 | `100-200-300_r75.dwg` | S11 with the curve radius changed to 75 ft in Civil 3D; saved. |
+| S13 | `S11_r75_generated.dwg` (generated) | S11 with the radius set to 75 by `examples/set_radius`. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -330,12 +332,41 @@ and depend on their neighbours, matching the fixed/free entity kinds
 described in Autodesk's public Civil 3D documentation. The meaning of the
 flag and of n2 (2 vs 29) is inferred from these two samples only.
 
+## Changing a free arc's radius: S11 → S12, and S13
+
+`rawdiff S11 S12`: only the alignment, the minor-station label group, a
+feature style and the catalog node differ. In the alignment record:
+
+| Change | S11 | S12 |
+|--------|-----|-----|
+| Radius (BD after the arc's links, bit 4307) | 50.0 | 75.0 |
+| Cached PC station, two copies (BDs at bits 4534 and 4748) | 88.1966011250105 | 82.29490168751575 |
+| Volatile header field | — | changed |
+| Block near bit 5300 | — | **new**: three BDs 2.0, 3.0, 4.0 (+211 bits) |
+
+Tangent records, links and the placeholder box are unchanged, confirming
+that a free arc depends only on its radius and its neighbours. The decoded
+S12 geometry: T = 17.7051, PC (82.2949, 0), PT (115.8359, 7.9180), length
+34.7736, alignment length 311.1668, all as computed by hand.
+
+The 2.0 / 3.0 / 4.0 block looks like element IDs (the arc and its
+neighbours, or the elements whose stations changed); not decoded.
+
+**Generated edit (S13).** `examples/set_radius S11 S13 8C5C 4 75` patched
+the radius and both PC-station copies. `rawdiff S13 S12 AECC_ALIGNMENT`
+leaves: the volatile field; the last bits of the PC station
+(82.29490168751578 vs Civil 3D's ...575, a 3×10⁻¹⁴ difference from
+floating-point order); and the 2/3/4 block, which civil3drust does not
+write. The radius is bit-identical. Not yet opened in Civil 3D.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
    (62 bits in S5–S7, 106 after a Civil 3D re-save in S8; +44 bits also in
    S3→S4); what it holds.
 9. The 2-bit flag at bit 2677 that Civil 3D changed when re-saving S7.
+10. The block of BDs (2.0, 3.0, 4.0) Civil 3D added in S12 after the radius
+    change.
 2. ~~Where the start station is stored~~ — answered by S9: a BD ending 41
    bits before the first tangent header. Editing it in place is only
    possible when the encoding length doesn't change (both values not 0 or
@@ -357,8 +388,8 @@ flag and of n2 (2 vs 29) is inferred from these two samples only.
 
 ## Next samples
 
-- S11 with the radius changed (50 → 75) in Civil 3D: should change only the
-  radius BD (and the derived PC station) if the free-curve model is right.
+- Open S13 in Civil 3D (AUDIT, radius 75, PC at station 0+82.29), save it,
+  and compare with S12.
 - S10 with the radius changed (e.g. 100 → 150) in Civil 3D, to see which
   fields an arc edit touches.
 

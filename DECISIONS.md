@@ -175,3 +175,22 @@ patch the records.
 editor needs (moving a PI moves a free arc automatically; a three-point
 arc must be patched). Treat free arcs as unsupported: S11 shows the model
 is simple and verifiable.
+
+## D-011: Radius edits patch the radius and cached PC stations only
+Date: 2026-10-21 · Status: accepted
+
+**Context.** Changing a free arc's radius in Civil 3D (S11 → S12) changed
+the radius, two cached PC-station copies, the volatile header field, and
+added a block of three BDs (2, 3, 4) (docs/alignment-object.md).
+
+**Decision.** `aecc_arc_edit::set_free_arc_radius` patches the radius and
+the cached PC-station copies (found as BDs after the element records whose
+value matches the old PC station to 1e-9), and checks the new radius fits
+on the neighbouring tangents. It does not write the volatile field or the
+2/3/4 block, following D-008. The result (S13) matches S12 apart from
+those and 3×10⁻¹⁴ in the station.
+
+**Alternatives.** Insert the 2/3/4 block: its meaning is unknown and it
+changes the record size, which nothing in civil3drust does yet. Leave the
+PC station stale: Civil 3D might trust it for stationing until it
+recomputes.

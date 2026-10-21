@@ -86,6 +86,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 - `alignments` example shows the arc kind.
 - Sample S11 (S5 with a 50 ft fillet at PI 1) and its findings; decision
   D-010.
+- `aecc_arc_edit` module: `set_free_arc_radius` patches a free arc's
+  radius and its cached PC-station copies, checking the curve still fits
+  (two unit tests). `set_radius` example.
+- Samples S12 (Civil 3D, radius 50 → 75) and S13 (same edit by
+  civil3drust, matching S12 apart from the volatile field, a 2/3/4 block
+  and 3×10⁻¹⁴ in the PC station); decision D-011.
 
 ### Fixed
 - Alignment names were wrong when the string stream holds a user name

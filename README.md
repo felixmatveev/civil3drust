@@ -44,6 +44,7 @@ round trip needs that fixed in acadrust.
 | `aecc_alignment_edit` | Writes a changed tangent alignment back into its record (same-size patches). |
 | `proxy_graphics` | The display cache embedded in AECC entity records. |
 | `aecc_elements` | Tangent and arc element records, read-only: arcs by three points and free arcs (fillets) by radius, resolved to segments with stationing. |
+| `aecc_arc_edit` | Changes the radius of a free arc (fillet), with the cached PC station. |
 | `raw` | The stored bytes of AECC records (acadrust keeps them opaque) and bit-level helpers for studying them. |
 
 Try the inventory on a drawing:
@@ -61,6 +62,7 @@ cargo run --release --example rawdiff -- a.dwg b.dwg AECC_ALIGNMENT
 cargo run --release --example dumprec -- a.dwg AECC_ALIGNMENT out/a
 cargo run --release --example alignments -- a.dwg
 cargo run --release --example set_length -- in.dwg out.dwg "Alignment - (2)" 2 121.8
+cargo run --release --example set_radius -- in.dwg out.dwg "Alignment - (2)" 4 75
 ```
 
 Findings so far: [`docs/alignment-object.md`](docs/alignment-object.md).
