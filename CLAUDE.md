@@ -27,6 +27,11 @@ samples and steps that produced it.
 - The acadrust 0.6.5 `3DSOLID` parsing problem (solids in
   `PRESSUREPARTERRORBLOCK` dropped on save) is **extremely low priority**.
   Don't work on it unless the owner asks; just keep warning about it.
+- LandXML export is **low priority** for now.
+- Current focus: **creating alignments** in existing Civil 3D drawings
+  (handle stream, style/label-set/site references, registration, adding
+  and removing elements).
+- Never ship Autodesk-provided styles or other template content (D-015).
 
 ## Tools
 - `cargo run --release --example rawdiff -- a.dwg b.dwg [AECC_CLASS]`

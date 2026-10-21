@@ -470,6 +470,16 @@ probably element counts in section 2).
 
 ## Next samples
 
+For alignment creation (each a copy of S5 with one change, saved the same
+way):
+
+- **A**: S5 plus a second alignment created from a polyline, same style and
+  label set as the first — everything creation touches.
+- **B**: as A, but the new alignment uses a different alignment style — the
+  style reference in the handle stream.
+- **C**: as A, but with the "No Labels" label set — whether label-group
+  objects are required.
+
 - A template with two tangents and one free curve (e.g. 0,0 → 100,0 →
   100,100, R = 50), for exact generation of that shape.
 

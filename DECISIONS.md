@@ -248,3 +248,25 @@ creation stay out of scope until studied with samples.
 **Alternatives.** Build records from scratch: not possible yet. Resize
 records to drop or add elements: changes record size and probably counts
 in section 2; needs controlled samples first.
+
+## D-015: Never ship Autodesk-provided styles; reference or copy from the user's drawing
+Date: 2026-10-21 · Status: accepted
+
+**Context.** Creating alignments needs a style, label set and site. Civil 3D
+templates supply default styles, but Autodesk's Terms of Use put
+Autodesk-provided content under the software's license (section 8.4) and
+forbid reproducing or distributing any portion of the software (section
+8.1), while users keep ownership of their own output (section 5). Not legal
+advice; this is the conservative reading.
+
+**Decision.** civil3drust ships no Autodesk-provided style data. New
+alignments reference styles that already exist in the target drawing, or
+copy them at runtime from a drawing the user supplies (the user's own
+data). If built-in styles are ever needed, they are authored from scratch
+with our own names, layers and values; only the format knowledge comes
+from samples. Sample drawings are not mined for style libraries.
+
+**Alternatives.** Embed the default template's styles: redistributes
+Autodesk content. Create Civil 3D drawings from plain AutoCAD drawings:
+needs the whole settings tree (about 1,500 settings nodes and hundreds of
+styles per drawing); out of scope.

@@ -115,6 +115,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   Opened in Civil 3D with zero AUDIT errors; Civil 3D's LandXML export of
   it (added to `samples/`) matches the intended geometry exactly.
 
+- Decision D-015 (no Autodesk-provided styles in civil3drust; reference or
+  copy from the user's drawing). CLAUDE.md priorities: LandXML export low,
+  focus on alignment creation.
+
 ### Fixed
 - Free arcs whose flag bit is set (S14) failed to decode; the arc layout is
   now chosen from the parameter block.
