@@ -18,8 +18,12 @@
 //! the `EntityBefore`/`EntityAfter` properties of alignment entities in
 //! Autodesk's public Civil 3D API documentation.
 //!
-//! Not yet decoded: the start station (assumed 0 here and reported as such),
-//! curves and spirals, and everything else in the record.
+//! The **start station** is a bit-coded double ("BD": code `10` = 0.0,
+//! `01` = 1.0, `00` + raw double) that ends 41 bits before the first
+//! tangent's header. The first 17 of those 41 bits have been identical in
+//! every sample, and are checked before the station is trusted.
+//!
+//! Not yet decoded: curves and spirals, and everything else in the record.
 
 use crate::alignment::{Alignment, AlignmentError, Point2};
 use crate::raw::{self, RawRecord};
@@ -182,27 +186,55 @@ pub struct DecodedAlignment {
     pub handle: u64,
     /// Tangent records in chain order.
     pub tangents: Vec<TangentRecord>,
-    /// Geometry. `start_station` is 0 until the station field is decoded.
+    /// The start station as stored, if it could be located (see
+    /// [`start_station`]). `alignment.start_station` falls back to 0.
+    pub stored_start_station: Option<f64>,
     pub alignment: Alignment,
 }
 
-/// Name from the string stream: the first string after `AeccImpAlignment`
-/// that isn't an internal token (`Tam`), a path, or binary noise.
-pub fn record_name(data: &[u8]) -> Option<String> {
-    let mut after = false;
-    for (_, s) in raw::utf16_strings(data, 3) {
-        if s == "AeccImpAlignment" {
-            after = true;
-        } else if after
-            && s != "Tam"
-            && !s.contains('\\')
-            && !s.starts_with('<')
-            && !s.contains('@')
-        {
-            return Some(s);
+/// Bits between the start-station BD and the first tangent header.
+pub const STATION_GAP_BITS: usize = 41;
+
+/// The leading part of that gap, identical in every sample so far.
+const STATION_GAP_PREFIX: [u8; 17] = [0, 0, 0, 0, 2, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0];
+
+/// Read the start station stored before the tangent whose header is at
+/// `first_header_bit` (the first element of the chain).
+///
+/// Returns `None` if the 41-bit gap doesn't have its usual prefix or no
+/// plausible bit-coded double ends where the gap begins.
+pub fn start_station(data: &[u8], first_header_bit: usize) -> Option<f64> {
+    let gap = first_header_bit.checked_sub(STATION_GAP_BITS)?;
+    // 2 in the prefix table means "varies between samples".
+    let prefix_ok = STATION_GAP_PREFIX
+        .iter()
+        .enumerate()
+        .all(|(i, &want)| want == 2 || raw::get_bit(data, gap + i) == want);
+    if !prefix_ok {
+        return None;
+    }
+    // Full double: code 00 then 64 bits, ending at `gap`.
+    if let Some(start) = gap.checked_sub(66) {
+        if raw::get_bit(data, start) == 0 && raw::get_bit(data, start + 1) == 0 {
+            let v = raw::get_f64(data, start + 2);
+            if v.is_finite() && (v == 0.0 || (1e-9..1e9).contains(&v.abs())) {
+                return Some(v);
+            }
         }
     }
-    None
+    match (
+        raw::get_bit(data, gap.checked_sub(2)?),
+        raw::get_bit(data, gap - 1),
+    ) {
+        (1, 0) => Some(0.0),
+        (0, 1) => Some(1.0),
+        _ => None,
+    }
+}
+
+/// Name from the string stream (see [`raw::object_name`]).
+pub fn record_name(data: &[u8]) -> Option<String> {
+    raw::object_name(data)
 }
 
 /// Decode a tangent-only alignment record.
@@ -222,10 +254,13 @@ pub fn decode(rec: &RawRecord) -> Result<DecodedAlignment, DecodeError> {
     let mut pis: Vec<Point2> = ordered.iter().map(|t| t.start).collect();
     pis.push(ordered.last().expect("non-empty").end);
     let name = record_name(&rec.data).unwrap_or_else(|| format!("{:X}", rec.handle));
-    let alignment = Alignment::new(name, 0.0, pis).map_err(DecodeError::Geometry)?;
+    let stored_start_station = start_station(&rec.data, ordered[0].header_bit);
+    let alignment = Alignment::new(name, stored_start_station.unwrap_or(0.0), pis)
+        .map_err(DecodeError::Geometry)?;
     Ok(DecodedAlignment {
         handle: rec.handle,
         tangents: ordered,
+        stored_start_station,
         alignment,
     })
 }
@@ -271,6 +306,26 @@ mod tests {
         }
         fn rd(&mut self, v: f64) {
             v.to_le_bytes().iter().for_each(|b| self.byte(*b));
+        }
+        fn bd(&mut self, v: f64) {
+            if v == 0.0 {
+                self.bit(1);
+                self.bit(0);
+            } else if v == 1.0 {
+                self.bit(0);
+                self.bit(1);
+            } else {
+                self.bit(0);
+                self.bit(0);
+                self.rd(v);
+            }
+        }
+        /// Start station plus the 41-bit gap as seen in sample S5.
+        fn station(&mut self, v: f64) {
+            self.bd(v);
+            for c in "00001111000100000001010000001100000000010".bytes() {
+                self.bit(c - b'0');
+            }
         }
         fn tangent(&mut self, id: i32, before: i32, after: i32, a: (f64, f64), b: (f64, f64)) {
             self.bl(TANGENT_HEADER);
@@ -341,6 +396,33 @@ mod tests {
             ]
         );
         assert!((d.alignment.length() - (100.0 + 50f64.hypot(100.0) + 100.0)).abs() < 1e-9);
+    }
+
+    #[test]
+    fn reads_start_station_in_all_bd_forms() {
+        for sta in [0.0, 1.0, 100.0, 1000.0, 2000.5] {
+            let mut w = Bits::new();
+            w.byte(0xFF);
+            w.station(sta);
+            w.tangent(1, 0, 0, (0.0, 0.0), (100.0, 0.0));
+            let d = decode(&record(w.0)).unwrap();
+            assert_eq!(d.stored_start_station, Some(sta));
+            assert_eq!(d.alignment.start_station, sta);
+            assert_eq!(d.alignment.end_station(), sta + 100.0);
+        }
+    }
+
+    #[test]
+    fn unknown_station_when_gap_does_not_match() {
+        let mut w = Bits::new();
+        w.bd(100.0);
+        for _ in 0..41 {
+            w.bit(1);
+        }
+        w.tangent(1, 0, 0, (0.0, 0.0), (100.0, 0.0));
+        let d = decode(&record(w.0)).unwrap();
+        assert_eq!(d.stored_start_station, None);
+        assert_eq!(d.alignment.start_station, 0.0);
     }
 
     #[test]

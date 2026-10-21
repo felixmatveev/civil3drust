@@ -153,23 +153,9 @@ fn detail(a: &acadrust::document::CadDocument, b: &acadrust::document::CadDocume
     }
 }
 
-/// Best-effort name: the first string after the implementation class name.
+/// Best-effort object name from the string stream.
 fn record_name(data: &[u8]) -> String {
-    let strs = raw::utf16_strings(data, 3);
-    let mut after = false;
-    for (_, s) in strs {
-        if s.starts_with("AeccImp") {
-            after = true;
-        } else if after
-            && s != "Tam"
-            && !s.contains('\\')
-            && !s.starts_with('<')
-            && !s.contains('@')
-        {
-            return s;
-        }
-    }
-    String::from("?")
+    raw::object_name(data).unwrap_or_else(|| String::from("?"))
 }
 
 /// Doubles in `[from, to)` that look like real field values, as

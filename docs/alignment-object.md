@@ -27,6 +27,7 @@ owner for this study. Not yet committed to `samples/`.
 | S6 | `100-200-30010.dwg` | Same as S5 but segment 2 is 10 ft longer (121.8034 instead of 111.8034); later PIs moved with it: (208.9443, 54.4721), (308.9443, 54.4721). Saved the same way as S5. Sample B of the pair. |
 | S7 | `A_seg2plus10.dwg` (generated) | S5 with segment 2 set to 121.80339887498948 by `examples/set_length` (civil3drust). |
 | S8 | `A_seg2plus10_civ3d_resaved.dwg` | S7 opened in Civil 3D 2024 (AUDIT: 0 errors; geometry correct), then saved. |
+| S9 | `A_seg2plus10_civ3d_resaved_sta100.dwg` | S8 with the alignment's start station changed from 0+00 to 1+00 in Civil 3D, saved. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -207,14 +208,57 @@ showed the new length. Saved as S8.
   flag it; the block still holds its two hatches and two polylines, and S8
   reads in acadrust without failsafe mode.
 
+## Start station: S8 → S9
+
+`rawdiff S8 S9 AECC_ALIGNMENT` (711 → 641 bytes):
+
+| Change | S8 | S9 |
+|--------|----|----|
+| Flag area near bit 2676 | 5 bits | 39 bits |
+| Volatile field | 65 bits | 163 bits |
+| **Start station** (bit-coded double, BD) | bit 2995: code `10` = 0.0 (2 bits) | bit 3127: code `00` + raw double **100.0** (66 bits) |
+| Station-reference cache and the label values after it (100, 100, 2.25, 60) | present (one record, tangent 1, point (0,0)) | **gone** |
+| String stream | `AeccImpAlignment`, `Alignment - (2)` | `AeccImpAlignment`, **`felix`**, `Alignment - (2)` |
+
+Tangent element records are unchanged apart from the shift.
+
+**Location of the start station.** The BD ends exactly 41 bits before the
+first tangent's header in every sample: S1, S2, S4–S9, and 24 of the 25
+tangent alignments in the production drawing. Two of those read 1000.0 and
+2000.0, matching their 10+00 and 20+00 stationing; the rest read 0.0. The
+first 17 of the 41 bits (`0000?111000100000`, `?` varies) are identical in
+all of them, so `aecc_alignment::start_station` checks them before trusting
+the value. The exception is an alignment made from a feature line with 262
+tangents, where the gap differs; there the station is reported as unknown.
+The rest of the 41 bits is not decoded; a few bits vary between samples
+(possibly counts or flags).
+
+**Cache is derived.** Civil 3D dropped the station-reference cache record
+when the stationing changed, confirming it is rebuilt data rather than part
+of the design.
+
+**Optional user string.** After the edit, the user's login name appears in
+the string stream between the class name and the alignment name. A
+production drawing has another user's name in the same position. Probably a
+"last modified by" field. Names are therefore read as the *last* plain
+string after `AeccImpAlignment` (`raw::object_name`), not the first.
+
+**Arc elements (lead for later).** In alignments with curves, the arc
+elements also start with the `0x04020008` header, but the fields after it
+are laid out differently (the BL that is 0 for tangents is not 0), so the
+tangent decoder rejects them and reports a broken chain. A sample with one
+curve is needed.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
    (62 bits in S5–S7, 106 after a Civil 3D re-save in S8; +44 bits also in
    S3→S4); what it holds.
 9. The 2-bit flag at bit 2677 that Civil 3D changed when re-saving S7.
-2. Where the start station is stored (a bit-coded double in section 2 is
-   suspected; 0 encodes in 2 bits, so S1/S2 can't show it).
+2. ~~Where the start station is stored~~ — answered by S9: a BD ending 41
+   bits before the first tangent header. Editing it in place is only
+   possible when the encoding length doesn't change (both values not 0 or
+   1); otherwise the record must grow or shrink.
 3. Whether lengths, end station, or extents are cached anywhere else (none
    found for single tangents: the only coordinate copies are sections 1, 3
    and 4).
@@ -230,7 +274,6 @@ showed the new length. Saved as S8.
 
 ## Next samples
 
-- Start station: S5 with the start station set to 1+00, saved the same way.
 - One arc: S5 with a curve added at PI 2, to find the arc element record.
 
 ## Template note

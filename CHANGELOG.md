@@ -54,6 +54,20 @@ versions follow [Semantic Versioning](https://semver.org/).
   and was re-saved (S8) with the edited geometry unchanged; findings in
   `docs/alignment-object.md` and README.
 
+- Start station decoding: `aecc_alignment::start_station` reads the
+  bit-coded double 41 bits before the first tangent header (checked against
+  a fixed 17-bit prefix); `DecodedAlignment::stored_start_station` and the
+  `Alignment` stationing use it. `alignments` example shows station ranges.
+- `raw::strings_after_impl` and `raw::object_name`: names are the last
+  plain string after `AeccImp…`, skipping the optional user-name string and
+  text-like binary noise.
+- `docs/alignment-object.md`: sample S9 (start station 1+00), station field,
+  cache rebuilt by Civil 3D, optional user string, arc-element lead.
+
+### Fixed
+- Alignment names were wrong when the string stream holds a user name
+  before the name (S9) or text-like noise after it.
+
 ### Known issues
 - acadrust 0.6.5 cannot parse the `3DSOLID` in Civil 3D's
   `PRESSUREPARTERRORBLOCK`; failsafe reading drops it and saved copies lack

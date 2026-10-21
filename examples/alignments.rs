@@ -24,12 +24,20 @@ fn main() {
         match decode(rec) {
             Ok(d) => {
                 let a = &d.alignment;
+                let sta = match d.stored_start_station {
+                    Some(s) => format!("stations {:.2}-{:.2}", s, a.end_station()),
+                    None => format!(
+                        "start station not found; shown from 0 to {:.2}",
+                        a.end_station()
+                    ),
+                };
                 println!(
-                    "\n[{:X}] {}  {} tangent(s), length {:.4} (start station not decoded; shown from 0)",
+                    "\n[{:X}] {}  {} tangent(s), length {:.4}, {}",
                     d.handle,
                     a.name,
                     a.segment_count(),
-                    a.length()
+                    a.length(),
+                    sta
                 );
                 for (t, r) in a.tangents().iter().zip(&d.tangents) {
                     println!(

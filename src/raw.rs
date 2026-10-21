@@ -253,6 +253,37 @@ pub fn utf16_strings(buf: &[u8], min: usize) -> Vec<(usize, String)> {
     out
 }
 
+/// True for a string-stream entry that looks like plain text, not a path,
+/// placeholder token or binary noise read as text.
+fn is_clean_text(s: &str) -> bool {
+    let alnum = s.chars().filter(|c| c.is_ascii_alphanumeric()).count();
+    !s.contains('\\') && !s.starts_with('<') && !s.contains('@') && alnum * 2 >= s.len()
+}
+
+/// The plain strings that follow the implementation class name
+/// (`AeccImp…`) in a record's string stream, in order, up to the first
+/// path, token or noise string.
+///
+/// For alignments this is `[name]` or `[user, name]`: an optional user name
+/// (seen after edits) precedes the object name (docs/alignment-object.md).
+pub fn strings_after_impl(data: &[u8]) -> Vec<String> {
+    let strs = utf16_strings(data, 3);
+    let Some(i) = strs.iter().position(|(_, s)| s.starts_with("AeccImp")) else {
+        return Vec::new();
+    };
+    strs[i + 1..]
+        .iter()
+        .map(|(_, s)| s.clone())
+        .take_while(|s| is_clean_text(s))
+        .collect()
+}
+
+/// Object name from the string stream: the last plain string after the
+/// implementation class name.
+pub fn object_name(data: &[u8]) -> Option<String> {
+    strings_after_impl(data).pop()
+}
+
 /// Ranges `[start, end)` of bits that differ between two equal-length
 /// buffers. Runs closer than `merge` bits are merged.
 pub fn changed_bit_ranges(a: &[u8], b: &[u8], merge: usize) -> Vec<(usize, usize)> {
@@ -304,6 +335,37 @@ mod tests {
             set_byte(&mut buf, 5 + i * 16 + 8, 0);
         }
         assert!(utf16_strings(&buf, 3).contains(&(5, "TEST".to_string())));
+    }
+
+    fn put_utf16(buf: &mut [u8], bit: usize, text: &str) -> usize {
+        for (i, c) in text.bytes().enumerate() {
+            set_byte(buf, bit + i * 16, c);
+            set_byte(buf, bit + i * 16 + 8, 0);
+        }
+        bit + text.len() * 16 + 16
+    }
+
+    #[test]
+    fn object_name_skips_optional_user_string() {
+        let mut buf = vec![0u8; 256];
+        let k = put_utf16(&mut buf, 3, "AeccImpAlignment");
+        let k = put_utf16(&mut buf, k, "felix");
+        let k = put_utf16(&mut buf, k, "Alignment - (2)");
+        put_utf16(&mut buf, k, "C:\\Data\\");
+        assert_eq!(strings_after_impl(&buf), vec!["felix", "Alignment - (2)"]);
+        assert_eq!(object_name(&buf).as_deref(), Some("Alignment - (2)"));
+
+        let mut buf = vec![0u8; 128];
+        let k = put_utf16(&mut buf, 0, "AeccImpAlignment");
+        put_utf16(&mut buf, k, "CB17");
+        assert_eq!(object_name(&buf).as_deref(), Some("CB17"));
+
+        // Binary noise that decodes as text ends the run.
+        let mut buf = vec![0u8; 160];
+        let k = put_utf16(&mut buf, 0, "AeccImpAlignment");
+        let k = put_utf16(&mut buf, k, "VAULT PROFILE CONTROL");
+        put_utf16(&mut buf, k, "'*)");
+        assert_eq!(object_name(&buf).as_deref(), Some("VAULT PROFILE CONTROL"));
     }
 
     #[test]
