@@ -136,3 +136,22 @@ the edited S5 (S7) matches Civil 3D's S6 bit for bit apart from that field.
 **Alternatives.** Guess a new value for the volatile field: no basis yet,
 and a wrong guess could be worse than a stale one. Recompute label-group
 boxes: depends on label text metrics we don't model; Civil 3D redraws them.
+
+## D-009: Read arcs through an element model; keep editing tangent-only
+Date: 2026-10-21 · Status: accepted
+
+**Context.** S10 and a production drawing showed how arc elements are
+stored (docs/alignment-object.md). The geometry model in `alignment` is a
+PI list that can only represent tangents (D-004), and the editor's
+correctness was established only for tangents.
+
+**Decision.** Add `aecc_elements` with an `Element` enum (tangent | arc),
+arc records with their three points and derived circle, and
+`decode_elements` for read-only use. `aecc_alignment::decode` stays
+tangent-only and now returns `HasCurves` for alignments with arcs, so the
+editor refuses them. The `alignment` model is unchanged until arc editing is
+studied with controlled samples.
+
+**Alternatives.** Extend `Alignment` to arcs now: premature, since we don't
+yet know how Civil 3D constrains arcs (fixed, floating, free) or what an arc
+edit changes. Treat arcs as unknown: loses information already decoded.

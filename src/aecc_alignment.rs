@@ -23,14 +23,42 @@
 //! tangent's header. The first 17 of those 41 bits have been identical in
 //! every sample, and are checked before the station is trusted.
 //!
-//! Not yet decoded: curves and spirals, and everything else in the record.
+//! Arc elements share the header and the id/before/after fields but carry
+//! extra parameters and three points; they are decoded (read-only) in
+//! [`crate::aecc_elements`]. [`decode`] handles tangent-only alignments and
+//! reports [`DecodeError::HasCurves`] otherwise.
+//!
+//! Not yet decoded: spirals, and everything else in the record.
 
 use crate::alignment::{Alignment, AlignmentError, Point2};
 use crate::raw::{self, RawRecord};
 use std::fmt;
 
-/// Header value that starts every tangent element record seen so far.
-pub const TANGENT_HEADER: i32 = 0x0402_0008;
+/// Header value that starts every alignment element record seen so far
+/// (tangents and arcs).
+pub const ELEMENT_HEADER: i32 = 0x0402_0008;
+
+/// Former name of [`ELEMENT_HEADER`].
+pub const TANGENT_HEADER: i32 = ELEMENT_HEADER;
+
+/// An element record linked to its neighbours by ID.
+pub trait Linked {
+    fn id(&self) -> i32;
+    fn before(&self) -> i32;
+    fn after(&self) -> i32;
+}
+
+impl Linked for TangentRecord {
+    fn id(&self) -> i32 {
+        self.id
+    }
+    fn before(&self) -> i32 {
+        self.before
+    }
+    fn after(&self) -> i32 {
+        self.after
+    }
+}
 
 /// One tangent element record found in the data.
 #[derive(Debug, Clone, PartialEq)]
@@ -56,13 +84,18 @@ pub enum DecodeError {
         after_id: i32,
     },
     Geometry(AlignmentError),
+    /// The alignment contains arc elements; use
+    /// [`crate::aecc_elements::decode_elements`] to read it.
+    HasCurves {
+        arcs: usize,
+    },
 }
 
 impl fmt::Display for DecodeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::NoTangents => write!(f, "no tangent element records found"),
-            Self::BrokenChain(why) => write!(f, "tangent links don't form a chain: {why}"),
+            Self::NoTangents => write!(f, "no element records found"),
+            Self::BrokenChain(why) => write!(f, "element links don't form a chain: {why}"),
             Self::Discontinuous { after_id } => {
                 write!(
                     f,
@@ -70,6 +103,10 @@ impl fmt::Display for DecodeError {
                 )
             }
             Self::Geometry(e) => write!(f, "{e}"),
+            Self::HasCurves { arcs } => write!(
+                f,
+                "contains {arcs} arc element(s); only tangent-only alignments can be edited"
+            ),
         }
     }
 }
@@ -95,7 +132,7 @@ pub fn tangent_records(data: &[u8], from: usize) -> Vec<TangentRecord> {
     out
 }
 
-fn record_at(data: &[u8], bit: usize) -> Option<TangentRecord> {
+pub(crate) fn record_at(data: &[u8], bit: usize) -> Option<TangentRecord> {
     // Cheap pre-check: code 00 followed by the header's first byte (0x08).
     if raw::get_bit(data, bit) != 0
         || raw::get_bit(data, bit + 1) != 0
@@ -104,7 +141,7 @@ fn record_at(data: &[u8], bit: usize) -> Option<TangentRecord> {
         return None;
     }
     let (h, k) = raw::read_bl(data, bit)?;
-    if h != TANGENT_HEADER {
+    if h != ELEMENT_HEADER {
         return None;
     }
     let (zero, k) = raw::read_bl(data, k)?;
@@ -138,12 +175,12 @@ fn record_at(data: &[u8], bit: usize) -> Option<TangentRecord> {
     })
 }
 
-/// Order tangent records by their before/after links, first element first.
-pub fn chain(records: &[TangentRecord]) -> Result<Vec<TangentRecord>, DecodeError> {
+/// Order element records by their before/after links, first element first.
+pub fn chain<T: Linked + Clone>(records: &[T]) -> Result<Vec<T>, DecodeError> {
     if records.is_empty() {
         return Err(DecodeError::NoTangents);
     }
-    let firsts: Vec<&TangentRecord> = records.iter().filter(|r| r.before == 0).collect();
+    let firsts: Vec<&T> = records.iter().filter(|r| r.before() == 0).collect();
     if firsts.len() != 1 {
         return Err(DecodeError::BrokenChain(format!(
             "{} elements have no predecessor",
@@ -151,18 +188,24 @@ pub fn chain(records: &[TangentRecord]) -> Result<Vec<TangentRecord>, DecodeErro
         )));
     }
     let mut ordered = vec![firsts[0].clone()];
-    while ordered.last().map_or(0, |r| r.after) != 0 {
+    while ordered.last().map_or(0, |r| r.after()) != 0 {
         let cur = ordered.last().expect("non-empty");
-        let next = records.iter().find(|r| r.id == cur.after).ok_or_else(|| {
-            DecodeError::BrokenChain(format!(
-                "element {} points to missing {}",
-                cur.id, cur.after
-            ))
-        })?;
-        if next.before != cur.id {
+        let next = records
+            .iter()
+            .find(|r| r.id() == cur.after())
+            .ok_or_else(|| {
+                DecodeError::BrokenChain(format!(
+                    "element {} points to missing {}",
+                    cur.id(),
+                    cur.after()
+                ))
+            })?;
+        if next.before() != cur.id() {
             return Err(DecodeError::BrokenChain(format!(
                 "element {} says it follows {}, not {}",
-                next.id, next.before, cur.id
+                next.id(),
+                next.before(),
+                cur.id()
             )));
         }
         if ordered.len() > records.len() {
@@ -244,7 +287,20 @@ pub fn record_name(data: &[u8]) -> Option<String> {
 /// The station-reference cache repeats tangent coordinates but without the
 /// header, so it is not picked up.
 pub fn decode(rec: &RawRecord) -> Result<DecodedAlignment, DecodeError> {
-    let ordered = chain(&tangent_records(&rec.data, 0))?;
+    let ordered = match chain(&tangent_records(&rec.data, 0)) {
+        Ok(o) => o,
+        Err(e) => {
+            let arcs = crate::aecc_elements::element_records(&rec.data)
+                .iter()
+                .filter(|el| matches!(el, crate::aecc_elements::Element::Arc(_)))
+                .count();
+            return Err(if arcs > 0 {
+                DecodeError::HasCurves { arcs }
+            } else {
+                e
+            });
+        }
+    };
     for w in ordered.windows(2) {
         if w[0].end.distance_to(w[1].start) > 1e-6 * (1.0 + w[0].end.x.abs().max(w[0].end.y.abs()))
         {

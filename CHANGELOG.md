@@ -69,6 +69,17 @@ versions follow [Semantic Versioning](https://semver.org/).
 - `CLAUDE.md`: working rules for this repository (commit straight to
   `main`, checks before commit, cleanroom and sample rules).
 
+- `aecc_elements` module (read-only): arc element records (`ArcRecord`,
+  `ArcParams`), circle through three points (`arc_through`: centre,
+  radius, direction, sweep, length), `Element` enum, `element_records`,
+  `decode_elements`. Three unit tests.
+- `aecc_alignment`: `ELEMENT_HEADER` (alias `TANGENT_HEADER`), `Linked`
+  trait, `chain` is generic over element kinds, `DecodeError::HasCurves`.
+- `raw::read_bd` (bit-coded double).
+- `alignments` example lists tangents and arcs (radius, direction, delta,
+  centre) with stationing.
+- Sample S10 (single R = 100 arc) and its findings; decision D-009.
+
 ### Fixed
 - Alignment names were wrong when the string stream holds a user name
   before the name (S9) or text-like noise after it.

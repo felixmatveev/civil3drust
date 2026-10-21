@@ -30,6 +30,7 @@ owner for this study, or generated from them. All are in
 | S7 | `A_seg2plus10.dwg` (generated) | S5 with segment 2 set to 121.80339887498948 by `examples/set_length` (civil3drust). |
 | S8 | `A_seg2plus10_civ3d_resaved.dwg` | S7 opened in Civil 3D 2024 (AUDIT: 0 errors; geometry correct), then saved. |
 | S9 | `A_seg2plus10_civ3d_resaved_sta100.dwg` | S8 with the alignment's start station changed from 0+00 to 1+00 in Civil 3D, saved. |
+| S10 | `arc_civ3d.dwg` | Alignment `Alignment - (3)`: a single arc, R = 100 ft, from (0,0) to (100,100); saved before being drawn. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -251,6 +252,51 @@ are laid out differently (the BL that is 0 for tangents is not 0), so the
 tangent decoder rejects them and reports a broken chain. A sample with one
 curve is needed.
 
+## Arc element records: S10
+
+S10's record has one element record, header at bit 2994 (same place as in
+S5). The display cache is a placeholder (box (0,0)–(100,100)).
+
+```text
+BL 0x04020008   header, same as tangents
+B  1
+BD 60.0
+BD -1.0
+BL 1
+BD -1.0
+BL 2
+B  0
+BL id = 1, BL before = 0, BL after = 0
+RD start X, RD start Y      (0, 0)
+RD mid X,   RD mid Y        (70.7107, 29.2893)
+RD end X,   RD end Y        (100, 100)
+```
+
+The middle point is the arc's midpoint: the circle through the three points
+has centre (0, 100), radius 100, turns left (counter-clockwise), sweeps 90°,
+and is 157.0796 long, matching how the arc was drawn. Centre and radius are
+not stored as such. (157.0796 does appear later in the record, outside the
+element record; not decoded.)
+
+**Unknown parameters.** The five values between the header and the IDs were
+identical (60, −1, 1, −1, 2) in S10 and in all six arcs of a production
+drawing (radii 25–40 ft, single arcs and arcs between tangents). Not
+geometry; perhaps defaults such as a design speed. Kept as read
+(`ArcParams`).
+
+**Check against a production drawing** (local only): `examples/alignments`
+decoded all four alignments with curves — three tangent–arc–tangent curb
+returns (element 2 is the arc, linked 1 ↔ 2 ↔ 3) and a three-arc
+cul-de-sac (35 / 40.01 / 35 ft). Radii, deltas, lengths and stationing
+match the earlier extraction from the display cache. One offset alignment
+still has no element records.
+
+**Tangents vs arcs.** Both start with the same header. After it, a tangent
+has `10` (read as BL 0) followed directly by its IDs; an arc has the bit `1`
+and the parameter block. No separate type field has been found; the decoder
+tries both layouts and validates each (link IDs in range, finite
+coordinates, three non-collinear points for an arc).
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
@@ -270,13 +316,19 @@ curve is needed.
    (candidates: element type, constraint type, version).
 6. The 11 bits between consecutive element records, and the data after the
    last one.
-7. Arc and spiral element records: expected to share the id/before/after
-   fields with a different header; needs a sample with one curve.
+7. ~~Arc element records~~ — answered by S10 (same header, parameter block,
+   three points). Still open: the meaning of the parameter block, how
+   curves defined by radius or by PI are distinguished (all arcs seen so far
+   store three points), and spirals.
 8. How offset alignments store their geometry (no tangent records).
 
 ## Next samples
 
-- One arc: S5 with a curve added at PI 2, to find the arc element record.
+- S5 with a curve (e.g. R = 50) added at PI 2 in Civil 3D, to see an arc
+  created between tangents in our own sample and what changes in the
+  tangents around it.
+- S10 with the radius changed (e.g. 100 → 150) in Civil 3D, to see which
+  fields an arc edit touches.
 
 ## Template note
 

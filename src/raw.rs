@@ -199,6 +199,22 @@ pub fn read_bl(buf: &[u8], bit: usize) -> Option<(i32, usize)> {
     }
 }
 
+/// Read a bit-coded double ("BD" in the public ODA specification) at `bit`.
+///
+/// Code `00`: a raw double follows; `01`: 1.0; `10`: 0.0; `11` is not used.
+/// Returns the value and the bit offset after it.
+pub fn read_bd(buf: &[u8], bit: usize) -> Option<(f64, usize)> {
+    if bit + 2 > bit_len(buf) {
+        return None;
+    }
+    match (get_bit(buf, bit), get_bit(buf, bit + 1)) {
+        (0, 0) if bit + 66 <= bit_len(buf) => Some((get_f64(buf, bit + 2), bit + 66)),
+        (0, 1) => Some((1.0, bit + 2)),
+        (1, 0) => Some((0.0, bit + 2)),
+        _ => None,
+    }
+}
+
 /// Bit offsets in `[from, to)` where the doubles `vals` occur back to back.
 pub fn find_f64s(buf: &[u8], vals: &[f64], from: usize, to: usize) -> Vec<usize> {
     let pat: Vec<u8> = vals.iter().flat_map(|v| v.to_le_bytes()).collect();
