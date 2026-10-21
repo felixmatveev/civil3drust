@@ -1,4 +1,5 @@
 /target
+/viewer/target
 Cargo.lock.bak
 *.bak
 *.dwl

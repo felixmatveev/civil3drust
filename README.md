@@ -74,6 +74,9 @@ cargo run --release --example set_radius -- in.dwg out.dwg "Alignment - (2)" 4 7
 cargo run --release --example set_pis -- template.dwg out.dwg "Alignment - (2)" "0,0 100,0 100,75 100,100"
 ```
 
+A 2D/3D viewer for checking decoded objects against Civil 3D's proxy
+graphics lives in [`viewer/`](viewer/README.md).
+
 Findings so far: [`docs/alignment-object.md`](docs/alignment-object.md).
 
 ## Cleanroom rules

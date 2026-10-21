@@ -7,6 +7,13 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `viewer/`: civil3drust-viewer, a 2D plan / 3D orbit viewer (egui) for the
+  Civil 3D objects in a DWG. Draws decoded alignments (path, PIs, station
+  ticks and labels), the proxy graphics stored in each AECC entity (lines,
+  arcs, circles, text, colors; Civil 3D placeholders hidden by default),
+  and plain AutoCAD entities for context. Object list with per-class
+  filtering, click-to-select details, adjustable proxy lift in 3D. Also
+  `--dump` (text listing) and `--svg` (headless render) modes.
 - Cargo project depending on `acadrust` 0.6.5.
 - `alignment` module: tangent-only horizontal alignment with stationing,
   `point_at_station`, and `set_segment_length` (downstream PIs translate

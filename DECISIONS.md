@@ -286,3 +286,19 @@ records from decoded fields, never from copied bytes.
 
 **Alternatives.** Study the template's default styles: works technically,
 but mixes Autodesk content into the baseline and invites copying it.
+
+## D-017: Viewer as a separate egui crate
+Date: 2026-10-21 · Status: accepted
+
+**Context.** A visual check of what civil3drust decodes, against the proxy
+graphics Civil 3D saved, is useful for development and demonstration. It is
+not part of the library.
+
+**Decision.** `viewer/` is its own Cargo project (own `[workspace]`, not a
+member of the library's) using eframe/egui, drawing everything through one
+small 2D canvas trait so the same code renders the window and headless SVG.
+The library gains no GUI dependencies and its `cargo test` stays fast.
+
+**Alternatives.** Tauri: a web front end plus IPC for what is a few hundred
+lines of line drawing. tkinter: needs Python bindings to civil3drust first.
+A full 3D engine (wgpu/bevy): overkill for wireframe display.
