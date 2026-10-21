@@ -1,27 +1,34 @@
 //! Alignment elements of every decoded kind: tangents and arcs (read-only).
 //!
-//! An **arc element record** (sample S10, checked against a production
-//! drawing) is laid out as:
+//! Two kinds of **arc element record** have been seen. Both share one
+//! layout up to the links:
 //!
 //! ```text
 //! BL 0x04020008   header, same as tangents
-//! B  1
-//! BD p1           60.0 in every arc seen
+//! B  kind         1 = arc by three points, 0 = free arc by radius
+//! BD p1           60.0 (by points) / -1.0 (free)
 //! BD p2           -1.0
 //! BL n1           1
 //! BD p3           -1.0
-//! BL n2           2
+//! BL n2           2 (by points) / 29 (free)
 //! B  0
 //! BL id, BL before, BL after      as for tangents
-//! RD start X, RD start Y
-//! RD mid X,   RD mid Y            point on the arc halfway along it
-//! RD end X,   RD end Y
 //! ```
 //!
+//! then, for an arc **by three points** (sample S10; production arcs made
+//! from polylines): `RD start X, Y, mid X, Y, end X, Y`, the midpoint being
+//! the point halfway along the arc; and for a **free arc** (sample S11, a
+//! fillet added between two tangents): `BD radius`. A free arc's position
+//! comes from its neighbours: the tangents on either side keep their PI to
+//! PI coordinates, and the arc is tangent to both with the stored radius.
+//!
 //! (B = bit, BL = bit-coded long, BD = bit-coded double, RD = raw double,
-//! per the public ODA DWG specification.) The meaning of p1–p3, n1, n2 is
-//! unknown; they are kept as read. Centre, radius, direction and length
-//! follow from the three points.
+//! per the public ODA DWG specification.) p1–p3, n1, n2 are kept as read;
+//! their meaning is not known.
+//!
+//! [`decode_elements`] chains the records and resolves them into
+//! [`Segment`]s: arcs get centre, radius, direction and length; tangents
+//! next to a free arc are trimmed to its PC or PT.
 
 use crate::aecc_alignment::{self, chain, DecodeError, Linked, TangentRecord, ELEMENT_HEADER};
 use crate::alignment::Point2;
@@ -37,22 +44,35 @@ pub struct ArcParams {
     pub n2: i32,
 }
 
+/// How an arc record defines its geometry.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ArcDef {
+    /// Start, midpoint and end stored as raw doubles from `coords_bit`.
+    ThreePoint {
+        coords_bit: usize,
+        start: Point2,
+        mid: Point2,
+        end: Point2,
+    },
+    /// Only the radius (a BD at `radius_bit`); placed between the
+    /// neighbouring tangents.
+    Free { radius_bit: usize, radius: f64 },
+}
+
 /// One arc element record.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ArcRecord {
     pub header_bit: usize,
-    /// Bit offset of start X (the first of six raw doubles).
-    pub coords_bit: usize,
+    /// Bit offset just after the record's last field.
+    pub end_bit: usize,
     pub id: i32,
     pub before: i32,
     pub after: i32,
     pub params: ArcParams,
-    pub start: Point2,
-    pub mid: Point2,
-    pub end: Point2,
+    pub def: ArcDef,
 }
 
-/// Circle geometry derived from an arc's three points.
+/// Circle geometry of an arc.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ArcGeometry {
     pub center: Point2,
@@ -62,14 +82,6 @@ pub struct ArcGeometry {
     /// Central angle in radians, always positive.
     pub sweep: f64,
     pub length: f64,
-}
-
-impl ArcRecord {
-    /// Centre, radius, direction and length of the circle through the
-    /// three stored points. `None` if they are collinear.
-    pub fn geometry(&self) -> Option<ArcGeometry> {
-        arc_through(self.start, self.mid, self.end)
-    }
 }
 
 /// Circle through three points, travelling start → mid → end.
@@ -101,7 +113,47 @@ pub fn arc_through(a: Point2, m: Point2, b: Point2) -> Option<ArcGeometry> {
     })
 }
 
-/// A decoded element of either kind.
+/// A curve of radius `radius` tangent to the line `pc_dir` arriving at
+/// `pi` and the line `pt_dir` leaving it: returns (PC, PT, geometry).
+/// `None` for parallel or degenerate directions.
+pub fn fillet(
+    pi: Point2,
+    in_dir: (f64, f64),
+    out_dir: (f64, f64),
+    radius: f64,
+) -> Option<(Point2, Point2, ArcGeometry)> {
+    let norm = |v: (f64, f64)| {
+        let l = v.0.hypot(v.1);
+        (l > 0.0).then(|| (v.0 / l, v.1 / l))
+    };
+    let (u1, u2) = (norm(in_dir)?, norm(out_dir)?);
+    let cross = u1.0 * u2.1 - u1.1 * u2.0;
+    let dot = (u1.0 * u2.0 + u1.1 * u2.1).clamp(-1.0, 1.0);
+    let delta = cross.atan2(dot).abs();
+    if delta <= 1e-12 || delta >= std::f64::consts::PI - 1e-12 || radius.is_nan() || radius <= 0.0 {
+        return None;
+    }
+    let t = radius * (delta / 2.0).tan();
+    let pc = Point2::new(pi.x - u1.0 * t, pi.y - u1.1 * t);
+    let pt = Point2::new(pi.x + u2.0 * t, pi.y + u2.1 * t);
+    let ccw = cross > 0.0;
+    // Centre is to the left of the incoming direction for a left turn.
+    let (nx, ny) = if ccw { (-u1.1, u1.0) } else { (u1.1, -u1.0) };
+    let center = Point2::new(pc.x + nx * radius, pc.y + ny * radius);
+    Some((
+        pc,
+        pt,
+        ArcGeometry {
+            center,
+            radius,
+            counter_clockwise: ccw,
+            sweep: delta,
+            length: radius * delta,
+        },
+    ))
+}
+
+/// A decoded element record of either kind.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Element {
     Tangent(TangentRecord),
@@ -113,25 +165,6 @@ impl Element {
         match self {
             Self::Tangent(t) => t.header_bit,
             Self::Arc(a) => a.header_bit,
-        }
-    }
-    pub fn start(&self) -> Point2 {
-        match self {
-            Self::Tangent(t) => t.start,
-            Self::Arc(a) => a.start,
-        }
-    }
-    pub fn end(&self) -> Point2 {
-        match self {
-            Self::Tangent(t) => t.end,
-            Self::Arc(a) => a.end,
-        }
-    }
-    /// Length along the element; `None` for a degenerate arc.
-    pub fn length(&self) -> Option<f64> {
-        match self {
-            Self::Tangent(t) => Some(t.start.distance_to(t.end)),
-            Self::Arc(a) => a.geometry().map(|g| g.length),
         }
     }
 }
@@ -165,9 +198,10 @@ fn arc_at(data: &[u8], bit: usize) -> Option<ArcRecord> {
         return None;
     }
     let (h, k) = raw::read_bl(data, bit)?;
-    if h != ELEMENT_HEADER || raw::get_bit(data, k) != 1 {
+    if h != ELEMENT_HEADER {
         return None;
     }
+    let by_points = raw::get_bit(data, k) == 1;
     let (p1, k) = raw::read_bd(data, k + 1)?;
     let (p2, k) = raw::read_bd(data, k)?;
     let (n1, k) = raw::read_bl(data, k)?;
@@ -183,26 +217,55 @@ fn arc_at(data: &[u8], bit: usize) -> Option<ArcRecord> {
     if id < 1 || !small(id) || !small(before) || !small(after) || !small(n1) || !small(n2) {
         return None;
     }
-    if ![p1, p2, p3].iter().all(|v| v.is_finite()) || k + 384 > raw::bit_len(data) {
+    if ![p1, p2, p3].iter().all(|v| v.is_finite()) {
         return None;
     }
-    let c: Vec<f64> = (0..6).map(|i| raw::get_f64(data, k + 64 * i)).collect();
-    if c.iter().any(|v| !v.is_finite()) {
-        return None;
-    }
-    let rec = ArcRecord {
+    let params = ArcParams { p1, p2, n1, p3, n2 };
+    let (def, end_bit) = if by_points {
+        if k + 384 > raw::bit_len(data) {
+            return None;
+        }
+        let c: Vec<f64> = (0..6).map(|i| raw::get_f64(data, k + 64 * i)).collect();
+        if c.iter().any(|v| !v.is_finite()) {
+            return None;
+        }
+        let (start, mid, end) = (
+            Point2::new(c[0], c[1]),
+            Point2::new(c[2], c[3]),
+            Point2::new(c[4], c[5]),
+        );
+        arc_through(start, mid, end)?; // three distinct, non-collinear points
+        (
+            ArcDef::ThreePoint {
+                coords_bit: k,
+                start,
+                mid,
+                end,
+            },
+            k + 384,
+        )
+    } else {
+        let (radius, k2) = raw::read_bd(data, k)?;
+        if !(radius.is_finite() && radius > 1e-9 && radius < 1e9) {
+            return None;
+        }
+        (
+            ArcDef::Free {
+                radius_bit: k,
+                radius,
+            },
+            k2,
+        )
+    };
+    Some(ArcRecord {
         header_bit: bit,
-        coords_bit: k,
+        end_bit,
         id,
         before,
         after,
-        params: ArcParams { p1, p2, n1, p3, n2 },
-        start: Point2::new(c[0], c[1]),
-        mid: Point2::new(c[2], c[3]),
-        end: Point2::new(c[4], c[5]),
-    };
-    rec.geometry()?; // three distinct, non-collinear points
-    Some(rec)
+        params,
+        def,
+    })
 }
 
 /// Every tangent or arc element record in `data`, in storage order.
@@ -215,7 +278,7 @@ pub fn element_records(data: &[u8]) -> Vec<Element> {
             bit = t.coords_bit + 256;
             out.push(Element::Tangent(t));
         } else if let Some(a) = arc_at(data, bit) {
-            bit = a.coords_bit + 384;
+            bit = a.end_bit;
             out.push(Element::Arc(a));
         } else {
             bit += 1;
@@ -224,34 +287,164 @@ pub fn element_records(data: &[u8]) -> Vec<Element> {
     out
 }
 
-/// An alignment decoded into elements of any supported kind.
+/// The geometry an element actually occupies along the alignment.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Segment {
+    Line {
+        start: Point2,
+        end: Point2,
+    },
+    Arc {
+        start: Point2,
+        end: Point2,
+        geometry: ArcGeometry,
+    },
+}
+
+impl Segment {
+    pub fn start(&self) -> Point2 {
+        match *self {
+            Self::Line { start, .. } | Self::Arc { start, .. } => start,
+        }
+    }
+    pub fn end(&self) -> Point2 {
+        match *self {
+            Self::Line { end, .. } | Self::Arc { end, .. } => end,
+        }
+    }
+    pub fn length(&self) -> f64 {
+        match self {
+            Self::Line { start, end } => start.distance_to(*end),
+            Self::Arc { geometry, .. } => geometry.length,
+        }
+    }
+}
+
+/// An element record together with its resolved geometry.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ResolvedElement {
+    pub record: Element,
+    pub segment: Segment,
+}
+
+impl Linked for ResolvedElement {
+    fn id(&self) -> i32 {
+        self.record.id()
+    }
+    fn before(&self) -> i32 {
+        self.record.before()
+    }
+    fn after(&self) -> i32 {
+        self.record.after()
+    }
+}
+
+/// Resolve chained records into segments. Free arcs need tangents on both
+/// sides that meet at a PI; those tangents are trimmed to the PC / PT.
+pub fn resolve(chain: &[Element]) -> Result<Vec<ResolvedElement>, DecodeError> {
+    let unsupported = |m: String| DecodeError::BrokenChain(m);
+    // Free arcs first: (PC, PT, geometry) by chain index.
+    let mut free: Vec<Option<(Point2, Point2, ArcGeometry)>> = vec![None; chain.len()];
+    for (i, e) in chain.iter().enumerate() {
+        if let Element::Arc(ArcRecord {
+            def: ArcDef::Free { radius, .. },
+            id,
+            ..
+        }) = e
+        {
+            let prev = i.checked_sub(1).and_then(|j| chain.get(j));
+            let next = chain.get(i + 1);
+            let (Some(Element::Tangent(a)), Some(Element::Tangent(b))) = (prev, next) else {
+                return Err(unsupported(format!(
+                    "free arc {id} is not between two tangents"
+                )));
+            };
+            if a.end.distance_to(b.start) > 1e-6 * (1.0 + a.end.x.abs().max(a.end.y.abs())) {
+                return Err(unsupported(format!(
+                    "tangents around free arc {id} don't meet at a PI"
+                )));
+            }
+            let f = fillet(
+                a.end,
+                (a.end.x - a.start.x, a.end.y - a.start.y),
+                (b.end.x - b.start.x, b.end.y - b.start.y),
+                *radius,
+            )
+            .ok_or_else(|| unsupported(format!("free arc {id} has no valid fillet")))?;
+            free[i] = Some(f);
+        }
+    }
+    let mut out = Vec::with_capacity(chain.len());
+    for (i, e) in chain.iter().enumerate() {
+        let segment = match e {
+            Element::Tangent(t) => {
+                let start = i
+                    .checked_sub(1)
+                    .and_then(|j| free[j])
+                    .map_or(t.start, |(_, pt, _)| pt);
+                let end = free
+                    .get(i + 1)
+                    .copied()
+                    .flatten()
+                    .map_or(t.end, |(pc, _, _)| pc);
+                Segment::Line { start, end }
+            }
+            Element::Arc(a) => match a.def {
+                ArcDef::ThreePoint {
+                    start, mid, end, ..
+                } => Segment::Arc {
+                    start,
+                    end,
+                    geometry: arc_through(start, mid, end)
+                        .ok_or_else(|| unsupported(format!("arc {} is degenerate", a.id)))?,
+                },
+                ArcDef::Free { .. } => {
+                    let (pc, pt, g) = free[i].expect("resolved above");
+                    Segment::Arc {
+                        start: pc,
+                        end: pt,
+                        geometry: g,
+                    }
+                }
+            },
+        };
+        out.push(ResolvedElement {
+            record: e.clone(),
+            segment,
+        });
+    }
+    Ok(out)
+}
+
+/// An alignment decoded into resolved elements.
 #[derive(Debug, Clone)]
 pub struct DecodedElements {
     pub handle: u64,
     pub name: Option<String>,
     pub stored_start_station: Option<f64>,
     /// Elements in chain order.
-    pub elements: Vec<Element>,
+    pub elements: Vec<ResolvedElement>,
 }
 
 impl DecodedElements {
     pub fn length(&self) -> f64 {
-        self.elements.iter().filter_map(Element::length).sum()
+        self.elements.iter().map(|e| e.segment.length()).sum()
     }
 }
 
 /// Decode an alignment of tangents and arcs (read-only).
 pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> {
-    let elements = chain(&element_records(&rec.data))?;
+    let chained = chain(&element_records(&rec.data))?;
+    let elements = resolve(&chained)?;
     for w in elements.windows(2) {
-        let (e, s) = (w[0].end(), w[1].start());
+        let (e, s) = (w[0].segment.end(), w[1].segment.start());
         if e.distance_to(s) > 1e-6 * (1.0 + e.x.abs().max(e.y.abs())) {
             return Err(DecodeError::Discontinuous {
                 after_id: w[0].id(),
             });
         }
     }
-    let stored_start_station = aecc_alignment::start_station(&rec.data, elements[0].header_bit());
+    let stored_start_station = aecc_alignment::start_station(&rec.data, chained[0].header_bit());
     Ok(DecodedElements {
         handle: rec.handle,
         name: aecc_alignment::record_name(&rec.data),
@@ -312,23 +505,31 @@ mod tests {
                 self.rd(v);
             }
         }
-        /// Arc record laid out as in sample S10.
-        fn arc(&mut self, ids: (i32, i32, i32), pts: [(f64, f64); 3]) {
+        fn arc_head(&mut self, by_points: bool, ids: (i32, i32, i32)) {
             self.bl(ELEMENT_HEADER);
-            self.bit(1);
-            self.bd(60.0);
+            self.bit(by_points as u8);
+            self.bd(if by_points { 60.0 } else { -1.0 });
             self.bd(-1.0);
             self.bl(1);
             self.bd(-1.0);
-            self.bl(2);
+            self.bl(if by_points { 2 } else { 29 });
             self.bit(0);
             self.bl(ids.0);
             self.bl(ids.1);
             self.bl(ids.2);
+        }
+        /// Arc by three points, as in S10.
+        fn arc(&mut self, ids: (i32, i32, i32), pts: [(f64, f64); 3]) {
+            self.arc_head(true, ids);
             for p in pts {
                 self.rd(p.0);
                 self.rd(p.1);
             }
+        }
+        /// Free arc by radius, as in S11.
+        fn free_arc(&mut self, ids: (i32, i32, i32), radius: f64) {
+            self.arc_head(false, ids);
+            self.bd(radius);
         }
     }
 
@@ -343,14 +544,23 @@ mod tests {
 
     const H: f64 = std::f64::consts::FRAC_1_SQRT_2 * 100.0; // 70.71…
 
+    fn kinds(d: &DecodedElements) -> Vec<&'static str> {
+        d.elements
+            .iter()
+            .map(|e| match e.segment {
+                Segment::Line { .. } => "T",
+                Segment::Arc { .. } => "A",
+            })
+            .collect()
+    }
+
     #[test]
     fn decodes_s10_quarter_arc() {
         let mut w = Bits(Vec::new(), 0);
         w.byte(0xA5);
         w.arc((1, 0, 0), [(0.0, 0.0), (H, 100.0 - H), (100.0, 100.0)]);
         let d = decode_elements(&record(w.0)).unwrap();
-        assert_eq!(d.elements.len(), 1);
-        let Element::Arc(a) = &d.elements[0] else {
+        let Element::Arc(a) = &d.elements[0].record else {
             panic!("not an arc")
         };
         assert_eq!(
@@ -363,7 +573,9 @@ mod tests {
                 n2: 2
             }
         );
-        let g = a.geometry().unwrap();
+        let Segment::Arc { geometry: g, .. } = d.elements[0].segment else {
+            panic!()
+        };
         assert!(g.center.distance_to(Point2::new(0.0, 100.0)) < 1e-9);
         assert!((g.radius - 100.0).abs() < 1e-9);
         assert!(g.counter_clockwise);
@@ -372,7 +584,6 @@ mod tests {
 
     #[test]
     fn decodes_tangent_arc_tangent_chain() {
-        // East 100, quarter arc R=100 turning left, north 50.
         let mut w = Bits(Vec::new(), 0);
         w.tangent(3, 2, 0, (200.0, 100.0), (200.0, 150.0));
         w.arc(
@@ -382,21 +593,46 @@ mod tests {
         w.tangent(1, 0, 2, (0.0, 0.0), (100.0, 0.0));
         let rec = record(w.0);
         let d = decode_elements(&rec).unwrap();
-        let kinds: Vec<&str> = d
-            .elements
-            .iter()
-            .map(|e| match e {
-                Element::Tangent(_) => "T",
-                Element::Arc(_) => "A",
-            })
-            .collect();
-        assert_eq!(kinds, ["T", "A", "T"]);
+        assert_eq!(kinds(&d), ["T", "A", "T"]);
         assert!((d.length() - (150.0 + 50.0 * std::f64::consts::PI)).abs() < 1e-9);
-        // The tangent-only decoder refuses it clearly.
         assert_eq!(
             decode(&rec).unwrap_err(),
             DecodeError::HasCurves { arcs: 1 }
         );
+    }
+
+    /// S11: S5's tangents kept PI to PI, a free R=50 arc at PI (100,0).
+    #[test]
+    fn resolves_free_fillet_like_s11() {
+        let mut w = Bits(Vec::new(), 0);
+        w.tangent(1, 0, 4, (0.0, 0.0), (100.0, 0.0));
+        w.tangent(2, 4, 3, (100.0, 0.0), (200.0, 50.0));
+        w.tangent(3, 2, 0, (200.0, 50.0), (300.0, 50.0));
+        w.free_arc((4, 1, 2), 50.0);
+        let rec = record(w.0);
+        let d = decode_elements(&rec).unwrap();
+        assert_eq!(kinds(&d), ["T", "A", "T", "T"]);
+        let delta = 0.5f64.atan(); // direction change 26.565°
+        let t = 50.0 * (delta / 2.0).tan(); // 11.8034
+        let pc = Point2::new(100.0 - t, 0.0);
+        let pt = Point2::new(100.0 + t * delta.cos(), t * delta.sin());
+        assert!(d.elements[0].segment.end().distance_to(pc) < 1e-9);
+        assert!(d.elements[2].segment.start().distance_to(pt) < 1e-9);
+        let Segment::Arc { geometry: g, .. } = d.elements[1].segment else {
+            panic!()
+        };
+        assert!(g.counter_clockwise);
+        assert!(g.center.distance_to(Point2::new(100.0 - t, 50.0)) < 1e-9);
+        assert!((g.length - 50.0 * delta).abs() < 1e-9);
+        let total = (100.0 - t) + 50.0 * delta + (125f64.sqrt() * 10.0 - t) + 100.0;
+        assert!((d.length() - total).abs() < 1e-9);
+    }
+
+    #[test]
+    fn free_arc_without_tangents_is_rejected() {
+        let mut w = Bits(Vec::new(), 0);
+        w.free_arc((1, 0, 0), 50.0);
+        assert!(decode_elements(&record(w.0)).is_err());
     }
 
     #[test]
@@ -415,5 +651,9 @@ mod tests {
             Point2::new(2.0, 2.0)
         )
         .is_none());
+        // Right-turn fillet: east then south-east.
+        let (pc, _pt, g) = fillet(Point2::new(100.0, 0.0), (1.0, 0.0), (1.0, -1.0), 10.0).unwrap();
+        assert!(!g.counter_clockwise);
+        assert!(g.center.distance_to(Point2::new(pc.x, -10.0)) < 1e-9);
     }
 }

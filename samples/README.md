@@ -20,10 +20,11 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S8 | `S8_A_seg2plus10_civ3d_resaved.dwg` | Civil 3D 2024 | S7 opened in Civil 3D (AUDIT 0 errors), saved. | 960944 | `df0b9e24be8db1a0` |
 | S9 | `S9_A_seg2plus10_civ3d_resaved_sta100.dwg` | Civil 3D 2024 | S8 with start station changed to 1+00, saved. | 961741 | `e004a7619b0fe76e` |
 | S10 | `S10_arc_civ3d.dwg` | Civil 3D 2024 | Alignment `Alignment - (3)`: a single arc, R = 100 ft, from (0,0) to (100,100) (centre (0,100), turning left); saved before being drawn (placeholder). | 972957 | `2ba4e7ba2c87348c` |
+| S11 | `S11_100-200-300_r50.dwg` | Civil 3D 2024 | S5 with a 50 ft free curve (fillet) added at the first PI (100,0) in Civil 3D; saved before being drawn (placeholder). | 985259 | `fa71ac1b7eac5296` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8
-(Civil 3D re-save), S8→S9 (start station). S10 is a single-arc reference.
+(Civil 3D re-save), S8→S9 (start station). S10 is a single-arc reference. S5→S11 (free curve added at PI 1).
 
-S1, S5–S10 come from a template whose `PRESSUREPARTERRORBLOCK` holds a
+S1, S5–S11 come from a template whose `PRESSUREPARTERRORBLOCK` holds a
 `3DSOLID` acadrust 0.6.5 cannot parse (S7–S9 no longer have it).

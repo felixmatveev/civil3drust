@@ -79,6 +79,13 @@ versions follow [Semantic Versioning](https://semver.org/).
 - `alignments` example lists tangents and arcs (radius, direction, delta,
   centre) with stationing.
 - Sample S10 (single R = 100 arc) and its findings; decision D-009.
+- Free arcs (fillets) in `aecc_elements`: `ArcDef::{ThreePoint, Free}`,
+  `fillet` (PC, PT, centre from a PI, two directions and a radius),
+  `resolve` → `Segment`/`ResolvedElement` with tangents trimmed to
+  PC/PT; `DecodedElements` now holds resolved elements. Two new tests.
+- `alignments` example shows the arc kind.
+- Sample S11 (S5 with a 50 ft fillet at PI 1) and its findings; decision
+  D-010.
 
 ### Fixed
 - Alignment names were wrong when the string stream holds a user name

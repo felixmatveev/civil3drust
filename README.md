@@ -43,7 +43,7 @@ round trip needs that fixed in acadrust.
 | `aecc_alignment` | Decodes tangent-only `AECC_ALIGNMENT` records into `alignment` geometry from their tangent element records. |
 | `aecc_alignment_edit` | Writes a changed tangent alignment back into its record (same-size patches). |
 | `proxy_graphics` | The display cache embedded in AECC entity records. |
-| `aecc_elements` | Tangent and arc element records, read-only (arcs: three stored points → centre, radius, direction, length). |
+| `aecc_elements` | Tangent and arc element records, read-only: arcs by three points and free arcs (fillets) by radius, resolved to segments with stationing. |
 | `raw` | The stored bytes of AECC records (acadrust keeps them opaque) and bit-level helpers for studying them. |
 
 Try the inventory on a drawing:

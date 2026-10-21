@@ -155,3 +155,23 @@ studied with controlled samples.
 **Alternatives.** Extend `Alignment` to arcs now: premature, since we don't
 yet know how Civil 3D constrains arcs (fixed, floating, free) or what an arc
 edit changes. Treat arcs as unknown: loses information already decoded.
+
+## D-010: Resolve free arcs from their neighbouring tangents
+Date: 2026-10-21 · Status: accepted
+
+**Context.** S11 showed a second arc kind: a free arc that stores only its
+radius, with the neighbouring tangents keeping PI-to-PI coordinates
+(docs/alignment-object.md). An element's stored values are therefore not
+always the geometry it occupies.
+
+**Decision.** `aecc_elements` keeps the stored records (`Element`, with
+`ArcDef::ThreePoint` or `ArcDef::Free`) and adds a resolution step that
+produces `Segment`s: a free arc is the fillet of the given radius between
+its neighbouring tangents, and those tangents are trimmed to its PC/PT.
+Callers that need lengths and stations use the segments; editors must
+patch the records.
+
+**Alternatives.** Store resolved geometry only: loses the distinction an
+editor needs (moving a PI moves a free arc automatically; a three-point
+arc must be patched). Treat free arcs as unsupported: S11 shows the model
+is simple and verifiable.

@@ -4,7 +4,7 @@
 //! Usage: cargo run --release --example alignments -- file.dwg
 
 use civil3drust::aecc_alignment::{record_name, Linked};
-use civil3drust::aecc_elements::{decode_elements, Element};
+use civil3drust::aecc_elements::{decode_elements, ArcDef, Element, Segment};
 use civil3drust::raw;
 
 fn main() {
@@ -37,7 +37,7 @@ fn main() {
         let arcs = d
             .elements
             .iter()
-            .filter(|e| matches!(e, Element::Arc(_)))
+            .filter(|e| matches!(e.segment, Segment::Arc { .. }))
             .count();
         println!(
             "\n[{:X}] {}  {} element(s) ({} tangent, {} arc), length {:.4}, stations {:.2}-{:.2}{}",
@@ -57,21 +57,27 @@ fn main() {
         );
         let mut sta = start;
         for e in &d.elements {
-            let len = e.length().unwrap_or(f64::NAN);
-            let (s, t) = (e.start(), e.end());
-            let what = match e {
-                Element::Tangent(_) => "tangent".to_string(),
-                Element::Arc(a) => match a.geometry() {
-                    Some(g) => format!(
-                        "arc R={:.4} {} delta={:.4}° center ({:.4}, {:.4})",
+            let len = e.segment.length();
+            let (s, t) = (e.segment.start(), e.segment.end());
+            let what = match (&e.segment, &e.record) {
+                (Segment::Line { .. }, _) => "tangent".to_string(),
+                (Segment::Arc { geometry: g, .. }, rec) => {
+                    let kind = match rec {
+                        Element::Arc(a) => match a.def {
+                            ArcDef::ThreePoint { .. } => "by 3 points",
+                            ArcDef::Free { .. } => "free, by radius",
+                        },
+                        Element::Tangent(_) => "?",
+                    };
+                    format!(
+                        "arc ({kind}) R={:.4} {} delta={:.4}° center ({:.4}, {:.4})",
                         g.radius,
                         if g.counter_clockwise { "left" } else { "right" },
                         g.sweep.to_degrees(),
                         g.center.x,
                         g.center.y
-                    ),
-                    None => "arc (degenerate)".to_string(),
-                },
+                    )
+                }
             };
             println!(
                 "  id {:>2} (before {}, after {})  {}  ({:.4}, {:.4}) -> ({:.4}, {:.4})  L={:.4}  sta {:.2}-{:.2}",

@@ -31,6 +31,7 @@ owner for this study, or generated from them. All are in
 | S8 | `A_seg2plus10_civ3d_resaved.dwg` | S7 opened in Civil 3D 2024 (AUDIT: 0 errors; geometry correct), then saved. |
 | S9 | `A_seg2plus10_civ3d_resaved_sta100.dwg` | S8 with the alignment's start station changed from 0+00 to 1+00 in Civil 3D, saved. |
 | S10 | `arc_civ3d.dwg` | Alignment `Alignment - (3)`: a single arc, R = 100 ft, from (0,0) to (100,100); saved before being drawn. |
+| S11 | `100-200-300_r50.dwg` | S5 with a 50 ft free curve (fillet) added at the first PI (100,0) in Civil 3D; saved before being drawn. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -297,6 +298,38 @@ and the parameter block. No separate type field has been found; the decoder
 tries both layouts and validates each (link IDs in range, finite
 coordinates, three non-collinear points for an arc).
 
+## Free arcs (fillets): S5 → S11
+
+Adding a 50 ft curve at PI (100,0) in Civil 3D:
+
+- **Tangents keep their PI-to-PI coordinates.** Tangent 1 is still
+  (0,0)→(100,0) and tangent 2 still (100,0)→(200,50); only their links
+  change (tangent 1 `after` 2 → 4, tangent 2 `before` 1 → 4).
+- **The arc is element 4**, stored *after* tangent 3 but linked 1 → 4 → 2.
+- **Its record is a second arc kind** — same fields up to the links, but:
+
+  | Field | Arc by 3 points (S10) | Free arc (S11) |
+  |-------|----------------------|----------------|
+  | B after header | 1 | **0** |
+  | p1 | 60.0 | **−1.0** |
+  | p2, n1, p3 | −1, 1, −1 | −1, 1, −1 |
+  | n2 | 2 | **29** |
+  | after the links | 6 raw doubles: start, mid, end | **BD radius** (50.0) |
+
+- **Geometry is derived**, not stored: the arc is tangent to both
+  neighbouring tangents with the stored radius. For S11: deflection
+  26.5651°, T = 11.8034, PC (88.1966, 0), PT (110.5573, 5.2786), centre
+  (88.1966, 50), length 23.1824, alignment length 311.3790.
+  `decode_elements` computes exactly these and trims the tangents to the
+  PC/PT. The only related value stored is 88.1966 (the PC station) twice
+  further on, outside the element record, together with the cache data.
+
+So "fixed" curves (made from polyline arcs, or drawn by points) store their
+points, while "free" curves (fillets between tangents) store only a radius
+and depend on their neighbours, matching the fixed/free entity kinds
+described in Autodesk's public Civil 3D documentation. The meaning of the
+flag and of n2 (2 vs 29) is inferred from these two samples only.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
@@ -316,17 +349,16 @@ coordinates, three non-collinear points for an arc).
    (candidates: element type, constraint type, version).
 6. The 11 bits between consecutive element records, and the data after the
    last one.
-7. ~~Arc element records~~ — answered by S10 (same header, parameter block,
-   three points). Still open: the meaning of the parameter block, how
-   curves defined by radius or by PI are distinguished (all arcs seen so far
-   store three points), and spirals.
+7. ~~Arc element records~~ — answered by S10 (arc by three points) and S11
+   (free arc by radius between tangents). Still open: the meaning of the
+   parameter block (p1 60 vs −1, n2 2 vs 29), other free/floating variants
+   (by length, through a point), and spirals.
 8. How offset alignments store their geometry (no tangent records).
 
 ## Next samples
 
-- S5 with a curve (e.g. R = 50) added at PI 2 in Civil 3D, to see an arc
-  created between tangents in our own sample and what changes in the
-  tangents around it.
+- S11 with the radius changed (50 → 75) in Civil 3D: should change only the
+  radius BD (and the derived PC station) if the free-curve model is right.
 - S10 with the radius changed (e.g. 100 → 150) in Civil 3D, to see which
   fields an arc edit touches.
 
