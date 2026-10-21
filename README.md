@@ -29,6 +29,11 @@ unchanged. civil3drust's edited record matched Civil 3D's own version of the
 same edit bit for bit, apart from one unidentified volatile field. Details:
 [`docs/alignment-object.md`](docs/alignment-object.md).
 
+Also confirmed in Civil 3D since: changing a free curve's radius
+(`examples/set_radius`, S13) opened with zero AUDIT errors, and Civil 3D's
+re-save (S14) differs from Civil 3D's own version of the same edit by a
+single flag bit.
+
 Known limitation: acadrust 0.6.5 can't parse a `3DSOLID` in Civil 3D's
 internal `PRESSUREPARTERRORBLOCK`; reading falls back to failsafe mode and
 that solid is dropped on save. Civil 3D accepted the result, but a lossless

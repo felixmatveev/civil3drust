@@ -5,7 +5,7 @@
 //!
 //! ```text
 //! BL 0x04020008   header, same as tangents
-//! B  kind         1 = arc by three points, 0 = free arc by radius
+//! B  flag         meaning unknown: 1 in S10 and S14, 0 in S11–S13
 //! BD p1           60.0 (by points) / -1.0 (free)
 //! BD p2           -1.0
 //! BL n1           1
@@ -24,7 +24,10 @@
 //!
 //! (B = bit, BL = bit-coded long, BD = bit-coded double, RD = raw double,
 //! per the public ODA DWG specification.) p1–p3, n1, n2 are kept as read;
-//! their meaning is not known.
+//! their meaning is not known. The kind is chosen from them (n2 = 29 or
+//! p1 = −1 → free; n2 = 2 or p1 = 60 → by points), not from the flag bit,
+//! which Civil 3D set on a free arc when re-saving S13 as S14. Unknown
+//! parameter values fall back to trying both layouts.
 //!
 //! [`decode_elements`] chains the records and resolves them into
 //! [`Segment`]s: arcs get centre, radius, direction and length; tangents
@@ -68,6 +71,8 @@ pub struct ArcRecord {
     pub id: i32,
     pub before: i32,
     pub after: i32,
+    /// The bit after the header (meaning unknown).
+    pub flag: bool,
     pub params: ArcParams,
     pub def: ArcDef,
 }
@@ -201,7 +206,7 @@ fn arc_at(data: &[u8], bit: usize) -> Option<ArcRecord> {
     if h != ELEMENT_HEADER {
         return None;
     }
-    let by_points = raw::get_bit(data, k) == 1;
+    let flag = raw::get_bit(data, k) == 1;
     let (p1, k) = raw::read_bd(data, k + 1)?;
     let (p2, k) = raw::read_bd(data, k)?;
     let (n1, k) = raw::read_bl(data, k)?;
@@ -221,7 +226,7 @@ fn arc_at(data: &[u8], bit: usize) -> Option<ArcRecord> {
         return None;
     }
     let params = ArcParams { p1, p2, n1, p3, n2 };
-    let (def, end_bit) = if by_points {
+    let three_point = || -> Option<(ArcDef, usize)> {
         if k + 384 > raw::bit_len(data) {
             return None;
         }
@@ -235,7 +240,7 @@ fn arc_at(data: &[u8], bit: usize) -> Option<ArcRecord> {
             Point2::new(c[4], c[5]),
         );
         arc_through(start, mid, end)?; // three distinct, non-collinear points
-        (
+        Some((
             ArcDef::ThreePoint {
                 coords_bit: k,
                 start,
@@ -243,23 +248,29 @@ fn arc_at(data: &[u8], bit: usize) -> Option<ArcRecord> {
                 end,
             },
             k + 384,
-        )
-    } else {
+        ))
+    };
+    let free = || -> Option<(ArcDef, usize)> {
         let (radius, k2) = raw::read_bd(data, k)?;
-        if !(radius.is_finite() && radius > 1e-9 && radius < 1e9) {
-            return None;
-        }
-        (
+        (radius.is_finite() && radius > 1e-9 && radius < 1e9).then_some((
             ArcDef::Free {
                 radius_bit: k,
                 radius,
             },
             k2,
-        )
+        ))
+    };
+    let (def, end_bit) = if n2 == 29 || p1 == -1.0 {
+        free()?
+    } else if n2 == 2 || p1 == 60.0 {
+        three_point()?
+    } else {
+        free().or_else(three_point)?
     };
     Some(ArcRecord {
         header_bit: bit,
         end_bit,
+        flag,
         id,
         before,
         after,
@@ -506,8 +517,11 @@ mod tests {
             }
         }
         fn arc_head(&mut self, by_points: bool, ids: (i32, i32, i32)) {
+            self.arc_head_flag(by_points, by_points, ids);
+        }
+        fn arc_head_flag(&mut self, by_points: bool, flag: bool, ids: (i32, i32, i32)) {
             self.bl(ELEMENT_HEADER);
-            self.bit(by_points as u8);
+            self.bit(flag as u8);
             self.bd(if by_points { 60.0 } else { -1.0 });
             self.bd(-1.0);
             self.bl(1);
@@ -626,6 +640,23 @@ mod tests {
         assert!((g.length - 50.0 * delta).abs() < 1e-9);
         let total = (100.0 - t) + 50.0 * delta + (125f64.sqrt() * 10.0 - t) + 100.0;
         assert!((d.length() - total).abs() < 1e-9);
+    }
+
+    /// S14: Civil 3D set the flag bit on the free arc when re-saving S13.
+    #[test]
+    fn free_arc_with_flag_set_like_s14() {
+        let mut w = Bits(Vec::new(), 0);
+        w.tangent(1, 0, 4, (0.0, 0.0), (100.0, 0.0));
+        w.tangent(2, 4, 3, (100.0, 0.0), (200.0, 50.0));
+        w.tangent(3, 2, 0, (200.0, 50.0), (300.0, 50.0));
+        w.arc_head_flag(false, true, (4, 1, 2));
+        w.bd(75.0);
+        let d = decode_elements(&record(w.0)).unwrap();
+        let Element::Arc(a) = &d.elements[1].record else {
+            panic!()
+        };
+        assert!(a.flag);
+        assert!(matches!(a.def, ArcDef::Free { radius, .. } if radius == 75.0));
     }
 
     #[test]

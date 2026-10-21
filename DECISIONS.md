@@ -194,3 +194,19 @@ those and 3×10⁻¹⁴ in the station.
 changes the record size, which nothing in civil3drust does yet. Leave the
 PC station stale: Civil 3D might trust it for stationing until it
 recomputes.
+
+## D-012: Choose the arc layout from its parameters, not the flag bit
+Date: 2026-10-21 · Status: accepted (refines D-010)
+
+**Context.** The arc decoder used the bit after the header to choose
+between "by three points" (1) and "free, by radius" (0). In S14 (S13
+re-saved by Civil 3D) that bit is 1 on an arc that is still free (p1 = −1,
+n2 = 29, radius only), so S14 failed to decode.
+
+**Decision.** Pick the layout from the parameter block: n2 = 29 or
+p1 = −1 → free; n2 = 2 or p1 = 60 → by three points; anything else → try
+free, then three points, each fully validated. Keep the bit as
+`ArcRecord::flag`, meaning unknown.
+
+**Alternatives.** Keep using the bit and treat S14 as an exception: wrong,
+since Civil 3D itself writes it this way.

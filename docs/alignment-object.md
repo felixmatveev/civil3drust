@@ -34,6 +34,7 @@ owner for this study, or generated from them. All are in
 | S11 | `100-200-300_r50.dwg` | S5 with a 50 ft free curve (fillet) added at the first PI (100,0) in Civil 3D; saved before being drawn. |
 | S12 | `100-200-300_r75.dwg` | S11 with the curve radius changed to 75 ft in Civil 3D; saved. |
 | S13 | `S11_r75_generated.dwg` (generated) | S11 with the radius set to 75 by `examples/set_radius`. |
+| S14 | `S13_civ3d_resaved.dwg` | S13 opened in Civil 3D (AUDIT 0 errors, radius 75 and stationing correct), saved. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -312,7 +313,7 @@ Adding a 50 ft curve at PI (100,0) in Civil 3D:
 
   | Field | Arc by 3 points (S10) | Free arc (S11) |
   |-------|----------------------|----------------|
-  | B after header | 1 | **0** |
+  | B after header | 1 | 0 (but 1 after a Civil 3D re-save, S14 — not the kind) |
   | p1 | 60.0 | **−1.0** |
   | p2, n1, p3 | −1, 1, −1 | −1, 1, −1 |
   | n2 | 2 | **29** |
@@ -357,7 +358,22 @@ the radius and both PC-station copies. `rawdiff S13 S12 AECC_ALIGNMENT`
 leaves: the volatile field; the last bits of the PC station
 (82.29490168751578 vs Civil 3D's ...575, a 3×10⁻¹⁴ difference from
 floating-point order); and the 2/3/4 block, which civil3drust does not
-write. The radius is bit-identical. Not yet opened in Civil 3D.
+write. The radius is bit-identical.
+
+**Round trip (S14).** S13 opened in Civil 3D 2024 with zero AUDIT errors and
+the curve at R = 75 with correct stationing; re-saved as S14.
+`rawdiff S14 S12 AECC_ALIGNMENT`: **one bit** differs — the flag bit right
+after the arc's header (bit 4055). Everything else, including the volatile
+header field, the 2/3/4 block and the PC station (now Civil 3D's own
+82.29490168751575), is identical to Civil 3D's own edit (S12). So on load
+and save Civil 3D recomputed the station, wrote the 2/3/4 block, and set the
+volatile field to the same value as in S12 — which suggests that field is
+derived from the content rather than random.
+
+**The bit after the arc header is not the arc kind.** It is 1 in S10 (arc by
+three points) and in S14 (still a free arc: p1 = −1, n2 = 29, radius only),
+and 0 in S11–S13. Its meaning is unknown; the decoder now picks the layout
+from p1/n2 (D-012).
 
 ## Open questions
 
@@ -366,7 +382,10 @@ write. The radius is bit-identical. Not yet opened in Civil 3D.
    S3→S4); what it holds.
 9. The 2-bit flag at bit 2677 that Civil 3D changed when re-saving S7.
 10. The block of BDs (2.0, 3.0, 4.0) Civil 3D added in S12 after the radius
-    change.
+    change (and again in S14).
+11. The flag bit after the arc header (1 in S10, S14; 0 in S11–S13).
+12. The volatile header field: identical in S12 and S14 (same content,
+    different save sessions), so probably computed from the content.
 2. ~~Where the start station is stored~~ — answered by S9: a BD ending 41
    bits before the first tangent header. Editing it in place is only
    possible when the encoding length doesn't change (both values not 0 or
@@ -388,8 +407,6 @@ write. The radius is bit-identical. Not yet opened in Civil 3D.
 
 ## Next samples
 
-- Open S13 in Civil 3D (AUDIT, radius 75, PC at station 0+82.29), save it,
-  and compare with S12.
 - S10 with the radius changed (e.g. 100 → 150) in Civil 3D, to see which
   fields an arc edit touches.
 

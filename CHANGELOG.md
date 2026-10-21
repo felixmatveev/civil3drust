@@ -93,7 +93,12 @@ versions follow [Semantic Versioning](https://semver.org/).
   civil3drust, matching S12 apart from the volatile field, a 2/3/4 block
   and 3×10⁻¹⁴ in the PC station); decision D-011.
 
+- Sample S14 (S13 re-saved by Civil 3D: AUDIT 0 errors, differs from
+  Civil 3D's own S12 by one flag bit); `ArcRecord::flag`; decision D-012.
+
 ### Fixed
+- Free arcs whose flag bit is set (S14) failed to decode; the arc layout is
+  now chosen from the parameter block.
 - Alignment names were wrong when the string stream holds a user name
   before the name (S9) or text-like noise after it.
 
