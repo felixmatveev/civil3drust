@@ -230,3 +230,21 @@ example uses this path for all alignments.
 **Alternatives.** Keep separate editors for tangent-only and curved
 alignments: duplicate logic; the PI view covers both. Shift fixed arcs
 rigidly: plausible, but not yet observed in a sample.
+
+## D-014: Generate alignments by rewriting a template of the same shape
+Date: 2026-10-21 · Status: accepted
+
+**Context.** The owner asked for a DWG with a given alignment produced by
+civil3drust. Creating an `AECC_ALIGNMENT` record from nothing needs the
+record prefix, section 2 and the handle stream (links to style, site and
+label groups), none of which are decoded.
+
+**Decision.** Generate by rewriting a template record with the same shape
+(`set_pis`: same number of PIs, free curves in the same places), reusing
+the tested PI-edit path. Where no exact template exists, a shape with an
+extra zero-deflection PI can stand in. Element insertion/removal and record
+creation stay out of scope until studied with samples.
+
+**Alternatives.** Build records from scratch: not possible yet. Resize
+records to drop or add elements: changes record size and probably counts
+in section 2; needs controlled samples first.

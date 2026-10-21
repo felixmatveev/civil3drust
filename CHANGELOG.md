@@ -106,6 +106,13 @@ versions follow [Semantic Versioning](https://semver.org/).
   edit by civil3drust, differing from S15 only in the volatile field and the
   arc flag bit); decision D-013.
 
+- `aecc_alignment_edit::set_pis` (move every PI of an alignment of
+  tangents and free arcs; used to generate alignments from a template of
+  the same shape) and `pi_alignment`; `set_tangent_length` now builds on
+  them. One new test. `set_pis` example.
+- Sample S17: 0,0 → 100,0 → 100,100 with an R = 50 fillet generated from
+  S11 (with an extra zero-deflection PI at 100,75); decision D-014.
+
 ### Fixed
 - Free arcs whose flag bit is set (S14) failed to decode; the arc layout is
   now chosen from the parameter block.

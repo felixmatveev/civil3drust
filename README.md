@@ -68,6 +68,7 @@ cargo run --release --example dumprec -- a.dwg AECC_ALIGNMENT out/a
 cargo run --release --example alignments -- a.dwg
 cargo run --release --example set_length -- in.dwg out.dwg "Alignment - (2)" 2 121.8
 cargo run --release --example set_radius -- in.dwg out.dwg "Alignment - (2)" 4 75
+cargo run --release --example set_pis -- template.dwg out.dwg "Alignment - (2)" "0,0 100,0 100,75 100,100"
 ```
 
 Findings so far: [`docs/alignment-object.md`](docs/alignment-object.md).

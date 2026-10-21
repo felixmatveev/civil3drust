@@ -37,6 +37,7 @@ owner for this study, or generated from them. All are in
 | S14 | `S13_civ3d_resaved.dwg` | S13 opened in Civil 3D (AUDIT 0 errors, radius 75 and stationing correct), saved. |
 | S15 | `100-200-300_r50_seg3plus100.dwg` + `.xml` | S11 with tangent 3 lengthened by 100 ft in Civil 3D; saved, and exported to LandXML 1.2 by Civil 3D. |
 | S16 | `S11_seg3plus100_generated.dwg` (generated) | S11 with tangent 3 set to 200 by `examples/set_length`. |
+| S17 | `generated_L90_r50.dwg` (generated) | S11 as a template, PIs set to (0,0), (100,0), (100,75), (100,100) by `examples/set_pis`. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -404,6 +405,30 @@ tangent 3 and the placeholder box. `rawdiff S16 S15 AECC_ALIGNMENT` leaves
 only the volatile field and the arc's flag bit. Re-running the S5 edit with
 the new code reproduces S7 byte for byte.
 
+## Generating an alignment from a template: S17
+
+civil3drust cannot create an `AECC_ALIGNMENT` record from nothing: the
+record prefix, most of section 2 and the handle stream (style, site, label
+links) are not decoded. It can rewrite a record whose *shape* matches: the
+same number of tangents with free curves in the same places.
+`aecc_alignment_edit::set_pis` moves every PI, lets free curves follow,
+updates their cached PC stations and the placeholder box, and refuses
+geometry where a curve doesn't fit.
+
+S17 was asked for as 0,0 → 100,0 → 100,100 with a 50 ft fillet. The nearest
+template, S11, has four PIs, so the PIs were set to (0,0), (100,0),
+(100,75), (100,100): the requested geometry with an extra zero-deflection
+PI on the second leg. Result: tangent 50.0000, R = 50 left 90° curve
+(PC (50,0), PT (100,50), centre (50,50), length 78.5398), tangents 25 + 25;
+total 178.5398. Changes against S11: tangent records 2 and 3, the
+placeholder box corners (300 → 100, 50 → 100), and both PC-station copies
+(88.1966 → 50.00000000000001; the last digit is floating-point rounding
+of T = R·tan 45°). Not yet opened in Civil 3D.
+
+An exact three-PI version needs a template with two tangents and one free
+curve, or support for removing elements (which changes the record size and
+probably element counts in section 2).
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
@@ -437,6 +462,10 @@ the new code reproduces S7 byte for byte.
 8. How offset alignments store their geometry (no tangent records).
 
 ## Next samples
+
+- Open S17 in Civil 3D; check whether the zero-deflection PI is accepted.
+- A template with two tangents and one free curve (e.g. 0,0 → 100,0 →
+  100,100, R = 50), for exact generation of that shape.
 
 - S10 with the radius changed (e.g. 100 → 150) in Civil 3D, to see which
   fields an arc edit touches.

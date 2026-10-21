@@ -205,6 +205,20 @@ pub fn set_tangent_length(
     segment: usize,
     new_length: f64,
 ) -> Result<ElementsEditReport, EditError> {
+    let mut target = pi_alignment(decoded)?;
+    target
+        .set_segment_length(segment, new_length)
+        .map_err(|e| EditError::Geometry(e.to_string()))?;
+    set_pis(data, decoded, target.pis())
+}
+
+/// The PI polyline of an alignment made of tangents and free arcs: the
+/// tangent records' PI-to-PI coordinates, in chain order.
+pub fn pi_alignment(decoded: &DecodedElements) -> Result<Alignment, EditError> {
+    Ok(pi_polyline(decoded)?.1)
+}
+
+fn pi_polyline(decoded: &DecodedElements) -> Result<(Vec<TangentRecord>, Alignment), EditError> {
     if decoded
         .elements
         .iter()
@@ -229,9 +243,31 @@ pub fn set_tangent_length(
     let name = decoded.name.clone().unwrap_or_default();
     let old_alignment =
         Alignment::new(name, start, pis).map_err(|e| EditError::Geometry(e.to_string()))?;
-    let mut new_alignment = old_alignment.clone();
-    new_alignment
-        .set_segment_length(segment, new_length)
+    Ok((tangents, old_alignment))
+}
+
+/// Move every PI of an alignment made of tangents and free arcs to
+/// `new_pis` (same count). Tangent records, cache records and the display
+/// cache are patched by [`apply`]; free arcs keep their radius and follow
+/// their tangents, and their cached PC stations are updated. The edit is
+/// refused if a curve would no longer fit.
+///
+/// This is how a new alignment is produced from a template record of the
+/// same shape (same number of tangents and curves in the same places).
+pub fn set_pis(
+    data: &mut [u8],
+    decoded: &DecodedElements,
+    new_pis: &[Point2],
+) -> Result<ElementsEditReport, EditError> {
+    let (tangents, old_alignment) = pi_polyline(decoded)?;
+    let start = old_alignment.start_station;
+    if new_pis.len() != old_alignment.pis().len() {
+        return Err(EditError::PiCountChanged {
+            old: old_alignment.pis().len(),
+            new: new_pis.len(),
+        });
+    }
+    let new_alignment = Alignment::new(old_alignment.name.clone(), start, new_pis.to_vec())
         .map_err(|e| EditError::Geometry(e.to_string()))?;
 
     // Resolve the edited chain and check every tangent still has room.
@@ -464,6 +500,45 @@ mod tests {
         assert_eq!(find_station_copies(&rec.data, 0, new_pc).len(), 2);
         let after = decode_elements(&rec).unwrap();
         assert!((after.elements[0].segment.length() - new_pc).abs() < 1e-9);
+    }
+
+    /// Template use: S11's shape rewritten as 0,0 -> 100,0 -> 100,75 ->
+    /// 100,100 keeps the R=50 fillet, now a 90° turn.
+    #[test]
+    fn set_pis_rewrites_s11_into_a_right_angle() {
+        use crate::aecc_elements::{decode_elements, Segment};
+        let mut rec = s11_like();
+        let before = decode_elements(&rec).unwrap();
+        let pis = [
+            Point2::new(0.0, 0.0),
+            Point2::new(100.0, 0.0),
+            Point2::new(100.0, 75.0),
+            Point2::new(100.0, 100.0),
+        ];
+        let rep = set_pis(&mut rec.data, &before, &pis).unwrap();
+        assert_eq!(rep.patches.tangent_records, 2); // tangent 1 unchanged
+        assert_eq!((rep.arcs_restationed, rep.station_copies), (1, 2));
+        let after = decode_elements(&rec).unwrap();
+        // Search after the element records: the radius (also 50) is inside them.
+        let from = elements_end_bit(&after);
+        assert_eq!(find_station_copies(&rec.data, from, 50.0).len(), 2);
+        let Segment::Arc {
+            start,
+            end,
+            geometry: g,
+        } = after.elements[1].segment
+        else {
+            panic!()
+        };
+        assert!(start.distance_to(Point2::new(50.0, 0.0)) < 1e-9);
+        assert!(end.distance_to(Point2::new(100.0, 50.0)) < 1e-9);
+        assert!(g.center.distance_to(Point2::new(50.0, 50.0)) < 1e-9);
+        assert!((g.sweep - std::f64::consts::FRAC_PI_2).abs() < 1e-12);
+        assert!((after.length() - (100.0 + 25.0 * std::f64::consts::PI)).abs() < 1e-9);
+        assert_eq!(
+            set_pis(&mut rec.data, &before, &pis[..3]),
+            Err(EditError::PiCountChanged { old: 4, new: 3 })
+        );
     }
 
     #[test]
