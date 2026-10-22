@@ -40,6 +40,7 @@ pub mod handle_refs;
 pub mod inventory;
 pub mod proxy_graphics;
 pub mod raw;
+pub mod string_stream;
 
 pub use alignment::{Alignment, AlignmentError, Point2, Tangent};
 pub use inventory::{aecc_classes, AeccClassInfo};

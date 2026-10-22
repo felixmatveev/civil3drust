@@ -44,3 +44,4 @@ samples and steps that produced it.
 - `cargo run --release --example set_style -- in.dwg [out.dwg <alignment> <style>]`
 - `cargo run --release --example style_components -- in.dwg [out.dwg <style> <component> on|off]`
 - `cargo run --release --example create_alignment -- donor.dwg target.dwg out.dwg <name> "x,y x,y" [--no-label-group] [--no-parcel-entry]`
+- `cargo run --release --example set_name -- in.dwg out.dwg <alignment> <new name>`

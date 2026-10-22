@@ -47,6 +47,9 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S33 | `S33_S24_created_alignment_v2.dwg` | generated | As S26 (parcel entry + label group) after the first-element end-station fix: the cached station at bit 2205 is 200, not the donor's 99.99999999999999. | 449435 | `601f28fffb6e98a9` |
 | S34 | `S34_S25_companions_swapped.dwg` | generated | S25 with the parcel companions of the two alignments swapped (alignment refs and companion back-pointers) by `examples/swap_companions`. Experiment. Opened in Civil 3D: AUDIT 0 errors. | 449628 | `1f2c833fd747fcb0` |
 | S35 | `S35_S34_civ3d_resaved.dwg` | Civil 3D 2024 | S34 opened (AUDIT 0 errors), saved. | 472416 | `461c5cf809a5f40c` |
+| S36 | `S36_S24_renamed_A.dwg` | generated | S24 with the alignment renamed `A` by `examples/set_name` (750 → 722-byte record). Not yet opened in Civil 3D. | 448679 | `b99b7036c391c700` |
+| S37 | `S37_S24_renamed_long.dwg` | generated | S24 with the alignment renamed to a 65-character name (750 → 850 bytes). Not yet opened in Civil 3D. | 448775 | `b69c6c6be7264eb4` |
+| S38 | `S38_S24_created_B.dwg` | generated | S24 plus alignment `B` (0,−100) → (200,−100) by `examples/create_alignment` (donor S25). Not yet opened in Civil 3D. | 449506 | `f31fe0462f0e4e2f` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

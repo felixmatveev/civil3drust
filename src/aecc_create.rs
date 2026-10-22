@@ -19,8 +19,8 @@
 //!   order, as Civil 3D did), patched in each record's own-handle field
 //!   (bit 26) and in every reference between them;
 //! - a new ID string in the companion and the registry;
-//! - the requested name (same length as the donor's, for now) and PIs
-//!   (same count, via [`set_pis`]).
+//! - the requested name (any length, via [`string_stream::set_name`]) and
+//!   PIs (same count as the donor's, via [`set_pis`]).
 //!
 //! The label group and the parcel entry (companion + registry entry) can
 //! be left out ([`CreateOptions`]) to test whether Civil 3D requires them;
@@ -29,8 +29,8 @@
 //! references become null references, which shrinks its handle stream
 //! (`handle_refs::null_refs`).
 //!
-//! All records keep their size. The style, layer and label style are the
-//! donor's and must exist in the target.
+//! Only the alignment record can change size (name). The style, layer and
+//! label style are the donor's and must exist in the target.
 
 use crate::aecc_alignment_edit::{set_pis, EditError};
 use crate::aecc_alignment_refs::alignment_refs;
@@ -38,6 +38,7 @@ use crate::aecc_elements::decode_elements;
 use crate::alignment::Point2;
 use crate::handle_refs::{self, HandleRef};
 use crate::raw::{self, RawRecord};
+use crate::string_stream;
 use acadrust::document::CadDocument;
 use acadrust::entities::EntityType;
 use acadrust::objects::ObjectType;
@@ -72,10 +73,7 @@ impl fmt::Display for CreateError {
         match self {
             Self::Donor(why) => write!(f, "donor drawing: {why}"),
             Self::MissingInTarget(what, h) => write!(f, "target has no {what} {h:X}"),
-            Self::NameLength { want, got } => write!(
-                f,
-                "name must be {want} characters long (same as the donor's), got {got}"
-            ),
+            Self::NameLength { .. } => write!(f, "name must not be empty"),
             Self::HandleSize(h) => write!(f, "handle {h:X} doesn't fit the stored byte count"),
             Self::Geometry(e) => write!(f, "geometry: {e}"),
         }
@@ -297,11 +295,8 @@ pub fn create_alignment(
     // --- Name and ID string. ---
     let old_name =
         raw::object_name(&d_align.data).ok_or_else(|| donor_err("alignment has no name"))?;
-    if name.chars().count() != old_name.chars().count() || !name.is_ascii() {
-        return Err(CreateError::NameLength {
-            want: old_name.len(),
-            got: name.chars().count(),
-        });
+    if name.is_empty() {
+        return Err(CreateError::NameLength { want: 1, got: 0 });
     }
     let old_id = id_string_of(&d_comp).ok_or_else(|| donor_err("companion has no ID string"))?;
     let existing_ids: Vec<String> = raw::records(target, COMPANION)
@@ -333,9 +328,6 @@ pub fn create_alignment(
     if retarget_all(&mut align, &arefs, align_h, d_comp_h, comp_h)? != 2 {
         return Err(donor_err("alignment doesn't reference its companion twice"));
     }
-    if replace_string(&mut align, &old_name, name) == 0 {
-        return Err(donor_err("alignment name not found"));
-    }
     let rec = RawRecord {
         handle: align_h,
         class: ALIGNMENT.into(),
@@ -345,7 +337,11 @@ pub fn create_alignment(
     };
     let decoded = decode_elements(&rec).map_err(|e| donor_err(e.to_string()))?;
     set_pis(&mut align, &decoded, pis).map_err(CreateError::Geometry)?;
-    let mut align_hb = d_align.handle_bits;
+    // Name last among data edits: it can change the record size.
+    let (bytes, mut align_hb) =
+        string_stream::set_name(&align, d_align.handle_bits, &old_name, name)
+            .map_err(|e| donor_err(e.to_string()))?;
+    align = bytes;
     if !opts.parcel_entry {
         let idx: Vec<usize> = handle_refs::of_record(&d_align)
             .iter()

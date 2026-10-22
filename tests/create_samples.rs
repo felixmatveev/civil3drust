@@ -69,14 +69,14 @@ fn create_in_s24_from_s25() {
 }
 
 #[test]
-fn refuses_wrong_name_length_and_pi_count() {
+fn refuses_empty_name_and_wrong_pi_count() {
     let donor = raw::open("samples/S25_ZERO_CIVIL_second_alignment.dwg").unwrap();
     let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
     let pis = [Point2::new(0.0, 0.0), Point2::new(1.0, 0.0)];
     assert!(create_alignment(
         &mut t.doc,
         &donor.doc,
-        "short",
+        "",
         &pis,
         1,
         CreateOptions::default()
@@ -143,4 +143,64 @@ fn create_without_parcel_entry() {
     assert_eq!(owned, [0xF9D]);
     assert_eq!(raw::records(&re.doc, "AECC_FEATURE_STYLE").len(), 2);
     let _ = std::fs::remove_file(dir);
+}
+
+#[test]
+fn create_with_one_letter_name() {
+    let donor = raw::open("samples/S25_ZERO_CIVIL_second_alignment.dwg").unwrap();
+    let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+    let pis = [Point2::new(0.0, -100.0), Point2::new(200.0, -100.0)];
+    let c = create_alignment(
+        &mut t.doc,
+        &donor.doc,
+        "B",
+        &pis,
+        3,
+        CreateOptions::default(),
+    )
+    .unwrap();
+    let dir = std::env::temp_dir().join("civil3drust-create-b.dwg");
+    acadrust::DwgWriter::write_to_file(&dir, &t.doc).unwrap();
+    let re = raw::open(&dir).unwrap();
+    let a = raw::records(&re.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == c.alignment)
+        .unwrap();
+    let d = decode_elements(&a).unwrap();
+    assert_eq!(d.name.as_deref(), Some("B"));
+    assert!((d.length() - 200.0).abs() < 1e-9);
+    assert_eq!(alignment_refs(&a).unwrap().style.handle, 0xFA9);
+    let _ = std::fs::remove_file(dir);
+}
+
+#[test]
+fn rename_s24_alignment_any_length() {
+    use civil3drust::string_stream;
+    let s24 = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+    let rec = raw::records(&s24.doc, "AECC_ALIGNMENT").remove(0);
+    for name in ["A", "Centerline of 19th Avenue NE - proposed realignment"] {
+        let (d, hb) =
+            string_stream::set_name(&rec.data, rec.handle_bits, "Alignment - (1)", name).unwrap();
+        let r2 = raw::RawRecord {
+            data: d,
+            handle_bits: hb,
+            ..rec.clone()
+        };
+        assert_eq!(raw::object_name(&r2.data).as_deref(), Some(name));
+        let dec = decode_elements(&r2).unwrap();
+        assert!((dec.length() - 411.378981575051).abs() < 1e-6);
+        let refs: Vec<u64> = handle_refs::of_record(&r2)
+            .iter()
+            .map(|r| r.handle)
+            .collect();
+        let refs0: Vec<u64> = handle_refs::of_record(&rec)
+            .iter()
+            .map(|r| r.handle)
+            .collect();
+        assert_eq!(refs, refs0);
+        assert_eq!(
+            string_stream::parse(&r2.data, hb).unwrap().strings.len(),
+            15
+        );
+    }
 }

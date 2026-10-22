@@ -341,10 +341,55 @@ pub fn strings_after_impl(data: &[u8]) -> Vec<String> {
         .collect()
 }
 
-/// Object name from the string stream: the last plain string after the
-/// implementation class name.
+/// Object name from the string stream.
+///
+/// First tries the structure seen in every alignment record (S1–S35,
+/// `string_stream`): the implementation class string `AeccImp…`, two empty
+/// strings, an optional user name (present in S9 and S22, after edits in
+/// Civil 3D), then the name, then (usually empty) further strings; each is a
+/// bit-coded length + UTF-16 code units. When the fifth string is non-empty
+/// the fourth is the user name and the fifth the object name. Falls back to
+/// the last plain string after the class name.
 pub fn object_name(data: &[u8]) -> Option<String> {
-    strings_after_impl(data).pop()
+    structured_name(data).or_else(|| strings_after_impl(data).pop())
+}
+
+fn structured_name(data: &[u8]) -> Option<String> {
+    let (b, _) = utf16_strings(data, 7)
+        .into_iter()
+        .find(|(_, s)| s.starts_with("AeccImp"))?;
+    let mut bit = b.checked_sub(10)?;
+    let mut strings = Vec::new();
+    for _ in 0..5 {
+        let (n, chars) = match (get_bit(data, bit), get_bit(data, bit + 1)) {
+            (0, 1) => (get_byte(data, bit + 2) as usize, bit + 10),
+            (1, 0) => (0, bit + 2),
+            _ => break,
+        };
+        if chars + 16 * n > bit_len(data) {
+            return None;
+        }
+        let units: Vec<u16> = (0..n)
+            .map(|i| {
+                get_byte(data, chars + 16 * i) as u16
+                    | (get_byte(data, chars + 16 * i + 8) as u16) << 8
+            })
+            .collect();
+        strings.push(String::from_utf16(&units).ok()?);
+        bit = chars + 16 * n;
+    }
+    if strings.len() < 4
+        || !strings[0].starts_with("AeccImp")
+        || !strings[1].is_empty()
+        || !strings[2].is_empty()
+    {
+        return None;
+    }
+    let name = match strings.get(4) {
+        Some(s) if !s.is_empty() => s,
+        _ => &strings[3],
+    };
+    (!name.is_empty()).then(|| name.clone())
 }
 
 /// Ranges `[start, end)` of bits that differ between two equal-length

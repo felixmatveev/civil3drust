@@ -56,6 +56,9 @@ owner for this study, or generated from them. All are in
 | S33 | `S24_created_alignment_v2.dwg` (generated) | As S26, generated after the end-station fix. |
 | S34 | `S25_companions_swapped.dwg` (generated) | S25 with the two alignments' parcel companions swapped. |
 | S35 | `S34_civ3d_resaved.dwg` | S34 opened in Civil 3D (AUDIT 0 errors), saved. |
+| S36 | `S24_renamed_A.dwg` (generated) | S24 with the alignment renamed `A`. |
+| S37 | `S24_renamed_long.dwg` (generated) | S24 with the alignment renamed to a 65-character name. |
+| S38 | `S24_created_B.dwg` (generated) | S24 plus a created alignment named `B`. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -795,6 +798,32 @@ interchangeable: its geometry is derived from whichever alignment points
 at it, and only the links and the ID string matter. That also explains
 why the donor's stale points in our generated companions (S26, S33) were
 harmless.
+
+## Names and the string stream (S1–S38)
+
+The alignment record's strings sit in an R2007+-style string stream at
+the end of the data stream (public ODA layout, confirmed in every sample):
+
+- the data stream ends with a **flag bit** (1) at `data_end − 1`, preceded
+  by a **16-bit little-endian size** at `data_end − 17` — the string stream
+  length in bits (S25 FB8: 536 bits, stream 3038–3574);
+- each string is a bit-coded short **length** (`01` + 1 byte for 1–255
+  code units; `10` for empty; `00` + 16 bits for longer) followed by the
+  **UTF-16LE code units**.
+
+Alignment strings, in order: `AeccImpAlignment`, `""`, `""`, the **name**,
+then 5–11 empty strings (count varies by record). In S9 and S22, after
+edits made in Civil 3D, an extra string — the user name `felix` — sits
+before the name (`raw::object_name` takes the fifth string when it is
+non-empty). Open: whether the string after the name is the description
+(a sample with a description would tell).
+
+`string_stream::set_name` rewrites the name's length and code units,
+recomputes the size field, and moves the rest of the stream, the size,
+the flag and the handle stream as a block; the record grows or shrinks.
+`examples/set_name.rs` renames an alignment; `create_alignment` now accepts
+any non-empty name. S36 (`A`), S37 (65 characters) and S38 (created `B`)
+await Civil 3D.
 
 ## Open questions
 

@@ -35,7 +35,16 @@ versions follow [Semantic Versioning](https://semver.org/).
   aside (S32 re-audit: 0 errors). S35: Civil 3D accepts the swap and
   regenerates each companion's points from its new alignment.
 
+- `string_stream` module: parses a record's string stream (flag, 16-bit
+  size, bit-coded length + UTF-16 strings) and replaces a string of any
+  length (`set_name`). `examples/set_name.rs` renames an alignment;
+  `create_alignment` accepts any non-empty name. Samples S36–S38.
+
 ### Fixed
+- `raw::object_name` reads the name from the string stream structure
+  (class string, two empty strings, optional user name, name), so short
+  names like `A` are found and the user name `felix` in S9/S22 is no
+  longer reported as the name.
 - `set_pis` / `set_tangent_length` / `create_alignment` now update the
   cached station at the end of the first element (first BD after the
   element records) when no free arc follows it. S26/S27/S30 kept the
