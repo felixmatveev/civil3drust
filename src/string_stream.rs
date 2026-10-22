@@ -213,6 +213,37 @@ pub fn set_name(
     replace(data, handle_bits, index, new_name)
 }
 
+/// Set an object's description: strings 1 and 2 of the stream, right after
+/// the `AeccImp…` class string, which hold the same text (S38 with a
+/// description; empty otherwise). Line breaks are stored as `\r\n`.
+pub fn set_description(
+    data: &[u8],
+    handle_bits: usize,
+    text: &str,
+) -> Result<(Vec<u8>, usize), StringStreamError> {
+    let ss = parse(data, handle_bits)?;
+    if ss.strings.len() < 4 || !ss.strings[0].text.starts_with("AeccImp") {
+        return Err(StringStreamError::Malformed(
+            "no AeccImp class string at the start".into(),
+        ));
+    }
+    if ss.strings[1].text != ss.strings[2].text {
+        return Err(StringStreamError::Malformed(
+            "description copies differ".into(),
+        ));
+    }
+    let text = text.replace("\r\n", "\n").replace('\n', "\r\n");
+    let (d, hb) = replace(data, handle_bits, 1, &text)?;
+    replace(&d, hb, 2, &text)
+}
+
+/// The description (string 1), if the stream has the alignment layout.
+pub fn description(data: &[u8], handle_bits: usize) -> Option<String> {
+    let ss = parse(data, handle_bits).ok()?;
+    (ss.strings.len() >= 4 && ss.strings[0].text.starts_with("AeccImp"))
+        .then(|| ss.strings[1].text.clone())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -264,5 +295,48 @@ mod tests {
             assert_eq!(v, 0xABC);
             assert_eq!(raw::get_bit(&d2, 0), 1);
         }
+    }
+
+    #[test]
+    fn description_round_trip() {
+        let (d, hb) = record_n(&["AeccImpAlignment", "", "", "B", ""]);
+        let (d2, hb2) = set_description(&d, hb, "line one\nline two").unwrap();
+        let ss = parse(&d2, hb2).unwrap();
+        assert_eq!(ss.strings[1].text, "line one\r\nline two");
+        assert_eq!(ss.strings[2].text, ss.strings[1].text);
+        assert_eq!(ss.strings[3].text, "B");
+        assert_eq!(raw::object_name(&d2).as_deref(), Some("B"));
+        assert_eq!(
+            description(&d2, hb2).as_deref(),
+            Some("line one\r\nline two")
+        );
+    }
+
+    fn record_n(strs: &[&str]) -> (Vec<u8>, usize) {
+        let mut out = vec![1u8, 0, 1];
+        let start = out.len();
+        for s in strs {
+            let u: Vec<u16> = s.encode_utf16().collect();
+            if u.is_empty() {
+                push_bits(&mut out, 0b10, 2);
+            } else {
+                push_bits(&mut out, 0b01, 2);
+                push_bits(&mut out, u.len() as u64, 8);
+            }
+            for c in u {
+                push_le16(&mut out, c);
+            }
+        }
+        let size = out.len() - start;
+        push_le16(&mut out, size as u16);
+        out.push(1);
+        let de = out.len();
+        push_bits(&mut out, 0x5A, 8);
+        let mut b = vec![0u8; out.len().div_ceil(8)];
+        for (i, x) in out.iter().enumerate() {
+            b[i / 8] |= x << (7 - i % 8);
+        }
+        let hb = b.len() * 8 - de;
+        (b, hb)
     }
 }

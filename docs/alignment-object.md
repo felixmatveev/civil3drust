@@ -59,6 +59,9 @@ owner for this study, or generated from them. All are in
 | S36 | `S24_renamed_A.dwg` (generated) | S24 with the alignment renamed `A`. |
 | S37 | `S24_renamed_long.dwg` (generated) | S24 with the alignment renamed to a 65-character name. |
 | S38 | `S24_created_B.dwg` (generated) | S24 plus a created alignment named `B`. |
+| S39–S41 | `S36/S37/S38_civ3d_resaved.dwg` | S36–S38 opened in Civil 3D (AUDIT 0 errors each), saved. |
+| S42 | `S41_descriptions.dwg` | S41 with descriptions entered in Civil 3D for both alignments. |
+| S43 | `S41_descriptions_generated.dwg` (generated) | S41 with the same descriptions set by civil3drust. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -811,19 +814,26 @@ the end of the data stream (public ODA layout, confirmed in every sample):
   code units; `10` for empty; `00` + 16 bits for longer) followed by the
   **UTF-16LE code units**.
 
-Alignment strings, in order: `AeccImpAlignment`, `""`, `""`, the **name**,
-then 5–11 empty strings (count varies by record). In S9 and S22, after
-edits made in Civil 3D, an extra string — the user name `felix` — sits
-before the name (`raw::object_name` takes the fifth string when it is
-non-empty). Open: whether the string after the name is the description
-(a sample with a description would tell).
+Alignment strings, in order: `AeccImpAlignment`, the **description
+twice** (empty unless set), the **name**, then 5–11 empty strings (count
+varies by record). In S9 and S22, after edits made in Civil 3D, an extra
+string — the user name `felix` — sits before the name (`raw::object_name`
+takes the fifth string when it is non-empty).
+
+**Description (S41 → S42).** Typing a description in Civil 3D changes only
+strings 1 and 2 (identical copies; line breaks stored as `\r\n`) and the
+stream size: every bit before the string stream and the whole handle stream
+are unchanged. `string_stream::set_description` writes both copies; S43
+(S41 + the same descriptions by civil3drust) has both alignment records
+byte-identical to S42's.
 
 `string_stream::set_name` rewrites the name's length and code units,
 recomputes the size field, and moves the rest of the stream, the size,
 the flag and the handle stream as a block; the record grows or shrinks.
 `examples/set_name.rs` renames an alignment; `create_alignment` now accepts
 any non-empty name. S36 (`A`), S37 (65 characters) and S38 (created `B`)
-await Civil 3D.
+all open with AUDIT 0 errors and keep their names through a Civil 3D save
+(S39–S41).
 
 ## Open questions
 

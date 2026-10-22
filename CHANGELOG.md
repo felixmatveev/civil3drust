@@ -38,11 +38,15 @@ versions follow [Semantic Versioning](https://semver.org/).
 - `string_stream` module: parses a record's string stream (flag, 16-bit
   size, bit-coded length + UTF-16 strings) and replaces a string of any
   length (`set_name`). `examples/set_name.rs` renames an alignment;
-  `create_alignment` accepts any non-empty name. Samples S36–S38.
+  `create_alignment` accepts any non-empty name. Samples S36–S38 (AUDIT
+  0 errors in Civil 3D; re-saves S39–S41).
+- `string_stream::set_description` / `description`: the description is
+  stored twice right after the class string. `set_name --description`.
+  S42 (Civil 3D) vs S43 (generated): identical alignment records.
 
 ### Fixed
 - `raw::object_name` reads the name from the string stream structure
-  (class string, two empty strings, optional user name, name), so short
+  (class string, description twice, optional user name, name), so short
   names like `A` are found and the user name `felix` in S9/S22 is no
   longer reported as the name.
 - `set_pis` / `set_tangent_length` / `create_alignment` now update the

@@ -343,13 +343,14 @@ pub fn strings_after_impl(data: &[u8]) -> Vec<String> {
 
 /// Object name from the string stream.
 ///
-/// First tries the structure seen in every alignment record (S1–S35,
-/// `string_stream`): the implementation class string `AeccImp…`, two empty
-/// strings, an optional user name (present in S9 and S22, after edits in
-/// Civil 3D), then the name, then (usually empty) further strings; each is a
-/// bit-coded length + UTF-16 code units. When the fifth string is non-empty
-/// the fourth is the user name and the fifth the object name. Falls back to
-/// the last plain string after the class name.
+/// First tries the structure seen in every alignment record (S1–S38,
+/// `string_stream`): the implementation class string `AeccImp…`, the
+/// description twice (empty unless set, S38 description file), an optional
+/// user name (present in S9 and S22, after edits in Civil 3D), then the
+/// name, then (usually empty) further strings; each is a bit-coded length +
+/// UTF-16 code units. When the fifth string is non-empty the fourth is the
+/// user name and the fifth the object name. Falls back to the last plain
+/// string after the class name.
 pub fn object_name(data: &[u8]) -> Option<String> {
     structured_name(data).or_else(|| strings_after_impl(data).pop())
 }
@@ -378,11 +379,7 @@ fn structured_name(data: &[u8]) -> Option<String> {
         strings.push(String::from_utf16(&units).ok()?);
         bit = chars + 16 * n;
     }
-    if strings.len() < 4
-        || !strings[0].starts_with("AeccImp")
-        || !strings[1].is_empty()
-        || !strings[2].is_empty()
-    {
+    if strings.len() < 4 || !strings[0].starts_with("AeccImp") || strings[1] != strings[2] {
         return None;
     }
     let name = match strings.get(4) {

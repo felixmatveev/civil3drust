@@ -1,7 +1,10 @@
 //! Rename a Civil 3D alignment (any name length) and save the drawing.
 //!
 //! Usage:
-//!   cargo run --release --example set_name -- in.dwg out.dwg <alignment> <new name>
+//!   cargo run --release --example set_name -- in.dwg out.dwg <alignment> <new name> [--description "text"]
+//!
+//! Use `-` as the new name to keep the current one (e.g. to set only the
+//! description). `\n` in the description becomes a line break.
 //!
 //! `<alignment>` is the current name or hex handle. The name's string in
 //! the record's string stream is rewritten and the stream size updated
@@ -16,9 +19,19 @@ fn fail(msg: impl std::fmt::Display) -> ! {
 }
 
 fn main() {
-    let a: Vec<String> = std::env::args().collect();
+    let mut a: Vec<String> = std::env::args().collect();
+    let mut description = None;
+    if let Some(i) = a.iter().position(|x| x == "--description") {
+        if i + 1 >= a.len() {
+            fail("--description needs a value");
+        }
+        description = Some(a[i + 1].replace("\\n", "\n"));
+        a.drain(i..=i + 1);
+    }
     if a.len() != 5 {
-        eprintln!("usage: set_name <in.dwg> <out.dwg> <alignment> <new name>");
+        eprintln!(
+            "usage: set_name <in.dwg> <out.dwg> <alignment> <new name|-> [--description \"text\"]"
+        );
         std::process::exit(2);
     }
     let mut o = raw::open(&a[1]).unwrap_or_else(|e| fail(e));
@@ -33,13 +46,21 @@ fn main() {
         })
         .unwrap_or_else(|| fail(format!("no alignment '{}'", a[3])));
     let old = raw::object_name(&rec.data).unwrap_or_else(|| fail("alignment has no name"));
-    let (bytes, hb) = string_stream::set_name(&rec.data, rec.handle_bits, &old, &a[4])
+    let new_name = if a[4] == "-" {
+        old.clone()
+    } else {
+        a[4].clone()
+    };
+    let (mut bytes, mut hb) = string_stream::set_name(&rec.data, rec.handle_bits, &old, &new_name)
         .unwrap_or_else(|e| fail(e));
+    if let Some(d) = &description {
+        (bytes, hb) = string_stream::set_description(&bytes, hb, d).unwrap_or_else(|e| fail(e));
+    }
     println!(
         "[{:X}] '{}' -> '{}': {} -> {} bytes",
         rec.handle,
         old,
-        a[4],
+        new_name,
         rec.data.len(),
         bytes.len()
     );
@@ -57,11 +78,12 @@ fn main() {
         let ss = string_stream::parse(&r.data, r.handle_bits).unwrap_or_else(|e| fail(e));
         let d = civil3drust::aecc_elements::decode_elements(&r).unwrap_or_else(|e| fail(e));
         println!(
-            "  [{:X}] {:?}  length {:.4}  strings {}",
+            "  [{:X}] {:?}  length {:.4}  strings {}  description {:?}",
             r.handle,
             d.name.as_deref().unwrap_or("?"),
             d.length(),
-            ss.strings.len()
+            ss.strings.len(),
+            ss.strings.get(1).map(|s| s.text.as_str()).unwrap_or("")
         );
     }
 }
