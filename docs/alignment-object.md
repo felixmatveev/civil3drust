@@ -46,6 +46,8 @@ owner for this study, or generated from them. All are in
 | S23 | `S21_line_on_generated.dwg` (generated) | S21 with component 0 of `TEST STYLE` turned on by `examples/style_components`. |
 | S24 | `ZERO_CIVIL.dwg` | Owner's simplified, purged base: one alignment (S15 geometry) using `TEST STYLE`. |
 | S25 | `ZERO_CIVIL_second_alignment.dwg` | S24 plus a second alignment, `Alignment - (2)`, created in Civil 3D from a polyline drawn (100,100) → (0,100), style `TEST STYLE`; saved. Creation sample A. |
+| S26 | `S24_created_alignment.dwg` (generated) | S24 plus `civil3drust - 1`, a tangent (0,−100) → (200,−100), created by `examples/create_alignment` with S25 as donor (companion FB2, alignment FB3, label group FB4). |
+| S27 | `S24_created_alignment_no_label_group.dwg` (generated) | As S26 but without the station-equation label group. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -628,6 +630,34 @@ So creating an alignment needs at minimum: the alignment record, its
 companion, the registry entry, and (probably) the station-equation label
 group. Whether Civil 3D accepts a file without the label group, and with
 the name counter and settings untouched, is the next experiment.
+
+## First generated alignment: S26, S27
+
+`aecc_create::create_alignment` (D-021) adds an alignment to S24 by
+copying S25's four creation records (companion, alignment, label group,
+registry) and turning them into a new alignment:
+
+1. New handles from the target's handle seed, in Civil 3D's order:
+   companion FB2, alignment FB3, label group FB4. Each record's own handle
+   (`0x02` + 2 bytes at bit 18) is patched.
+2. References between them retargeted in place: alignment → companion
+   (twice), companion → registry (`own−off`, offset recomputed) and →
+   alignment, label group → alignment, registry soft-owner → companion.
+3. A new 32-hex-digit ID string written over the donor's in the companion
+   and in the registry (the only two places S25 stores it).
+4. Name `civil3drust - 1` written over `Alignment - (2)` (same length) and
+   the tangent moved to (0,−100) → (200,−100) with `set_pis`.
+5. The companion inserted as a raw object owned by the registry, the
+   alignment and label group added to model space, and the registry's
+   bytes replaced by the patched two-entry version.
+
+Every record keeps its size. Read back, S26 has both alignments decoding,
+and all references resolve. S27 is the same without the label group, to
+see whether Civil 3D requires it.
+
+Not touched (S25 showed them changing, but they look like bookkeeping):
+the name counter in `AECC_NAME_TEMPLATES_NODE` and the Create Alignment
+command's last-used settings.
 
 ## Open questions
 

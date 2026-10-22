@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `aecc_create::create_alignment`: adds a new alignment to a drawing by
+  transplanting the records of a donor drawing (target + one Civil 3D
+  alignment) with new handles, a new ID string, a new name and PIs; the
+  label group is optional. `handle_refs::retarget_any` retargets relative
+  references too. `examples/create_alignment.rs`. Samples S26/S27
+  (generated, with/without label group). D-021.
 - Sample S24 (`ZERO_CIVIL`): the owner's simplified, purged base drawing,
   read without failsafe mode. docs: "Base drawing: S24".
 - Sample S25: S24 plus an alignment created in Civil 3D (creation sample

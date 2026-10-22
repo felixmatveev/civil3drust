@@ -104,6 +104,30 @@ pub fn retarget(data: &mut [u8], r: &HandleRef, handle: u64) -> bool {
     true
 }
 
+/// Rewrite reference `r` (absolute or relative, codes 2–5, 0xA, 0xC) in a
+/// record whose own handle is `own` so that it points at `target`, keeping
+/// its code and byte count. Returns false (and changes nothing) if the new
+/// stored value would need a different number of bytes, or the code can't
+/// express `target` (6/8 only mean own±1).
+pub fn retarget_any(data: &mut [u8], r: &HandleRef, own: u64, target: u64) -> bool {
+    let value = match r.code {
+        2..=5 => return retarget(data, r, target),
+        0x6 => return target == own.wrapping_add(1),
+        0x8 => return target == own.wrapping_sub(1),
+        0xA if target > own => target - own,
+        0xC if target < own => own - target,
+        _ => return false,
+    };
+    let n = r.counter as usize;
+    if n == 0 || (n < 8 && value >> (8 * n) != 0) || (n > 1 && value >> (8 * (n - 1)) == 0) {
+        return false;
+    }
+    for i in 0..n {
+        raw::set_byte(data, r.bit + 8 + 8 * i, (value >> (8 * (n - 1 - i))) as u8);
+    }
+    true
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -149,5 +173,16 @@ mod tests {
         assert!(!retarget(&mut d, &refs[5], 0x42)); // fits 1 byte: not minimal
         assert!(!retarget(&mut d, &refs[5], 0x12345));
         assert!(!retarget(&mut d, &refs[1], 0x10)); // zero-length null ref
+    }
+
+    #[test]
+    fn retarget_relative() {
+        // own-off (C.2): own 0xFB7, offset 0x3F7 -> 0xBC0
+        let mut d = [0xC2, 0x03, 0xF7];
+        let r = parse(&d, 0, 24, 0xFB7)[0];
+        assert_eq!(r.handle, 0xBC0);
+        assert!(retarget_any(&mut d, &r, 0xFC0, 0xBC0));
+        assert_eq!(parse(&d, 0, 24, 0xFC0)[0].handle, 0xBC0);
+        assert!(!retarget_any(&mut d, &r, 0xBD0, 0xBC0)); // offset 0x10: 1 byte
     }
 }

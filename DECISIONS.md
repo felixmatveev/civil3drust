@@ -361,3 +361,22 @@ style's modified-time stamp (Civil 3D does; S23 shows we can leave it).
 long-term, but needs many more samples; the marker approach is checked on
 every alignment style in S1–S24 and will be replaced when the layout is
 decoded.
+
+## D-021: First alignment creation by transplanting a donor's records
+Date: 2026-10-22 · Status: accepted (interim)
+
+**Context.** Creating an alignment adds four records (S24 → S25). The
+companion registry's entry layout (an ID string plus a reference and some
+bits) and parts of the alignment record aren't decoded, so they can't be
+written from scratch yet.
+
+**Decision.** `create_alignment` takes a donor drawing — the target plus
+one alignment made in Civil 3D, from the owner's own samples — and copies
+those records into the target, patching handles, references, the ID
+string, the name and the PIs. The name must keep its length and the PI
+count must match, so no record changes size. The name counter and command
+settings are left alone.
+
+**Alternatives.** Decode the registry and alignment fully first: the
+right end state, but a transplant tells us now whether Civil 3D accepts
+records we place, which de-risks the from-scratch writer.
