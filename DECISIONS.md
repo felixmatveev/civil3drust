@@ -420,3 +420,21 @@ remains for experiments. Parcels are out of scope until needed.
 **Alternatives.** Decode the companion and registry entry now: effort
 better spent on alignment creation itself (any name length, PI count,
 curves) since nothing user-visible depends on it yet.
+
+## D-024: Alignment geometry rebuilt from PIs, not patched
+Date: 2026-10-22 · Status: accepted
+
+**Context.** Same-size patches (D-019, D-021) can't change the number of
+elements. S44 showed that only the graphics, the element count, the
+element records and a fixed element-0 cache depend on the geometry.
+
+**Decision.** `aecc_build::set_geometry` rebuilds those parts from a PI
+list with optional free-curve radii and copies every other bit of the
+donor record unchanged (graphics: the donor's leading attribute chunks plus
+one polyline chunk per tangent; a placeholder is kept as is). New
+alignments get a fresh identity value. The layout is checked before writing
+and the edit refused if a field isn't where expected.
+
+**Alternatives.** Keep requiring a donor with the same PI count: not
+usable. Write the whole record from scratch: the unknown regions (section
+2, the post-cache block) would have to be invented rather than copied.

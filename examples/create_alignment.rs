@@ -5,8 +5,8 @@
 //!
 //! `donor.dwg` is `target.dwg` plus one alignment created in Civil 3D (e.g.
 //! S25 for S24). Its records are copied into the target with new handles,
-//! a new ID string, the given name (same length as the donor alignment's
-//! name) and the given PIs (same count as the donor alignment's).
+//! a new ID string, the given name and the given PIs (any number). A PI
+//! written `x,y,r` gets a free curve (fillet) of radius `r`.
 
 use civil3drust::aecc_create::{create_alignment, CreateOptions};
 use civil3drust::aecc_elements::decode_elements;
@@ -18,20 +18,32 @@ fn fail(msg: impl std::fmt::Display) -> ! {
     std::process::exit(1);
 }
 
-fn parse_pis(s: &str) -> Vec<Point2> {
-    s.split_whitespace()
-        .map(|p| {
-            let (x, y) = p
-                .split_once(',')
-                .unwrap_or_else(|| fail(format!("bad point '{p}'")));
-            Point2::new(
-                x.parse()
-                    .unwrap_or_else(|_| fail(format!("bad x in '{p}'"))),
-                y.parse()
-                    .unwrap_or_else(|_| fail(format!("bad y in '{p}'"))),
-            )
-        })
-        .collect()
+/// PIs as "x,y" or "x,y,radius"; returns the PIs and per-interior-PI radii.
+fn parse_pis(s: &str) -> (Vec<Point2>, Vec<Option<f64>>) {
+    let mut pis = Vec::new();
+    let mut radii = Vec::new();
+    let items: Vec<&str> = s.split_whitespace().collect();
+    for (i, p) in items.iter().enumerate() {
+        let f: Vec<f64> = p
+            .split(',')
+            .map(|v| {
+                v.parse()
+                    .unwrap_or_else(|_| fail(format!("bad number in '{p}'")))
+            })
+            .collect();
+        if f.len() < 2 || f.len() > 3 {
+            fail(format!("point '{p}' must be x,y or x,y,r"));
+        }
+        pis.push(Point2::new(f[0], f[1]));
+        let interior = i > 0 && i + 1 < items.len();
+        if f.len() == 3 && !interior {
+            fail(format!("'{p}': only interior PIs can have a curve"));
+        }
+        if interior {
+            radii.push(f.get(2).copied());
+        }
+    }
+    (pis, radii)
 }
 
 fn main() {
@@ -58,11 +70,13 @@ fn main() {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_nanos() as u64)
         .unwrap_or(1);
+    let (pis, radii) = parse_pis(&a[5]);
     let c = create_alignment(
         &mut target.doc,
         &donor.doc,
         &a[4],
-        &parse_pis(&a[5]),
+        &pis,
+        &radii,
         seed,
         CreateOptions {
             label_group: !no_label,

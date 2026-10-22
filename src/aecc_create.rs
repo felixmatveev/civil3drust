@@ -19,8 +19,10 @@
 //!   order, as Civil 3D did), patched in each record's own-handle field
 //!   (bit 26) and in every reference between them;
 //! - a new ID string in the companion and the registry;
-//! - the requested name (any length, via [`string_stream::set_name`]) and
-//!   PIs (same count as the donor's, via [`set_pis`]).
+//! - the requested name (any length, via [`string_stream::set_name`]),
+//!   PIs (any number) and free arcs at interior PIs, via
+//!   [`aecc_build::set_geometry`], and a fresh identity value
+//!   ([`aecc_build::set_identity`]).
 //!
 //! The label group and the parcel entry (companion + registry entry) can
 //! be left out ([`CreateOptions`]) to test whether Civil 3D requires them;
@@ -32,9 +34,8 @@
 //! Only the alignment record can change size (name). The style, layer and
 //! label style are the donor's and must exist in the target.
 
-use crate::aecc_alignment_edit::{set_pis, EditError};
 use crate::aecc_alignment_refs::alignment_refs;
-use crate::aecc_elements::decode_elements;
+use crate::aecc_build;
 use crate::alignment::Point2;
 use crate::handle_refs::{self, HandleRef};
 use crate::raw::{self, RawRecord};
@@ -65,7 +66,7 @@ pub enum CreateError {
     },
     /// A new handle or offset doesn't fit the stored byte count.
     HandleSize(u64),
-    Geometry(EditError),
+    Geometry(String),
 }
 
 impl fmt::Display for CreateError {
@@ -225,6 +226,7 @@ pub fn create_alignment(
     donor: &CadDocument,
     name: &str,
     pis: &[Point2],
+    radii: &[Option<f64>],
     seed: u64,
     opts: CreateOptions,
 ) -> Result<Created, CreateError> {
@@ -328,19 +330,27 @@ pub fn create_alignment(
     if retarget_all(&mut align, &arefs, align_h, d_comp_h, comp_h)? != 2 {
         return Err(donor_err("alignment doesn't reference its companion twice"));
     }
+    // Geometry (any PI count, free arcs), then a fresh identity value.
     let rec = RawRecord {
         handle: align_h,
         class: ALIGNMENT.into(),
         is_entity: true,
-        data: align.clone(),
+        data: align,
         handle_bits: d_align.handle_bits,
     };
-    let decoded = decode_elements(&rec).map_err(|e| donor_err(e.to_string()))?;
-    set_pis(&mut align, &decoded, pis).map_err(CreateError::Geometry)?;
+    let (bytes, hb, _) = aecc_build::set_geometry(&rec, pis, radii)
+        .map_err(|e| CreateError::Geometry(e.to_string()))?;
+    let mut align = bytes;
+    let rec = RawRecord {
+        data: align.clone(),
+        handle_bits: hb,
+        ..rec
+    };
+    aecc_build::set_identity(&rec, &mut align, seed.rotate_left(17))
+        .map_err(|e| donor_err(e.to_string()))?;
     // Name last among data edits: it can change the record size.
-    let (bytes, mut align_hb) =
-        string_stream::set_name(&align, d_align.handle_bits, &old_name, name)
-            .map_err(|e| donor_err(e.to_string()))?;
+    let (bytes, mut align_hb) = string_stream::set_name(&align, hb, &old_name, name)
+        .map_err(|e| donor_err(e.to_string()))?;
     align = bytes;
     if !opts.parcel_entry {
         let idx: Vec<usize> = handle_refs::of_record(&d_align)

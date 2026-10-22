@@ -32,6 +32,7 @@ pub mod aecc_alignment;
 pub mod aecc_alignment_edit;
 pub mod aecc_alignment_refs;
 pub mod aecc_arc_edit;
+pub mod aecc_build;
 pub mod aecc_create;
 pub mod aecc_elements;
 pub mod aecc_style;

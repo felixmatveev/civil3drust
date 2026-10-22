@@ -16,6 +16,7 @@ fn create_in_s24_from_s25() {
         &donor.doc,
         "civil3drust - 1",
         &pis,
+        &[],
         7,
         CreateOptions::default(),
     )
@@ -69,29 +70,84 @@ fn create_in_s24_from_s25() {
 }
 
 #[test]
-fn refuses_empty_name_and_wrong_pi_count() {
+fn refuses_empty_name_and_bad_geometry() {
     let donor = raw::open("samples/S25_ZERO_CIVIL_second_alignment.dwg").unwrap();
     let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
     let pis = [Point2::new(0.0, 0.0), Point2::new(1.0, 0.0)];
-    assert!(create_alignment(
+    let d = CreateOptions::default();
+    assert!(create_alignment(&mut t.doc, &donor.doc, "", &pis, &[], 1, d).is_err());
+    let one = [Point2::new(0.0, 0.0)];
+    assert!(create_alignment(&mut t.doc, &donor.doc, "X", &one, &[], 1, d).is_err());
+    let three = [pis[0], Point2::new(10.0, 0.0), Point2::new(10.0, 10.0)];
+    // R = 1000 needs a 1000-ft tangent on a 10-ft leg.
+    assert!(create_alignment(&mut t.doc, &donor.doc, "X", &three, &[Some(1000.0)], 1, d).is_err());
+}
+
+#[test]
+fn create_multi_pi_with_curves() {
+    let donor = raw::open("samples/S25_ZERO_CIVIL_second_alignment.dwg").unwrap();
+    let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+    let pis = [
+        Point2::new(0.0, -200.0),
+        Point2::new(100.0, -200.0),
+        Point2::new(200.0, -150.0),
+        Point2::new(300.0, -150.0),
+        Point2::new(400.0, -250.0),
+    ];
+    let radii = [Some(50.0), None, Some(30.0)];
+    let c = create_alignment(
         &mut t.doc,
         &donor.doc,
-        "",
+        "C",
         &pis,
-        1,
-        CreateOptions::default()
+        &radii,
+        9,
+        CreateOptions::default(),
     )
-    .is_err());
-    let three = [pis[0], pis[1], Point2::new(1.0, 1.0)];
-    assert!(create_alignment(
-        &mut t.doc,
-        &donor.doc,
-        "civil3drust - 1",
-        &three,
-        1,
-        CreateOptions::default()
-    )
-    .is_err());
+    .unwrap();
+    let dir = std::env::temp_dir().join("civil3drust-create-multi.dwg");
+    acadrust::DwgWriter::write_to_file(&dir, &t.doc).unwrap();
+    let re = raw::open(&dir).unwrap();
+    let recs = raw::records(&re.doc, "AECC_ALIGNMENT");
+    let a = recs.iter().find(|r| r.handle == c.alignment).unwrap();
+    let d = decode_elements(a).unwrap();
+    assert_eq!(d.name.as_deref(), Some("C"));
+    let kinds: String = d
+        .elements
+        .iter()
+        .map(|e| match e.segment {
+            civil3drust::aecc_elements::Segment::Line { .. } => 'T',
+            _ => 'A',
+        })
+        .collect();
+    assert_eq!(kinds, "TATTAT");
+    let s = d.elements[0].segment.start();
+    let e = d.elements.last().unwrap().segment.end();
+    assert_eq!((s.x, s.y, e.x, e.y), (0.0, -200.0, 400.0, -250.0));
+    // Identity differs from the donor's alignment.
+    let id_of = |r: &raw::RawRecord| -> Vec<u8> {
+        let dd = decode_elements(r).unwrap();
+        let end = dd
+            .elements
+            .iter()
+            .map(|e| match &e.record {
+                civil3drust::aecc_elements::Element::Tangent(t) => t.coords_bit + 256,
+                civil3drust::aecc_elements::Element::Arc(a) => a.end_bit,
+            })
+            .max()
+            .unwrap();
+        (0..16)
+            .map(|i| raw::get_byte(&r.data, end + 16 + 8 * i))
+            .collect()
+    };
+    let dn = raw::records(&donor.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0xFB8)
+        .unwrap();
+    let (mine, theirs) = (id_of(a), id_of(&dn));
+    assert_ne!(mine[..14], theirs[..14]);
+    assert_eq!(mine[14..], theirs[14..]);
+    let _ = std::fs::remove_file(dir);
 }
 
 #[test]
@@ -103,7 +159,16 @@ fn create_without_parcel_entry() {
         label_group: false,
         parcel_entry: false,
     };
-    let c = create_alignment(&mut t.doc, &donor.doc, "civil3drust - 1", &pis, 7, opts).unwrap();
+    let c = create_alignment(
+        &mut t.doc,
+        &donor.doc,
+        "civil3drust - 1",
+        &pis,
+        &[],
+        7,
+        opts,
+    )
+    .unwrap();
     assert_eq!((c.companion, c.label_group), (0, 0));
     let dir = std::env::temp_dir().join("civil3drust-create-noparcel.dwg");
     acadrust::DwgWriter::write_to_file(&dir, &t.doc).unwrap();
@@ -155,6 +220,7 @@ fn create_with_one_letter_name() {
         &donor.doc,
         "B",
         &pis,
+        &[],
         3,
         CreateOptions::default(),
     )
@@ -203,4 +269,75 @@ fn rename_s24_alignment_any_length() {
             15
         );
     }
+}
+
+/// The two-tangent alignment civil3drust writes equals the one Civil 3D
+/// wrote for the same polyline (S44 FF3) from the element count to the
+/// string stream, except for the two copies of the identity value.
+#[test]
+fn two_tangents_match_civil3d_s44() {
+    use civil3drust::{aecc_elements::Element, proxy_graphics as pg, string_stream};
+    let donor = raw::open("samples/S25_ZERO_CIVIL_second_alignment.dwg").unwrap();
+    let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+    let pis = [
+        Point2::new(0.0, -200.0),
+        Point2::new(100.0, -200.0),
+        Point2::new(200.0, -150.0),
+    ];
+    let c = create_alignment(
+        &mut t.doc,
+        &donor.doc,
+        "T",
+        &pis,
+        &[],
+        5,
+        CreateOptions::default(),
+    )
+    .unwrap();
+    let ours = raw::records(&t.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == c.alignment)
+        .unwrap();
+    let s44 = raw::open("samples/S44_S25_plus_two_tangent_alignment.dwg").unwrap();
+    let theirs = raw::records(&s44.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0xFF3)
+        .unwrap();
+    let span = |r: &raw::RawRecord| -> (Vec<u8>, Vec<u8>, usize) {
+        let g = pg::find(&r.data, 4096).unwrap();
+        let d = decode_elements(r).unwrap();
+        let bounds: Vec<(usize, usize)> = d
+            .elements
+            .iter()
+            .map(|e| match &e.record {
+                Element::Tangent(t) => (t.header_bit, t.coords_bit + 256),
+                Element::Arc(a) => (a.header_bit, a.end_bit),
+            })
+            .collect();
+        let first = bounds.iter().map(|b| b.0).min().unwrap() - 21;
+        let end = bounds.iter().map(|b| b.1).max().unwrap();
+        let ss = string_stream::parse(&r.data, r.handle_bits).unwrap();
+        let bits = |a: usize, b: usize| {
+            (a..b)
+                .map(|i| raw::get_bit(&r.data, i))
+                .collect::<Vec<u8>>()
+        };
+        (
+            bits(g.start_bit, g.end_bit()),
+            bits(first, ss.start),
+            end - first,
+        )
+    };
+    let (g1, mut e1, end1) = span(&ours);
+    let (g2, mut e2, end2) = span(&theirs);
+    assert_eq!(g1, g2);
+    assert_eq!(end1, end2);
+    assert_eq!(e1.len(), e2.len());
+    // Mask the identity copies (after the elements, and 717 bits later).
+    for v in [&mut e1, &mut e2] {
+        for k in [end1 + 16, end1 + 733] {
+            v[k..k + 128].iter_mut().for_each(|b| *b = 0);
+        }
+    }
+    assert_eq!(e1, e2);
 }

@@ -62,6 +62,9 @@ owner for this study, or generated from them. All are in
 | S39–S41 | `S36/S37/S38_civ3d_resaved.dwg` | S36–S38 opened in Civil 3D (AUDIT 0 errors each), saved. |
 | S42 | `S41_descriptions.dwg` | S41 with descriptions entered in Civil 3D for both alignments. |
 | S43 | `S41_descriptions_generated.dwg` (generated) | S41 with the same descriptions set by civil3drust. |
+| S44 | `S25_plus_two_tangent_alignment.dwg` | S25 plus `Alignment - (3)` from a 3-vertex polyline (two tangents). |
+| S45 | `S24_created_two_tangents.dwg` (generated) | S24 plus `Two tangents`, same PIs as S44's, by civil3drust. |
+| S46 | `S24_created_five_pis_two_curves.dwg` (generated) | S24 plus `C`: five PIs, R50 and R30 free curves. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -834,6 +837,45 @@ the flag and the handle stream as a block; the record grows or shrinks.
 any non-empty name. S36 (`A`), S37 (65 characters) and S38 (created `B`)
 all open with AUDIT 0 errors and keep their names through a Civil 3D save
 (S39–S41).
+
+## Element list, cache and graphics (S44 and S1–S15)
+
+Comparing the one-tangent `Alignment - (2)` (FB8) with the two-tangent
+`Alignment - (3)` (FF3) in S44, and the curve samples:
+
+- **Graphics size.** After the object header: bits 42–43 EED size `10`
+  (none), bit 44 has-graphics `1`, then from bit 45 a bit-coded long long
+  (3-bit byte count + little-endian bytes) — the proxy graphics size in
+  bytes (FB8 156, FF3 216, `Alignment - (1)` 312). With `TEST STYLE` the
+  graphics are seven attribute chunks followed by one 60-byte, 2-point
+  polyline chunk (opcode 6) per tangent; arcs aren't drawn by that style.
+- **Element count.** A BL (`01` + byte) right before the first element:
+  1 (S1, S2, FB8, S10), 2 (FF3), 3 (S5), 4 (S11, S24).
+- **Kind prefix.** Each element record is preceded by 11 bits:
+  `00000000010` for a tangent, `00000000100` for an arc (S10, S11).
+  Records are stored in ID order; tangents get IDs 1…n, arcs the next IDs
+  (S11: T1 T2 T3 A4, path T1 A4 T2 T3).
+- **After the last record:** 16 bits, the alignment's **identity value**
+  (128 bits; the same value is stored again ~717 bits later; stable through
+  edits — S5/S6/S11 — distinct per alignment, found nowhere else; the last
+  two bytes are `40 aa` in every sample), then bits up to 161 after the
+  records, the BD station at the end of element 0, and the **element-0
+  cache**: BL 1, BL 0, BL id of the element after element 0, then six raw
+  doubles — element 0's start, its end (the PC when a curve follows), and
+  the start again. Nothing else in the record depends on the element
+  count; the rest is copied unchanged.
+
+`aecc_build::set_geometry` rebuilds the graphics (donor's attribute
+chunks + one polyline per tangent), the count, the element records and the
+cache from PIs and optional radii; `set_identity` writes a fresh identity
+value (both copies). From S24 + S25's one-tangent donor, S45 reproduces
+S44's two-tangent record exactly from the count to the string stream
+(test `two_tangents_match_civil3d_s44`) apart from the identity value; the
+graphics are identical too. Re-encoding S5 with R = 50 at PI 1 reproduces
+S11's four element records bit for bit.
+
+`create_alignment` now takes any number of PIs and free curves at interior
+PIs (`x,y,r` in `examples/create_alignment`).
 
 ## Open questions
 

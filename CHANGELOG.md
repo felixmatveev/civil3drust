@@ -44,7 +44,16 @@ versions follow [Semantic Versioning](https://semver.org/).
   stored twice right after the class string. `set_name --description`.
   S42 (Civil 3D) vs S43 (generated): identical alignment records.
 
+- `aecc_build` module: rewrite an alignment's geometry with any number of
+  tangents and free curves (graphics size + chunks, element count, kind
+  prefixes, records, element-0 end station and cache), and give it a fresh
+  identity value. `create_alignment` takes PIs of any count plus radii;
+  `examples/create_alignment` accepts `x,y,r` for curves. Samples S44
+  (Civil 3D two-tangent alignment), S45 (generated, equals S44's record
+  apart from the identity), S46 (five PIs, two curves).
+
 ### Fixed
+- Created alignments no longer reuse the donor alignment's identity value.
 - `raw::object_name` reads the name from the string stream structure
   (class string, description twice, optional user name, name), so short
   names like `A` are found and the user name `felix` in S9/S22 is no
