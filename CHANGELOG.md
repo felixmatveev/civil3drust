@@ -15,6 +15,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   (generated, with/without label group). D-021. Both open in Civil 3D
   with AUDIT 0 errors; re-saves S28/S29 show the label group is optional.
   D-022: no imitation of Autodesk's "TrustedDWG" marker.
+- docs: "The companion object's content" — it stores points of the
+  alignment's geometry; S28 shows Civil 3D accepted stale points.
 - Sample S24 (`ZERO_CIVIL`): the owner's simplified, purged base drawing,
   read without failsafe mode. docs: "Base drawing: S24".
 - Sample S25: S24 plus an alignment created in Civil 3D (creation sample

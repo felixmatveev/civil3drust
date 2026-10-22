@@ -675,6 +675,48 @@ Not touched (S25 showed them changing, but they look like bookkeeping):
 the name counter in `AECC_NAME_TEMPLATES_NODE` and the Create Alignment
 command's last-used settings.
 
+## The companion object's content (S1–S28)
+
+The companion is class `AECC_FEATURE_STYLE` (C++ `AeccDbFeatureStyle`,
+class number 1056 in S25; its registry BC0 is the same class, owned by
+BBF `AECC_ALIGNMENT_PARCEL_NODE`, `AeccDbAlignmentParcelNode`, 1055). In
+S25:
+
+- F9D (for `Alignment - (1)`), 231 bytes: object header, then bit-coded
+  doubles **200, 50, 0** (bits 356–489), a BD 1.0, about 30 bits, then
+  **400, 50, …** (from bit 522); further data; the ID string
+  `b4c9ce06…` at bit 1240; handle stream: `own−off` → BC0, soft pointer →
+  F9E, three nulls.
+- FB7 (for `Alignment - (2)`), 174 bytes: **100, 100, 0**, 1.0, …, then
+  a point with x = 0 (2-bit BD) and **100**; ID string `07ce2462…` at bit
+  785; handle stream `own−off` → BC0, soft pointer → FB8, three nulls.
+
+Full doubles found in the companion across samples (zeros are 2-bit BDs
+and don't show):
+
+| sample | alignment PIs | companion |
+|---|---|---|
+| S1, S2 | (0,0) → (100,0) | 100 |
+| S10 | arc (0,0) → (100,100) | 100, 100 |
+| S5 | (0,0) (100,0) (200,50) (300,50) | 300, 50, 100, 200, 50 |
+| S11 | S5 + R50 at PI 1 | 200, 50, 300, 50 |
+| S12 | S11 with R75 | 300, 50, 200, 50 |
+| S15 | S11, tangent 3 to (400,50) | 400, 50, 200, 50 |
+| S24/S25 F9D | as S15 | 200, 50, 400, 50 |
+| S25 FB7 | (100,100) → (0,100) | 100, 100, 100 |
+
+So the companion stores points of the alignment's geometry — the
+endpoints of the last tangent (or of the whole alignment when it has one
+element), order varying — and Civil 3D updates them when it edits the
+alignment. Its class name and its registry's owner suggest it is the
+alignment's entry in the parcel/site topology.
+
+**S28:** after Civil 3D opened and re-saved S26, the generated
+alignment's companion FB2 still holds the donor's points (100,100) /
+(0,100), not (0,−100) / (200,−100); it changed size (174 → 177 bytes) but
+those values were not refreshed, and AUDIT was clean. `create_alignment`
+should write the new geometry there too once the layout is pinned down.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
