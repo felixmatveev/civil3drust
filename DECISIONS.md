@@ -402,3 +402,21 @@ re-saved by Civil 3D no longer shows it.
 
 **Alternatives.** Reproducing the marker: misrepresents the file's origin,
 is not cleanroom knowledge we may use, and touches Autodesk's trademarks.
+
+## D-023: Parcel companion set aside
+Date: 2026-10-22 · Status: accepted
+
+**Context.** Every alignment has a parcel-topology companion
+(`AECC_FEATURE_STYLE`) and an entry in the registry owned by the alignment
+parcel node. Without it Civil 3D's AUDIT reports 2 errors (S30), but after
+AUDIT fixes them it accepts null companion references (S32: 0 errors on
+re-audit); its stored points are recomputed by AUDIT anyway.
+
+**Decision.** civil3drust doesn't decode or maintain the parcel companion
+for now. `create_alignment` keeps copying the donor's parcel entry by
+default (gives a clean AUDIT with no user action); `--no-parcel-entry`
+remains for experiments. Parcels are out of scope until needed.
+
+**Alternatives.** Decode the companion and registry entry now: effort
+better spent on alignment creation itself (any name length, PI count,
+curves) since nothing user-visible depends on it yet.

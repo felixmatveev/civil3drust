@@ -30,6 +30,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   adds (alignment, companion, registry entry, station-equation label
   group), their references, and which other changes are save noise.
 
+- `examples/swap_companions.rs` and sample S34 (experiment: two
+  alignments' parcel companions swapped). D-023: parcel companion set
+  aside (S32 re-audit: 0 errors).
+
 ### Fixed
 - `set_pis` / `set_tangent_length` / `create_alignment` now update the
   cached station at the end of the first element (first BD after the

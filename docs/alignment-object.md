@@ -54,6 +54,7 @@ owner for this study, or generated from them. All are in
 | S31 | `S30_civ3d_resaved.dwg` | S30 opened in Civil 3D (AUDIT: 2 errors found, not fixed), saved. |
 | S32 | `S30_audit_fixed.dwg` | S30 opened in Civil 3D, AUDIT with fixing, saved. |
 | S33 | `S24_created_alignment_v2.dwg` (generated) | As S26, generated after the end-station fix. |
+| S34 | `S25_companions_swapped.dwg` (generated) | S25 with the two alignments' parcel companions swapped. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -770,6 +771,18 @@ the first BD copy of the old end-of-element-0 station after the element
 records. Before the fix, S26/S27/S30 kept the donor's 99.99999999999999;
 S26 still audited clean, so a stale value there is not one of S30's two
 errors. S33 is S26 regenerated with the fix.
+
+**Re-audit of S32:** 0 errors. After AUDIT's fix, an alignment with null
+companion references and no parcel entry is accepted. The owner decided to
+set the parcel companion aside (D-023).
+
+## Experiment: swapped companions (S34)
+
+S25 with `Alignment - (1)` (F9E) pointed at FB7 and `Alignment - (2)`
+(FB8) at F9D, both references each, and the companions' back-pointers
+swapped to match (`examples/swap_companions`). Only those four records
+change, all same-size. Each parcel entry now holds the other alignment's
+points and ID string; the result in Civil 3D is pending.
 
 ## Open questions
 
