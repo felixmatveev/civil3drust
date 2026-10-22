@@ -63,8 +63,10 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S49 | `S49_S48_C_with_curves.dwg` | Civil 3D 2024 | S48 with free curves added to `C`: R50 at PI 1, R30 at PI 3; saved. Reference for S46. | 474891 | `8893150dda09717a` |
 | S50 | `S50_S24_created_C_v2.dwg` | generated | S46 regenerated after the fix (3 empty strings per arc, attribute chunks after arcs): equals S49's `C` in elements, strings and graphics apart from the identity, the 62-bit field and PC-station rounding. Opened in Civil 3D: AUDIT 0 errors. | 450048 | `b6aec3a18a620821` |
 | S51 | `S51_S50_civ3d_resaved.dwg` | Civil 3D 2024 | S50 opened (AUDIT 0 errors), saved; geometry and identity GUID kept. | 472836 | `55d10d4c2c411195` |
-| S52 | `S52_S44_created_D.dwg` | generated | S44 (three alignments, registry with three entries) plus `D` (0,−300) (150,−300) (250,−250, R40) (350,−250), template from S25 — the donor is no longer target + 1; registry entry added by `aecc_registry`. Not yet opened in Civil 3D. | 453160 | `657c743c043db7ce` |
-| S53 | `S53_S24_created_E1_E2.dwg` | generated | S24 plus two alignments created one after the other: `E1 tangents` (0,−400) (120,−400) (200,−350) and `E2 curves` (0,−500) (100,−500, R40) (200,−450) (300,−500, R25) (400,−500). Not yet opened in Civil 3D. | 450987 | `b220929ee8151802` |
+| S52 | `S52_S44_created_D.dwg` | generated | S44 (three alignments, registry with three entries) plus `D` (0,−300) (150,−300) (250,−250, R40) (350,−250), template from S25 — the donor is no longer target + 1; registry entry added by `aecc_registry`. Opened in Civil 3D: AUDIT 0 errors. | 453160 | `657c743c043db7ce` |
+| S53 | `S53_S24_created_E1_E2.dwg` | generated | S24 plus two alignments created one after the other: `E1 tangents` (0,−400) (120,−400) (200,−350) and `E2 curves` (0,−500) (100,−500, R40) (200,−450) (300,−500, R25) (400,−500). Opened in Civil 3D: AUDIT 0 errors. | 450987 | `b220929ee8151802` |
+| S54 | `S54_S52_civ3d_resaved.dwg` | Civil 3D 2024 | S52 opened (AUDIT 0 errors), saved. | 473836 | `0b638a28742c0d39` |
+| S55 | `S55_S53_civ3d_resaved.dwg` | Civil 3D 2024 | S53 opened (AUDIT 0 errors), saved (after S54, same session). | 474145 | `cd25f65e6108315c` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

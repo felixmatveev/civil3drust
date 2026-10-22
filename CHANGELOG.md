@@ -15,7 +15,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   a registry entry (new key, ID string) is added to the target. Options
   `style` and `template` (`--style`, `--template`). Own handles and handle
   streams are rewritten at any byte length (`handle_refs::set_own_handle`,
-  `rewrite_refs`). Samples S52 (S44 + D), S53 (S24 + two alignments).
+  `rewrite_refs`). Samples S52 (S44 + D), S53 (S24 + two alignments):
+  AUDIT 0 errors; re-saves S54/S55 (Civil 3D re-keys generated entries
+  from a session counter).
 - `create_alignment` takes `CreateOptions { label_group, parcel_entry }`;
   without the parcel entry no companion/registry entry is written and the
   alignment's companion references are nulled (`handle_refs::null_refs`

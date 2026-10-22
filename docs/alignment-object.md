@@ -72,6 +72,8 @@ owner for this study, or generated from them. All are in
 | S51 | `S50_civ3d_resaved.dwg` | S50 opened in Civil 3D (AUDIT 0 errors), saved. |
 | S52 | `S44_created_D.dwg` (generated) | S44 plus `D` (template from S25; registry entry added). |
 | S53 | `S24_created_E1_E2.dwg` (generated) | S24 plus two created alignments. |
+| S54 | `S52_civ3d_resaved.dwg` | S52 opened in Civil 3D (AUDIT 0 errors), saved. |
+| S55 | `S53_civ3d_resaved.dwg` | S53 opened in Civil 3D (AUDIT 0 errors), saved after S54. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -964,6 +966,15 @@ byte length (`handle_refs::set_own_handle`, `rewrite_refs`). The style can
 be chosen (`--style`); the label group is written only if the target has
 its label style. S52 adds `D` to S44 (three existing entries); S53 adds
 two alignments to S24 in a row.
+
+**Civil 3D result (S54, S55).** Both open with AUDIT 0 errors; re-saved,
+every alignment, companion and registry entry is kept, in ID-string order.
+Civil 3D **re-keys the generated entries** and leaves its own alone: `D`
+29F6 → 29FC (S54), `E1` C77 → 29FD and `E2` C78 → 29FE (S55, saved next in
+the same session). The new keys continue one counter across the two files,
+so keys come from a counter of the running Civil 3D session, and the key
+civil3drust writes only has to be unique until the next save (it also
+regenerates companions whose stored points are stale, cf. S35).
 
 ## Open questions
 
