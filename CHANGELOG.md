@@ -11,7 +11,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   without the parcel entry no companion/registry entry is written and the
   alignment's companion references are nulled (`handle_refs::null_refs`
   rebuilds a handle stream, the first record-size change). Example flag
-  `--no-parcel-entry`. Sample S30.
+  `--no-parcel-entry`. Sample S30: AUDIT reports 2 errors without the
+  parcel entry (S31 re-save), so it stays on by default.
 - `aecc_create::create_alignment`: adds a new alignment to a drawing by
   transplanting the records of a donor drawing (target + one Civil 3D
   alignment) with new handles, a new ID string, a new name and PIs; the

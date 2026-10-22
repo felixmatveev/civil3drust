@@ -51,6 +51,7 @@ owner for this study, or generated from them. All are in
 | S28 | `S26_civ3d_resaved.dwg` | S26 opened in Civil 3D (AUDIT 0 errors), saved. |
 | S29 | `S27_civ3d_resaved.dwg` | S27 opened in Civil 3D (AUDIT 0 errors), saved. |
 | S30 | `S24_created_alignment_no_parcel_entry.dwg` (generated) | S24 plus `civil3drust - 1` with no label group and no parcel entry (no companion, registry untouched, companion references nulled). |
+| S31 | `S30_civ3d_resaved.dwg` | S30 opened in Civil 3D (AUDIT: 2 errors found, not fixed), saved. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -727,6 +728,20 @@ alignment FB3 is written alone — no companion object, no registry entry
 null, **null, null** (were the companion), null, style, null: 113 → 81 bits
 and 463 → 459 bytes, rebuilt by `handle_refs::null_refs`; the data stream
 is unchanged. S30 differs from S24 only by the added alignment record.
+
+**Civil 3D result.** AUDIT reports **2 errors** (not fixed; the summary
+names no objects). S26/S27 (with the parcel entry) audit clean, so the
+errors come from the missing parcel entry — most likely the alignment's
+two null companion references. Re-saved without fixing (S31), Civil 3D
+keeps the alignment with null references and does not rebuild a
+companion or registry entry. The other objects it adds (a dictionary with
+a `1" = 1'` scale, class-node/attribute-classification objects, save
+history and app-version XRecords) are the same as in the clean S28/S29
+re-saves, so they are routine for files written by acadrust.
+
+Conclusion: the parcel entry is expected for every alignment;
+`create_alignment` writes it by default. Open: what AUDIT does when
+allowed to fix the two errors.
 
 ## Open questions
 
