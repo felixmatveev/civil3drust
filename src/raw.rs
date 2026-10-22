@@ -301,12 +301,19 @@ pub fn utf16_strings(buf: &[u8], min: usize) -> Vec<(usize, String)> {
 /// Name of a style record: the first plain string of three or more
 /// characters (style records carry no `AeccImp…` class string; the name is
 /// followed by the description and the created-by / modified-by user
-/// names, S18).
+/// names, S18). Returns `None` when the record holds only that user-name
+/// pair, as the template default style does in S2 and S24.
 pub fn style_name(data: &[u8]) -> Option<String> {
-    utf16_strings(data, 3)
+    let strings: Vec<String> = utf16_strings(data, 3)
         .into_iter()
         .map(|(_, s)| s)
-        .find(|s| is_clean_text(s))
+        .filter(|s| is_clean_text(s) && s.chars().any(|c| c.is_ascii_alphabetic()))
+        .collect();
+    match strings.as_slice() {
+        [a, b] if a == b => None,
+        [first, ..] => Some(first.clone()),
+        [] => None,
+    }
 }
 
 /// True for a string-stream entry that looks like plain text, not a path,

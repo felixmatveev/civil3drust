@@ -7,6 +7,16 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Sample S24 (`ZERO_CIVIL`): the owner's simplified, purged base drawing,
+  read without failsafe mode. docs: "Base drawing: S24".
+
+### Changed
+- `aecc_style`: alignment styles have 17 display components, not 16; the
+  marker is now sixteen 1 bits + `01`, which also finds the last block
+  (it was missed before) and the template default style of S2/S24.
+- `raw::style_name` returns `None` for a style that stores no name (only
+  the user-name pair) instead of the user name; `alignment_styles` lists
+  it as "(no name stored)" and no longer drops unnamed styles.
 - `aecc_style` module: locates the 16 display-component blocks of an
   alignment style and reads/sets each component's visible flag (component
   0 = line, from S21/S22). `examples/style_components.rs` lists flags or

@@ -48,10 +48,10 @@ fn s21_s22_line_component_flag_and_s23_regeneration() {
     let off = style("samples/S21_TEST_STYLE_line_off.dwg");
     let on = style("samples/S22_TEST_STYLE_line_on.dwg");
     let gen = style("samples/S23_S21_line_on_generated.dwg");
-    assert_eq!(aecc_style::flags_string(&off.data).unwrap(), "0".repeat(16));
+    assert_eq!(aecc_style::flags_string(&off.data).unwrap(), "0".repeat(17));
     assert_eq!(
         aecc_style::flags_string(&on.data).unwrap(),
-        format!("1{}", "0".repeat(15))
+        format!("1{}", "0".repeat(16))
     );
     // Civil 3D changed the flag and the modified-time stamp (bits 801..865).
     let flag = aecc_style::components(&off.data).unwrap()[0].flag_bit;

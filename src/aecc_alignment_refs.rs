@@ -95,7 +95,10 @@ pub fn alignment_styles(doc: &CadDocument) -> Vec<(u64, String)> {
     raw::records(doc, "AECC_ALIGNMENT_STYLE")
         .into_iter()
         .filter(|r| !handle_refs::of_record(r).iter().any(|h| h.code == 2))
-        .filter_map(|r| raw::style_name(&r.data).map(|n| (r.handle, n)))
+        .map(|r| {
+            let n = raw::style_name(&r.data).unwrap_or_else(|| "(no name stored)".into());
+            (r.handle, n)
+        })
         .collect()
 }
 

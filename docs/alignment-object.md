@@ -516,26 +516,33 @@ component of `TEST STYLE` (8DFE) was switched on. In the style record
    files) is probably the creation time. (Positions are for this record;
    they move with the encoding before them.)
 
-The flag belongs to a run of **16 display-component blocks**, 123 bits
-apart (one gap is 125). Each block contains the fixed bit run
-`11111111111111110101`; the visible flag is 47 bits before it. Reading
-that bit in every style in S5–S22 gives sensible results:
+The flag belongs to a run of **17 display-component blocks**: 16 spaced
+123 bits apart (one gap is 125) and a last, longer one (135 bits in S24).
+Each block contains a run of sixteen 1 bits followed by `01`; the visible
+flag is 47 bits before it. (A first version matched `…0101`, which misses
+the 17th block whenever its next bits differ, as in S2 and S5–S23; S24
+showed all 17.) Reading that bit in every style in S1–S24 gives sensible
+results:
 
 | style | flags (component 0 first) |
 |---|---|
-| `NO STYLE` (owner's, all off) | `0000000000000000` |
-| `TEST STYLE`, S21 | `0000000000000000` |
-| `TEST STYLE`, S22 | `1000000000000000` |
-| Basic | `1110000100000000` |
-| Proposed | `1110110111100000` |
-| Existing | `1110000111100000` |
-| Layout | `1110111111100000` |
-| Offsets | `1110000000000000` |
+| `NO STYLE` (owner's, all off) | `00000000000000000` |
+| `TEST STYLE`, S21 | `00000000000000000` |
+| `TEST STYLE`, S22 | `10000000000000000` |
+| template default style, no name stored (S2 C2, S24 48C) | `11111101000000001` |
+| Basic | `11100001000000001` |
+| Proposed | `11101101111000001` |
+| Existing | `11100001111000001` |
+| Layout | `11101111111000001` |
+| Offsets | `11100000000000000` |
 
 Component 0 is the line (S22). The others suggest 1–2 are curve and
 spiral, but only component 0 is confirmed; the names of the rest need one
-sample each. The only style in S2–S4 (a different template) does not
-show 16 blocks and is refused by `aecc_style::components`.
+sample each.
+
+The default style of S2's and S24's template stores no name: its only
+strings are the created-by / modified-by pair (`raw::style_name` returns
+`None`). What Civil 3D displays for it is still to be checked.
 
 S23 (S21 with that one bit set by civil3drust) has a style record equal to
 S22's except for the modified time, which civil3drust leaves alone.
@@ -547,6 +554,25 @@ write those, and Civil 3D redraws on open.
 The S19 → S21 re-save changed every style record (and many other style
 classes), so style comparisons are only valid between consecutive saves
 of one session, as here.
+
+## Base drawing: S24
+
+From S24 on, samples start from `ZERO_CIVIL.dwg` (S24), the owner's
+further simplified and purged drawing (473 KB, 3008 AECC records in 317
+classes). acadrust reads it without failsafe mode: the
+`PRESSUREPARTERRORBLOCK` 3DSOLID of S1/S5–S19 is gone, so files written
+from it lose nothing.
+
+It holds one alignment, `Alignment - (1)` [F9E], with the S15 geometry
+(0,0 → 100,0 → 200,50 → 400,50, free R = 50 curve at PI 1; 411.379 ft),
+and two alignment styles besides the collection (48B): the template
+default [48C] (no name stored) and the owner's `TEST STYLE` [FA9], line
+component on, used by the alignment. The alignment's handle stream has the
+usual seven references (layer `0`, companion F9D = F9E − 1, style FA9).
+The companion registry is BC0, which soft-owns only F9D.
+
+`set_length`, `set_radius`, `set_pis` and `style_components` all work on
+it unchanged (read-back verified).
 
 ## Open questions
 
@@ -582,11 +608,11 @@ of one session, as here.
 
 ## Next samples
 
-For alignment creation (each a copy of S5 with one change, saved the same
-way):
+For alignment creation (each a copy of S24 with one change, saved the
+same way):
 
-- **A**: S5 plus a second alignment created from a polyline, same style and
-  label set as the first — everything creation touches.
+- **A**: S24 plus a second alignment created from a polyline, same style
+  and label set as the first — everything creation touches.
 - **B**: ~~as A, but with a different alignment style~~ — the style
   reference is answered by S18/S19.
 - **C**: as A, but with the "No Labels" label set — whether label-group
