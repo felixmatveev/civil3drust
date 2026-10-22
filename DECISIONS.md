@@ -380,3 +380,20 @@ settings are left alone.
 **Alternatives.** Decode the registry and alignment fully first: the
 right end state, but a transplant tells us now whether Civil 3D accepts
 records we place, which de-risks the from-scratch writer.
+
+## D-022: Files written by civil3drust identify as non-Autodesk
+Date: 2026-10-22 · Status: accepted
+
+**Context.** Civil 3D shows a "Non Autodesk DWG" notice when opening
+S26/S27 (and other files written through acadrust): DWG files saved by
+Autodesk products carry a marker identifying them as such, and files from
+other writers don't.
+
+**Decision.** civil3drust and the files it writes never imitate that
+marker or otherwise claim to be produced by Autodesk software. The notice
+is expected and harmless (AUDIT is clean); users who don't want it can turn
+the check off in their own AutoCAD/Civil 3D settings, and any file
+re-saved by Civil 3D no longer shows it.
+
+**Alternatives.** Reproducing the marker: misrepresents the file's origin,
+is not cleanroom knowledge we may use, and touches Autodesk's trademarks.

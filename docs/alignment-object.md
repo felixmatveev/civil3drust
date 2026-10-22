@@ -48,6 +48,8 @@ owner for this study, or generated from them. All are in
 | S25 | `ZERO_CIVIL_second_alignment.dwg` | S24 plus a second alignment, `Alignment - (2)`, created in Civil 3D from a polyline drawn (100,100) → (0,100), style `TEST STYLE`; saved. Creation sample A. |
 | S26 | `S24_created_alignment.dwg` (generated) | S24 plus `civil3drust - 1`, a tangent (0,−100) → (200,−100), created by `examples/create_alignment` with S25 as donor (companion FB2, alignment FB3, label group FB4). |
 | S27 | `S24_created_alignment_no_label_group.dwg` (generated) | As S26 but without the station-equation label group. |
+| S28 | `S26_civ3d_resaved.dwg` | S26 opened in Civil 3D (AUDIT 0 errors), saved. |
+| S29 | `S27_civ3d_resaved.dwg` | S27 opened in Civil 3D (AUDIT 0 errors), saved. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -652,8 +654,22 @@ registry) and turning them into a new alignment:
    bytes replaced by the patched two-entry version.
 
 Every record keeps its size. Read back, S26 has both alignments decoding,
-and all references resolve. S27 is the same without the label group, to
-see whether Civil 3D requires it.
+and all references resolve. S27 is the same without the label group.
+
+**Civil 3D result (S28, S29).** Both files open with AUDIT 0 errors;
+Civil 3D shows its "Non Autodesk DWG" notice on open (see D-022). Re-saved:
+
+- `civil3drust - 1` keeps its name, style, geometry and handles
+  (FB2/FB3/FB4); the registry still owns FB2 then F9D; the label group
+  FB4 (S28) is kept unchanged.
+- **The label group is optional**: S29 has none, and Civil 3D did not add
+  one.
+- In the generated alignment Civil 3D changed only what it changes in its
+  own alignments on every re-save — the 2-bit flag (open question 9) and
+  the +44-bit volatile field (open question 1) — plus regenerated display
+  graphics. `Alignment - (1)` got the identical treatment.
+- Many style records were re-encoded (as in the S19 → S21 re-save); not
+  caused by the generated objects.
 
 Not touched (S25 showed them changing, but they look like bookkeeping):
 the name counter in `AECC_NAME_TEMPLATES_NODE` and the Create Alignment
