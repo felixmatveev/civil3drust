@@ -44,6 +44,8 @@ owner for this study, or generated from them. All are in
 | S21 | `TEST_STYLE_line_off.dwg` | As S19, with `TEST STYLE`'s line component turned off (nothing drawn); saved. |
 | S22 | `TEST_STYLE_line_on.dwg` | S21 with only `TEST STYLE`'s line component turned back on in Civil 3D; saved. |
 | S23 | `S21_line_on_generated.dwg` (generated) | S21 with component 0 of `TEST STYLE` turned on by `examples/style_components`. |
+| S24 | `ZERO_CIVIL.dwg` | Owner's simplified, purged base: one alignment (S15 geometry) using `TEST STYLE`. |
+| S25 | `ZERO_CIVIL_second_alignment.dwg` | S24 plus a second alignment, `Alignment - (2)`, created in Civil 3D from a polyline drawn (100,100) → (0,100), style `TEST STYLE`; saved. Creation sample A. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -542,7 +544,8 @@ sample each.
 
 The default style of S2's and S24's template stores no name: its only
 strings are the created-by / modified-by pair (`raw::style_name` returns
-`None`). What Civil 3D displays for it is still to be checked.
+`None`). Civil 3D lists it as **Standard** (owner, S24), so the name of
+the default style is implied, not stored.
 
 S23 (S21 with that one bit set by civil3drust) has a style record equal to
 S22's except for the modified time, which civil3drust leaves alone.
@@ -566,13 +569,65 @@ from it lose nothing.
 It holds one alignment, `Alignment - (1)` [F9E], with the S15 geometry
 (0,0 → 100,0 → 200,50 → 400,50, free R = 50 curve at PI 1; 411.379 ft),
 and two alignment styles besides the collection (48B): the template
-default [48C] (no name stored) and the owner's `TEST STYLE` [FA9], line
+default [48C] (shown as Standard, no name stored) and the owner's `TEST STYLE` [FA9], line
 component on, used by the alignment. The alignment's handle stream has the
 usual seven references (layer `0`, companion F9D = F9E − 1, style FA9).
 The companion registry is BC0, which soft-owns only F9D.
 
 `set_length`, `set_radius`, `set_pis` and `style_components` all work on
 it unchanged (read-back verified).
+
+## Creating an alignment: S24 → S25 (sample A)
+
+Objects added (every other handle is unchanged; handles FB9, FBA, FBC,
+FBD were used and freed, presumably by the source polyline, which Civil 3D
+erased):
+
+| handle | class | what it is |
+|---|---|---|
+| FB7 | `AECC_FEATURE_STYLE` | the companion object (alignment − 1, as predicted from S1–S24) |
+| FB8 | `AECC_ALIGNMENT` | `Alignment - (2)`, 463 bytes, one tangent (100,100) → (0,100), real display graphics |
+| FBB | `AECC_ALIGNMENT_STAEQU_LABEL_GROUP` | station-equation label group, entity in model space |
+
+References between them:
+
+- **FB8** (alignment): the usual seven — layer `0`, FB7 twice, style FA9.
+  It does not point at its label group.
+- **FB7** (companion): first reference `own−off` → BC0 (the registry),
+  then a soft pointer → FB8.
+- **BC0** (registry, `AECC_FEATURE_STYLE`, owned via `own−1` by BBF
+  `AECC_ALIGNMENT_PARCEL_NODE`): gains a soft-owner reference to FB7 in
+  front of the existing one to F9D (34 → 62 handle bits; 118 → 191 bytes,
+  so it carries per-entry data too).
+- **FBB** (label group): layer `0`, null, null, soft pointer → FB8, hard
+  pointer → label style 49F (`AECC_LABEL_COLLECTOR_STYLE`). Byte size and
+  layout equal to the first alignment's group FA3, which points at F9E.
+
+The first alignment also has an `AECC_ALIGNMENT_DESIGNSPEED_LABEL_GROUP`
+(FA4); the new one got none, so it is not required.
+
+Model space entity order after the save: F9E, FA3, FA4, FB8, FBB.
+
+Both alignment records store their own handle at bit 26 of the data, so a
+copied record must have it patched.
+
+Other differences, all save noise or "last used" settings:
+
+- `AECC_SETTINGS_NODE` 994 (holds the string `AeccCreateAlignmentEntities`,
+  the Create Alignment command settings): +7 bytes and a new hard pointer to
+  `TEST STYLE` — the last style used by the command.
+- `AECC_NAME_TEMPLATES_NODE` FA0 (holds `Alignment - (<[…]>)`): one bit,
+  112, changed 0 → 1; probably the name counter's next value (not yet
+  decoded).
+- Two XRecords re-created with new handles and identical content
+  (`AECC_LASTSAVED_APPVERSION` 13.6.1963 and the Map `_CurrQry`), the
+  first alignment's design-speed group (a −2.0 double lost its rounding
+  error), and the network-part catalog (changes on every save).
+
+So creating an alignment needs at minimum: the alignment record, its
+companion, the registry entry, and (probably) the station-equation label
+group. Whether Civil 3D accepts a file without the label group, and with
+the name counter and settings untouched, is the next experiment.
 
 ## Open questions
 
@@ -611,8 +666,7 @@ it unchanged (read-back verified).
 For alignment creation (each a copy of S24 with one change, saved the
 same way):
 
-- **A**: S24 plus a second alignment created from a polyline, same style
-  and label set as the first — everything creation touches.
+- **A**: ~~S24 plus a second alignment from a polyline~~ — done, S25.
 - **B**: ~~as A, but with a different alignment style~~ — the style
   reference is answered by S18/S19.
 - **C**: as A, but with the "No Labels" label set — whether label-group

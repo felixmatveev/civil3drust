@@ -9,6 +9,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 ### Added
 - Sample S24 (`ZERO_CIVIL`): the owner's simplified, purged base drawing,
   read without failsafe mode. docs: "Base drawing: S24".
+- Sample S25: S24 plus an alignment created in Civil 3D (creation sample
+  A). docs: "Creating an alignment: S24 → S25" — the objects creation
+  adds (alignment, companion, registry entry, station-equation label
+  group), their references, and which other changes are save noise.
 
 ### Changed
 - `aecc_style`: alignment styles have 17 display components, not 16; the
