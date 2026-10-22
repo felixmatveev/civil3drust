@@ -30,6 +30,12 @@ versions follow [Semantic Versioning](https://semver.org/).
   adds (alignment, companion, registry entry, station-equation label
   group), their references, and which other changes are save noise.
 
+### Fixed
+- `set_pis` / `set_tangent_length` / `create_alignment` now update the
+  cached station at the end of the first element (first BD after the
+  element records) when no free arc follows it. S26/S27/S30 kept the
+  donor's value; AUDIT's fix in S32 showed the field. Sample S33.
+
 ### Changed
 - `aecc_style`: alignment styles have 17 display components, not 16; the
   marker is now sixteen 1 bits + `01`, which also finds the last block

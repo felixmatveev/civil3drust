@@ -43,6 +43,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S29 | `S29_S27_civ3d_resaved.dwg` | Civil 3D 2024 | S27 opened in Civil 3D (AUDIT 0 errors), saved; no label group was added. | 474462 | `fc003fd073966c86` |
 | S30 | `S30_S24_created_alignment_no_parcel_entry.dwg` | generated | As S27 (no label group) and also without the parcel entry: no companion object, registry unchanged from S24, the alignment's two companion references nulled. Opened in Civil 3D: AUDIT **2 errors** (not fixed). | 449218 | `7ea41a31f21227ea` |
 | S31 | `S31_S30_civ3d_resaved.dwg` | Civil 3D 2024 | S30 opened (AUDIT: 2 errors found, 0 fixed), saved without fixing. | 472421 | `a071bb0e0c883c09` |
+| S32 | `S32_S30_audit_fixed.dwg` | Civil 3D 2024 | S30 opened, AUDIT with fixing (2 errors), saved. | 473092 | `67352f1541bae3e1` |
+| S33 | `S33_S24_created_alignment_v2.dwg` | generated | As S26 (parcel entry + label group) after the first-element end-station fix: the cached station at bit 2205 is 200, not the donor's 99.99999999999999. Not yet opened in Civil 3D. | 449435 | `601f28fffb6e98a9` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

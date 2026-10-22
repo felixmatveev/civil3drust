@@ -318,6 +318,23 @@ pub fn set_pis(
         }
     }
 
+    // The station at the end of the first element is cached as the first
+    // bit-coded double after the element records (S5: 100, S24: 88.197,
+    // S25: the length of a single-tangent alignment). It doubles as the
+    // first PC station when element 1 is a free arc, so skip it if the arc
+    // patches already cover it.
+    if !decoded.elements.is_empty() {
+        let old_end0 = station_of(&decoded.elements, 1, start);
+        let new_end0 = station_of(&resolved, 1, start);
+        if (old_end0 - new_end0).abs() > 1e-12 * old_end0.abs().max(1.0) {
+            if let Some(&b) = find_station_copies(data, from, old_end0).first() {
+                if !station_patches.iter().any(|&(p, _)| p == b) {
+                    station_patches.push((b, new_end0));
+                }
+            }
+        }
+    }
+
     let old = DecodedAlignment {
         handle: decoded.handle,
         tangents,
@@ -629,5 +646,42 @@ mod tests {
             apply(&mut rec.data, &before, &fewer),
             Err(EditError::PiCountChanged { old: 4, new: 2 })
         );
+    }
+
+    /// Two tangents, then (like S5/S25) the end station of element 0 as
+    /// the first BD after the elements, then a BD 100.0 that is not a
+    /// station (must stay).
+    #[test]
+    fn set_pis_updates_first_element_end_station() {
+        let mut w = Bits(Vec::new(), 0);
+        w.tangent(1, 0, 2, (0.0, 0.0), (100.0, 0.0));
+        w.tangent(2, 1, 0, (100.0, 0.0), (200.0, 0.0));
+        w.bit(1);
+        w.bd(99.99999999999999);
+        w.byte(0x41);
+        w.bd(100.0);
+        w.byte(0);
+        let mut rec = RawRecord {
+            handle: 1,
+            handle_bits: 0,
+            class: "AECC_ALIGNMENT".into(),
+            is_entity: true,
+            data: w.0,
+        };
+        let before = crate::aecc_elements::decode_elements(&rec).unwrap();
+        let from = elements_end_bit(&before);
+        set_pis(
+            &mut rec.data,
+            &before,
+            &[
+                Point2::new(0.0, 0.0),
+                Point2::new(150.0, 0.0),
+                Point2::new(250.0, 0.0),
+            ],
+        )
+        .unwrap();
+        let copies = find_station_copies(&rec.data, from, 150.0);
+        assert_eq!(copies.len(), 1);
+        assert_eq!(find_station_copies(&rec.data, from, 100.0).len(), 1);
     }
 }

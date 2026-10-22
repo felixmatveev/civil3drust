@@ -52,6 +52,8 @@ owner for this study, or generated from them. All are in
 | S29 | `S27_civ3d_resaved.dwg` | S27 opened in Civil 3D (AUDIT 0 errors), saved. |
 | S30 | `S24_created_alignment_no_parcel_entry.dwg` (generated) | S24 plus `civil3drust - 1` with no label group and no parcel entry (no companion, registry untouched, companion references nulled). |
 | S31 | `S30_civ3d_resaved.dwg` | S30 opened in Civil 3D (AUDIT: 2 errors found, not fixed), saved. |
+| S32 | `S30_audit_fixed.dwg` | S30 opened in Civil 3D, AUDIT with fixing, saved. |
+| S33 | `S24_created_alignment_v2.dwg` (generated) | As S26, generated after the end-station fix. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -740,8 +742,34 @@ history and app-version XRecords) are the same as in the clean S28/S29
 re-saves, so they are routine for files written by acadrust.
 
 Conclusion: the parcel entry is expected for every alignment;
-`create_alignment` writes it by default. Open: what AUDIT does when
-allowed to fix the two errors.
+`create_alignment` writes it by default.
+
+**AUDIT with fixing (S32).** Compared with S31 (same file, not fixed):
+
+- The alignment's companion references stay **null**; no companion or
+  registry entry is created. So AUDIT's fix does not rebuild the parcel
+  entry.
+- In `civil3drust - 1` exactly one value changed: the BD at bit 2259
+  (2207 before the re-save shift), **99.99999999999999 → 200**.
+- `Alignment - (1)`'s companion F9D got new points, (110.557, 5.279) and
+  (200, 50) — the middle tangent — replacing what was there: AUDIT
+  recomputes companion geometry.
+
+## Station at the end of the first element
+
+The value AUDIT corrected is the first bit-coded double after the element
+records. It is the station at the end of element 0: 100 in S5–S7 (first
+tangent), 88.197 in S24 (first tangent up to the curve), the total length
+for a single-tangent alignment (S25: 99.99999999999999 — Civil 3D's own
+rounding of 100). When element 1 is a free arc it is also the first of the
+two PC-station copies, which is why the radius and tangent edits already
+updated it in the curve samples.
+
+`set_pis` (and so `set_tangent_length` and `create_alignment`) now patches
+the first BD copy of the old end-of-element-0 station after the element
+records. Before the fix, S26/S27/S30 kept the donor's 99.99999999999999;
+S26 still audited clean, so a stale value there is not one of S30's two
+errors. S33 is S26 regenerated with the fix.
 
 ## Open questions
 
