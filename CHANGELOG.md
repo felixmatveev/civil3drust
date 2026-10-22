@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `SIMILAR_PROJECTS.md`: related open-source projects to reuse or cross-check,
+  starting with CivilCraft (Apache-2.0): what it covers (LandXML I/O,
+  alignment/profile math, raw passthrough of undecoded objects; no AECC
+  decoding), and how ported code is attributed. Decision D-018.
 - `viewer/`: civil3drust-viewer, a 2D plan / 3D orbit viewer (egui) for the
   Civil 3D objects in a DWG. Draws decoded alignments (path, PIs, station
   ticks and labels), the proxy graphics stored in each AECC entity (lines,

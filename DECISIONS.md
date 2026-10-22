@@ -302,3 +302,25 @@ The library gains no GUI dependencies and its `cargo test` stays fast.
 **Alternatives.** Tauri: a web front end plus IPC for what is a few hundred
 lines of line drawing. tkinter: needs Python bindings to civil3drust first.
 A full 3D engine (wgpu/bevy): overkill for wireframe display.
+
+## D-018: Reuse of permissively licensed related projects
+Date: 2026-10-22 · Status: accepted
+
+**Context.** Other open-source projects already implement parts of what
+civil3drust needs, e.g. CivilCraft (Apache-2.0, JavaScript) has LandXML 1.2
+I/O and alignment/profile geometry. Rewriting them blind wastes effort;
+copying without records makes them hard to maintain and credit.
+
+**Decision.** Related projects are listed in `SIMILAR_PROJECTS.md` with
+license, reviewed commit and what is useful. Code from projects with
+compatible permissive licenses may be ported: ported files keep their
+original SPDX license, upstream path and commit, copyright line and a
+"modified" note, and are recorded in `THIRD_PARTY.md` (crate license then
+`MPL-2.0 AND Apache-2.0` where applicable). Otherwise they serve as
+black-box test oracles pinned to a commit, credited in the docs. Such
+projects are not sources for DWG/AECC format findings; the README's
+cleanroom sources are unchanged. Their names and trademarks are used only
+to identify the source.
+
+**Alternatives.** Library linkage: not practical across JS/Rust. Ignore
+them: loses free test vectors and a second implementation to check against.
