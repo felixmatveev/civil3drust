@@ -56,8 +56,9 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S42 | `S42_S41_descriptions.dwg` | Civil 3D 2024 | S41 with descriptions typed in Civil 3D: `Alignment - (1)` "This is test description", `B` a long text with an empty line and "new paragraph". | 473445 | `f5e4d237df6776e1` |
 | S43 | `S43_S41_descriptions_generated.dwg` | generated | S41 with the same two descriptions set by `examples/set_name --description`; both alignment records byte-identical to S42's. | 451556 | `b36b50733a517fc1` |
 | S44 | `S44_S25_plus_two_tangent_alignment.dwg` | Civil 3D 2024 | S25 (re-saved) plus `Alignment - (3)` created from a 3-vertex polyline (0,−200) → (100,−200) → (200,−150), no curve. | 475488 | `a4020c488117a446` |
-| S45 | `S45_S24_created_two_tangents.dwg` | generated | S24 plus `Two tangents` with the same PIs as S44's alignment, by `examples/create_alignment` (donor S25, one-tangent). Element list, cache and graphics equal Civil 3D's except the identity value. Not yet opened in Civil 3D. | 449570 | `902a42e479646fda` |
-| S46 | `S46_S24_created_five_pis_two_curves.dwg` | generated | S24 plus `C`: PIs (0,−200) (100,−200) (200,−150) (300,−150) (400,−250), free curves R50 at PI 1 and R30 at PI 3. Not yet opened in Civil 3D. | 449881 | `602062bf256ae6f1` |
+| S45 | `S45_S24_created_two_tangents.dwg` | generated | S24 plus `Two tangents` with the same PIs as S44's alignment, by `examples/create_alignment` (donor S25, one-tangent). Element list, cache and graphics equal Civil 3D's except the identity value. Opened in Civil 3D: AUDIT 0 errors. | 449570 | `902a42e479646fda` |
+| S46 | `S46_S24_created_five_pis_two_curves.dwg` | generated | S24 plus `C`: PIs (0,−200) (100,−200) (200,−150) (300,−150) (400,−250), free curves R50 at PI 1 and R30 at PI 3. **Does not open in Civil 3D**; RECOVER removes alignment `C`. | 449881 | `602062bf256ae6f1` |
+| S47 | `S47_S45_civ3d_resaved.dwg` | Civil 3D 2024 | S45 opened (AUDIT 0 errors), saved. Both alignments got new identity GUIDs. | 472867 | `085e9a329e414716` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

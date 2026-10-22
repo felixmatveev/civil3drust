@@ -53,7 +53,11 @@ versions follow [Semantic Versioning](https://semver.org/).
   apart from the identity), S46 (five PIs, two curves).
 
 ### Fixed
-- Created alignments no longer reuse the donor alignment's identity value.
+- Created alignments no longer reuse the donor alignment's identity value;
+  the new value is a proper version-4 GUID (S45's had version nibble 5).
+  New companion ID strings carry the '4' at position 13 like Civil 3D's.
+- Known issue: S46 (generated with free curves) doesn't open in Civil 3D;
+  tangent-only creation (S45) is confirmed (AUDIT 0 errors, S47).
 - `raw::object_name` reads the name from the string stream structure
   (class string, description twice, optional user name, name), so short
   names like `A` are found and the user name `felix` in S9/S22 is no

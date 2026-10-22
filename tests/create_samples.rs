@@ -145,8 +145,9 @@ fn create_multi_pi_with_curves() {
         .find(|r| r.handle == 0xFB8)
         .unwrap();
     let (mine, theirs) = (id_of(a), id_of(&dn));
-    assert_ne!(mine[..14], theirs[..14]);
-    assert_eq!(mine[14..], theirs[14..]);
+    assert_ne!(mine, theirs);
+    assert_eq!(mine[7] >> 4, 4, "version-4 GUID");
+    assert_eq!(mine[8] >> 6, 0b10, "GUID variant");
     let _ = std::fs::remove_file(dir);
 }
 

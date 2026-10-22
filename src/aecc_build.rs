@@ -7,6 +7,8 @@
 //!   has-graphics `1`, then (bit 45) a bit-coded long long (3-bit byte count +
 //!   little-endian bytes) giving the proxy graphics size in bytes, then the
 //!   graphics.
+//! - **Identity** — a version-4 GUID, 16 bits after the last element
+//!   record and again further on ([`set_identity`]).
 //! - **Element list** — a bit-coded long element **count** (`01` + byte),
 //!   then per element, in ID order, an 11-bit **kind prefix**
 //!   (`00000000010` tangent, `00000000100` arc) and the element record.
@@ -449,13 +451,32 @@ pub fn set_geometry(
 }
 
 /// Offset of the first copy of the alignment's 128-bit identity value
-/// after the last element record (S2, S5, S10, S11, S44: stable through
-/// edits, distinct per alignment, stored twice, nowhere else).
+/// after the last element record. It is a random (version 4) GUID in
+/// little-endian GUID layout — every value Civil 3D wrote has version
+/// nibble 4 in byte 7 and variant bits `10` in byte 8 (S5, S24, S25, S44,
+/// S47); stored twice, distinct per alignment, found nowhere else.
 const IDENTITY_AFTER_ELEMENTS: usize = 16;
 
-/// Give the alignment record a new identity value: both copies get the
-/// same 14 bytes derived from `seed`; the last two bytes (`40 aa` in every
-/// sample) are kept. Returns the bit offsets of the two copies.
+/// A version-4 GUID's 16 bytes in little-endian GUID layout, from `seed`.
+pub fn guid_v4(seed: u64) -> [u8; 16] {
+    let mut x = seed ^ 0xD1B5_4A32_D192_ED03;
+    let mut out = [0u8; 16];
+    for half in out.chunks_mut(8) {
+        x = x.wrapping_add(0x9E37_79B9_7F4A_7C15);
+        let mut z = x;
+        z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+        z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+        z ^= z >> 31;
+        half.copy_from_slice(&z.to_le_bytes());
+    }
+    out[7] = (out[7] & 0x0F) | 0x40; // version 4 (high nibble of Data3)
+    out[8] = (out[8] & 0x3F) | 0x80; // variant 10xx
+    out
+}
+
+/// Give the alignment record a new identity value: a fresh version-4 GUID
+/// from `seed`, written to both copies. Returns the bit offsets of the two
+/// copies.
 pub fn set_identity(
     rec: &RawRecord,
     data: &mut [u8],
@@ -477,17 +498,7 @@ pub fn set_identity(
     let b = (a + 128..n.saturating_sub(128))
         .find(|&b| (0..16).all(|i| raw::get_byte(data, b + 8 * i) == old[i]))
         .ok_or_else(|| layout("second copy of the identity value not found"))?;
-    let mut x = seed ^ 0xD1B5_4A32_D192_ED03;
-    let mut fresh = Vec::with_capacity(14);
-    while fresh.len() < 14 {
-        x = x.wrapping_add(0x9E37_79B9_7F4A_7C15);
-        let mut z = x;
-        z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
-        z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
-        z ^= z >> 31;
-        fresh.extend(z.to_le_bytes());
-    }
-    fresh.truncate(14);
+    let fresh = guid_v4(seed);
     for pos in [a, b] {
         for (i, v) in fresh.iter().enumerate() {
             raw::set_byte(data, pos + 8 * i, *v);
@@ -572,5 +583,15 @@ mod tests {
             let b = w.into_bytes();
             assert_eq!(read_bll(&b, 0), (v, n));
         }
+    }
+
+    #[test]
+    fn guid_v4_bits() {
+        for seed in [0u64, 1, 42, u64::MAX] {
+            let g = guid_v4(seed);
+            assert_eq!(g[7] >> 4, 4);
+            assert_eq!(g[8] >> 6, 0b10);
+        }
+        assert_ne!(guid_v4(1), guid_v4(2));
     }
 }

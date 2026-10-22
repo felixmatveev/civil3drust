@@ -206,6 +206,9 @@ pub fn new_id_string(seed: u64, avoid: &[String]) -> String {
             z ^= z >> 31;
             s.push_str(&format!("{z:016x}"));
         }
+        // Civil 3D's ID strings have a '4' at position 13 (S24, S25), like
+        // a version-4 GUID written without dashes.
+        s.replace_range(12..13, "4");
         if !avoid.contains(&s) {
             return s;
         }

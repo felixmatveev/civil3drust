@@ -64,7 +64,8 @@ owner for this study, or generated from them. All are in
 | S43 | `S41_descriptions_generated.dwg` (generated) | S41 with the same descriptions set by civil3drust. |
 | S44 | `S25_plus_two_tangent_alignment.dwg` | S25 plus `Alignment - (3)` from a 3-vertex polyline (two tangents). |
 | S45 | `S24_created_two_tangents.dwg` (generated) | S24 plus `Two tangents`, same PIs as S44's, by civil3drust. |
-| S46 | `S24_created_five_pis_two_curves.dwg` (generated) | S24 plus `C`: five PIs, R50 and R30 free curves. |
+| S46 | `S24_created_five_pis_two_curves.dwg` (generated) | S24 plus `C`: five PIs, R50 and R30 free curves. Does not open in Civil 3D; RECOVER removes `C`. |
+| S47 | `S45_civ3d_resaved.dwg` | S45 opened in Civil 3D (AUDIT 0 errors), saved. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -856,10 +857,13 @@ Comparing the one-tangent `Alignment - (2)` (FB8) with the two-tangent
   Records are stored in ID order; tangents get IDs 1…n, arcs the next IDs
   (S11: T1 T2 T3 A4, path T1 A4 T2 T3).
 - **After the last record:** 16 bits, the alignment's **identity value**
-  (128 bits; the same value is stored again ~717 bits later; stable through
-  edits — S5/S6/S11 — distinct per alignment, found nowhere else; the last
-  two bytes are `40 aa` in every sample), then bits up to 161 after the
-  records, the BD station at the end of element 0, and the **element-0
+  — a version-4 GUID in little-endian GUID layout (version nibble 4 in
+  byte 7, variant `10` in byte 8 in every Civil 3D value); the same value
+  is stored again ~717 bits later; distinct per alignment, found nowhere
+  else; stable through edits and most re-saves (S5/S6/S8/S11/S12,
+  S24→S44), but in S47 Civil 3D gave **both** alignments new GUIDs (S45's
+  generated value had version nibble 5 — fixed since) — then bits up to
+  161 after the records, the BD station at the end of element 0, and the **element-0
   cache**: BL 1, BL 0, BL id of the element after element 0, then six raw
   doubles — element 0's start, its end (the PC when a curve follows), and
   the start again. Nothing else in the record depends on the element
@@ -876,6 +880,13 @@ S11's four element records bit for bit.
 
 `create_alignment` now takes any number of PIs and free curves at interior
 PIs (`x,y,r` in `examples/create_alignment`).
+
+**Civil 3D results.** S45 (two tangents) opens with AUDIT 0 errors and
+keeps its geometry through a save (S47). S46 (five PIs, two free curves)
+does not open; RECOVER deletes the alignment. Tangent-only lists are
+therefore confirmed; something about written arcs (or their combination
+with a one-tangent donor) is missing. Next: the same alignment created in
+Civil 3D, for comparison.
 
 ## Open questions
 
