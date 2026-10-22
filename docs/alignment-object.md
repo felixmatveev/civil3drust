@@ -50,6 +50,7 @@ owner for this study, or generated from them. All are in
 | S27 | `S24_created_alignment_no_label_group.dwg` (generated) | As S26 but without the station-equation label group. |
 | S28 | `S26_civ3d_resaved.dwg` | S26 opened in Civil 3D (AUDIT 0 errors), saved. |
 | S29 | `S27_civ3d_resaved.dwg` | S27 opened in Civil 3D (AUDIT 0 errors), saved. |
+| S30 | `S24_created_alignment_no_parcel_entry.dwg` (generated) | S24 plus `civil3drust - 1` with no label group and no parcel entry (no companion, registry untouched, companion references nulled). |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -716,6 +717,16 @@ alignment's companion FB2 still holds the donor's points (100,100) /
 (0,100), not (0,−100) / (200,−100); it changed size (174 → 177 bytes) but
 those values were not refreshed, and AUDIT was clean. `create_alignment`
 should write the new geometry there too once the layout is pinned down.
+
+## Without the parcel entry: S30
+
+The owner identified the companion as the alignment's parcel (site
+topology) data. S30 tests whether an alignment needs it: the new
+alignment FB3 is written alone — no companion object, no registry entry
+(BC0 identical to S24), no label group. Its handle stream becomes layer,
+null, **null, null** (were the companion), null, style, null: 113 → 81 bits
+and 463 → 459 bytes, rebuilt by `handle_refs::null_refs`; the data stream
+is unchanged. S30 differs from S24 only by the added alignment record.
 
 ## Open questions
 

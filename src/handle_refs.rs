@@ -128,6 +128,36 @@ pub fn retarget_any(data: &mut [u8], r: &HandleRef, own: u64, target: u64) -> bo
     true
 }
 
+/// Rebuild the handle stream of a record (`data`, with `handle_bits` bits
+/// of handle stream at its end), replacing the references at `null_at`
+/// (indices into [`parse`]'s list) with null references of the same code
+/// (one byte, counter 0). The data stream is copied unchanged; the new
+/// stream is padded with zero bits to a whole byte. Returns the new record
+/// bytes and handle-stream size in bits.
+pub fn null_refs(data: &[u8], handle_bits: usize, own: u64, null_at: &[usize]) -> (Vec<u8>, usize) {
+    let total = raw::bit_len(data);
+    let start = total - handle_bits;
+    let refs = parse(data, start, total, own);
+    let mut bits: Vec<u8> = (0..start).map(|b| raw::get_bit(data, b)).collect();
+    for (i, r) in refs.iter().enumerate() {
+        if null_at.contains(&i) {
+            let b = r.code << 4;
+            bits.extend((0..8).rev().map(|k| (b >> k) & 1));
+        } else {
+            bits.extend((r.bit..r.bit + r.bits()).map(|b| raw::get_bit(data, b)));
+        }
+    }
+    while !bits.len().is_multiple_of(8) {
+        bits.push(0);
+    }
+    let mut out = vec![0u8; bits.len() / 8];
+    for (i, b) in bits.iter().enumerate() {
+        out[i / 8] |= b << (7 - i % 8);
+    }
+    let hb = bits.len() - start;
+    (out, hb)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -184,5 +214,29 @@ mod tests {
         assert!(retarget_any(&mut d, &r, 0xFC0, 0xBC0));
         assert_eq!(parse(&d, 0, 24, 0xFC0)[0].handle, 0xBC0);
         assert!(!retarget_any(&mut d, &r, 0xBD0, 0xBC0)); // offset 0x10: 1 byte
+    }
+
+    #[test]
+    fn null_refs_shrinks_stream() {
+        // 4 data bits "1010", then refs 5:10 5.2:0FB7 5.0, padded.
+        let mut bits = vec![1u8, 0, 1, 0];
+        for byte in [0x51u8, 0x10, 0x52, 0x0F, 0xB7, 0x50] {
+            bits.extend((0..8).rev().map(|k| (byte >> k) & 1));
+        }
+        while !bits.len().is_multiple_of(8) {
+            bits.push(0);
+        }
+        let mut d = vec![0u8; bits.len() / 8];
+        for (i, b) in bits.iter().enumerate() {
+            d[i / 8] |= b << (7 - i % 8);
+        }
+        let hb = bits.len() - 4;
+        let (out, nhb) = null_refs(&d, hb, 0xFB8, &[1]);
+        let refs = parse(&out, 4, out.len() * 8, 0xFB8);
+        let v: Vec<(u8, u64)> = refs.iter().map(|r| (r.code, r.handle)).collect();
+        assert_eq!(v, [(5, 0x10), (5, 0), (5, 0)]);
+        assert_eq!(out.len() * 8 - nhb, 4);
+        assert_eq!(raw::get_bit(&out, 0), 1);
+        assert_eq!(out.len(), d.len() - 2);
     }
 }

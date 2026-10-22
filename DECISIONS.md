@@ -377,6 +377,11 @@ string, the name and the PIs. The name must keep its length and the PI
 count must match, so no record changes size. The name counter and command
 settings are left alone.
 
+Update (S30): optional records are selected with `CreateOptions`; leaving
+out the parcel entry nulls the alignment's companion references, which
+changes the record size — only the handle stream at the record's end is
+rebuilt, the data stream is untouched.
+
 **Alternatives.** Decode the registry and alignment fully first: the
 right end state, but a transplant tells us now whether Civil 3D accepts
 records we place, which de-risks the from-scratch writer.

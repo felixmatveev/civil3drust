@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `create_alignment` takes `CreateOptions { label_group, parcel_entry }`;
+  without the parcel entry no companion/registry entry is written and the
+  alignment's companion references are nulled (`handle_refs::null_refs`
+  rebuilds a handle stream, the first record-size change). Example flag
+  `--no-parcel-entry`. Sample S30.
 - `aecc_create::create_alignment`: adds a new alignment to a drawing by
   transplanting the records of a donor drawing (target + one Civil 3D
   alignment) with new handles, a new ID string, a new name and PIs; the

@@ -41,6 +41,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S27 | `S27_S24_created_alignment_no_label_group.dwg` | generated | As S26 without the station-equation label group. Opened in Civil 3D: AUDIT 0 errors (same notice). | 449413 | `f39457789388ea83` |
 | S28 | `S28_S26_civ3d_resaved.dwg` | Civil 3D 2024 | S26 opened in Civil 3D (AUDIT 0 errors), saved. | 473638 | `14a855aa9c890a97` |
 | S29 | `S29_S27_civ3d_resaved.dwg` | Civil 3D 2024 | S27 opened in Civil 3D (AUDIT 0 errors), saved; no label group was added. | 474462 | `fc003fd073966c86` |
+| S30 | `S30_S24_created_alignment_no_parcel_entry.dwg` | generated | As S27 (no label group) and also without the parcel entry: no companion object, registry unchanged from S24, the alignment's two companion references nulled. Not yet opened in Civil 3D. | 449218 | `7ea41a31f21227ea` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

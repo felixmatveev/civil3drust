@@ -1,7 +1,7 @@
 //! Creating an alignment in S24 from donor S25 (aecc_create).
 
 use civil3drust::aecc_alignment_refs::alignment_refs;
-use civil3drust::aecc_create::create_alignment;
+use civil3drust::aecc_create::{create_alignment, CreateOptions};
 use civil3drust::aecc_elements::decode_elements;
 use civil3drust::alignment::Point2;
 use civil3drust::{handle_refs, raw};
@@ -11,7 +11,15 @@ fn create_in_s24_from_s25() {
     let donor = raw::open("samples/S25_ZERO_CIVIL_second_alignment.dwg").unwrap();
     let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
     let pis = [Point2::new(0.0, -100.0), Point2::new(200.0, -100.0)];
-    let c = create_alignment(&mut t.doc, &donor.doc, "civil3drust - 1", &pis, 7, true).unwrap();
+    let c = create_alignment(
+        &mut t.doc,
+        &donor.doc,
+        "civil3drust - 1",
+        &pis,
+        7,
+        CreateOptions::default(),
+    )
+    .unwrap();
     assert_eq!(c.alignment, c.companion + 1);
     assert_eq!(c.label_group, c.alignment + 1);
 
@@ -65,7 +73,74 @@ fn refuses_wrong_name_length_and_pi_count() {
     let donor = raw::open("samples/S25_ZERO_CIVIL_second_alignment.dwg").unwrap();
     let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
     let pis = [Point2::new(0.0, 0.0), Point2::new(1.0, 0.0)];
-    assert!(create_alignment(&mut t.doc, &donor.doc, "short", &pis, 1, true).is_err());
+    assert!(create_alignment(
+        &mut t.doc,
+        &donor.doc,
+        "short",
+        &pis,
+        1,
+        CreateOptions::default()
+    )
+    .is_err());
     let three = [pis[0], pis[1], Point2::new(1.0, 1.0)];
-    assert!(create_alignment(&mut t.doc, &donor.doc, "civil3drust - 1", &three, 1, true).is_err());
+    assert!(create_alignment(
+        &mut t.doc,
+        &donor.doc,
+        "civil3drust - 1",
+        &three,
+        1,
+        CreateOptions::default()
+    )
+    .is_err());
+}
+
+#[test]
+fn create_without_parcel_entry() {
+    let donor = raw::open("samples/S25_ZERO_CIVIL_second_alignment.dwg").unwrap();
+    let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+    let pis = [Point2::new(0.0, -100.0), Point2::new(200.0, -100.0)];
+    let opts = CreateOptions {
+        label_group: false,
+        parcel_entry: false,
+    };
+    let c = create_alignment(&mut t.doc, &donor.doc, "civil3drust - 1", &pis, 7, opts).unwrap();
+    assert_eq!((c.companion, c.label_group), (0, 0));
+    let dir = std::env::temp_dir().join("civil3drust-create-noparcel.dwg");
+    acadrust::DwgWriter::write_to_file(&dir, &t.doc).unwrap();
+    let re = raw::open(&dir).unwrap();
+    let a = raw::records(&re.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == c.alignment)
+        .unwrap();
+    let d = decode_elements(&a).unwrap();
+    assert!((d.length() - 200.0).abs() < 1e-9);
+    let refs: Vec<(u8, u64)> = handle_refs::of_record(&a)
+        .iter()
+        .map(|r| (r.code, r.handle))
+        .collect();
+    assert_eq!(
+        refs,
+        [
+            (5, 0x10),
+            (4, 0),
+            (5, 0),
+            (5, 0),
+            (4, 0),
+            (5, 0xFA9),
+            (5, 0)
+        ]
+    );
+    // Registry unchanged from S24: still owns only F9D.
+    let reg = raw::records(&re.doc, "AECC_FEATURE_STYLE")
+        .into_iter()
+        .find(|r| r.handle == 0xBC0)
+        .unwrap();
+    let owned: Vec<u64> = handle_refs::of_record(&reg)
+        .iter()
+        .filter(|r| r.code == 2)
+        .map(|r| r.handle)
+        .collect();
+    assert_eq!(owned, [0xF9D]);
+    assert_eq!(raw::records(&re.doc, "AECC_FEATURE_STYLE").len(), 2);
+    let _ = std::fs::remove_file(dir);
 }

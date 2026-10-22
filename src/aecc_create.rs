@@ -22,9 +22,12 @@
 //! - the requested name (same length as the donor's, for now) and PIs
 //!   (same count, via [`set_pis`]).
 //!
-//! The label group can be left out (`with_label_group = false`) to test
-//! whether Civil 3D requires it; its handle is still allocated, so both
-//! variants use the same handles.
+//! The label group and the parcel entry (companion + registry entry) can
+//! be left out ([`CreateOptions`]) to test whether Civil 3D requires them;
+//! their handles are still allocated, so all variants use the same
+//! handles. Without the parcel entry the alignment's two companion
+//! references become null references, which shrinks its handle stream
+//! (`handle_refs::null_refs`).
 //!
 //! All records keep their size. The style, layer and label style are the
 //! donor's and must exist in the target.
@@ -81,10 +84,30 @@ impl fmt::Display for CreateError {
 
 impl std::error::Error for CreateError {}
 
+/// Which optional records [`create_alignment`] writes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CreateOptions {
+    /// The station-equation label group (optional: S27 → S29).
+    pub label_group: bool,
+    /// The parcel-topology entry: companion object plus registry entry. When
+    /// false, the alignment's two companion references are nulled.
+    pub parcel_entry: bool,
+}
+
+impl Default for CreateOptions {
+    fn default() -> Self {
+        Self {
+            label_group: true,
+            parcel_entry: true,
+        }
+    }
+}
+
 /// What [`create_alignment`] added.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Created {
     pub alignment: u64,
+    /// 0 when created without the parcel entry.
     pub companion: u64,
     /// 0 when created without a label group.
     pub label_group: u64,
@@ -205,8 +228,9 @@ pub fn create_alignment(
     name: &str,
     pis: &[Point2],
     seed: u64,
-    with_label_group: bool,
+    opts: CreateOptions,
 ) -> Result<Created, CreateError> {
+    let with_label_group = opts.label_group;
     // --- Identify the donor's new records. ---
     let d_reg = registry(donor).ok_or_else(|| donor_err("no companion registry"))?;
     let t_reg = record(target, COMPANION, d_reg.handle).ok_or(CreateError::MissingInTarget(
@@ -321,6 +345,18 @@ pub fn create_alignment(
     };
     let decoded = decode_elements(&rec).map_err(|e| donor_err(e.to_string()))?;
     set_pis(&mut align, &decoded, pis).map_err(CreateError::Geometry)?;
+    let mut align_hb = d_align.handle_bits;
+    if !opts.parcel_entry {
+        let idx: Vec<usize> = handle_refs::of_record(&d_align)
+            .iter()
+            .enumerate()
+            .filter(|(_, r)| r.handle == d_comp_h)
+            .map(|(i, _)| i)
+            .collect();
+        let (bytes, hb) = handle_refs::null_refs(&align, align_hb, align_h, &idx);
+        align = bytes;
+        align_hb = hb;
+    }
 
     // Label group.
     let mut label = d_label.data.clone();
@@ -343,52 +379,54 @@ pub fn create_alignment(
     }
 
     // --- Insert into the target. ---
-    let d_obj = donor
-        .objects
-        .iter()
-        .find(|(h, _)| h.value() == d_comp_h)
-        .map(|(_, o)| o.clone())
-        .unwrap();
-    let ObjectType::Unknown {
-        type_name,
-        raw_dxf_codes,
-        raw_dwg_version,
-        ..
-    } = d_obj
-    else {
-        return Err(donor_err("companion is not a raw object"));
-    };
-    target.objects.insert(
-        Handle::new(comp_h),
-        ObjectType::Unknown {
+    if opts.parcel_entry {
+        let d_obj = donor
+            .objects
+            .iter()
+            .find(|(h, _)| h.value() == d_comp_h)
+            .map(|(_, o)| o.clone())
+            .unwrap();
+        let ObjectType::Unknown {
             type_name,
-            handle: Handle::new(comp_h),
-            owner: Handle::new(d_reg.handle),
             raw_dxf_codes,
-            raw_dwg_data: Some(comp),
-            raw_dwg_handle_bits: d_comp.handle_bits as i64,
             raw_dwg_version,
-        },
-    );
-    if let Some(ObjectType::Unknown {
-        raw_dwg_data,
-        raw_dwg_handle_bits,
-        ..
-    }) = target
-        .objects
-        .iter_mut()
-        .find(|(h, _)| h.value() == d_reg.handle)
-        .map(|(_, o)| o)
-    {
-        *raw_dwg_data = Some(reg);
-        *raw_dwg_handle_bits = d_reg.handle_bits as i64;
+            ..
+        } = d_obj
+        else {
+            return Err(donor_err("companion is not a raw object"));
+        };
+        target.objects.insert(
+            Handle::new(comp_h),
+            ObjectType::Unknown {
+                type_name,
+                handle: Handle::new(comp_h),
+                owner: Handle::new(d_reg.handle),
+                raw_dxf_codes,
+                raw_dwg_data: Some(comp),
+                raw_dwg_handle_bits: d_comp.handle_bits as i64,
+                raw_dwg_version,
+            },
+        );
+        if let Some(ObjectType::Unknown {
+            raw_dwg_data,
+            raw_dwg_handle_bits,
+            ..
+        }) = target
+            .objects
+            .iter_mut()
+            .find(|(h, _)| h.value() == d_reg.handle)
+            .map(|(_, o)| o)
+        {
+            *raw_dwg_data = Some(reg);
+            *raw_dwg_handle_bits = d_reg.handle_bits as i64;
+        }
     }
 
-    let mut entities = vec![(d_align.handle, align_h, align)];
+    let mut entities = vec![(d_align.handle, align_h, align, align_hb)];
     if with_label_group {
-        entities.push((d_label.handle, label_h, label));
+        entities.push((d_label.handle, label_h, label, d_label.handle_bits));
     }
-    for (src, new_h, data) in entities {
+    for (src, new_h, data, hb) in entities {
         let mut e = donor
             .entities()
             .find(|e| e.common().handle.value() == src)
@@ -398,13 +436,14 @@ pub fn create_alignment(
             u.common.handle = Handle::new(new_h);
             u.common.owner_handle = Handle::NULL;
             u.raw_dwg_data = Some(data);
+            u.dwg_handle_bits = hb as i64;
         }
         target.add_entity(e).map_err(|e| donor_err(e.to_string()))?;
     }
 
     Ok(Created {
         alignment: align_h,
-        companion: comp_h,
+        companion: if opts.parcel_entry { comp_h } else { 0 },
         label_group: if with_label_group { label_h } else { 0 },
         registry: d_reg.handle,
         id_string: new_id,

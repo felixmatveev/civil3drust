@@ -1,14 +1,14 @@
 //! Create a new alignment in a Civil 3D drawing (D-021).
 //!
 //! Usage:
-//!   cargo run --release --example create_alignment -- donor.dwg target.dwg out.dwg <name> "x,y x,y" [--no-label-group]
+//!   cargo run --release --example create_alignment -- donor.dwg target.dwg out.dwg <name> "x,y x,y" [--no-label-group] [--no-parcel-entry]
 //!
 //! `donor.dwg` is `target.dwg` plus one alignment created in Civil 3D (e.g.
 //! S25 for S24). Its records are copied into the target with new handles,
 //! a new ID string, the given name (same length as the donor alignment's
 //! name) and the given PIs (same count as the donor alignment's).
 
-use civil3drust::aecc_create::create_alignment;
+use civil3drust::aecc_create::{create_alignment, CreateOptions};
 use civil3drust::aecc_elements::decode_elements;
 use civil3drust::alignment::Point2;
 use civil3drust::raw;
@@ -37,7 +37,8 @@ fn parse_pis(s: &str) -> Vec<Point2> {
 fn main() {
     let a: Vec<String> = std::env::args().collect();
     let no_label = a.iter().any(|x| x == "--no-label-group");
-    let a: Vec<String> = a.into_iter().filter(|x| x != "--no-label-group").collect();
+    let no_parcel = a.iter().any(|x| x == "--no-parcel-entry");
+    let a: Vec<String> = a.into_iter().filter(|x| !x.starts_with("--no-")).collect();
     if a.len() != 6 {
         eprintln!(
             "usage: create_alignment <donor.dwg> <target.dwg> <out.dwg> <name> \"x,y x,y ...\""
@@ -63,12 +64,23 @@ fn main() {
         &a[4],
         &parse_pis(&a[5]),
         seed,
-        !no_label,
+        CreateOptions {
+            label_group: !no_label,
+            parcel_entry: !no_parcel,
+        },
     )
     .unwrap_or_else(|e| fail(e));
     println!(
-        "created '{}': alignment {:X}, companion {:X}, label group {:X}, registry {:X} entry, ID {}",
-        c.name, c.alignment, c.companion, c.label_group, c.registry, c.id_string
+        "created '{}': alignment {:X}, companion {:X}, label group {:X} (0 = not written){}",
+        c.name,
+        c.alignment,
+        c.companion,
+        c.label_group,
+        if c.companion != 0 {
+            format!(", registry {:X} entry, ID {}", c.registry, c.id_string)
+        } else {
+            String::new()
+        }
     );
     acadrust::DwgWriter::write_to_file(&a[3], &target.doc).unwrap_or_else(|e| fail(e));
 
