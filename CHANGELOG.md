@@ -60,7 +60,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   string stream and an attribute-chunk triple in the graphics; S46 lacked
   both and didn't open. `set_geometry` now writes them
   (`string_stream::set_string_count`). S48/S49 (Civil 3D reference), S50
-  (regenerated; matches S49 apart from GUID, a 62-bit field and rounding).
+  (regenerated; matches S49 apart from GUID, a 62-bit field and rounding)
+  opens with AUDIT 0 errors (re-save S51).
 - `raw::object_name` reads the name from the string stream structure
   (class string, description twice, optional user name, name), so short
   names like `A` are found and the user name `felix` in S9/S22 is no

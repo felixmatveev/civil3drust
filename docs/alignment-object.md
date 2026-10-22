@@ -69,6 +69,7 @@ owner for this study, or generated from them. All are in
 | S48 | `S25_plus_C_no_curves.dwg` | S25 plus `C`, five PIs, no curves (Civil 3D). |
 | S49 | `S48_C_with_curves.dwg` | S48 with R50 / R30 free curves added in Civil 3D. |
 | S50 | `S24_created_C_v2.dwg` (generated) | S46 regenerated after the arc-string fix. |
+| S51 | `S50_civ3d_resaved.dwg` | S50 opened in Civil 3D (AUDIT 0 errors), saved. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -909,14 +910,23 @@ last bit of the PC station (Civil 3D 88.1966011250105, us
 88.19660112501052 — S24's own alignment, saved by Civil 3D, holds the
 latter, so it isn't validated). Test `curves_match_civil3d_s49`.
 
+**Result (S51).** S50 opens with AUDIT 0 errors; re-saved, `C` keeps its
+six elements, radii, stationing and its generated identity GUID. Civil 3D
+changed the usual re-save fields (2-bit flag, +44-bit volatile field, the
+arc flag bit — open questions 9, 1, 11) and **added a block of BDs 2, 3,
+4, 5, 6 — the element IDs after the first**. This is the "2.0, 3.0, 4.0"
+block of S12 (IDs 2–4 of a four-element alignment), answering open
+question 10: an ID list Civil 3D adds after geometry edits; optional, as
+S50 shows.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
    (62 bits in S5–S7, 106 after a Civil 3D re-save in S8; +44 bits also in
    S3→S4); what it holds.
 9. The 2-bit flag at bit 2677 that Civil 3D changed when re-saving S7.
-10. The block of BDs (2.0, 3.0, 4.0) Civil 3D added in S12 after the radius
-    change (and again in S14).
+10. ~~The block of BDs (2.0, 3.0, 4.0) in S12~~ — answered by S51: the
+    element IDs after the first, added by Civil 3D on save; optional.
 11. The flag bit after the arc header (1 in S10, S14, S15; 0 in S11–S13).
     Civil 3D set it after geometry edits it saved (S14, S15) but not after
     its own radius edit (S12).

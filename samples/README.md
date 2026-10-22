@@ -57,11 +57,12 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S43 | `S43_S41_descriptions_generated.dwg` | generated | S41 with the same two descriptions set by `examples/set_name --description`; both alignment records byte-identical to S42's. | 451556 | `b36b50733a517fc1` |
 | S44 | `S44_S25_plus_two_tangent_alignment.dwg` | Civil 3D 2024 | S25 (re-saved) plus `Alignment - (3)` created from a 3-vertex polyline (0,−200) → (100,−200) → (200,−150), no curve. | 475488 | `a4020c488117a446` |
 | S45 | `S45_S24_created_two_tangents.dwg` | generated | S24 plus `Two tangents` with the same PIs as S44's alignment, by `examples/create_alignment` (donor S25, one-tangent). Element list, cache and graphics equal Civil 3D's except the identity value. Opened in Civil 3D: AUDIT 0 errors. | 449570 | `902a42e479646fda` |
-| S46 | `S46_S24_created_five_pis_two_curves.dwg` | generated | S24 plus `C`: PIs (0,−200) (100,−200) (200,−150) (300,−150) (400,−250), free curves R50 at PI 1 and R30 at PI 3. **Does not open in Civil 3D**; RECOVER removes alignment `C`. | 449881 | `602062bf256ae6f1` |
+| S46 | `S46_S24_created_five_pis_two_curves.dwg` | generated | S24 plus `C`: PIs (0,−200) (100,−200) (200,−150) (300,−150) (400,−250), free curves R50 at PI 1 and R30 at PI 3. **Does not open in Civil 3D**; RECOVER removes alignment `C` (fixed in S50). | 449881 | `602062bf256ae6f1` |
 | S47 | `S47_S45_civ3d_resaved.dwg` | Civil 3D 2024 | S45 opened (AUDIT 0 errors), saved. Both alignments got new identity GUIDs. | 472867 | `085e9a329e414716` |
 | S48 | `S48_S25_plus_C_no_curves.dwg` | Civil 3D 2024 | S25 plus alignment `C` from a polyline (0,−200) (100,−200) (200,−150) (300,−150) (400,−250), no curves; saved. | 472870 | `dfd9ba74970f7fff` |
 | S49 | `S49_S48_C_with_curves.dwg` | Civil 3D 2024 | S48 with free curves added to `C`: R50 at PI 1, R30 at PI 3; saved. Reference for S46. | 474891 | `8893150dda09717a` |
-| S50 | `S50_S24_created_C_v2.dwg` | generated | S46 regenerated after the fix (3 empty strings per arc, attribute chunks after arcs): equals S49's `C` in elements, strings and graphics apart from the identity, the 62-bit field and PC-station rounding. Not yet opened in Civil 3D. | 450048 | `b6aec3a18a620821` |
+| S50 | `S50_S24_created_C_v2.dwg` | generated | S46 regenerated after the fix (3 empty strings per arc, attribute chunks after arcs): equals S49's `C` in elements, strings and graphics apart from the identity, the 62-bit field and PC-station rounding. Opened in Civil 3D: AUDIT 0 errors. | 450048 | `b6aec3a18a620821` |
+| S51 | `S51_S50_civ3d_resaved.dwg` | Civil 3D 2024 | S50 opened (AUDIT 0 errors), saved; geometry and identity GUID kept. | 472836 | `55d10d4c2c411195` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8
