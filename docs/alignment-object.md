@@ -40,7 +40,10 @@ owner for this study, or generated from them. All are in
 | S17 | `generated_L90_r50.dwg` (generated) + `.xml` | S11 as a template, PIs set to (0,0), (100,0), (100,75), (100,100) by `examples/set_pis`; opened in Civil 3D (AUDIT 0 errors) and exported to LandXML. |
 | S18 | `r50_NO_STYLE.dwg` | The S15 alignment with the owner's own alignment style `NO STYLE` (made with *New*; every component off); drawing purged. |
 | S19 | `r50_TEST_STYLE.dwg` | As S18, but the alignment uses the owner's style `TEST STYLE` (made with *New*; only the line component drawn). Both styles exist in both files. |
-| S20 | `S18_TEST_STYLE_generated.dwg` (generated) | S18 with the alignment's style set to `TEST STYLE` by `examples/set_style`. |
+| S20 | `S18_TEST_STYLE_generated.dwg` (generated) | S18 with the alignment's style set to `TEST STYLE` by `examples/set_style`; opened in Civil 3D, AUDIT 0 errors. |
+| S21 | `TEST_STYLE_line_off.dwg` | As S19, with `TEST STYLE`'s line component turned off (nothing drawn); saved. |
+| S22 | `TEST_STYLE_line_on.dwg` | S21 with only `TEST STYLE`'s line component turned back on in Civil 3D; saved. |
+| S23 | `S21_line_on_generated.dwg` (generated) | S21 with component 0 of `TEST STYLE` turned on by `examples/style_components`. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -500,6 +503,51 @@ show which bits are component visibility. Decoding needs either field-by-field
 parsing or style pairs that share a handle length *and* name length (see
 Next samples).
 
+## Alignment style: display components (S21 → S22, S23)
+
+S21 and S22 were saved from the same drawing; between them only the line
+component of `TEST STYLE` (8DFE) was switched on. In the style record
+(603 bytes in both) exactly two things changed:
+
+1. **One bit** at 1428 (0 → 1): the line component's visible flag.
+2. **A 64-bit Windows FILETIME** (100 ns ticks since 1601, UTC), stored
+   raw at bit 801: 2026-10-22 19:39:33 → 19:40:03 UTC, i.e. the style's
+   modified time. A second FILETIME at bit 1307 (19:15:01 UTC, both
+   files) is probably the creation time. (Positions are for this record;
+   they move with the encoding before them.)
+
+The flag belongs to a run of **16 display-component blocks**, 123 bits
+apart (one gap is 125). Each block contains the fixed bit run
+`11111111111111110101`; the visible flag is 47 bits before it. Reading
+that bit in every style in S5–S22 gives sensible results:
+
+| style | flags (component 0 first) |
+|---|---|
+| `NO STYLE` (owner's, all off) | `0000000000000000` |
+| `TEST STYLE`, S21 | `0000000000000000` |
+| `TEST STYLE`, S22 | `1000000000000000` |
+| Basic | `1110000100000000` |
+| Proposed | `1110110111100000` |
+| Existing | `1110000111100000` |
+| Layout | `1110111111100000` |
+| Offsets | `1110000000000000` |
+
+Component 0 is the line (S22). The others suggest 1–2 are curve and
+spiral, but only component 0 is confirmed; the names of the rest need one
+sample each. The only style in S2–S4 (a different template) does not
+show 16 blocks and is refused by `aecc_style::components`.
+
+S23 (S21 with that one bit set by civil3drust) has a style record equal to
+S22's except for the modified time, which civil3drust leaves alone.
+
+In the alignment record the S21 → S22 change only added display graphics
+(+28 bytes, proxy graphics now hold the drawn line); civil3drust does not
+write those, and Civil 3D redraws on open.
+
+The S19 → S21 re-save changed every style record (and many other style
+classes), so style comparisons are only valid between consecutive saves
+of one session, as here.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
@@ -545,11 +593,10 @@ way):
   objects are required.
 
 For style records: pairs saved from the **same** style edited in place
-(one property changed, Save As in between), so the record's handle, name
-length and everything else stay put and a bit diff isolates the property:
-`NO STYLE` → line component visible → its colour → its layer → arc
-component visible. S18/S19 used two different styles, which shifts all
-bits after the handle.
+(one property changed, Save As in between), so a bit diff isolates the
+property. Done: line visible (S21 → S22). Next: line colour, line layer,
+line linetype, then the curve and spiral components visible (to confirm
+components 1 and 2), each from the previous file.
 
 For styles (D-015): the owner creates **own** minimal styles in Civil 3D with
 *New* (not *Copy*), own names, generic values — e.g. alignment style

@@ -7,6 +7,13 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `aecc_style` module: locates the 16 display-component blocks of an
+  alignment style and reads/sets each component's visible flag (component
+  0 = line, from S21/S22). `examples/style_components.rs` lists flags or
+  toggles one. Samples S21/S22 (line off/on) and S23 (generated; matches
+  S22 except the modified time). D-020.
+- docs: "Alignment style: display components"; S20 confirmed in Civil 3D
+  (AUDIT 0 errors).
 - `handle_refs` module: decodes a record's handle stream (code/counter
   references, relative codes resolved) and retargets an absolute reference
   in place. `RawRecord` gains `handle_bits`; `raw::class_of` names the

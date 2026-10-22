@@ -343,3 +343,20 @@ elements) will be handled once, for all edits, when creation needs it.
 **Alternatives.** Re-encode the whole handle stream and update
 `dwg_handle_bits` now: more code before any sample shows that Civil 3D
 accepts a resized record from us.
+
+## D-020: Locate style display components by a marker run, not a parser
+Date: 2026-10-22 · Status: accepted
+
+**Context.** The visible flag of a style display component is one bit
+(S21 → S22), but the fields before it aren't decoded, so its offset can't
+be computed by parsing from the record start.
+
+**Decision.** `aecc_style` finds the 16 component blocks by a fixed 20-bit
+run present in each, and takes the flag 47 bits before it. It refuses any
+record where the run doesn't occur exactly 16 times. It does not update the
+style's modified-time stamp (Civil 3D does; S23 shows we can leave it).
+
+**Alternatives.** Decode the style record field by field first: correct
+long-term, but needs many more samples; the marker approach is checked on
+every alignment style in S5–S22 and will be replaced when the layout is
+decoded.
