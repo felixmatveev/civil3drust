@@ -56,8 +56,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 - Created alignments no longer reuse the donor alignment's identity value;
   the new value is a proper version-4 GUID (S45's had version nibble 5).
   New companion ID strings carry the '4' at position 13 like Civil 3D's.
-- Known issue: S46 (generated with free curves) doesn't open in Civil 3D;
-  tangent-only creation (S45) is confirmed (AUDIT 0 errors, S47).
+- Alignments with free curves: each arc needs three empty strings in the
+  string stream and an attribute-chunk triple in the graphics; S46 lacked
+  both and didn't open. `set_geometry` now writes them
+  (`string_stream::set_string_count`). S48/S49 (Civil 3D reference), S50
+  (regenerated; matches S49 apart from GUID, a 62-bit field and rounding).
 - `raw::object_name` reads the name from the string stream structure
   (class string, description twice, optional user name, name), so short
   names like `A` are found and the user name `felix` in S9/S22 is no

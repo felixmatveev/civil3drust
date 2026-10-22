@@ -66,6 +66,9 @@ owner for this study, or generated from them. All are in
 | S45 | `S24_created_two_tangents.dwg` (generated) | S24 plus `Two tangents`, same PIs as S44's, by civil3drust. |
 | S46 | `S24_created_five_pis_two_curves.dwg` (generated) | S24 plus `C`: five PIs, R50 and R30 free curves. Does not open in Civil 3D; RECOVER removes `C`. |
 | S47 | `S45_civ3d_resaved.dwg` | S45 opened in Civil 3D (AUDIT 0 errors), saved. |
+| S48 | `S25_plus_C_no_curves.dwg` | S25 plus `C`, five PIs, no curves (Civil 3D). |
+| S49 | `S48_C_with_curves.dwg` | S48 with R50 / R30 free curves added in Civil 3D. |
+| S50 | `S24_created_C_v2.dwg` (generated) | S46 regenerated after the arc-string fix. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -883,10 +886,28 @@ PIs (`x,y,r` in `examples/create_alignment`).
 
 **Civil 3D results.** S45 (two tangents) opens with AUDIT 0 errors and
 keeps its geometry through a save (S47). S46 (five PIs, two free curves)
-does not open; RECOVER deletes the alignment. Tangent-only lists are
-therefore confirmed; something about written arcs (or their combination
-with a one-tangent donor) is missing. Next: the same alignment created in
-Civil 3D, for comparison.
+did not open; RECOVER deleted the alignment.
+
+**Why (S49).** Comparing S46's `C` with the same alignment made in Civil
+3D: element records identical, but
+
+- **each free arc reads three empty strings** from the string stream:
+  tangent-only records have 12 strings (S2, S5, S25), one arc 15 (S10,
+  S11), two arcs 18 (S49). S46 had 12, so Civil 3D ran off the end of the
+  stream. (S12 and S48 carry 8 more, together with other extra data —
+  optional, not needed.)
+- in the graphics, after each arc Civil 3D repeats the attribute triple
+  (opcodes 16, 18, 14 — copies of leading chunks 4–6) even though the
+  lines-only style draws no arc (also in S24's `Alignment - (1)`).
+
+`set_geometry` now sets the string count to `donor − 3·donor arcs + 3·new
+arcs` (`string_stream::set_string_count`) and writes the triple after each
+arc. S50 (S46 regenerated) equals S49's record in elements, strings and
+graphics, except the identity GUID, the 62-bit section-2 field (copied
+from the donor; it differs in every record and isn't a timestamp) and the
+last bit of the PC station (Civil 3D 88.1966011250105, us
+88.19660112501052 — S24's own alignment, saved by Civil 3D, holds the
+latter, so it isn't validated). Test `curves_match_civil3d_s49`.
 
 ## Open questions
 

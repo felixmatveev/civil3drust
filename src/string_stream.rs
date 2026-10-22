@@ -213,6 +213,51 @@ pub fn set_name(
     replace(data, handle_bits, index, new_name)
 }
 
+/// Change the number of strings in the stream to `count` by appending
+/// empty strings at the end, or removing trailing empty strings. Fails if
+/// a string to remove isn't empty.
+pub fn set_string_count(
+    data: &[u8],
+    handle_bits: usize,
+    count: usize,
+) -> Result<(Vec<u8>, usize), StringStreamError> {
+    let ss = parse(data, handle_bits)?;
+    let n = ss.strings.len();
+    let cut = if count < n {
+        if ss.strings[count..].iter().any(|s| !s.text.is_empty()) {
+            return Err(StringStreamError::Malformed(
+                "would remove a non-empty string".into(),
+            ));
+        }
+        ss.strings[count].bit
+    } else {
+        ss.size_field
+    };
+    let bit = |b: usize| raw::get_bit(data, b);
+    let total = raw::bit_len(data);
+    let mut out: Vec<u8> = (0..cut).map(bit).collect();
+    for _ in n..count.max(n) {
+        push_bits(&mut out, 0b10, 2);
+    }
+    let new_size = out.len() - ss.start;
+    if new_size & 0x8000 != 0 {
+        return Err(StringStreamError::LargeStream);
+    }
+    push_le16(&mut out, new_size as u16);
+    out.push(1);
+    let new_data_end = out.len();
+    out.extend((ss.data_end..total).map(bit));
+    while !out.len().is_multiple_of(8) {
+        out.push(0);
+    }
+    let mut bytes = vec![0u8; out.len() / 8];
+    for (i, b) in out.iter().enumerate() {
+        bytes[i / 8] |= b << (7 - i % 8);
+    }
+    let hb = out.len() - new_data_end;
+    Ok((bytes, hb))
+}
+
 /// Set an object's description: strings 1 and 2 of the stream, right after
 /// the `AeccImp…` class string, which hold the same text (S38 with a
 /// description; empty otherwise). Line breaks are stored as `\r\n`.
@@ -338,5 +383,17 @@ mod tests {
         }
         let hb = b.len() * 8 - de;
         (b, hb)
+    }
+
+    #[test]
+    fn string_count_grows_and_shrinks() {
+        let (d, hb) = record_n(&["AeccImpAlignment", "", "", "B", "", ""]);
+        let (d2, hb2) = set_string_count(&d, hb, 9).unwrap();
+        let ss = parse(&d2, hb2).unwrap();
+        assert_eq!(ss.strings.len(), 9);
+        assert_eq!(ss.strings[3].text, "B");
+        let (d3, hb3) = set_string_count(&d2, hb2, 5).unwrap();
+        assert_eq!(parse(&d3, hb3).unwrap().strings.len(), 5);
+        assert!(set_string_count(&d3, hb3, 3).is_err()); // would drop "B"
     }
 }

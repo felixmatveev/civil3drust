@@ -342,3 +342,74 @@ fn two_tangents_match_civil3d_s44() {
     }
     assert_eq!(e1, e2);
 }
+
+/// Five PIs with two free curves: civil3drust's record equals Civil 3D's
+/// (S49) in graphics, elements and strings, except the identity GUID, the
+/// 62-bit section-2 field and the last bit of the PC station (Civil 3D
+/// rounds 88.1966011250105, we compute 88.19660112501052).
+#[test]
+fn curves_match_civil3d_s49() {
+    use civil3drust::{aecc_elements::Element, proxy_graphics as pg, string_stream};
+    let donor = raw::open("samples/S25_ZERO_CIVIL_second_alignment.dwg").unwrap();
+    let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+    let pis = [
+        Point2::new(0.0, -200.0),
+        Point2::new(100.0, -200.0),
+        Point2::new(200.0, -150.0),
+        Point2::new(300.0, -150.0),
+        Point2::new(400.0, -250.0),
+    ];
+    let c = create_alignment(
+        &mut t.doc,
+        &donor.doc,
+        "C",
+        &pis,
+        &[Some(50.0), None, Some(30.0)],
+        5,
+        CreateOptions::default(),
+    )
+    .unwrap();
+    let ours = raw::records(&t.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == c.alignment)
+        .unwrap();
+    let s49 = raw::open("samples/S49_S48_C_with_curves.dwg").unwrap();
+    let theirs = raw::records(&s49.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0x102B)
+        .unwrap();
+    let parts = |r: &raw::RawRecord| {
+        let g = pg::find(&r.data, 4096).unwrap();
+        let d = decode_elements(r).unwrap();
+        let b: Vec<(usize, usize)> = d
+            .elements
+            .iter()
+            .map(|e| match &e.record {
+                Element::Tangent(t) => (t.header_bit, t.coords_bit + 256),
+                Element::Arc(a) => (a.header_bit, a.end_bit),
+            })
+            .collect();
+        let first = b.iter().map(|x| x.0).min().unwrap() - 21;
+        let end = b.iter().map(|x| x.1).max().unwrap();
+        let ss = string_stream::parse(&r.data, r.handle_bits).unwrap();
+        let bits = |a: usize, z: usize| {
+            (a..z)
+                .map(|i| raw::get_bit(&r.data, i))
+                .collect::<Vec<u8>>()
+        };
+        (
+            bits(g.start_bit, g.end_bit()),
+            bits(first, end),
+            bits(ss.start, ss.size_field),
+            ss.strings.len(),
+        )
+    };
+    let (g1, e1, s1, n1) = parts(&ours);
+    let (g2, e2, s2, n2) = parts(&theirs);
+    assert_eq!(e1, e2, "element records");
+    assert_eq!((s1, n1), (s2, n2), "string stream");
+    assert_eq!(n1, 18);
+    let gd: Vec<usize> = (0..g1.len()).filter(|&i| g1[i] != g2[i]).collect();
+    assert_eq!(g1.len(), g2.len());
+    assert!(gd.len() <= 2, "graphics differ beyond PC rounding: {gd:?}");
+}

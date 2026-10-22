@@ -17,6 +17,9 @@
 //!   element after it, and three raw points: element 0's start, its end,
 //!   and the start again.
 //!
+//! - **Strings** — each free arc reads three empty strings from the string
+//!   stream, so its string count is 12 + 3 × arcs for a plain alignment.
+//!
 //! [`set_geometry`] rebuilds the graphics (one 2-point polyline chunk per
 //! tangent, in the donor's chunk format, after the donor's leading
 //! attribute chunks), the element list and that cache from a PI list with
@@ -31,6 +34,7 @@ use crate::aecc_elements::{
 use crate::alignment::Point2;
 use crate::proxy_graphics as pg;
 use crate::raw::{self, RawRecord};
+use crate::string_stream;
 use std::fmt;
 
 /// Kind prefixes before each element record.
@@ -372,27 +376,43 @@ pub fn set_geometry(
             .iter()
             .take_while(|c| c.opcode != pg::OP_POLYLINE)
             .collect();
-        let lines: Vec<(Point2, Point2)> = resolved
-            .iter()
-            .filter_map(|e| match e.segment {
-                Segment::Line { start, end } => Some((start, end)),
-                _ => None,
-            })
-            .collect();
+        // Per element in path order: a polyline chunk for each tangent;
+        // after each arc (not drawn by a lines-only style) the attribute
+        // triple (layer, marker, colour) again — copies of the leading
+        // chunks 4..7, as Civil 3D writes them (S24, S48).
+        let triple: Vec<&pg::Chunk> = if lead.len() >= 7 {
+            lead[4..7].to_vec()
+        } else {
+            Vec::new()
+        };
+        let mut body = Bits::default();
+        let mut nchunks = lead.len();
+        for e in &resolved {
+            match e.segment {
+                Segment::Line { start: a, end: b } => {
+                    body.rl(60);
+                    body.rl(pg::OP_POLYLINE);
+                    body.rl(2);
+                    for v in [a.x, a.y, 0.0, b.x, b.y, 0.0] {
+                        body.rd(v);
+                    }
+                    nchunks += 1;
+                }
+                _ => {
+                    for c in &triple {
+                        body.copy(data, c.bit, c.bit + c.size * 8);
+                        nchunks += 1;
+                    }
+                }
+            }
+        }
         let lead_bytes: usize = lead.iter().map(|c| c.size).sum();
-        gbits.rl((8 + lead_bytes + 60 * lines.len()) as i32);
-        gbits.rl((lead.len() + lines.len()) as i32);
+        gbits.rl((8 + lead_bytes + body.len() / 8) as i32);
+        gbits.rl(nchunks as i32);
         for c in &lead {
             gbits.copy(data, c.bit, c.bit + c.size * 8);
         }
-        for (a, b) in lines {
-            gbits.rl(60);
-            gbits.rl(pg::OP_POLYLINE);
-            gbits.rl(2);
-            for v in [a.x, a.y, 0.0, b.x, b.y, 0.0] {
-                gbits.rd(v);
-            }
-        }
+        gbits.0.extend(body.0);
     } else {
         gbits.copy(data, g.start_bit, g.end_bit());
     }
@@ -439,6 +459,26 @@ pub fn set_geometry(
     w.copy(data, data_end, total);
     let bytes = w.into_bytes();
     let hb = bytes.len() * 8 - new_data_end;
+    // Each free arc reads three (empty) strings from the string stream
+    // (S10/S11: 15 strings, S48: 18 for two arcs, tangent-only: 12).
+    let arcs = |v: &[Element]| v.iter().filter(|e| matches!(e, Element::Arc(_))).count();
+    let old_count = string_stream::parse(data, rec.handle_bits)
+        .map_err(|e| layout(e.to_string()))?
+        .strings
+        .len();
+    let want = (old_count + 3 * arcs(&els))
+        .checked_sub(
+            3 * arcs(
+                &decoded
+                    .elements
+                    .iter()
+                    .map(|e| e.record.clone())
+                    .collect::<Vec<_>>(),
+            ),
+        )
+        .ok_or_else(|| layout("string count"))?;
+    let (bytes, hb) =
+        string_stream::set_string_count(&bytes, hb, want).map_err(|e| layout(e.to_string()))?;
     Ok((
         bytes,
         hb,
