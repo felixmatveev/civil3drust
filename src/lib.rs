@@ -30,9 +30,11 @@
 
 pub mod aecc_alignment;
 pub mod aecc_alignment_edit;
+pub mod aecc_alignment_refs;
 pub mod aecc_arc_edit;
 pub mod aecc_elements;
 pub mod alignment;
+pub mod handle_refs;
 pub mod inventory;
 pub mod proxy_graphics;
 pub mod raw;

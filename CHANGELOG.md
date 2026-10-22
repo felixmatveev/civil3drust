@@ -7,6 +7,19 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `handle_refs` module: decodes a record's handle stream (code/counter
+  references, relative codes resolved) and retargets an absolute reference
+  in place. `RawRecord` gains `handle_bits`; `raw::class_of` names the
+  object behind a handle; `raw::style_name` reads a style record's name.
+- `aecc_alignment_refs` module: the alignment's layer, companion-object and
+  alignment-style references; `alignment_styles` lists a drawing's styles;
+  `set_alignment_style` changes an alignment's style (same-size only,
+  D-019).
+- `examples/refs.rs` (list handle references with target classes) and
+  `examples/set_style.rs` (list styles / change an alignment's style).
+- Samples S18/S19 (owner's own `NO STYLE` / `TEST STYLE` alignment styles)
+  and S20 (S18 restyled by civil3drust; alignment record identical to
+  S19's). docs: "Handle stream" section.
 - `SIMILAR_PROJECTS.md`: related open-source projects to reuse or cross-check,
   starting with CivilCraft (Apache-2.0): what it covers (LandXML I/O,
   alignment/profile math, raw passthrough of undecoded objects; no AECC

@@ -29,6 +29,9 @@ pub struct RawRecord {
     /// Record bytes as acadrust stores them (merged data/string/handle
     /// streams, without the size prefix and CRC).
     pub data: Vec<u8>,
+    /// Size of the handle stream in bits: it occupies the last
+    /// `handle_bits` bits of `data` (see [`crate::handle_refs`]).
+    pub handle_bits: usize,
 }
 
 /// All records of DXF class `class` in `doc`, sorted by handle.
@@ -43,6 +46,7 @@ pub fn records(doc: &CadDocument, class: &str) -> Vec<RawRecord> {
                         class: u.dxf_name.clone(),
                         is_entity: true,
                         data: d.clone(),
+                        handle_bits: u.dwg_handle_bits.max(0) as usize,
                     });
                 }
             }
@@ -52,6 +56,7 @@ pub fn records(doc: &CadDocument, class: &str) -> Vec<RawRecord> {
         if let ObjectType::Unknown {
             type_name,
             raw_dwg_data: Some(d),
+            raw_dwg_handle_bits,
             ..
         } = o
         {
@@ -61,12 +66,36 @@ pub fn records(doc: &CadDocument, class: &str) -> Vec<RawRecord> {
                     class: type_name.clone(),
                     is_entity: false,
                     data: d.clone(),
+                    handle_bits: (*raw_dwg_handle_bits).max(0) as usize,
                 });
             }
         }
     }
     out.sort_by_key(|r| r.handle);
     out
+}
+
+/// Class name of the object or entity with handle `handle`, if any: the
+/// DXF name for AECC and other unknown records, acadrust's type name
+/// otherwise.
+pub fn class_of(doc: &CadDocument, handle: u64) -> Option<String> {
+    for e in doc.entities() {
+        if e.common().handle.value() == handle {
+            return Some(match e {
+                EntityType::Unknown(u) => u.dxf_name.clone(),
+                other => format!("{:?}", std::mem::discriminant(other)),
+            });
+        }
+    }
+    doc.objects.iter().find_map(|(h, o)| {
+        (h.value() == handle).then(|| match o {
+            ObjectType::Unknown { type_name, .. } => type_name.clone(),
+            other => {
+                let dbg = format!("{other:?}");
+                dbg.split(['(', ' ', '{']).next().unwrap_or("?").to_string()
+            }
+        })
+    })
 }
 
 /// Mutable bytes of the AECC record with this handle (entity or object).
@@ -267,6 +296,17 @@ pub fn utf16_strings(buf: &[u8], min: usize) -> Vec<(usize, String)> {
     out.sort();
     out.dedup();
     out
+}
+
+/// Name of a style record: the first plain string of three or more
+/// characters (style records carry no `AeccImp…` class string; the name is
+/// followed by the description and the created-by / modified-by user
+/// names, S18).
+pub fn style_name(data: &[u8]) -> Option<String> {
+    utf16_strings(data, 3)
+        .into_iter()
+        .map(|(_, s)| s)
+        .find(|s| is_clean_text(s))
 }
 
 /// True for a string-stream entry that looks like plain text, not a path,

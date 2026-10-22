@@ -29,10 +29,13 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S16 | `S16_S11_seg3plus100_generated.dwg` | generated | S11 with tangent 3 set to 200 by `examples/set_length`; acadrust dropped the `3DSOLID` in `PRESSUREPARTERRORBLOCK`. | 946198 | `e4f0d63dc40fd267` |
 | S17 | `S17_generated_L90_r50.dwg` | generated | S11 used as a template: all PIs set to (0,0), (100,0), (100,75), (100,100) by `examples/set_pis`, keeping the R = 50 free curve (now a 90° turn). The PI at (100,75) has zero deflection because the template has four PIs. | 946198 | `975ae1ab1d1a77b5` |
 | S17 | `S17_generated_L90_r50.xml` | Civil 3D 2024 | LandXML 1.2 export by Civil 3D after opening S17 (AUDIT 0 errors). | 1882 | `532024616a90db2d` |
+| S18 | `S18_r50_NO_STYLE.dwg` | Civil 3D 2024 | The S15 alignment with the owner's own alignment style `NO STYLE` (created with *New*, every component off); purged. | 930646 | `e54b4d4f8127645a` |
+| S19 | `S19_r50_TEST_STYLE.dwg` | Civil 3D 2024 | As S18, alignment style `TEST STYLE` (owner's own, *New*, only lines drawn). Both styles exist in both files. | 930874 | `ae054085dc7f117f` |
+| S20 | `S20_S18_TEST_STYLE_generated.dwg` | generated | S18 with the alignment style set to `TEST STYLE` by `examples/set_style` (one handle byte). Its alignment record is byte-identical to S19's. Not yet opened in Civil 3D. | 914473 | `22a1d39bbe00f5f4` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8
-(Civil 3D re-save), S8→S9 (start station). S10 is a single-arc reference. S5→S11 (free curve added at PI 1), S11→S12 (radius 50→75), S13 vs S12 (generated vs Civil 3D), S13→S14 (Civil 3D re-save), S14 vs S12, S11→S15 (tangent 3 +100 ft past a fillet), S16 vs S15 (generated vs Civil 3D). S15's LandXML is Civil 3D's own export of the same geometry.
+(Civil 3D re-save), S8→S9 (start station). S10 is a single-arc reference. S5→S11 (free curve added at PI 1), S11→S12 (radius 50→75), S13 vs S12 (generated vs Civil 3D), S13→S14 (Civil 3D re-save), S14 vs S12, S11→S15 (tangent 3 +100 ft past a fillet), S16 vs S15 (generated vs Civil 3D), S18 vs S19 (alignment style), S20 vs S19 (generated vs Civil 3D). S15's LandXML is Civil 3D's own export of the same geometry.
 
 S1, S5–S17 come from a template whose `PRESSUREPARTERRORBLOCK` holds a
 `3DSOLID` acadrust 0.6.5 cannot parse (S7–S9, S13, S14, S16 and S17 no longer have it).

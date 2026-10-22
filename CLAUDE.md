@@ -40,3 +40,5 @@ samples and steps that produced it.
 - `cargo run --release --example set_radius -- in.dwg out.dwg <name|handle> <arc id> <radius>`
 - `cargo run --release --example set_pis -- template.dwg out.dwg <name|handle> "x,y x,y ..."`
 - `cargo run --release --example dumprec -- file.dwg AECC_CLASS out/prefix`
+- `cargo run --release --example refs -- file.dwg [AECC_CLASS] [handle]`
+- `cargo run --release --example set_style -- in.dwg [out.dwg <alignment> <style>]`

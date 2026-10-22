@@ -469,6 +469,7 @@ mod tests {
         w.byte(0);
         RawRecord {
             handle: 1,
+            handle_bits: 0,
             class: "AECC_ALIGNMENT".into(),
             is_entity: true,
             data: w.0,
@@ -570,6 +571,7 @@ mod tests {
         w.byte(0);
         RawRecord {
             handle: 1,
+            handle_bits: 0,
             class: "AECC_ALIGNMENT".into(),
             is_entity: true,
             data: w.0,

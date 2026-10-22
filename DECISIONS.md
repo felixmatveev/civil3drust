@@ -324,3 +324,22 @@ to identify the source.
 
 **Alternatives.** Library linkage: not practical across JS/Rust. Ignore
 them: loses free test vectors and a second implementation to check against.
+
+## D-019: Change handle references in place, same byte length only
+Date: 2026-10-22 · Status: accepted
+
+**Context.** An alignment's style is a hard pointer in its handle stream
+(S18/S19). A handle reference stores only as many bytes as the handle
+needs, so pointing at a handle of a different byte length (e.g. 9B4 → 8DE7
+is fine, 9B4 → 12345 is not) would change the record's bit length, and the
+handle stream's size is also recorded by acadrust (`dwg_handle_bits`).
+
+**Decision.** `handle_refs::retarget` only rewrites references whose new
+handle has the same minimal byte count; otherwise it refuses and the caller
+reports `SizeChange`. Every other edit in civil3drust is same-size too.
+Resizing records (also needed for start stations of 0/1 and for adding
+elements) will be handled once, for all edits, when creation needs it.
+
+**Alternatives.** Re-encode the whole handle stream and update
+`dwg_handle_bits` now: more code before any sample shows that Civil 3D
+accepts a resized record from us.

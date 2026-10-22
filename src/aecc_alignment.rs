@@ -399,6 +399,7 @@ mod tests {
     fn record(data: Vec<u8>) -> RawRecord {
         RawRecord {
             handle: 0xABC,
+            handle_bits: 0,
             class: "AECC_ALIGNMENT".into(),
             is_entity: true,
             data,

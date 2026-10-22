@@ -38,6 +38,9 @@ owner for this study, or generated from them. All are in
 | S15 | `100-200-300_r50_seg3plus100.dwg` + `.xml` | S11 with tangent 3 lengthened by 100 ft in Civil 3D; saved, and exported to LandXML 1.2 by Civil 3D. |
 | S16 | `S11_seg3plus100_generated.dwg` (generated) | S11 with tangent 3 set to 200 by `examples/set_length`. |
 | S17 | `generated_L90_r50.dwg` (generated) + `.xml` | S11 as a template, PIs set to (0,0), (100,0), (100,75), (100,100) by `examples/set_pis`; opened in Civil 3D (AUDIT 0 errors) and exported to LandXML. |
+| S18 | `r50_NO_STYLE.dwg` | The S15 alignment with the owner's own alignment style `NO STYLE` (made with *New*; every component off); drawing purged. |
+| S19 | `r50_TEST_STYLE.dwg` | As S18, but the alignment uses the owner's style `TEST STYLE` (made with *New*; only the line component drawn). Both styles exist in both files. |
+| S20 | `S18_TEST_STYLE_generated.dwg` (generated) | S18 with the alignment's style set to `TEST STYLE` by `examples/set_style`. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -436,6 +439,67 @@ An exact three-PI version needs a template with two tangents and one free
 curve, or support for removing elements (which changes the record size and
 probably element counts in section 2).
 
+## Handle stream: S1–S19
+
+Each record's handle stream is its last `dwg_handle_bits` bits (acadrust
+reports the count; `RawRecord::handle_bits`). It is a run of handle
+references, each a byte `CODE(4) | COUNTER(4)` followed by `COUNTER`
+handle bytes, most significant first (public ODA specification; acadrust
+`read_handle_reference`). Decoded by `handle_refs`; listed by
+`examples/refs.rs`.
+
+Every alignment in S1–S19 ends with the same seven references:
+
+| # (from end) | code | S11 | S18 | target |
+|---:|---|---|---|---|
+| 7 | 5 hard ptr | 3800 | 10 | the entity's layer (`C-ROAD`, `0`) |
+| 6 | 4 soft ptr | 0 | 0 | null |
+| 5 | 5 hard ptr | 8C5B | 8C5B | an `AECC_FEATURE_STYLE` object, handle = alignment − 1 in every sample |
+| 4 | 5 hard ptr | 8C5B | 8C5B | the same object again |
+| 3 | 4 soft ptr | 0 | 0 | null |
+| 2 | 5 hard ptr | 1F64 | 8DE7 | **the alignment style** (`AECC_ALIGNMENT_STYLE`) |
+| 1 | 5 hard ptr | 0 | 0 | null |
+
+S1 has one more in front: code 3 (hard owner) to a dictionary, probably its
+extension dictionary.
+
+**Style reference (S18 vs S19).** The two alignment records are the same
+size (756 bytes) and differ only in bits 6031–6036: the low byte of
+reference 2, `5.2 8D E7` (`NO STYLE`) vs `5.2 8D FE` (`TEST STYLE`). No
+other alignment field depends on the style. S20, made from S18 by rewriting
+only that byte (`aecc_alignment_refs::set_alignment_style`), has an
+alignment record byte-identical to S19's. The only other record that
+differs between S18 and S19 is one `AECC_NETWORK_PART_CATALOG_DEF_NODE`
+(not related; not studied).
+
+Changing the style this way needs the new handle to take as many bytes as
+the old one, so the record size stays the same (decision D-019).
+
+**Companion object.** The `AECC_FEATURE_STYLE` object at alignment − 1
+(8C5B in S5–S19) soft-points back to the alignment (its second reference)
+and to object 12F9, which soft-owns (code 2) every such companion in the
+drawing (8C5B, and 37FD in S11/S18). Creating an alignment will likely mean
+creating a companion and adding it to that list; to be confirmed by
+creation sample A.
+
+**Alignment style records.** All styles, and a collection record of the
+same class (9B3) that soft-owns each of them, are `AECC_ALIGNMENT_STYLE`.
+A style record starts with a soft pointer to the collection (or `own−1`
+when it is the next handle), then about 70 references: mostly null, plus
+for each display component a triple (layer, linetype, null), e.g.
+(`0`, `ByBlock`, null), with `DASHED2` and `ByLayer` in a few. `NO STYLE` and
+`TEST STYLE` have identical handle-stream contents (both reference block
+`_None`, 8DFB, as an arrow block). Their names are the first plain string
+in the string stream (`raw::style_name`), followed by the description and
+created-by / modified-by user names.
+
+The data streams of `NO STYLE` and `TEST STYLE` differ from bit 29 on: the
+object's own handle is stored early (8DE7 vs 8DFE), and the varying
+encoding lengths after it shift everything, so a plain bit diff doesn't
+show which bits are component visibility. Decoding needs either field-by-field
+parsing or style pairs that share a handle length *and* name length (see
+Next samples).
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
@@ -475,10 +539,17 @@ way):
 
 - **A**: S5 plus a second alignment created from a polyline, same style and
   label set as the first — everything creation touches.
-- **B**: as A, but the new alignment uses a different alignment style — the
-  style reference in the handle stream.
+- **B**: ~~as A, but with a different alignment style~~ — the style
+  reference is answered by S18/S19.
 - **C**: as A, but with the "No Labels" label set — whether label-group
   objects are required.
+
+For style records: pairs saved from the **same** style edited in place
+(one property changed, Save As in between), so the record's handle, name
+length and everything else stay put and a bit diff isolates the property:
+`NO STYLE` → line component visible → its colour → its layer → arc
+component visible. S18/S19 used two different styles, which shifts all
+bits after the handle.
 
 For styles (D-015): the owner creates **own** minimal styles in Civil 3D with
 *New* (not *Copy*), own names, generic values — e.g. alignment style
