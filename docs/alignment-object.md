@@ -55,6 +55,7 @@ owner for this study, or generated from them. All are in
 | S32 | `S30_audit_fixed.dwg` | S30 opened in Civil 3D, AUDIT with fixing, saved. |
 | S33 | `S24_created_alignment_v2.dwg` (generated) | As S26, generated after the end-station fix. |
 | S34 | `S25_companions_swapped.dwg` (generated) | S25 with the two alignments' parcel companions swapped. |
+| S35 | `S34_civ3d_resaved.dwg` | S34 opened in Civil 3D (AUDIT 0 errors), saved. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -782,7 +783,18 @@ S25 with `Alignment - (1)` (F9E) pointed at FB7 and `Alignment - (2)`
 (FB8) at F9D, both references each, and the companions' back-pointers
 swapped to match (`examples/swap_companions`). Only those four records
 change, all same-size. Each parcel entry now holds the other alignment's
-points and ID string; the result in Civil 3D is pending.
+points and ID string.
+
+**Result (S35).** AUDIT 0 errors. Civil 3D keeps the swapped links and, on
+save, **regenerates each companion's points from its new alignment**: F9D
+(now `Alignment - (2)`'s) goes from 200, 50, 400, 50 to 100, 100, 100
+(231 → 162 bytes); FB7 (now `Alignment - (1)`'s) from 100, 100, 100 to
+200, 50, 400, 50 (174 → 228 bytes). Each keeps its own ID string and
+registry position; the alignments are untouched. So a companion is
+interchangeable: its geometry is derived from whichever alignment points
+at it, and only the links and the ID string matter. That also explains
+why the donor's stale points in our generated companions (S26, S33) were
+harmless.
 
 ## Open questions
 

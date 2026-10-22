@@ -32,7 +32,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 - `examples/swap_companions.rs` and sample S34 (experiment: two
   alignments' parcel companions swapped). D-023: parcel companion set
-  aside (S32 re-audit: 0 errors).
+  aside (S32 re-audit: 0 errors). S35: Civil 3D accepts the swap and
+  regenerates each companion's points from its new alignment.
 
 ### Fixed
 - `set_pis` / `set_tangent_length` / `create_alignment` now update the
