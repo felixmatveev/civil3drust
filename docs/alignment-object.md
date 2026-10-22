@@ -70,6 +70,8 @@ owner for this study, or generated from them. All are in
 | S49 | `S48_C_with_curves.dwg` | S48 with R50 / R30 free curves added in Civil 3D. |
 | S50 | `S24_created_C_v2.dwg` (generated) | S46 regenerated after the arc-string fix. |
 | S51 | `S50_civ3d_resaved.dwg` | S50 opened in Civil 3D (AUDIT 0 errors), saved. |
+| S52 | `S44_created_D.dwg` (generated) | S44 plus `D` (template from S25; registry entry added). |
+| S53 | `S24_created_E1_E2.dwg` (generated) | S24 plus two created alignments. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
@@ -918,6 +920,50 @@ arc flag bit — open questions 9, 1, 11) and **added a block of BDs 2, 3,
 block of S12 (IDs 2–4 of a four-element alignment), answering open
 question 10: an ID list Civil 3D adds after geometry edits; optional, as
 S50 shows.
+
+## The companion registry (S24, S25, S44, S48, S11)
+
+The registry (BC0 in S24–S53, 12F9 in S5–S19; class `AECC_FEATURE_STYLE`,
+owned by the `AECC_ALIGNMENT_PARCEL_NODE` through an `own−1` reference)
+lists every alignment companion. With one to four entries:
+
+| sample | entries | keys | string stream | handle stream |
+|---|---|---|---|---|
+| S24 | 1 | C76 | `""`, `b4c9…` | own−1, F9D |
+| S25 | 2 | C7A, C76 | `""`, `07ce…`, `b4c9…` | own−1, FB7, F9D |
+| S44 | 3 | C7A, 29F5, C76 | + `475c…` | + FF2 |
+| S48 | 4 | C7A, 29FA, 29F5, C76 | + `37d6…` | + 102A |
+
+(keys shown without their high bit `0x8000_0000`.)
+
+- **Data stream:** after the object header, a BL 0, a BL **count**, then
+  one key per entry, always as a full RL (`00` + 32 bits, high bit set) —
+  34 bits per entry, the whole growth of the data stream.
+- **Keys:** the same value is stored in the companion (first `00` + RL with
+  the high bit set, bit 66 in S48's companions). Values come in runs per
+  editing session (C76, C7A; 29F5, 29FA) and appear nowhere else, so a new
+  entry uses the largest key + 1.
+- **Strings:** an empty string, then each companion's 32-hex-digit ID
+  string.
+- **Handles:** `own−1` to the parcel node, then a soft-owner reference to
+  each companion.
+- All three lists are in the same order: **sorted by ID string** (S48:
+  `07ce`, `37d6`, `475c`, `b4c9`).
+
+`aecc_registry::Registry` parses this and rebuilds it with an entry added
+or removed. Adding S25's, S44's and S48's new entries to their
+predecessors reproduces Civil 3D's records exactly, except the padding
+after the handle stream (Civil 3D pads with ones, we with zeros); removing
+gives back the predecessor (test `registry_entries_match_civil3d`).
+
+With this, `create_alignment` (D-025) takes its template alignment,
+companion and label group from **any** donor drawing with a Civil 3D
+alignment, gives the companion a new key and ID string, and adds it to the
+target's own registry. Own handles and references are rewritten at any
+byte length (`handle_refs::set_own_handle`, `rewrite_refs`). The style can
+be chosen (`--style`); the label group is written only if the target has
+its label style. S52 adds `D` to S44 (three existing entries); S53 adds
+two alignments to S24 in a row.
 
 ## Open questions
 

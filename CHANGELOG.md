@@ -7,6 +7,15 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `aecc_registry` module: parse the companion registry (keys, companions,
+  ID strings, sorted by ID string) and rebuild it with an entry added or
+  removed; matches Civil 3D's records (S24→S25→S44→S48). D-025.
+- `create_alignment` no longer needs the donor to be the target plus one
+  alignment: any drawing with a Civil 3D alignment supplies the template;
+  a registry entry (new key, ID string) is added to the target. Options
+  `style` and `template` (`--style`, `--template`). Own handles and handle
+  streams are rewritten at any byte length (`handle_refs::set_own_handle`,
+  `rewrite_refs`). Samples S52 (S44 + D), S53 (S24 + two alignments).
 - `create_alignment` takes `CreateOptions { label_group, parcel_entry }`;
   without the parcel entry no companion/registry entry is written and the
   alignment's companion references are nulled (`handle_refs::null_refs`

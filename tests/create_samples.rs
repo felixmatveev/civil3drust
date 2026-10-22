@@ -53,7 +53,8 @@ fn create_in_s24_from_s25() {
         .filter(|r| r.code == 2)
         .map(|r| r.handle)
         .collect();
-    assert_eq!(owned, [c.companion, 0xF9D]);
+    assert_eq!(owned.len(), 2);
+    assert!(owned.contains(&c.companion) && owned.contains(&0xF9D));
     for rec in [&comp, &reg] {
         assert!(raw::utf16_strings(&rec.data, 32)
             .iter()
@@ -159,6 +160,7 @@ fn create_without_parcel_entry() {
     let opts = CreateOptions {
         label_group: false,
         parcel_entry: false,
+        ..Default::default()
     };
     let c = create_alignment(
         &mut t.doc,
@@ -412,4 +414,124 @@ fn curves_match_civil3d_s49() {
     let gd: Vec<usize> = (0..g1.len()).filter(|&i| g1[i] != g2[i]).collect();
     assert_eq!(g1.len(), g2.len());
     assert!(gd.len() <= 2, "graphics differ beyond PC rounding: {gd:?}");
+}
+
+/// The donor no longer has to be the target plus one alignment: S25's
+/// template into S44 (three registry entries) and S24 twice in a row.
+#[test]
+fn registry_entry_added_for_any_target() {
+    use civil3drust::aecc_create::find_registry;
+    let donor = raw::open("samples/S25_ZERO_CIVIL_second_alignment.dwg").unwrap();
+    let mut t = raw::open("samples/S44_S25_plus_two_tangent_alignment.dwg").unwrap();
+    let pis = [Point2::new(0.0, -300.0), Point2::new(150.0, -300.0)];
+    let c = create_alignment(
+        &mut t.doc,
+        &donor.doc,
+        "D",
+        &pis,
+        &[],
+        11,
+        CreateOptions::default(),
+    )
+    .unwrap();
+    let (_, reg) = find_registry(&t.doc).unwrap();
+    assert_eq!(reg.entries.len(), 4);
+    let ids: Vec<&str> = reg.entries.iter().map(|e| e.id.as_str()).collect();
+    let mut sorted = ids.clone();
+    sorted.sort();
+    assert_eq!(ids, sorted);
+    let e = reg
+        .entries
+        .iter()
+        .find(|e| e.companion == c.companion)
+        .unwrap();
+    assert_eq!(e.key, 0x8000_29F6); // largest key in S44 + 1
+    assert_eq!(e.id, c.id_string);
+
+    // Two alignments into S24, one after the other.
+    let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+    let c1 = create_alignment(
+        &mut t.doc,
+        &donor.doc,
+        "E1",
+        &pis,
+        &[],
+        1,
+        CreateOptions::default(),
+    )
+    .unwrap();
+    let c2 = create_alignment(
+        &mut t.doc,
+        &donor.doc,
+        "E2",
+        &pis,
+        &[],
+        2,
+        CreateOptions::default(),
+    )
+    .unwrap();
+    let dir = std::env::temp_dir().join("civil3drust-two-created.dwg");
+    acadrust::DwgWriter::write_to_file(&dir, &t.doc).unwrap();
+    let re = raw::open(&dir).unwrap();
+    let (_, reg) = find_registry(&re.doc).unwrap();
+    assert_eq!(reg.entries.len(), 3);
+    let keys: Vec<u32> = reg.entries.iter().map(|e| e.key).collect();
+    assert!(keys.contains(&0x8000_0C77) && keys.contains(&0x8000_0C78));
+    for c in [&c1, &c2] {
+        let comp = raw::records(&re.doc, "AECC_FEATURE_STYLE")
+            .into_iter()
+            .find(|r| r.handle == c.companion)
+            .unwrap();
+        let refs = handle_refs::of_record(&comp);
+        assert_eq!(refs[0].handle, reg.handle);
+        assert_eq!(refs[1].handle, c.alignment);
+        assert_eq!(
+            civil3drust::aecc_registry::companion_key(&comp).unwrap().1,
+            c.registry_key
+        );
+    }
+    let names: Vec<String> = raw::records(&re.doc, "AECC_ALIGNMENT")
+        .iter()
+        .filter_map(|r| raw::object_name(&r.data))
+        .collect();
+    assert!(names.contains(&"E1".to_string()) && names.contains(&"E2".to_string()));
+    let _ = std::fs::remove_file(dir);
+}
+
+/// Adding an entry to a registry reproduces Civil 3D's registry exactly
+/// (apart from padding bits): S24 → S25, S25 → S44, S44 → S48; removing it
+/// gives back the original.
+#[test]
+fn registry_entries_match_civil3d() {
+    use civil3drust::aecc_create::find_registry;
+    let files = [
+        "samples/S24_ZERO_CIVIL.dwg",
+        "samples/S25_ZERO_CIVIL_second_alignment.dwg",
+        "samples/S44_S25_plus_two_tangent_alignment.dwg",
+        "samples/S48_S25_plus_C_no_curves.dwg",
+    ];
+    let regs: Vec<_> = files
+        .iter()
+        .map(|f| find_registry(&raw::open(f).unwrap().doc).unwrap())
+        .collect();
+    let content = |d: &[u8], hb: usize| -> Vec<u8> {
+        // data stream + handle references, without trailing padding
+        let total = d.len() * 8;
+        let refs = handle_refs::parse(d, total - hb, total, 0);
+        let end = refs.last().map(|r| r.bit + r.bits()).unwrap();
+        (0..end).map(|i| raw::get_bit(d, i)).collect()
+    };
+    for w in regs.windows(2) {
+        let ((ra, ga), (rb, gb)) = (&w[0], &w[1]);
+        let new = gb
+            .entries
+            .iter()
+            .find(|e| !ga.entries.iter().any(|x| x.companion == e.companion))
+            .unwrap()
+            .clone();
+        let (d, hb) = ga.with_entry(ra, new.clone()).unwrap();
+        assert_eq!(content(&d, hb), content(&rb.data, rb.handle_bits));
+        let (d2, hb2) = gb.without_entry(rb, new.companion).unwrap();
+        assert_eq!(content(&d2, hb2), content(&ra.data, ra.handle_bits));
+    }
 }

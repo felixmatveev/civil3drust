@@ -105,6 +105,22 @@ impl Bits {
             v.to_le_bytes().iter().for_each(|b| self.byte(*b));
         }
     }
+    /// Bit-coded short (string lengths): `10` for 0, `01` + byte for
+    /// 1–255, `00` + 16 bits little-endian otherwise.
+    pub fn bl_short(&mut self, v: usize) {
+        match v {
+            0 => self.bits(0b10, 2),
+            1..=255 => {
+                self.bits(0b01, 2);
+                self.byte(v as u8);
+            }
+            _ => {
+                self.bits(0b00, 2);
+                self.byte((v & 0xFF) as u8);
+                self.byte((v >> 8) as u8);
+            }
+        }
+    }
     /// Raw double.
     pub fn rd(&mut self, v: f64) {
         v.to_le_bytes().iter().for_each(|b| self.byte(*b));

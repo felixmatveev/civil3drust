@@ -158,6 +158,120 @@ pub fn null_refs(data: &[u8], handle_bits: usize, own: u64, null_at: &[usize]) -
     (out, hb)
 }
 
+/// Bit offset of the object's own handle (`CODE 0 | COUNTER` byte + bytes)
+/// in every AECC record studied (after the 2-byte object type).
+pub const OWN_HANDLE_BIT: usize = 18;
+
+/// The object's own handle stored at [`OWN_HANDLE_BIT`].
+pub fn own_handle(data: &[u8]) -> Option<u64> {
+    let form = raw::get_byte(data, OWN_HANDLE_BIT);
+    if form >> 4 != 0 || form & 0x0F > 8 {
+        return None;
+    }
+    let n = (form & 0x0F) as usize;
+    Some((0..n).fold(0u64, |v, i| {
+        v << 8 | raw::get_byte(data, OWN_HANDLE_BIT + 8 + 8 * i) as u64
+    }))
+}
+
+fn pack(bits: &[u8]) -> Vec<u8> {
+    let mut out = vec![0u8; bits.len().div_ceil(8)];
+    for (i, b) in bits.iter().enumerate() {
+        out[i / 8] |= b << (7 - i % 8);
+    }
+    out
+}
+
+fn push_byte(out: &mut Vec<u8>, v: u8) {
+    out.extend((0..8).rev().map(|k| (v >> k) & 1));
+}
+
+/// Rewrite the object's own handle (minimal byte count; the record size
+/// can change). Returns the new bytes and handle-stream size.
+pub fn set_own_handle(data: &[u8], handle_bits: usize, new: u64) -> Option<(Vec<u8>, usize)> {
+    let form = raw::get_byte(data, OWN_HANDLE_BIT);
+    if form >> 4 != 0 {
+        return None;
+    }
+    let old_end = OWN_HANDLE_BIT + 8 + 8 * (form & 0x0F) as usize;
+    let total = raw::bit_len(data);
+    let data_end = total - handle_bits;
+    let mut bits: Vec<u8> = (0..OWN_HANDLE_BIT).map(|b| raw::get_bit(data, b)).collect();
+    let n = if new == 0 {
+        0
+    } else {
+        8 - new.leading_zeros() as usize / 8
+    };
+    push_byte(&mut bits, n as u8);
+    for i in (0..n).rev() {
+        push_byte(&mut bits, (new >> (8 * i)) as u8);
+    }
+    let shift = bits.len() as isize - old_end as isize;
+    bits.extend((old_end..total).map(|b| raw::get_bit(data, b)));
+    let new_data_end = (data_end as isize + shift) as usize;
+    // Drop old padding past the handle stream's references, re-pad.
+    let refs = parse(&pack(&bits), new_data_end, bits.len(), new);
+    if let Some(last) = refs.last() {
+        bits.truncate(last.bit + last.bits());
+    }
+    while !bits.len().is_multiple_of(8) {
+        bits.push(0);
+    }
+    let hb = bits.len() - new_data_end;
+    Some((pack(&bits), hb))
+}
+
+/// Re-encode the whole handle stream of a record whose own handle is `own`:
+/// reference `i` points at `targets[i]`, keeping its kind. Absolute codes
+/// (2–5) use the minimal byte count; relative codes are recomputed (`6`/`8`
+/// when the target is own ± 1 and the original used them, else `A`/`C`
+/// with a minimal offset). Returns the new bytes and handle-stream size.
+pub fn rewrite_refs(
+    data: &[u8],
+    handle_bits: usize,
+    own: u64,
+    targets: &[u64],
+) -> Option<(Vec<u8>, usize)> {
+    let total = raw::bit_len(data);
+    let data_end = total - handle_bits;
+    let refs = parse(data, data_end, total, own);
+    if refs.len() != targets.len() {
+        return None;
+    }
+    let mut bits: Vec<u8> = (0..data_end).map(|b| raw::get_bit(data, b)).collect();
+    for (r, &t) in refs.iter().zip(targets) {
+        let (code, value) = match r.code {
+            2..=5 => (r.code, t),
+            0x6 | 0x8 | 0xA | 0xC => {
+                if r.code == 0x6 && t == own.wrapping_add(1) {
+                    (0x6, 0)
+                } else if r.code == 0x8 && t == own.wrapping_sub(1) {
+                    (0x8, 0)
+                } else if t > own {
+                    (0xA, t - own)
+                } else {
+                    (0xC, own - t)
+                }
+            }
+            _ => return None,
+        };
+        let n = if matches!(code, 0x6 | 0x8) || value == 0 {
+            0
+        } else {
+            8 - value.leading_zeros() as usize / 8
+        };
+        push_byte(&mut bits, (code << 4) | n as u8);
+        for i in (0..n).rev() {
+            push_byte(&mut bits, (value >> (8 * i)) as u8);
+        }
+    }
+    while !bits.len().is_multiple_of(8) {
+        bits.push(0);
+    }
+    let hb = bits.len() - data_end;
+    Some((pack(&bits), hb))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -238,5 +352,37 @@ mod tests {
         assert_eq!(out.len() * 8 - nhb, 4);
         assert_eq!(raw::get_bit(&out, 0), 1);
         assert_eq!(out.len(), d.len() - 2);
+    }
+
+    #[test]
+    fn rewrite_and_own_handle() {
+        // header: 18 bits, own handle 02 0F B8, 6 data bits, refs C.2 03F7, 4.2 0FB8, 5.0
+        let mut bits = vec![0u8; 18];
+        for b in [0x02u8, 0x0F, 0xB8] {
+            bits.extend((0..8).rev().map(|k| (b >> k) & 1));
+        }
+        bits.extend([1, 0, 1, 1, 0, 1]);
+        let de = bits.len();
+        for b in [0xC2u8, 0x03, 0xF7, 0x42, 0x0F, 0xB8, 0x50] {
+            bits.extend((0..8).rev().map(|k| (b >> k) & 1));
+        }
+        while !bits.len().is_multiple_of(8) {
+            bits.push(0);
+        }
+        let d = pack(&bits);
+        let hb = d.len() * 8 - de;
+        assert_eq!(own_handle(&d), Some(0xFB7 + 1));
+        let (d2, hb2) = set_own_handle(&d, hb, 0x12345).unwrap();
+        assert_eq!(own_handle(&d2), Some(0x12345));
+        let refs: Vec<u64> = parse(&d2, d2.len() * 8 - hb2, d2.len() * 8, 0x12345)
+            .iter()
+            .map(|r| r.raw)
+            .collect();
+        assert_eq!(refs, [0x3F7, 0xFB8, 0]); // stored values unchanged
+        let (d3, hb3) = rewrite_refs(&d2, hb2, 0x12345, &[0xBC0, 0x12346, 0]).unwrap();
+        let r3 = parse(&d3, d3.len() * 8 - hb3, d3.len() * 8, 0x12345);
+        let got: Vec<(u8, u64)> = r3.iter().map(|r| (r.code, r.handle)).collect();
+        assert_eq!(got, [(0xC, 0xBC0), (4, 0x12346), (5, 0)]);
+        assert_eq!(raw::get_bit(&d3, 18 + 32), 1); // data bits kept
     }
 }

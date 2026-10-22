@@ -1,12 +1,16 @@
 //! Create a new alignment in a Civil 3D drawing (D-021).
 //!
 //! Usage:
-//!   cargo run --release --example create_alignment -- donor.dwg target.dwg out.dwg <name> "x,y x,y" [--no-label-group] [--no-parcel-entry]
+//!   cargo run --release --example create_alignment -- donor.dwg target.dwg out.dwg <name> "x,y x,y"
+//!       [--style <name|hex>] [--template <hex>] [--no-label-group] [--no-parcel-entry]
 //!
-//! `donor.dwg` is `target.dwg` plus one alignment created in Civil 3D (e.g.
-//! S25 for S24). Its records are copied into the target with new handles,
-//! a new ID string, the given name and the given PIs (any number). A PI
-//! written `x,y,r` gets a free curve (fillet) of radius `r`.
+//! `donor.dwg` is any drawing with an alignment made by Civil 3D (the
+//! template; default: its alignment with the highest handle, or
+//! `--template`). Its records are copied into the target with new handles,
+//! a new registry entry, the given name and PIs (any number). A PI written
+//! `x,y,r` gets a free curve (fillet) of radius `r`. `--style` picks an
+//! alignment style of the target (default: the template's, which must then
+//! exist in the target).
 
 use civil3drust::aecc_create::{create_alignment, CreateOptions};
 use civil3drust::aecc_elements::decode_elements;
@@ -47,7 +51,21 @@ fn parse_pis(s: &str) -> (Vec<Point2>, Vec<Option<f64>>) {
 }
 
 fn main() {
-    let a: Vec<String> = std::env::args().collect();
+    let mut a: Vec<String> = std::env::args().collect();
+    let mut take = |flag: &str| -> Option<String> {
+        let i = a.iter().position(|x| x == flag)?;
+        if i + 1 >= a.len() {
+            fail(format!("{flag} needs a value"));
+        }
+        let v = a[i + 1].clone();
+        a.drain(i..=i + 1);
+        Some(v)
+    };
+    let style_arg = take("--style");
+    let template = take("--template").map(|h| {
+        u64::from_str_radix(h.trim_start_matches("0x"), 16)
+            .unwrap_or_else(|_| fail("--template takes a hex handle"))
+    });
     let no_label = a.iter().any(|x| x == "--no-label-group");
     let no_parcel = a.iter().any(|x| x == "--no-parcel-entry");
     let a: Vec<String> = a.into_iter().filter(|x| !x.starts_with("--no-")).collect();
@@ -71,6 +89,15 @@ fn main() {
         .map(|d| d.as_nanos() as u64)
         .unwrap_or(1);
     let (pis, radii) = parse_pis(&a[5]);
+    let style = style_arg.map(|s| {
+        civil3drust::aecc_alignment_refs::alignment_styles(&target.doc)
+            .into_iter()
+            .find(|(h, n)| {
+                n == &s || u64::from_str_radix(s.trim_start_matches("0x"), 16).ok() == Some(*h)
+            })
+            .map(|x| x.0)
+            .unwrap_or_else(|| fail(format!("target has no alignment style '{s}'")))
+    });
     let c = create_alignment(
         &mut target.doc,
         &donor.doc,
@@ -81,17 +108,23 @@ fn main() {
         CreateOptions {
             label_group: !no_label,
             parcel_entry: !no_parcel,
+            style,
+            template,
         },
     )
     .unwrap_or_else(|e| fail(e));
     println!(
-        "created '{}': alignment {:X}, companion {:X}, label group {:X} (0 = not written){}",
+        "created '{}': alignment {:X}, style {:X}, companion {:X}, label group {:X} (0 = not written){}",
         c.name,
         c.alignment,
+        c.style,
         c.companion,
         c.label_group,
         if c.companion != 0 {
-            format!(", registry {:X} entry, ID {}", c.registry, c.id_string)
+            format!(
+                ", registry {:X} key {:X}, ID {}",
+                c.registry, c.registry_key, c.id_string
+            )
         } else {
             String::new()
         }

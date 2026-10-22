@@ -363,7 +363,7 @@ every alignment style in S1–S24 and will be replaced when the layout is
 decoded.
 
 ## D-021: First alignment creation by transplanting a donor's records
-Date: 2026-10-22 · Status: accepted (interim)
+Date: 2026-10-22 · Status: superseded by D-025
 
 **Context.** Creating an alignment adds four records (S24 → S25). The
 companion registry's entry layout (an ID string plus a reference and some
@@ -438,3 +438,22 @@ and the edit refused if a field isn't where expected.
 **Alternatives.** Keep requiring a donor with the same PI count: not
 usable. Write the whole record from scratch: the unknown regions (section
 2, the post-cache block) would have to be invented rather than copied.
+
+## D-025: Alignment creation from a template; registry rebuilt
+Date: 2026-10-22 · Status: accepted
+
+**Context.** D-021 needed a donor that was the target plus one alignment,
+because the registry entry layout was unknown. S24/S25/S44/S48 decoded it
+(key list, ID strings, soft-owner references, sorted by ID string).
+
+**Decision.** `create_alignment` takes a template alignment (with its
+companion and label group) from any donor drawing and adds a new entry to
+the target's own registry: key = largest key + 1, new ID string, entries
+re-sorted. Handles are rewritten at any byte length rather than patched in
+place. The template's style must exist in the target unless another is
+given; the label group is written only when its label style exists.
+
+**Alternatives.** Keep the donor + 1 requirement: unusable on real
+drawings. Write companions and the registry from scratch: companions still
+contain undecoded parcel data, which Civil 3D regenerates anyway (S35), so
+copying a template companion is enough.

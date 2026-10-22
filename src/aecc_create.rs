@@ -1,41 +1,36 @@
-//! Creating an alignment by transplanting Civil 3D's own records.
+//! Creating an alignment from a template alignment.
 //!
 //! Creating an alignment in Civil 3D adds (S24 → S25, docs/alignment-object.md
 //! "Creating an alignment"):
 //!
 //! - the `AECC_ALIGNMENT` entity,
-//! - its companion `AECC_FEATURE_STYLE` object, which carries a 32-hex-digit
-//!   ID string,
-//! - an `AECC_ALIGNMENT_STAEQU_LABEL_GROUP` entity pointing at the alignment,
-//! - an entry in the companion registry (`AECC_FEATURE_STYLE`, BC0 in
-//!   S24/S25): a soft-owner reference and a copy of the ID string.
+//! - its companion `AECC_FEATURE_STYLE` object (parcel-topology entry) with
+//!   a key and a 32-hex-digit ID string,
+//! - optionally an `AECC_ALIGNMENT_STAEQU_LABEL_GROUP` entity,
+//! - an entry in the drawing's companion registry ([`crate::aecc_registry`]).
 //!
-//! The registry's entry layout isn't decoded yet, so [`create_alignment`]
-//! takes a **donor** drawing that is the target plus one alignment created
-//! in Civil 3D (S25 for target S24). It copies the donor's four records
-//! into the target and makes them a new alignment:
+//! [`create_alignment`] copies a **template** alignment, its companion and
+//! (if wanted) its label group from a donor drawing — any drawing with an
+//! alignment made by Civil 3D (S25 in the tests) — and turns them into a new
+//! alignment of the target:
 //!
-//! - fresh handles (companion, alignment, label group, allocated in that
-//!   order, as Civil 3D did), patched in each record's own-handle field
-//!   (bit 26) and in every reference between them;
-//! - a new ID string in the companion and the registry;
-//! - the requested name (any length, via [`string_stream::set_name`]),
-//!   PIs (any number) and free arcs at interior PIs, via
-//!   [`aecc_build::set_geometry`], and a fresh identity value
-//!   ([`aecc_build::set_identity`]).
+//! - fresh handles (companion, alignment, label group, in that order, as
+//!   Civil 3D allocates them), written as each record's own handle and in
+//!   every reference ([`handle_refs::set_own_handle`],
+//!   [`handle_refs::rewrite_refs`]) — any byte length;
+//! - the companion gets a new registry key and ID string, and is added to
+//!   the target's registry, sorted by ID string;
+//! - the alignment gets the requested name, PIs and free curves
+//!   ([`aecc_build::set_geometry`]), a fresh identity GUID and the requested
+//!   (or the donor's) alignment style.
 //!
-//! The label group and the parcel entry (companion + registry entry) can
-//! be left out ([`CreateOptions`]) to test whether Civil 3D requires them;
-//! their handles are still allocated, so all variants use the same
-//! handles. Without the parcel entry the alignment's two companion
-//! references become null references, which shrinks its handle stream
-//! (`handle_refs::null_refs`).
-//!
-//! Only the alignment record can change size (name). The style, layer and
-//! label style are the donor's and must exist in the target.
+//! The label group is written only when the target has its label style; it
+//! is optional (S27 → S29). Without the parcel entry (an experiment, S30)
+//! the alignment's companion references are null.
 
 use crate::aecc_alignment_refs::alignment_refs;
 use crate::aecc_build;
+use crate::aecc_registry::{companion_key, Entry, Registry};
 use crate::alignment::Point2;
 use crate::handle_refs::{self, HandleRef};
 use crate::raw::{self, RawRecord};
@@ -49,23 +44,20 @@ use std::fmt;
 const COMPANION: &str = "AECC_FEATURE_STYLE";
 const ALIGNMENT: &str = "AECC_ALIGNMENT";
 const LABEL_GROUP: &str = "AECC_ALIGNMENT_STAEQU_LABEL_GROUP";
-/// Bit offset of the own-handle reference (`0x02` + two handle bytes) in
-/// every record studied.
-const OWN_HANDLE_REF: usize = 18;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum CreateError {
-    /// The donor/target pair doesn't have the expected shape.
+    /// The donor drawing doesn't have a usable template alignment.
     Donor(String),
-    /// The target lacks an object the donor's records point at.
+    /// The target lacks an object the new records must point at.
     MissingInTarget(&'static str, u64),
-    /// The new name must have the donor name's length (for now).
+    /// The name must not be empty.
     NameLength {
         want: usize,
         got: usize,
     },
-    /// A new handle or offset doesn't fit the stored byte count.
-    HandleSize(u64),
+    /// A record could not be rewritten.
+    Layout(String),
     Geometry(String),
 }
 
@@ -75,7 +67,7 @@ impl fmt::Display for CreateError {
             Self::Donor(why) => write!(f, "donor drawing: {why}"),
             Self::MissingInTarget(what, h) => write!(f, "target has no {what} {h:X}"),
             Self::NameLength { .. } => write!(f, "name must not be empty"),
-            Self::HandleSize(h) => write!(f, "handle {h:X} doesn't fit the stored byte count"),
+            Self::Layout(why) => write!(f, "record layout: {why}"),
             Self::Geometry(e) => write!(f, "geometry: {e}"),
         }
     }
@@ -83,14 +75,20 @@ impl fmt::Display for CreateError {
 
 impl std::error::Error for CreateError {}
 
-/// Which optional records [`create_alignment`] writes.
+/// Options for [`create_alignment`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CreateOptions {
-    /// The station-equation label group (optional: S27 → S29).
+    /// Write the station-equation label group (if the target has its label
+    /// style).
     pub label_group: bool,
-    /// The parcel-topology entry: companion object plus registry entry. When
-    /// false, the alignment's two companion references are nulled.
+    /// The parcel-topology entry: companion object plus registry entry.
+    /// When false, the alignment's two companion references are nulled.
     pub parcel_entry: bool,
+    /// Alignment style handle in the target; default: the template's.
+    pub style: Option<u64>,
+    /// Handle of the template alignment in the donor; default: the donor's
+    /// alignment with the highest handle that has a companion.
+    pub template: Option<u64>,
 }
 
 impl Default for CreateOptions {
@@ -98,6 +96,8 @@ impl Default for CreateOptions {
         Self {
             label_group: true,
             parcel_entry: true,
+            style: None,
+            template: None,
         }
     }
 }
@@ -108,15 +108,21 @@ pub struct Created {
     pub alignment: u64,
     /// 0 when created without the parcel entry.
     pub companion: u64,
-    /// 0 when created without a label group.
+    /// 0 when no label group was written.
     pub label_group: u64,
     pub registry: u64,
+    pub registry_key: u32,
     pub id_string: String,
     pub name: String,
+    pub style: u64,
 }
 
 fn donor_err(msg: impl Into<String>) -> CreateError {
     CreateError::Donor(msg.into())
+}
+
+fn lay(msg: impl Into<String>) -> CreateError {
+    CreateError::Layout(msg.into())
 }
 
 fn record(doc: &CadDocument, class: &str, handle: u64) -> Option<RawRecord> {
@@ -125,53 +131,11 @@ fn record(doc: &CadDocument, class: &str, handle: u64) -> Option<RawRecord> {
         .find(|r| r.handle == handle)
 }
 
-/// Soft-owner (code 2) entries of a registry record.
-fn owned(rec: &RawRecord) -> Vec<u64> {
-    handle_refs::of_record(rec)
-        .iter()
-        .filter(|r| r.code == 2)
-        .map(|r| r.handle)
-        .collect()
-}
-
-fn registry(doc: &CadDocument) -> Option<RawRecord> {
+/// The drawing's companion registry.
+pub fn find_registry(doc: &CadDocument) -> Option<(RawRecord, Registry)> {
     raw::records(doc, COMPANION)
         .into_iter()
-        .find(|r| !owned(r).is_empty())
-}
-
-fn patch_own_handle(data: &mut [u8], old: u64, new: u64) -> Result<(), CreateError> {
-    let stored = ((raw::get_byte(data, OWN_HANDLE_REF + 8) as u64) << 8)
-        | raw::get_byte(data, OWN_HANDLE_REF + 16) as u64;
-    if raw::get_byte(data, OWN_HANDLE_REF) != 0x02 || stored != old {
-        return Err(donor_err(format!(
-            "record {old:X}: own handle not at the expected position"
-        )));
-    }
-    if !(0x100..=0xFFFF).contains(&new) {
-        return Err(CreateError::HandleSize(new));
-    }
-    raw::set_byte(data, OWN_HANDLE_REF + 8, (new >> 8) as u8);
-    raw::set_byte(data, OWN_HANDLE_REF + 16, new as u8);
-    Ok(())
-}
-
-/// Point every reference in `refs` that targets `from` at `to`.
-fn retarget_all(
-    data: &mut [u8],
-    refs: &[HandleRef],
-    own: u64,
-    from: u64,
-    to: u64,
-) -> Result<usize, CreateError> {
-    let mut n = 0;
-    for r in refs.iter().filter(|r| r.handle == from) {
-        if !handle_refs::retarget_any(data, r, own, to) {
-            return Err(CreateError::HandleSize(to));
-        }
-        n += 1;
-    }
-    Ok(n)
+        .find_map(|r| Registry::parse(&r).ok().map(|g| (r, g)))
 }
 
 /// Overwrite every occurrence of the UTF-16 string `old` with `new` (same
@@ -222,8 +186,27 @@ fn id_string_of(rec: &RawRecord) -> Option<String> {
         .find(|s| s.len() == 32 && s.chars().all(|c| c.is_ascii_hexdigit()))
 }
 
-/// Add a new alignment to `target`, built from the one alignment `donor`
-/// has that `target` lacks. `seed` feeds the ID string.
+/// Set own handle then all references of `rec` (mapped by `map`).
+fn rehandle(
+    rec: &RawRecord,
+    new: u64,
+    map: impl Fn(&HandleRef) -> u64,
+) -> Result<(Vec<u8>, usize), CreateError> {
+    let refs = handle_refs::of_record(rec);
+    let targets: Vec<u64> = refs.iter().map(&map).collect();
+    let (d, hb) = handle_refs::set_own_handle(&rec.data, rec.handle_bits, new)
+        .ok_or_else(|| lay(format!("record {:X}: own handle", rec.handle)))?;
+    handle_refs::rewrite_refs(&d, hb, new, &targets)
+        .ok_or_else(|| lay(format!("record {:X}: handle stream", rec.handle)))
+}
+
+fn is_layer(doc: &CadDocument, h: u64) -> bool {
+    doc.layers.iter().any(|l| l.handle.value() == h)
+}
+
+/// Add a new alignment to `target`, built from a template alignment in
+/// `donor`. `seed` feeds the ID string, the registry key choice is
+/// deterministic (largest + 1), and the identity GUID.
 pub fn create_alignment(
     target: &mut CadDocument,
     donor: &CadDocument,
@@ -233,113 +216,107 @@ pub fn create_alignment(
     seed: u64,
     opts: CreateOptions,
 ) -> Result<Created, CreateError> {
-    let with_label_group = opts.label_group;
-    // --- Identify the donor's new records. ---
-    let d_reg = registry(donor).ok_or_else(|| donor_err("no companion registry"))?;
-    let t_reg = record(target, COMPANION, d_reg.handle).ok_or(CreateError::MissingInTarget(
-        "companion registry",
-        d_reg.handle,
-    ))?;
-    let (d_owned, t_owned) = (owned(&d_reg), owned(&t_reg));
-    let extra: Vec<u64> = d_owned
-        .iter()
-        .copied()
-        .filter(|h| !t_owned.contains(h))
-        .collect();
-    if extra.len() != 1 || d_owned.len() != t_owned.len() + 1 {
-        return Err(donor_err(format!(
-            "registry must list exactly one more companion than the target's (donor {d_owned:X?}, target {t_owned:X?})"
-        )));
-    }
-    let d_comp_h = extra[0];
-    let d_comp = record(donor, COMPANION, d_comp_h)
-        .ok_or_else(|| donor_err(format!("companion {d_comp_h:X} missing")))?;
-    let d_align = raw::records(donor, ALIGNMENT)
-        .into_iter()
-        .find(|r| alignment_refs(r).is_some_and(|x| x.companion.handle == d_comp_h))
-        .ok_or_else(|| donor_err("no alignment uses the new companion"))?;
-    let d_label = raw::records(donor, LABEL_GROUP)
-        .into_iter()
-        .find(|r| {
-            handle_refs::of_record(r)
-                .iter()
-                .any(|x| x.code == 4 && x.handle == d_align.handle)
-        })
-        .ok_or_else(|| donor_err("no station-equation label group for the alignment"))?;
-    let refs = alignment_refs(&d_align).unwrap();
-
-    // --- Everything the copies point at must exist in the target. ---
-    if raw::class_of(target, refs.style.handle).as_deref() != Some("AECC_ALIGNMENT_STYLE") {
-        return Err(CreateError::MissingInTarget(
-            "alignment style",
-            refs.style.handle,
-        ));
-    }
-    if !target
-        .layers
-        .iter()
-        .any(|l| l.handle.value() == refs.layer.handle)
-    {
-        return Err(CreateError::MissingInTarget("layer", refs.layer.handle));
-    }
-    let new_set = [d_comp_h, d_align.handle, d_label.handle];
-    for r in handle_refs::of_record(&d_label)
-        .iter()
-        .chain(handle_refs::of_record(&d_comp).iter())
-    {
-        let known = r.handle == 0
-            || new_set.contains(&r.handle)
-            || r.handle == d_reg.handle
-            || target.layers.iter().any(|l| l.handle.value() == r.handle)
-            || raw::class_of(target, r.handle).is_some();
-        if !known {
-            return Err(CreateError::MissingInTarget("object", r.handle));
-        }
-    }
-
-    // --- Name and ID string. ---
-    let old_name =
-        raw::object_name(&d_align.data).ok_or_else(|| donor_err("alignment has no name"))?;
     if name.is_empty() {
         return Err(CreateError::NameLength { want: 1, got: 0 });
     }
-    let old_id = id_string_of(&d_comp).ok_or_else(|| donor_err("companion has no ID string"))?;
-    let existing_ids: Vec<String> = raw::records(target, COMPANION)
-        .iter()
-        .filter_map(id_string_of)
-        .chain([old_id.clone()])
+    // --- Template records in the donor. ---
+    let candidates: Vec<RawRecord> = raw::records(donor, ALIGNMENT)
+        .into_iter()
+        .filter(|r| alignment_refs(r).is_some_and(|x| x.companion.handle != 0))
         .collect();
-    let new_id = new_id_string(seed, &existing_ids);
+    let d_align = match opts.template {
+        Some(h) => candidates.into_iter().find(|r| r.handle == h),
+        None => candidates.into_iter().max_by_key(|r| r.handle),
+    }
+    .ok_or_else(|| donor_err("no alignment with a companion"))?;
+    let refs = alignment_refs(&d_align).unwrap();
+    let d_comp_h = refs.companion.handle;
+    let d_comp = record(donor, COMPANION, d_comp_h)
+        .ok_or_else(|| donor_err(format!("companion {d_comp_h:X} missing")))?;
+    let d_label = raw::records(donor, LABEL_GROUP).into_iter().find(|r| {
+        handle_refs::of_record(r)
+            .iter()
+            .any(|x| x.code == 4 && x.handle == d_align.handle)
+    });
 
-    // --- New handles (Civil 3D order: companion, alignment, label). ---
+    // --- What the new records point at, in the target. ---
+    let style = opts.style.unwrap_or(refs.style.handle);
+    if raw::class_of(target, style).as_deref() != Some("AECC_ALIGNMENT_STYLE") {
+        return Err(CreateError::MissingInTarget("alignment style", style));
+    }
+    if !is_layer(target, refs.layer.handle) {
+        return Err(CreateError::MissingInTarget("layer", refs.layer.handle));
+    }
+    let (t_reg_rec, t_reg) =
+        find_registry(target).ok_or(CreateError::MissingInTarget("companion registry", 0))?;
+    // The label group's other references (layer, label style) must exist.
+    let label = d_label.filter(|l| {
+        opts.label_group
+            && handle_refs::of_record(l).iter().all(|r| {
+                r.handle == 0
+                    || r.handle == d_align.handle
+                    || is_layer(target, r.handle)
+                    || raw::class_of(target, r.handle).is_some()
+            })
+    });
+
+    // --- ID string, key, handles. ---
+    let old_name =
+        raw::object_name(&d_align.data).ok_or_else(|| donor_err("alignment has no name"))?;
+    let old_id = id_string_of(&d_comp).ok_or_else(|| donor_err("companion has no ID string"))?;
+    let existing_ids: Vec<String> = t_reg.entries.iter().map(|e| e.id.clone()).collect();
+    let new_id = new_id_string(seed, &existing_ids);
+    let key = t_reg.next_key();
     let comp_h = target.allocate_handle().value();
     let align_h = target.allocate_handle().value();
     let label_h = target.allocate_handle().value();
 
-    // Companion.
-    let mut comp = d_comp.data.clone();
-    patch_own_handle(&mut comp, d_comp_h, comp_h)?;
-    let crefs = handle_refs::of_record(&d_comp);
-    retarget_all(&mut comp, &crefs, comp_h, d_reg.handle, d_reg.handle)?;
-    retarget_all(&mut comp, &crefs, comp_h, d_align.handle, align_h)?;
+    // Companion: own handle, refs (registry, alignment), key, ID string.
+    let (mut comp, comp_hb) = rehandle(&d_comp, comp_h, |r| {
+        if r.handle == d_align.handle {
+            align_h
+        } else if r.code != 2 && r.code != 4 && r.handle != 0 {
+            t_reg.handle // the own-offset reference to the registry
+        } else {
+            r.handle
+        }
+    })?;
+    let crec = RawRecord {
+        handle: comp_h,
+        class: COMPANION.into(),
+        is_entity: false,
+        data: comp.clone(),
+        handle_bits: comp_hb,
+    };
+    let (kbit, _) = companion_key(&crec).ok_or_else(|| lay("companion key not found"))?;
+    for (i, b) in key.to_le_bytes().iter().enumerate() {
+        raw::set_byte(&mut comp, kbit + 8 * i, *b);
+    }
     if replace_string(&mut comp, &old_id, &new_id) != 1 {
         return Err(donor_err("companion ID string not found once"));
     }
 
-    // Alignment.
-    let mut align = d_align.data.clone();
-    patch_own_handle(&mut align, d_align.handle, align_h)?;
-    let arefs = handle_refs::of_record(&d_align);
-    if retarget_all(&mut align, &arefs, align_h, d_comp_h, comp_h)? != 2 {
-        return Err(donor_err("alignment doesn't reference its companion twice"));
-    }
-    // Geometry (any PI count, free arcs), then a fresh identity value.
+    // Alignment: own handle, refs (companion, style), geometry, identity,
+    // name.
+    let (align, ahb) = rehandle(&d_align, align_h, |r| {
+        if r.handle == d_comp_h {
+            if opts.parcel_entry {
+                comp_h
+            } else {
+                0
+            }
+        } else if r.bit == refs.style.bit {
+            style
+        } else {
+            r.handle
+        }
+    })?;
     let rec = RawRecord {
         handle: align_h,
         class: ALIGNMENT.into(),
         is_entity: true,
         data: align,
-        handle_bits: d_align.handle_bits,
+        handle_bits: ahb,
     };
     let (bytes, hb, _) = aecc_build::set_geometry(&rec, pis, radii)
         .map_err(|e| CreateError::Geometry(e.to_string()))?;
@@ -350,45 +327,34 @@ pub fn create_alignment(
         ..rec
     };
     aecc_build::set_identity(&rec, &mut align, seed.rotate_left(17))
-        .map_err(|e| donor_err(e.to_string()))?;
-    // Name last among data edits: it can change the record size.
-    let (bytes, mut align_hb) = string_stream::set_name(&align, hb, &old_name, name)
-        .map_err(|e| donor_err(e.to_string()))?;
-    align = bytes;
-    if !opts.parcel_entry {
-        let idx: Vec<usize> = handle_refs::of_record(&d_align)
-            .iter()
-            .enumerate()
-            .filter(|(_, r)| r.handle == d_comp_h)
-            .map(|(i, _)| i)
-            .collect();
-        let (bytes, hb) = handle_refs::null_refs(&align, align_hb, align_h, &idx);
-        align = bytes;
-        align_hb = hb;
-    }
+        .map_err(|e| lay(e.to_string()))?;
+    let (align, align_hb) =
+        string_stream::set_name(&align, hb, &old_name, name).map_err(|e| lay(e.to_string()))?;
 
-    // Label group.
-    let mut label = d_label.data.clone();
-    patch_own_handle(&mut label, d_label.handle, label_h)?;
-    let lrefs = handle_refs::of_record(&d_label);
-    if retarget_all(&mut label, &lrefs, label_h, d_align.handle, align_h)? != 1 {
-        return Err(donor_err(
-            "label group doesn't reference the alignment once",
-        ));
-    }
-
-    // Registry: the donor's version, with the new companion and ID string.
-    let mut reg = d_reg.data.clone();
-    let rrefs = handle_refs::of_record(&d_reg);
-    if retarget_all(&mut reg, &rrefs, d_reg.handle, d_comp_h, comp_h)? != 1 {
-        return Err(donor_err("registry doesn't own the companion once"));
-    }
-    if replace_string(&mut reg, &old_id, &new_id) != 1 {
-        return Err(donor_err("registry ID string not found once"));
-    }
+    // Label group: own handle, reference to the alignment.
+    let label_rec = match &label {
+        Some(l) => Some(rehandle(l, label_h, |r| {
+            if r.handle == d_align.handle {
+                align_h
+            } else {
+                r.handle
+            }
+        })?),
+        None => None,
+    };
 
     // --- Insert into the target. ---
     if opts.parcel_entry {
+        let (reg, reg_hb) = t_reg
+            .with_entry(
+                &t_reg_rec,
+                Entry {
+                    key,
+                    companion: comp_h,
+                    id: new_id.clone(),
+                },
+            )
+            .map_err(|e| lay(e.to_string()))?;
         let d_obj = donor
             .objects
             .iter()
@@ -409,10 +375,10 @@ pub fn create_alignment(
             ObjectType::Unknown {
                 type_name,
                 handle: Handle::new(comp_h),
-                owner: Handle::new(d_reg.handle),
+                owner: Handle::new(t_reg.handle),
                 raw_dxf_codes,
                 raw_dwg_data: Some(comp),
-                raw_dwg_handle_bits: d_comp.handle_bits as i64,
+                raw_dwg_handle_bits: comp_hb as i64,
                 raw_dwg_version,
             },
         );
@@ -423,18 +389,19 @@ pub fn create_alignment(
         }) = target
             .objects
             .iter_mut()
-            .find(|(h, _)| h.value() == d_reg.handle)
+            .find(|(h, _)| h.value() == t_reg.handle)
             .map(|(_, o)| o)
         {
             *raw_dwg_data = Some(reg);
-            *raw_dwg_handle_bits = d_reg.handle_bits as i64;
+            *raw_dwg_handle_bits = reg_hb as i64;
         }
     }
 
     let mut entities = vec![(d_align.handle, align_h, align, align_hb)];
-    if with_label_group {
-        entities.push((d_label.handle, label_h, label, d_label.handle_bits));
+    if let (Some(l), Some((data, hb))) = (&label, label_rec) {
+        entities.push((l.handle, label_h, data, hb));
     }
+    let wrote_label = entities.len() == 2;
     for (src, new_h, data, hb) in entities {
         let mut e = donor
             .entities()
@@ -447,16 +414,18 @@ pub fn create_alignment(
             u.raw_dwg_data = Some(data);
             u.dwg_handle_bits = hb as i64;
         }
-        target.add_entity(e).map_err(|e| donor_err(e.to_string()))?;
+        target.add_entity(e).map_err(|e| lay(e.to_string()))?;
     }
 
     Ok(Created {
         alignment: align_h,
         companion: if opts.parcel_entry { comp_h } else { 0 },
-        label_group: if with_label_group { label_h } else { 0 },
-        registry: d_reg.handle,
+        label_group: if wrote_label { label_h } else { 0 },
+        registry: t_reg.handle,
+        registry_key: key,
         id_string: new_id,
         name: name.to_string(),
+        style,
     })
 }
 
@@ -471,21 +440,5 @@ mod tests {
         assert!(a.chars().all(|c| c.is_ascii_hexdigit()));
         let b = new_id_string(1, std::slice::from_ref(&a));
         assert_ne!(a, b);
-    }
-
-    #[test]
-    fn own_handle_patch() {
-        let mut d = vec![0u8; 8];
-        raw::set_byte(&mut d, 18, 0x02);
-        raw::set_byte(&mut d, 26, 0x0F);
-        raw::set_byte(&mut d, 34, 0xB8);
-        patch_own_handle(&mut d, 0xFB8, 0x1234).unwrap();
-        assert_eq!(raw::get_byte(&d, 26), 0x12);
-        assert_eq!(raw::get_byte(&d, 34), 0x34);
-        assert!(patch_own_handle(&mut d, 0xFB8, 0x1235).is_err());
-        assert_eq!(
-            patch_own_handle(&mut d, 0x1234, 0x12345),
-            Err(CreateError::HandleSize(0x12345))
-        );
     }
 }
