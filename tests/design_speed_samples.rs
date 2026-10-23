@@ -63,3 +63,23 @@ fn rewrite_to_two_speeds() {
     };
     assert_eq!(n(&r2), n(&r) + 1);
 }
+
+/// Editing Civil 3D's own two-entry table (S74 `mixed speed`), whose entry
+/// GUIDs also occur outside the table (S78).
+#[test]
+fn rewrite_civil3d_two_speed_table() {
+    let r = rec("samples/S74_O2_design_speeds.dwg", 0x1074);
+    let old = design_speeds(&r).unwrap();
+    let speeds = [(0.0, 50.0), (150.0, 40.0), (300.0, 30.0)];
+    let (d, hb) = set_design_speeds(&r, &speeds, 5).unwrap();
+    let r2 = raw::RawRecord {
+        data: d,
+        handle_bits: hb,
+        ..r.clone()
+    };
+    let new = design_speeds(&r2).unwrap();
+    assert_eq!(pairs(&r2), speeds);
+    // Old GUIDs kept: the identity first, then the other old entry's.
+    assert_eq!(new[0].id, old[1].id);
+    assert_eq!(new[1].id, old[0].id);
+}

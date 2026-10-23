@@ -83,21 +83,8 @@ fn parse_at(data: &[u8], start: usize) -> Option<(Vec<DesignSpeed>, usize)> {
 /// element records; it must hold the identity GUID (copy 1, 16 bits after
 /// the last element record) in one entry.
 pub fn locate(rec: &RawRecord) -> Result<(usize, usize, Vec<DesignSpeed>), SpeedError> {
-    let d = decode_elements(rec).map_err(|e| err(e.to_string()))?;
-    let end = d
-        .elements
-        .iter()
-        .map(|e| match &e.record {
-            Element::Tangent(t) => t.coords_bit + 256,
-            Element::Arc(a) => a.end_bit,
-        })
-        .max()
-        .ok_or_else(|| err("no elements"))?;
+    let (end, identity) = identity(rec)?;
     let data = &rec.data;
-    let mut identity = [0u8; 16];
-    for (i, b) in identity.iter_mut().enumerate() {
-        *b = raw::get_byte(data, end + 16 + 8 * i);
-    }
     let data_end = raw::bit_len(data) - rec.handle_bits;
     (end + 144..data_end.saturating_sub(200))
         .find_map(|s| {
@@ -108,14 +95,34 @@ pub fn locate(rec: &RawRecord) -> Result<(usize, usize, Vec<DesignSpeed>), Speed
         .ok_or_else(|| err("design-speed table not found"))
 }
 
+/// End of the element records and the identity GUID (copy 1, 16 bits
+/// after them).
+fn identity(rec: &RawRecord) -> Result<(usize, [u8; 16]), SpeedError> {
+    let d = decode_elements(rec).map_err(|e| err(e.to_string()))?;
+    let end = d
+        .elements
+        .iter()
+        .map(|e| match &e.record {
+            Element::Tangent(t) => t.coords_bit + 256,
+            Element::Arc(a) => a.end_bit,
+        })
+        .max()
+        .ok_or_else(|| err("no elements"))?;
+    let mut id = [0u8; 16];
+    for (i, b) in id.iter_mut().enumerate() {
+        *b = raw::get_byte(&rec.data, end + 16 + 8 * i);
+    }
+    Ok((end, id))
+}
+
 /// The alignment's design speeds, in stored order.
 pub fn design_speeds(rec: &RawRecord) -> Result<Vec<DesignSpeed>, SpeedError> {
     locate(rec).map(|x| x.2)
 }
 
 /// Rewrite the design-speed table with `(station, speed)` entries. The
-/// entry holding the identity GUID keeps it and becomes the first entry;
-/// the others get random version-4 GUIDs from `seed`. Returns the new
+/// first entry gets the identity GUID, the others keep the old entries'
+/// GUIDs in order or get random version-4 GUIDs from `seed`. Returns the new
 /// bytes and handle-stream size (the record grows or shrinks).
 pub fn set_design_speeds(
     rec: &RawRecord,
@@ -133,17 +140,12 @@ pub fn set_design_speeds(
     }
     let (start, stop, old) = locate(rec)?;
     let data = &rec.data;
-    // The identity GUID is the entry whose ID Civil 3D also stores after
-    // the element records; locate() guarantees one exists.
-    let keep = old
-        .iter()
-        .map(|e| e.id)
-        .find(|id| {
-            // copy 1 is found by value anywhere before the table
-            (0..start.saturating_sub(128))
-                .any(|b| (0..16).all(|i| raw::get_byte(data, b + 8 * i) == id[i]))
-        })
-        .unwrap_or(old[0].id);
+    // The first entry gets the identity GUID; the others reuse the old
+    // entries' GUIDs in order, then fresh ones. (Other copies of entry
+    // GUIDs exist outside the table, S74 `mixed speed`, so the identity is
+    // taken from copy 1, not searched by value.)
+    let (_, keep) = identity(rec)?;
+    let mut others = old.iter().map(|e| e.id).filter(|id| *id != keep);
     let total = raw::bit_len(data);
     let data_end = total - rec.handle_bits;
     let mut w = Bits::default();
@@ -158,7 +160,9 @@ pub fn set_design_speeds(
         let id = if i == 0 {
             keep
         } else {
-            guid_v4(seed.wrapping_add(i as u64))
+            others
+                .next()
+                .unwrap_or_else(|| guid_v4(seed.wrapping_add(i as u64)))
         };
         for b in id {
             w.byte(b);

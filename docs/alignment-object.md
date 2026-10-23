@@ -1249,6 +1249,15 @@ some other edit in S74 and is still open.
 
 S77 = S75 regenerated with the fix, plus `Speeds 50-40-30` ((0, 50),
 (150, 40), (300, 30)).
+Owner: S77 looks correct in Civil 3D.
+
+**S78** = S74 with Civil 3D's own `mixed speed` (two entries) rewritten to
+(0, 50), (150, 40), (300, 30). The first attempt failed to read back:
+`mixed speed`'s entry GUIDs also occur in the interval block after the
+elements, so finding the identity GUID by value picked the wrong entry.
+`set_design_speeds` now reads the identity from copy 1 (16 bits after the
+elements), gives it to the first entry, and reuses the other old GUIDs in
+order before generating new ones.
 
 ## Open questions
 
