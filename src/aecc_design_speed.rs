@@ -52,7 +52,7 @@ fn parse_at(data: &[u8], start: usize) -> Option<(Vec<DesignSpeed>, usize)> {
     let (zero, q) = raw::read_bl(data, start)?;
     let (one, q) = raw::read_bl(data, q)?;
     let (n, mut q) = raw::read_bl(data, q)?;
-    if zero != 0 || one != 1 || !(1..=1000).contains(&n) {
+    if zero != 0 || one != 1 || !(0..=1000).contains(&n) {
         return None;
     }
     let mut out = Vec::with_capacity(n as usize);
@@ -85,6 +85,15 @@ fn parse_at(data: &[u8], start: usize) -> Option<(Vec<DesignSpeed>, usize)> {
 pub fn locate(rec: &RawRecord) -> Result<(usize, usize, Vec<DesignSpeed>), SpeedError> {
     let (end, identity) = identity(rec)?;
     let data = &rec.data;
+    // No design speeds (S1, S9, S82 FB6/FB9): no intervals (four BL 0)
+    // and an empty table right after them.
+    if (0..EMPTY_INTERVALS.len()).all(|i| raw::get_bit(data, end + i) == EMPTY_INTERVALS[i]) {
+        if let Some((v, q)) = parse_at(data, end + EMPTY_INTERVALS.len()) {
+            if v.is_empty() {
+                return Ok((end + EMPTY_INTERVALS.len(), q, v));
+            }
+        }
+    }
     let data_end = raw::bit_len(data) - rec.handle_bits;
     (end + 144..data_end.saturating_sub(200))
         .find_map(|s| {
@@ -94,6 +103,9 @@ pub fn locate(rec: &RawRecord) -> Result<(usize, usize, Vec<DesignSpeed>), Speed
         })
         .ok_or_else(|| err("design-speed table not found"))
 }
+
+/// The interval block of an alignment without design speeds: BL 0 ×4.
+const EMPTY_INTERVALS: [u8; 8] = [1, 0, 1, 0, 1, 0, 1, 0];
 
 /// End of the element records and the identity GUID (copy 1, 16 bits
 /// after them).
@@ -139,6 +151,12 @@ pub fn set_design_speeds(
         return Err(err("stations must be finite and speeds positive"));
     }
     let (start, stop, old) = locate(rec)?;
+    if old.is_empty() {
+        return Err(err(
+            "the alignment has no design speeds; adding them needs the interval block, \
+             which is not written yet",
+        ));
+    }
     let data = &rec.data;
     // The first entry gets the identity GUID; the others reuse the old
     // entries' GUIDs in order, then fresh ones. (Other copies of entry
@@ -180,6 +198,38 @@ pub fn set_design_speeds(
     let ss = string_stream::parse(&bytes, hb).map_err(|e| err(e.to_string()))?;
     let count = (ss.strings.len() + speeds.len())
         .checked_sub(old.len())
+        .ok_or_else(|| err("string stream too short"))?;
+    string_stream::set_string_count(&bytes, hb, count).map_err(|e| err(e.to_string()))
+}
+
+/// Remove all design speeds, as Civil 3D does when the start station
+/// changes (S82): the interval block after the elements becomes four BL 0,
+/// the table gets `n = 0`, and the three strings per speed (comment and
+/// the interval's two) are removed from the end of the string stream.
+pub fn clear_design_speeds(rec: &RawRecord) -> Result<(Vec<u8>, usize), SpeedError> {
+    let (_, stop, old) = locate(rec)?;
+    let (end, _) = identity(rec)?;
+    let data = &rec.data;
+    let total = raw::bit_len(data);
+    let data_end = total - rec.handle_bits;
+    let mut w = Bits::default();
+    w.copy(data, 0, end);
+    for b in EMPTY_INTERVALS {
+        w.bit(b);
+    }
+    w.bl(0);
+    w.bl(1);
+    w.bl(0);
+    let new_stop = w.len();
+    w.copy(data, stop, total);
+    let new_data_end = data_end + new_stop - stop;
+    let bytes = w.into_bytes();
+    let hb = bytes.len() * 8 - new_data_end;
+    let ss = string_stream::parse(&bytes, hb).map_err(|e| err(e.to_string()))?;
+    let count = ss
+        .strings
+        .len()
+        .checked_sub(3 * old.len())
         .ok_or_else(|| err("string stream too short"))?;
     string_stream::set_string_count(&bytes, hb, count).map_err(|e| err(e.to_string()))
 }

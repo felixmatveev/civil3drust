@@ -1371,9 +1371,20 @@ part of O4.
   table, with the same GUID (S74 `mixed speed`: two intervals, two
   entries, GUIDs shared). The three strings are the speed's comment and
   the interval's two strings (S79 `DESING OFF`: 2 speeds → 8 + 3).
-- Open: why Civil 3D dropped the speeds. The speed at 0+00 lies outside
-  an alignment starting at +1+00 (S9, FB9), but FB6 (−1+00) also lost it.
-  Owner to confirm whether Design Criteria shows no speeds for both.
+- **Changing the start station wipes the design speeds** (owner checked
+  in Civil 3D: no speeds for both, in either direction).
+
+**Code.** `aecc_station::{start_station, set_start_station}`;
+`aecc_design_speed::clear_design_speeds` (writes the no-speed form);
+`design_speeds` reads the empty form; `set_design_speeds` refuses to add
+speeds to an alignment without any (the interval block is not written
+yet); `examples/set_start` (`--clear-speeds`).
+
+**Experiment S83**: S24 + `Start 100 speeds kept` (start 1+00, the
+template's speed entry and interval left in place), `Start 100 no
+speeds` and `Start -100 no speeds` (speeds cleared as Civil 3D does).
+Question: are both forms accepted, and what does Civil 3D show for the
+kept speed?
 
 ## Open questions
 

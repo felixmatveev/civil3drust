@@ -10,6 +10,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 - O4 findings (S82): start station confirmed; alignments without design
   speeds have no interval block, which shows that the two "identity GUID"
   copies belong to the first design-speed interval and entry.
+- `aecc_station` (start station read/write), `clear_design_speeds`,
+  reading alignments without design speeds, `examples/set_start`,
+  experiment S83.
 - Design criteria (O3, S79): `aecc_criteria` reads and sets the three
   criteria flags; `examples/exp_criteria` and experiment S80. S81: the
   generated full criteria set works in Civil 3D. `aecc_criteria::Criteria`

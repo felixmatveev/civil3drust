@@ -83,3 +83,61 @@ fn rewrite_civil3d_two_speed_table() {
     assert_eq!(new[0].id, old[1].id);
     assert_eq!(new[1].id, old[0].id);
 }
+
+/// No design speeds after a start-station change (S82, S9, S1).
+#[test]
+fn empty_speed_tables() {
+    assert!(
+        design_speeds(&rec("samples/S82_O4_start_station.dwg", 0xFB6))
+            .unwrap()
+            .is_empty()
+    );
+    assert!(
+        design_speeds(&rec("samples/S82_O4_start_station.dwg", 0xFB9))
+            .unwrap()
+            .is_empty()
+    );
+    assert!(design_speeds(&rec(
+        "samples/S9_A_seg2plus10_civ3d_resaved_sta100.dwg",
+        0x8C5C
+    ))
+    .unwrap()
+    .is_empty());
+}
+
+#[test]
+fn clear_then_set_start_matches_civil3d_form() {
+    use civil3drust::aecc_design_speed::clear_design_speeds;
+    use civil3drust::aecc_station::{set_start_station, start_station};
+    let r = rec("samples/S77_S24_created_design_speeds_v2.dwg", 0xFB3);
+    let (d, hb) = clear_design_speeds(&r).unwrap();
+    let r2 = raw::RawRecord {
+        data: d,
+        handle_bits: hb,
+        ..r.clone()
+    };
+    assert!(design_speeds(&r2).unwrap().is_empty());
+    let (d, hb) = set_start_station(&r2, 100.0).unwrap();
+    let r3 = raw::RawRecord {
+        data: d,
+        handle_bits: hb,
+        ..r.clone()
+    };
+    assert_eq!(start_station(&r3), Some(100.0));
+    assert_eq!(raw::object_name(&r3.data).as_deref(), Some("Speed 30"));
+    let n = |r: &raw::RawRecord| {
+        civil3drust::string_stream::parse(&r.data, r.handle_bits)
+            .unwrap()
+            .strings
+            .len()
+    };
+    // S9/S82: 5 empty strings after the name instead of 8.
+    assert_eq!(n(&r3), n(&r) - 3);
+    // Same record size as Civil 3D's S82 FB9 minus its user-name string
+    // is not comparable (different section-2 form); check the station of
+    // Civil 3D's own records instead.
+    assert_eq!(
+        start_station(&rec("samples/S82_O4_start_station.dwg", 0xFB6)),
+        Some(-100.0)
+    );
+}

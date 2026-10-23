@@ -94,6 +94,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S80 | `S80_S24_criteria_experiments.dwg` | civil3drust | S24 + `C0 control`, `C1 flags`, `C2 checkset`, `C3 full` (`examples/exp_criteria`, template S58 1089, check set 4D3). | 453237 | `2990b91b1976caad` |
 | S81 | `S81_S80_civ3d_resaved.dwg` | Civil 3D 2024 | S80 opened, C0/C1/C3 viewed in Alignment Properties (C3 showed S79's criteria), saved. | 473799 | `c6941bf294ede74d` |
 | S82 | `S82_O4_start_station.dwg` | Civil 3D 2024 | O4: S81 with C3 deleted and C0/C1/C2 renamed `ZERO START` (start 0+00), `100 PLUS` (reference station −1+00 at the start point), `100 MINUS` (start +1+00); saved. | 474276 | `2ee4850d12095733` |
+| S83 | `S83_S24_created_start_stations.dwg` | civil3drust | S24 + `Start 100 speeds kept`, `Start 100 no speeds`, `Start -100 no speeds` (`create_alignment`, template S58 1089, then `set_start` with/without `--clear-speeds`). | 451216 | `69a7b98a874f85ee` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

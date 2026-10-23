@@ -38,6 +38,7 @@ pub mod aecc_criteria;
 pub mod aecc_design_speed;
 pub mod aecc_elements;
 pub mod aecc_registry;
+pub mod aecc_station;
 pub mod aecc_style;
 pub mod alignment;
 pub mod handle_refs;

@@ -46,6 +46,7 @@ samples and steps that produced it.
 - `cargo run --release --example create_alignment -- donor.dwg target.dwg out.dwg <name> "x,y x,y,r ..." [--style <name|hex>] [--template <hex>] [--type <centerline|misc|n>] [--no-label-group] [--no-parcel-entry] [--no-graphics]`
 - `cargo run --release --example set_name -- in.dwg out.dwg <alignment> <new name|-> [--description "text"]`
 - `cargo run --release --example set_speeds -- in.dwg [out.dwg <alignment> "station:speed ..."]`
+- `cargo run --release --example set_start -- in.dwg out.dwg <alignment> <station> [--clear-speeds]`
 - `cargo run --release --example exp_minimal -- donor.dwg target.dwg out.dwg` (experiment S56)
 - `cargo run --release --example exp_bare -- donor.dwg base.dwg plain.dwg out.dwg [style-hex]` (experiments S67, S70)
 - `cargo run --release --example exp_criteria -- donor.dwg target.dwg out.dwg <check-set-hex>` (experiment S80)
