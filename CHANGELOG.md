@@ -11,7 +11,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   `aecc_registry` parses the empty registry, and `aecc_create::ensure_class`
   adds a missing class entry with the next positional number.
 - `examples/exp_bare.rs` and S67: an alignment record alone in a plain
-  AutoCAD drawing (S64), style and companion null.
+  AutoCAD drawing (S64), style and companion null. Civil 3D opens it and
+  creates its settings, but selecting the alignment crashes until AUDIT
+  assigns the Standard style: the style reference is required.
 - Samples S64 (empty AutoCAD drawing) and S65 (its Civil 3D save).
 
 ### Fixed

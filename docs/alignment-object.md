@@ -1076,6 +1076,30 @@ and all other references (companion, style) null; 28 KB. It asks whether
 Civil 3D builds its settings on open and keeps an alignment that has no
 style and no parcel entry.
 
+**Results.**
+
+- S66 (and S65): opened with no issues.
+- S67: opens without a RECOVER prompt. The alignment is listed in
+  Prospector but not drawn in the viewport. **Selecting it crashes Civil 3D**
+  (unhandled access violation reading 0x0098), so a null style reference is
+  not safe.
+- AUDIT on S67 reports 3 errors and fixes 3; the one it names is
+  `Alignment (Alignment Style) eNullObjectId → Standard`: it assigns a style
+  called Standard, which means Civil 3D built its default settings and
+  styles when it opened the plain drawing. After the fix the alignment shows
+  as a dot until it is moved (and moved back); then it draws normally. So
+  Civil 3D does not draw from the record's proxy graphics. It recomputes the
+  display when the alignment changes, and the AUDIT fix alone does not
+  trigger that.
+- AutoCAD (without Civil 3D) and OpenCADStudio open S67 and draw the
+  alignment from its proxy graphics.
+
+Conclusions: the style reference is required (the only reference AUDIT
+had to repair). The companion/registry entry and the rest of Civil 3D's
+infrastructure are not required to open the file: Civil 3D creates the
+infrastructure itself. The other two AUDIT errors are not named in its
+output; the resaved files (with and without AUDIT) will show them.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
