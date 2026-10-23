@@ -1431,6 +1431,7 @@ outside the alignment are refused.
 
 S87 = S82 with speeds added: `ZERO START` 0:60 100:50 250:40 400:30
 (had one), `100 PLUS` −100:40 150:25 and `100 MINUS` 100:55 (had none).
+Result (S88): no AUDIT errors, all speeds shown as written. O4 done.
 
 ## Open questions
 
