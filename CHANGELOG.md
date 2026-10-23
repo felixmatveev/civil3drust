@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- O4 findings (S82): start station confirmed; alignments without design
+  speeds have no interval block, which shows that the two "identity GUID"
+  copies belong to the first design-speed interval and entry.
 - Design criteria (O3, S79): `aecc_criteria` reads and sets the three
   criteria flags; `examples/exp_criteria` and experiment S80. S81: the
   generated full criteria set works in Civil 3D. `aecc_criteria::Criteria`
@@ -31,6 +34,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   drawings postponed (D-030, alignment-map §6).
 
 ### Fixed
+- Start-station reader failed on alignments with Design Criteria bits set
+  (S79–S82).
 - `alignment_type` on records with several design speeds (S79).
 - `raw::object_name` with design-criteria strings after the name; it no
   longer gives up when reading past the end of a short string stream

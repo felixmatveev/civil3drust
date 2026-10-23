@@ -1341,6 +1341,40 @@ Alignment Properties, which adds the user-name string).**
 - `C0 control`: unchanged apart from the edited-record form; every
   alignment now references check set 4D3 (set on save).
 
+## Start station (O4: S82)
+
+**Sample.** S82 (owner): S81 edited in Civil 3D, C3 deleted, the others
+renamed: `ZERO START` (FB3, was C0; start 0+00), `100 PLUS` (FB6, was
+C1; reference point at the start (0, −200), reference station −1+00,
+owner's screenshot) and `100 MINUS` (FB9, was C2; start +1+00). The
+criteria bits of FB6/FB9 are the ones left from S80/S81 (C1, C2), not
+part of O4.
+
+**Findings.**
+
+- The start station is the BD that ends 20 bits before the end of
+  section 2, as found with S9: −100 in FB6, +100 in FB9 (section 2 grows
+  by 64 bits from the `10` of 0.0). The reference point equal to the start
+  point adds nothing else to section 2. The station reader required the
+  criteria bits after the BD to be 0, so it failed on S79–S82; fixed.
+- With a nonzero start station **both have no design speeds and no
+  interval block**: after the element records come `BL 0, BL 0, BL 0,
+  BL 0` (interval count 0, so no GUID copy 1 and no cache), then the
+  design-speed table with `n = 0`, then `BD 100 …`. The string stream has
+  3 strings fewer (5 empty strings after the name instead of 8). S9
+  (start 1+00) and S1 (LandXML import) have exactly the same form, which
+  explains why their layouts looked different.
+- So the "identity GUID" is not an alignment identity at all: **copy 1 is
+  the GUID of the first interval in the interval block, and copy 2 the
+  GUID of the matching design-speed entry.** Each design speed has an
+  interval (GUID, stations, cache) after the elements and an entry in the
+  table, with the same GUID (S74 `mixed speed`: two intervals, two
+  entries, GUIDs shared). The three strings are the speed's comment and
+  the interval's two strings (S79 `DESING OFF`: 2 speeds → 8 + 3).
+- Open: why Civil 3D dropped the speeds. The speed at 0+00 lies outside
+  an alignment starting at +1+00 (S9, FB9), but FB6 (−1+00) also lost it.
+  Owner to confirm whether Design Criteria shows no speeds for both.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length

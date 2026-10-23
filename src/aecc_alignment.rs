@@ -238,8 +238,10 @@ pub struct DecodedAlignment {
 /// Bits between the start-station BD and the first tangent header.
 pub const STATION_GAP_BITS: usize = 41;
 
-/// The leading part of that gap, identical in every sample so far.
-const STATION_GAP_PREFIX: [u8; 17] = [0, 0, 0, 0, 2, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0];
+/// The leading part of that gap. Bits 1–3 and 6 are the Design Criteria
+/// check boxes (`aecc_criteria`, O3) and bit 4 varies (S9), so they are not
+/// checked.
+const STATION_GAP_PREFIX: [u8; 17] = [0, 2, 2, 2, 2, 1, 2, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0];
 
 /// Read the start station stored before the tangent whose header is at
 /// `first_header_bit` (the first element of the chain).
