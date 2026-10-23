@@ -361,10 +361,14 @@ fn structured_name(data: &[u8]) -> Option<String> {
         .find(|(_, s)| s.starts_with("AeccImp"))?;
     let mut bit = b.checked_sub(10)?;
     let mut strings = Vec::new();
-    for _ in 0..5 {
+    for _ in 0..7 {
         let (n, chars) = match (get_bit(data, bit), get_bit(data, bit + 1)) {
             (0, 1) => (get_byte(data, bit + 2) as usize, bit + 10),
             (1, 0) => (0, bit + 2),
+            (0, 0) => (
+                get_byte(data, bit + 2) as usize | (get_byte(data, bit + 10) as usize) << 8,
+                bit + 18,
+            ),
             _ => break,
         };
         if chars + 16 * n > bit_len(data) {
@@ -382,9 +386,19 @@ fn structured_name(data: &[u8]) -> Option<String> {
     if strings.len() < 4 || !strings[0].starts_with("AeccImp") || strings[1] != strings[2] {
         return None;
     }
-    let name = match strings.get(4) {
-        Some(s) if !s.is_empty() => s,
-        _ => &strings[3],
+    // With design criteria on, the criteria file path follows the name and
+    // its `<DATADIR>` form comes next (S79, S80): that fixes the name's
+    // position whether or not a user-name string precedes it.
+    let datadir = |i: usize| strings.get(i).is_some_and(|s| s.starts_with("<DATADIR>"));
+    let name = if datadir(5) {
+        &strings[3]
+    } else if datadir(6) {
+        &strings[4]
+    } else {
+        match strings.get(4) {
+            Some(s) if !s.is_empty() => s,
+            _ => &strings[3],
+        }
     };
     (!name.is_empty()).then(|| name.clone())
 }

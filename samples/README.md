@@ -90,6 +90,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S76 | `S76_S75_civ3d_resaved.dwg` | Civil 3D 2024 | S75 opened (no errors; garbage comment in the second speed row of `Speeds 60-30`), saved. | 473889 | `29fbfa3751cf8de8` |
 | S77 | `S77_S24_created_design_speeds_v2.dwg` | civil3drust | As S75 with one comment string per speed entry, plus `Speeds 50-40-30` (0:50 150:40 300:30). | 451694 | `29fbde1589833fe6` |
 | S78 | `S78_S74_mixed_speed_50_40_30.dwg` | civil3drust | S74 with `mixed speed` set to 0:50 150:40 300:30 (`set_speeds`). | 457960 | `afc4cb454a2a78e9` |
+| S79 | `S79_O3_design_criteria.dwg` | Civil 3D 2024 | O3: S77 with `Speed 30` renamed `DESIGN ON` (design criteria on) and `Speeds 60-30` renamed `DESING OFF` (criteria off, comment `COMMENT` in a speed row); saved. | 473575 | `4fd7c407f0aef89f` |
+| S80 | `S80_S24_criteria_experiments.dwg` | civil3drust | S24 + `C0 control`, `C1 flags`, `C2 checkset`, `C3 full` (`examples/exp_criteria`, template S58 1089, check set 4D3). | 453237 | `2990b91b1976caad` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

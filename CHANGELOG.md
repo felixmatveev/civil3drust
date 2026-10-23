@@ -7,6 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Design criteria (O3, S79): `aecc_criteria` reads and sets the three
+  criteria flags; `examples/exp_criteria` and experiment S80.
 - Design speeds (O2, S74): `aecc_design_speed` reads and rewrites the
   design-speed table (station, speed, GUID per entry) at the start of the
   post-cache block; `examples/set_speeds`; test drawing S75.
@@ -26,6 +28,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   drawings postponed (D-030, alignment-map §6).
 
 ### Fixed
+- `alignment_type` on records with several design speeds (S79).
+- `raw::object_name` with design-criteria strings after the name.
 - `set_design_speeds` now adds one (empty) comment string per design-speed
   entry; without it Civil 3D showed garbage as the comment (S76). Test
   drawing S77.

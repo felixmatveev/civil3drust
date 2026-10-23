@@ -601,13 +601,19 @@ fn identity_copies(rec: &RawRecord, data: &[u8]) -> Result<(usize, usize), Build
 pub const TYPE_CENTERLINE: i32 = 1;
 pub const TYPE_MISCELLANEOUS: i32 = 4;
 
-/// Bit offset of the alignment-type BL. After GUID copy 2 the record has
-/// BD 100, BL 0, BL n, n BDs (element IDs 1..n, present after some saves),
-/// then the type BL (docs/alignment-object.md, "Alignment type").
+/// Bit offset of the alignment-type BL. After the design-speed table the
+/// record has BD 100, BL 0, BL n, n BDs (element IDs 1..n, present after
+/// some saves), then the type BL (docs/alignment-object.md, "Alignment type").
 fn type_bit(rec: &RawRecord, data: &[u8]) -> Result<usize, BuildError> {
-    let (_, b) = identity_copies(rec, data)?;
+    // After the design-speed table (O2): with one speed it ends with GUID
+    // copy 2, with more speeds the identity GUID is in another entry (S79).
+    let r = RawRecord {
+        data: data.to_vec(),
+        ..rec.clone()
+    };
+    let (_, end, _) = crate::aecc_design_speed::locate(&r).map_err(|e| layout(e.to_string()))?;
     let bad = || layout("alignment-type field not found");
-    let (_, q) = raw::read_bd(data, b + 128).ok_or_else(bad)?;
+    let (_, q) = raw::read_bd(data, end).ok_or_else(bad)?;
     let (_, q) = raw::read_bl(data, q).ok_or_else(bad)?;
     let (n, mut q) = raw::read_bl(data, q).ok_or_else(bad)?;
     if !(0..=10_000).contains(&n) {

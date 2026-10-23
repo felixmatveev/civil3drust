@@ -1259,6 +1259,58 @@ elements, so finding the identity GUID by value picked the wrong entry.
 elements), gives it to the first entry, and reuses the other old GUIDs in
 order before generating new ones. Owner: S78 works in Civil 3D.
 
+## Design criteria (O3: S79, S80)
+
+**Sample.** S79 (owner): S77 opened in Civil 3D, its two alignments
+renamed `DESIGN ON` (FB3, was `Speed 30`; design criteria switched on)
+and `DESING OFF` (FB6, was `Speeds 60-30`; criteria off, a comment
+`COMMENT` typed in a speed row), saved. So S77 → S79 is a clean pair for
+both records.
+
+**Steps.** Region comparison against the same records in S77, the
+section-2 bits of ON vs OFF, handle streams, string streams.
+
+**Findings.**
+
+- **Three flag bits** 19, 18 and 17 bits before the end of section 2:
+  `111` in `DESIGN ON`, `000` in `DESING OFF` and every other sample (the
+  bits after the start station BD: S9 has its own flag in the next bit).
+  The rest of section 2 differs only in the 66-bit cache field and a
+  31-bit field (bits 300–330 of the 589-bit form), both probably caches.
+  Which bit is which check box is not separated (one sample with all on).
+- **Strings**: with criteria on, five of the eight empty strings after the
+  name are filled: the criteria file path, the same path as
+  `<DATADIR>…`, the superelevation rate table
+  (`AASHTO 2011 US Customary eMax 4%`), the lanes (`2 Lane`) and the
+  attainment method (`AASHTO 2011 Crowned Roadway`). These are names of
+  Civil 3D's standard data and appear here as text only.
+- **Design check set**: the last handle reference (null in alignments
+  created from the S24 template) points at `AECC_ALIGNMENT_DESIGN_CHECK_SET`
+  4D3 in both records, also in OFF. Civil 3D sets it on save, as in S74
+  (`30MPH`, `mixed speed`), so it does not mean criteria are on.
+- Both records got the edited section-2 form (413 → 589 bits) and the
+  user-name string, as after other Civil 3D property edits.
+- **Speed comments**: `DESING OFF` has 16 strings, the last one `COMMENT`:
+  the speed comments are at the end of the string stream. Civil 3D also
+  filled the interval block after the elements (625 → 1362 bits, the S74
+  `mixed speed` form, +2 strings), so that block is derived from the
+  speed table after all. Civil 3D accepted S77's records without it and
+  rebuilt it when the alignment was edited.
+- With criteria strings present, the name is no longer always string 3 or
+  4 by the earlier rule; `raw::object_name` now uses the `<DATADIR>`
+  string as an anchor.
+- `aecc_build::alignment_type` failed on records with several design
+  speeds (it read after the GUID copy 2 entry); it now reads after the
+  whole table.
+
+**Code.** `aecc_criteria::{criteria_flags, set_criteria_flags}`.
+
+**Experiment S80** (`examples/exp_criteria`): S24 + four created
+alignments: `C0 control`, `C1 flags` (flags only), `C2 checkset` (flags +
+check set 4D3), `C3 full` (flags + check set + the five strings copied
+from S79). Question: which of these Civil 3D shows as criteria-based
+design, and whether flags without the strings cause errors.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
