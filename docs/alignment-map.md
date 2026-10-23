@@ -182,7 +182,7 @@ geometry; the bits that change name the option.
 
 | option | result |
 |---|---|
-| O3 design criteria | **partly decoded** (S79): three flags at the end of section 2, five strings (criteria file, superelevation table, lanes, attainment method), check-set reference (set on save regardless). Experiment S80. |
+| O3 design criteria | **partly decoded** (S79): three flags at the end of section 2, five strings (criteria file, superelevation table, lanes, attainment method), check-set reference (set on save regardless). Verified: flags + strings + check set reproduce criteria-on (S80 C3 → S81). Probable flag meanings from S81 C1. |
 | O2 design speed | **decoded** (S74): the table at the start of the post-cache block; the "BD 60" constant was the default entry. Two speeds also split the interval cache after the elements (not decoded). Verified: generated one-, two- and three-speed tables (S77) and an edited Civil 3D table (S78) work in Civil 3D; each entry needs a comment string (S76). |
 | O1 alignment type | **decoded** (S58 Centerline, S59 Miscellaneous): one BL in the post-cache block, 1 = Centerline, 4 = Miscellaneous; the "constant" block was this option at its default. Verified: generated types 1 and 4 accepted and kept (S60 → S62); values 2, 3, 5 on a plain alignment are rejected and removed by RECOVER (S61 → S63), so they need a parent or other data. |
 

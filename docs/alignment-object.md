@@ -1280,9 +1280,10 @@ section-2 bits of ON vs OFF, handle streams, string streams.
   Which bit is which check box is not separated (one sample with all on).
 - **Strings**: with criteria on, five of the eight empty strings after the
   name are filled: the criteria file path, the same path as
-  `<DATADIR>…`, the superelevation rate table
-  (`AASHTO 2011 US Customary eMax 4%`), the lanes (`2 Lane`) and the
-  attainment method (`AASHTO 2011 Crowned Roadway`). These are names of
+  `<DATADIR>…`, and the three default criteria shown in the Design
+  Criteria tab (S81 screenshot): Minimum Radius Table
+  (`AASHTO 2011 US Customary eMax 4%`), Transition Length Table
+  (`2 Lane`) and Attainment Method (`AASHTO 2011 Crowned Roadway`). These are names of
   Civil 3D's standard data and appear here as text only.
 - **Design check set**: the last handle reference (null in alignments
   created from the S24 template) points at `AECC_ALIGNMENT_DESIGN_CHECK_SET`
@@ -1310,6 +1311,30 @@ alignments: `C0 control`, `C1 flags` (flags only), `C2 checkset` (flags +
 check set 4D3), `C3 full` (flags + check set + the five strings copied
 from S79). Question: which of these Civil 3D shows as criteria-based
 design, and whether flags without the strings cause errors.
+
+**Result (S81, owner's re-save; `C0`, `C1`, `C3` were opened in
+Alignment Properties, which adds the user-name string).**
+
+- `C3 full` shows exactly S79's settings (screenshot): criteria-based
+  design on, design criteria file on with the file and the three default
+  criteria, design check set on (`Standard`), check for tangency on.
+  **Flags + strings + check-set reference reproduce criteria-on.**
+- `C2 checkset` (not opened): kept as written, flags `111`.
+- `C1 flags` (opened): Civil 3D changed its bits from `111 0111` to
+  `100 0101` (19…13 bits before the section-2 end): flag 1 kept, flags 2
+  and 3 cleared, and the bit 15 before the end cleared too. C1 had no
+  criteria file strings and no check set, so the likely mapping is:
+
+  | bits before section-2 end | probable meaning | default |
+  |---|---|---|
+  | 19 | use criteria-based design | 0 |
+  | 18 | use design criteria file | 0 |
+  | 17 | use design check set | 0 |
+  | 15 | check for tangency between elements | 1 |
+
+  (To be confirmed: what the dialog showed for C1.)
+- `C0 control`: unchanged apart from the edited-record form; every
+  alignment now references check set 4D3 (set on save).
 
 ## Open questions
 

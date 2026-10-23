@@ -4,14 +4,16 @@
 //! graphics and the element list), 19, 18 and 17 bits before its end:
 //! all three are 1 for an alignment with design criteria switched on
 //! (S79 `DESIGN ON`) and 0 otherwise (every other sample). Their individual
-//! meaning is not separated yet; Civil 3D's Design Criteria tab has three
-//! check boxes (criteria-based design, design criteria file, design check
-//! set), which they probably are, in some order.
+//! meaning follows from S81, where Civil 3D kept only the first flag of an
+//! alignment that had no criteria file and no check set: probably
+//! [criteria-based design, design criteria file, design check set]. The bit
+//! 15 before the end (1 by default, cleared together with the check set in
+//! S81) is probably "check for tangency between elements".
 //!
-//! With criteria on, Civil 3D also stores in the string stream (strings 2–6
-//! after the name): the criteria file path, the same path with
-//! `<DATADIR>`, the superelevation rate table, the number of lanes and the
-//! attainment method; and the alignment's last handle reference points at
+//! With criteria on, Civil 3D also stores in the string stream (the five
+//! strings after the name): the criteria file path, the same path with
+//! `<DATADIR>`, the Minimum Radius Table, the Transition Length Table and
+//! the Attainment Method; and the alignment's last handle reference points at
 //! an `AECC_ALIGNMENT_DESIGN_CHECK_SET` (S74, S79; null in alignments
 //! created without one). See `docs/alignment-object.md`, "Design criteria".
 

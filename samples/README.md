@@ -92,6 +92,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S78 | `S78_S74_mixed_speed_50_40_30.dwg` | civil3drust | S74 with `mixed speed` set to 0:50 150:40 300:30 (`set_speeds`). | 457960 | `afc4cb454a2a78e9` |
 | S79 | `S79_O3_design_criteria.dwg` | Civil 3D 2024 | O3: S77 with `Speed 30` renamed `DESIGN ON` (design criteria on) and `Speeds 60-30` renamed `DESING OFF` (criteria off, comment `COMMENT` in a speed row); saved. | 473575 | `4fd7c407f0aef89f` |
 | S80 | `S80_S24_criteria_experiments.dwg` | civil3drust | S24 + `C0 control`, `C1 flags`, `C2 checkset`, `C3 full` (`examples/exp_criteria`, template S58 1089, check set 4D3). | 453237 | `2990b91b1976caad` |
+| S81 | `S81_S80_civ3d_resaved.dwg` | Civil 3D 2024 | S80 opened, C0/C1/C3 viewed in Alignment Properties (C3 showed S79's criteria), saved. | 473799 | `c6941bf294ede74d` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

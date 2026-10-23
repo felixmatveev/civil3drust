@@ -8,7 +8,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 - Design criteria (O3, S79): `aecc_criteria` reads and sets the three
-  criteria flags; `examples/exp_criteria` and experiment S80.
+  criteria flags; `examples/exp_criteria` and experiment S80. S81: the
+  generated full criteria set works in Civil 3D.
 - Design speeds (O2, S74): `aecc_design_speed` reads and rewrites the
   design-speed table (station, speed, GUID per entry) at the start of the
   post-cache block; `examples/set_speeds`; test drawing S75.
