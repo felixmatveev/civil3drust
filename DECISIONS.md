@@ -508,3 +508,19 @@ as plain numbers until a sample (S61) shows which type they are.
 
 **Alternatives.** An enum with all types guessed from their order in the
 Civil 3D UI: convenient, but not backed by a sample.
+
+## D-029: Class entries copied from the donor, numbered by position
+
+**Context.** A Civil 3D drawing without alignments (S65) has no
+`AECC_ALIGNMENT` class entry, and class numbers differ between templates
+(S2 vs S24). DWG class numbers are the position in the class section plus
+500.
+
+**Decision.** `create_alignment` uses the target's class number for each
+record it adds and, when the target lacks the class, appends the donor's
+class entry (names and flags as stored in the donor) with the next number.
+Class entries are drawing structure, not Autodesk template content, so this
+is consistent with D-015.
+
+**Alternatives.** Hard-coding the class entries: no donor needed, but the
+flags and version fields would be guesses until compared across samples.

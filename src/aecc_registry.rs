@@ -57,15 +57,19 @@ pub struct Entry {
     pub id: String,
 }
 
+/// Bits between the key list and the string stream, the same in every
+/// registry in the samples (S24–S66, 0–7 entries).
+pub const TAIL_BITS: usize = 249;
+
 /// A parsed registry record.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Registry {
     pub handle: u64,
     pub entries: Vec<Entry>,
     /// Bit offset of the BL 0 before the count.
-    list_bit: usize,
+    pub list_bit: usize,
     /// Bit offset just after the last key.
-    list_end: usize,
+    pub list_end: usize,
 }
 
 /// Find `BL 0, BL n, n × (00 + RL with the high bit set)` in the data
@@ -110,11 +114,31 @@ impl Registry {
             .filter(|r| r.code == 2)
             .map(|r| r.handle)
             .collect();
-        if owned.is_empty() {
-            return Err(layout("no soft-owner references"));
-        }
         let ss =
             string_stream::parse(&rec.data, rec.handle_bits).map_err(|e| layout(e.to_string()))?;
+        if owned.is_empty() {
+            // Empty registry (a Civil 3D drawing without alignments, S65):
+            // the list is `10 10` (BL 0, count 0), followed by the same
+            // 249-bit tail as every registry in S24–S63.
+            let only_empty = ss.strings.len() == 1 && ss.strings[0].text.is_empty();
+            let list_end = ss
+                .start
+                .checked_sub(TAIL_BITS)
+                .ok_or_else(|| layout("too short"))?;
+            let list_bit = list_end.checked_sub(4).ok_or_else(|| layout("too short"))?;
+            let bits: Vec<u8> = (list_bit..list_end)
+                .map(|b| raw::get_bit(&rec.data, b))
+                .collect();
+            if !only_empty || bits != [1, 0, 1, 0] {
+                return Err(layout("no soft-owner references"));
+            }
+            return Ok(Registry {
+                handle: rec.handle,
+                entries: Vec::new(),
+                list_bit,
+                list_end,
+            });
+        }
         let ids: Vec<String> = ss.strings.iter().skip(1).map(|s| s.text.clone()).collect();
         if ss.strings.first().map(|s| s.text.as_str()) != Some("") || ids.len() != owned.len() {
             return Err(layout(format!(
@@ -191,8 +215,12 @@ impl Registry {
         let data_end = w.len();
         // Handles: non-owner references before the owners, then owners in
         // entry order, then any references after them.
-        let first_owner = refs.iter().position(|r| r.code == 2).unwrap();
-        let last_owner = refs.iter().rposition(|r| r.code == 2).unwrap();
+        // An empty registry has no owners yet: they go after its references.
+        let first_owner = refs.iter().position(|r| r.code == 2).unwrap_or(refs.len());
+        let last_owner = refs
+            .iter()
+            .rposition(|r| r.code == 2)
+            .unwrap_or(refs.len().wrapping_sub(1));
         for r in &refs[..first_owner] {
             w.copy(data, r.bit, r.bit + r.bits());
         }

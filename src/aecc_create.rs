@@ -208,6 +208,45 @@ fn rehandle(
         .ok_or_else(|| lay(format!("record {:X}: handle stream", rec.handle)))
 }
 
+/// The class number of `dxf_name` in `target`, adding the donor's class
+/// entry when the target lacks it (a Civil 3D drawing that never had an
+/// alignment, S65). DWG class numbers are positional (500 + index), so a
+/// new entry is appended with the next number.
+pub fn ensure_class(
+    target: &mut CadDocument,
+    donor: &CadDocument,
+    dxf_name: &str,
+) -> Result<i16, CreateError> {
+    if let Some(c) = target.classes.get_by_name(dxf_name) {
+        return Ok(c.class_number);
+    }
+    let mut c = donor
+        .classes
+        .get_by_name(dxf_name)
+        .cloned()
+        .ok_or_else(|| donor_err(format!("no class {dxf_name}")))?;
+    let n = 500 + target.classes.len() as i16;
+    if target.classes.iter().any(|x| x.class_number >= n) {
+        return Err(lay("target class numbers are not positional"));
+    }
+    c.class_number = n;
+    c.instance_count = 1;
+    target.classes.push_preserving(c);
+    Ok(n)
+}
+
+/// Write the object type (class number) at the start of a record: the
+/// two-byte form `10` + RS, which every AECC record in the samples uses.
+pub fn set_object_type(data: &mut [u8], class_number: i16) -> Result<(), CreateError> {
+    if (raw::get_bit(data, 0), raw::get_bit(data, 1)) != (1, 0) {
+        return Err(lay("object type is not in the two-byte form"));
+    }
+    let v = class_number as u16;
+    raw::set_byte(data, 2, (v & 0xFF) as u8);
+    raw::set_byte(data, 10, (v >> 8) as u8);
+    Ok(())
+}
+
 fn is_layer(doc: &CadDocument, h: u64) -> bool {
     doc.layers.iter().any(|l| l.handle.value() == h)
 }
@@ -363,6 +402,7 @@ pub fn create_alignment(
 
     // --- Insert into the target. ---
     if opts.parcel_entry {
+        let comp_class = ensure_class(target, donor, COMPANION)?;
         let (reg, reg_hb) = t_reg
             .with_entry(
                 &t_reg_rec,
@@ -395,7 +435,11 @@ pub fn create_alignment(
                 handle: Handle::new(comp_h),
                 owner: Handle::new(t_reg.handle),
                 raw_dxf_codes,
-                raw_dwg_data: Some(comp),
+                raw_dwg_data: Some({
+                    let mut c = comp;
+                    set_object_type(&mut c, comp_class)?;
+                    c
+                }),
                 raw_dwg_handle_bits: comp_hb as i64,
                 raw_dwg_version,
             },
@@ -415,12 +459,14 @@ pub fn create_alignment(
         }
     }
 
-    let mut entities = vec![(d_align.handle, align_h, align, align_hb)];
+    let mut entities = vec![(d_align.handle, align_h, align, align_hb, ALIGNMENT)];
     if let (Some(l), Some((data, hb))) = (&label, label_rec) {
-        entities.push((l.handle, label_h, data, hb));
+        entities.push((l.handle, label_h, data, hb, LABEL_GROUP));
     }
     let wrote_label = entities.len() == 2;
-    for (src, new_h, data, hb) in entities {
+    for (src, new_h, mut data, hb, class) in entities {
+        let n = ensure_class(target, donor, class)?;
+        set_object_type(&mut data, n)?;
         let mut e = donor
             .entities()
             .find(|e| e.common().handle.value() == src)

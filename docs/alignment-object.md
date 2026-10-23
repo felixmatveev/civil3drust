@@ -1039,6 +1039,43 @@ stays open until a sample with a real offset or curb-return alignment.
 `create_alignment --type` therefore accepts only 1 and 4 by name; other
 numbers are an experiment option.
 
+## Drawings without alignments (S64–S67)
+
+**Samples.** S64 is an empty AutoCAD drawing (32 KB, 18 classes, no AECC
+classes). S65 is S64 opened in Civil 3D and saved (470 KB): Civil 3D adds
+its drawing infrastructure on save — 593 classes, about 300 of them AECC
+(settings, styles, label sets, parcel nodes, the companion registry) — but
+no alignment classes. Compared with S24 (which has an alignment) S65 lacks
+the class entries `AECC_ALIGNMENT`, the four alignment label-group classes
+and `AECC_NAME_TEMPLATES_NODE`/`_ROOT`; it has one alignment style (48C, no
+name stored) and an **empty registry** (BC0, 45 bytes).
+
+**Empty registry.** The key list is `10 10` (BL 0, count 0) at bit 74; the
+249 bits after it are the same as in every registry in S24–S63 (1–7
+entries), and the string stream holds only `""`. The handle stream has
+only the own−1 reference to the parcel node. `aecc_registry` now parses
+it and adds the first soft-owner reference after the existing references.
+
+**Class table.** DWG class numbers are positional (500 + index; all
+classes in S24, S64, S65 follow this), and every AECC record starts with
+its class number as object type (`10` + RS, bits 0–17). Different
+templates number the same class differently (S2: `AECC_ALIGNMENT` 1092;
+S24: 1093). `create_alignment` therefore looks the class up in the target,
+appends the donor's class entry when it is missing (S65 → number
+500 + 593 = 1093), and writes the target's number into every record it
+adds. (Before, the donor's number was copied, which only worked because
+the samples used matching templates.)
+
+**S66** = S65 + one alignment ("Minimal", one tangent, style 48C, no label
+group), template S58 1089: the minimal Civil 3D drawing with an alignment
+built entirely from Civil 3D's own default infrastructure.
+
+**S67** = S64 + one alignment record (experiment `exp_bare`): only the
+`AECC_ALIGNMENT` class entry (number 518) and the record, with layer 0
+and all other references (companion, style) null; 28 KB. It asks whether
+Civil 3D builds its settings on open and keeps an alignment that has no
+style and no parcel entry.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length

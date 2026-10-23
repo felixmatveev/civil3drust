@@ -75,6 +75,10 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S61 | `S61_S24_created_types_2_3_5.dwg` | civil3drust | S24 + "Type 2", "Type 3", "Type 5" (`create_alignment --type 2/3/5`, template S58 1089): which types the other values are. | 451306 | `61cc51e939ea55a4` |
 | S62 | `S62_S60_civ3d_resaved.dwg` | Civil 3D 2024 | S60 opened (no issues; types shown as Centerline and Miscellaneous), saved. | 473545 | `66a43185caa07904` |
 | S63 | `S63_S61_civ3d_recovered.dwg` | Civil 3D 2024 | S61 opened with errors; RECOVER removed the three generated alignments; saved. | 474433 | `f0d9f996f0113a10` |
+| S64 | `S64_ZERO_autocad.dwg` | AutoCAD 2024 | Owner's minimal empty AutoCAD drawing: no AECC classes or objects. | 32180 | `5a2e5e47023daa10` |
+| S65 | `S65_S64_civ3d_resaved.dwg` | Civil 3D 2024 | S64 opened in Civil 3D and saved: Civil 3D's default drawing infrastructure, no alignment, empty companion registry. | 469758 | `bb779bb512bd8364` |
+| S66 | `S66_S65_created_alignment.dwg` | civil3drust | S65 + alignment "Minimal" (0,0)→(500,0), style 48C, no label group, template S58 1089 (`create_alignment … --style 48C --no-label-group`); adds the `AECC_ALIGNMENT` class entry. | 447732 | `711378e77281ad84` |
+| S67 | `S67_S64_bare_alignment.dwg` | civil3drust | S64 + one alignment record "Bare" with null style and companion references, plus its class entry (`examples/exp_bare`, record built from S58 1089 in S24). | 27899 | `34cd9d9ddf1c9363` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

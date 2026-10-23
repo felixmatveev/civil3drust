@@ -7,6 +7,17 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Creating alignments in Civil 3D drawings that never had one (S65 → S66):
+  `aecc_registry` parses the empty registry, and `aecc_create::ensure_class`
+  adds a missing class entry with the next positional number.
+- `examples/exp_bare.rs` and S67: an alignment record alone in a plain
+  AutoCAD drawing (S64), style and companion null.
+- Samples S64 (empty AutoCAD drawing) and S65 (its Civil 3D save).
+
+### Fixed
+- `create_alignment` wrote the donor's class numbers into the new records;
+  it now writes the target's (`set_object_type`), so donor and target can
+  come from different templates.
 - Alignment type (O1, samples S58/S59): a BL in the post-cache block after
   GUID copy 2, 1 = Centerline, 4 = Miscellaneous.
   `aecc_build::alignment_type` / `set_alignment_type`,

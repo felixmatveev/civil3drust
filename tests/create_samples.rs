@@ -648,3 +648,42 @@ fn create_with_alignment_type() {
         .unwrap();
     assert_eq!(alignment_type(&r).unwrap(), TYPE_MISCELLANEOUS);
 }
+
+/// S65 is a Civil 3D drawing that never had an alignment: an empty registry
+/// and no `AECC_ALIGNMENT` class. Creating one adds the class (positional
+/// number) and the first registry entry.
+#[test]
+fn create_in_drawing_without_alignments() {
+    use civil3drust::aecc_create::find_registry;
+    let donor = raw::open("samples/S58_O1_centerline.dwg").unwrap();
+    let mut t = raw::open("samples/S65_S64_civ3d_resaved.dwg").unwrap();
+    assert!(t.doc.classes.get_by_name("AECC_ALIGNMENT").is_none());
+    let (_, reg) = find_registry(&t.doc).unwrap();
+    assert!(reg.entries.is_empty());
+    let pis = [Point2::new(0.0, 0.0), Point2::new(500.0, 0.0)];
+    let opts = CreateOptions {
+        label_group: false,
+        style: Some(0x48C),
+        ..Default::default()
+    };
+    let c = create_alignment(&mut t.doc, &donor.doc, "Minimal", &pis, &[], 3, opts).unwrap();
+    let n = t.doc.classes.len() as i16 - 1;
+    assert_eq!(
+        t.doc
+            .classes
+            .get_by_name("AECC_ALIGNMENT")
+            .unwrap()
+            .class_number,
+        500 + n
+    );
+    let path = std::env::temp_dir().join("civil3drust-s65-create.dwg");
+    acadrust::DwgWriter::write_to_file(&path, &t.doc).unwrap();
+    let re = raw::open(&path).unwrap();
+    let a = raw::records(&re.doc, "AECC_ALIGNMENT");
+    assert_eq!(a.len(), 1);
+    assert_eq!(a[0].handle, c.alignment);
+    assert_eq!(decode_elements(&a[0]).unwrap().length(), 500.0);
+    let (_, reg) = find_registry(&re.doc).unwrap();
+    assert_eq!(reg.entries.len(), 1);
+    assert_eq!(reg.entries[0].companion, c.companion);
+}
