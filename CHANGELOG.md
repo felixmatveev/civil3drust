@@ -17,7 +17,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 - Samples S64 (empty AutoCAD drawing) and S65 (its Civil 3D save).
 
 - `exp_bare` optional style argument and S70: the alignment plus a copy of
-  `TEST STYLE` in a plain AutoCAD drawing.
+  `TEST STYLE` in a plain AutoCAD drawing. Civil 3D dropped the ownerless
+  style (S71/S72), so `exp_bare` now gives it an owner dictionary in the
+  named object dictionary (S73).
 
 ### Fixed
 - `create_alignment` wrote the donor's class numbers into the new records;

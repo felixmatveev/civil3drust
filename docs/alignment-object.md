@@ -1131,6 +1131,27 @@ owner (the style collection 48B) and the soft pointer to the default style
 without a collection (adopt it, AUDIT it, or remove it), and does the
 alignment then draw and select normally?
 
+**Result (S71 with AUDIT, S72 without).** S70 opens with no RECOVER prompt
+and no visible errors, but the alignment shows the default style
+(Standard, not TEST STYLE). AUDIT: 2 errors found, 2 fixed, none named. In
+both re-saves **our style 248 is gone**; Civil 3D built its own collection
+(257) with one style (258, the default):
+
+- S72 (no AUDIT): the alignment still points at 248, which no longer exists.
+- S71 (AUDIT): the alignment points at 258.
+
+So Civil 3D did not keep an alignment style that has no owner. It
+probably never loaded it, since nothing owns or reaches it. When the
+reference turned out to be broken, Civil 3D fell back to the default
+style. The two AUDIT errors are probably the companion references (as in
+S30, S67), since the style fix is not reported as an error here.
+
+**S73** = S70 with the style given an owner: a new dictionary
+`CIVIL3DRUST_STYLES` (249) in the named object dictionary holds the
+entry `TEST STYLE` → 248, and the style's owner reference points at 249.
+Question: is an owned style kept and used, even though it is outside
+Civil 3D's own style collection?
+
 **Results.**
 
 - S66 (and S65): opened with no issues.

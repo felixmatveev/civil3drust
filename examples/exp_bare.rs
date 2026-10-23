@@ -10,9 +10,10 @@
 //! Usage: cargo run --release --example exp_bare -- donor.dwg base.dwg plain.dwg out.dwg [style-hex]
 //!
 //! With `style-hex` (experiment S70) the alignment style with that handle in
-//! `base.dwg` is copied too and the alignment points at it. The style's
-//! owner (style collection) and its soft pointer to the default style are
-//! nulled; layers and linetypes missing in `plain.dwg` become layer 0 /
+//! `base.dwg` is copied too and the alignment points at it. The style is
+//! owned by a new dictionary `CIVIL3DRUST_STYLES` in the named object
+//! dictionary (S73; with no owner, S70, Civil 3D dropped it); its soft
+//! pointer to the default style is nulled; layers and linetypes missing in `plain.dwg` become layer 0 /
 //! Continuous.
 //!
 //! `donor.dwg` provides the template alignment, `base.dwg` a Civil 3D drawing
@@ -103,6 +104,25 @@ fn copy_style(base: &raw::Opened, plain: &mut raw::Opened, h: u64) -> u64 {
         .find(|r| r.handle == h)
         .unwrap_or_else(|| fail(format!("no alignment style {h:X} in base")));
     let new_h = plain.doc.allocate_handle().value();
+    // Owner: a new dictionary in the named object dictionary (S73). Without
+    // an owner Civil 3D drops the style on open (S70 -> S71/S72).
+    let dict_h = plain.doc.allocate_handle();
+    let nod = plain.doc.header.named_objects_dict_handle;
+    match plain.doc.objects.get_mut(&nod) {
+        Some(ObjectType::Dictionary(d)) => {
+            d.entries.push(("CIVIL3DRUST_STYLES".into(), dict_h));
+        }
+        _ => fail("plain drawing has no named object dictionary"),
+    }
+    let mut dict = acadrust::objects::Dictionary::new();
+    dict.handle = dict_h;
+    dict.owner = nod;
+    dict.hard_owner = true;
+    dict.entries.push(("TEST STYLE".into(), Handle::new(new_h)));
+    plain
+        .doc
+        .objects
+        .insert(dict_h, ObjectType::Dictionary(dict));
     let layers: Vec<u64> = plain.doc.layers.iter().map(|l| l.handle.value()).collect();
     let ltypes: Vec<u64> = plain
         .doc
@@ -113,9 +133,12 @@ fn copy_style(base: &raw::Opened, plain: &mut raw::Opened, h: u64) -> u64 {
     let base_layers: Vec<u64> = base.doc.layers.iter().map(|l| l.handle.value()).collect();
     let targets: Vec<u64> = handle_refs::of_record(&rec)
         .iter()
-        .map(|r| {
+        .enumerate()
+        .map(|(i, r)| {
             let t = r.handle;
-            if t == 0 || r.code == 2 || r.code == 4 || r.code >= 6 {
+            if i == 0 {
+                dict_h.value() // owner reference
+            } else if t == 0 || r.code == 2 || r.code == 4 || r.code >= 6 {
                 0 // owner, soft pointers (style collection, default style)
             } else if layers.contains(&t) || ltypes.contains(&t) {
                 t
@@ -156,7 +179,7 @@ fn copy_style(base: &raw::Opened, plain: &mut raw::Opened, h: u64) -> u64 {
         ObjectType::Unknown {
             type_name,
             handle: Handle::new(new_h),
-            owner: Handle::NULL,
+            owner: dict_h,
             raw_dxf_codes,
             raw_dwg_data: Some(d),
             raw_dwg_handle_bits: hb as i64,

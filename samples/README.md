@@ -82,6 +82,9 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S68 | `S68_S67_civ3d_audit_resaved.dwg` | Civil 3D 2024 | S67 opened (no RECOVER prompt; selecting the alignment crashed), AUDIT (3 errors fixed: null style → Standard), saved. | 467487 | `e24a5b247bbd3daf` |
 | S69 | `S69_S67_civ3d_resaved_no_audit.dwg` | Civil 3D 2024 | S67 opened and saved without AUDIT. | 468994 | `0db530a212f325fc` |
 | S70 | `S70_S64_bare_alignment_test_style.dwg` | civil3drust | S64 + `TEST STYLE` copied from S24 (owner and default-style pointer null, DASHED2 → Continuous) + alignment "Bare" using it (`examples/exp_bare … FA9`). | 28507 | `6a8fe5fa20a70403` |
+| S71 | `S71_S70_civ3d_audit_resaved.dwg` | Civil 3D 2024 | S70 opened (no RECOVER prompt; alignment shown with the default style), AUDIT (2 errors fixed), saved. | 469854 | `a1a4a1b9b172b017` |
+| S72 | `S72_S70_civ3d_resaved_no_audit.dwg` | Civil 3D 2024 | S70 opened and saved without AUDIT. | 469764 | `6007bb53fc21f788` |
+| S73 | `S73_S64_bare_alignment_test_style_owned.dwg` | civil3drust | As S70, but the style is owned by a new dictionary `CIVIL3DRUST_STYLES` in the named object dictionary (`examples/exp_bare … FA9`). | 28763 | `a0e00161db900dc6` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8
