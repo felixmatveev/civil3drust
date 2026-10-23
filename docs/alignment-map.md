@@ -121,3 +121,36 @@ S56 is S24 plus six alignments, each with one part emptied
 
 If Civil 3D rejects a change, RECOVER removes only that alignment.
 Results go back into the tables above.
+
+## 5. Hypothesis: the constant blocks are default options
+
+The "constant" regions are probably not opaque data but alignment settings
+and element constraints at their default values, identical only because
+every sample alignment was created the same way (from a polyline, as a
+centerline, no design criteria). Evidence so far:
+
+- **Element constraints vary already**: free arcs (fillets) store
+  parameters −1, −1, 1, −1, 29, three-point arcs 60, …, 2 (S10, D-012);
+  the element header `0x04020008` and the BL 0 after it may encode the
+  constraint type (fixed / floating / free) and how the element was made.
+- **Creation method changes the layout**: S1 (imported from LandXML) has
+  a 22-bit instead of 161-bit gap after its element records.
+- **Station equations add data** in section 2 and after the cache (S9).
+- **Optional blocks appear with edits** (S12's radius edit, S48 fresh,
+  S51 re-save), so some regions are option-dependent.
+
+### Sample plan (each S24 + one alignment, one option changed)
+
+| sample | option | expected region |
+|---|---|---|
+| O1 | alignment type *Offset* or *Miscellaneous* instead of Centerline | section 2 constants |
+| O2 | design speed set (e.g. 30 mph at station 0) | optional block / design-speed group |
+| O3 | design criteria on (criteria-based design) | section 2 / post-cache |
+| O4 | reference point / start station changed (e.g. 1+00) | start station BD, section 2 |
+| O5 | alignment created with layout tools: fixed tangent + fixed curve | element headers / parameters |
+| O6 | floating curve (attached to one tangent) | arc parameters |
+| O7 | alignment in a site instead of siteless | handle stream, companion |
+| O8 | superelevation calculated | optional blocks |
+
+Each sample is compared with the plain S24-style alignment of the same
+geometry; the bits that change name the option.

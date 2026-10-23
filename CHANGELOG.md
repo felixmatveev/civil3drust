@@ -12,6 +12,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   and what a new alignment needs. Built by comparing every Civil 3D
   alignment record in S2–S55: outside the geometry almost everything is
   constant across both templates.
+- docs/alignment-map.md §5: hypothesis that the constant blocks hold
+  alignment options and element constraints at their defaults, with a
+  one-option-per-sample plan (O1–O8).
 - D-026: alignments are modelled as minimal parameters; caches are
   derived when writing, kept in separate writers if needed.
 - `examples/exp_minimal.rs` and sample S56: six alignments, each with one
