@@ -1079,6 +1079,51 @@ style and no parcel entry.
 **Results.**
 
 - S66 (and S65): opened with no issues.
+- S67: opens without a RECOVER prompt; the alignment is listed in
+  Prospector but not drawn. **Selecting it crashes Civil 3D** (unhandled
+  access violation reading 0x0098), so a null style reference is not safe.
+- AUDIT on S67: 3 errors found, 3 fixed. The one it names is
+  `Alignment (Alignment Style) eNullObjectId → Standard`. After the fix the
+  alignment shows as a dot until it is moved (and moved back), then draws
+  normally. Saved as S68.
+- S67 saved without AUDIT: S69.
+- AutoCAD (without Civil 3D) and OpenCADStudio open S67 and draw the
+  alignment from its proxy graphics.
+
+**What the re-saves show.**
+
+| | S67 (ours) | S69 (no AUDIT) | S68 (AUDIT) |
+|---|---|---|---|
+| file | 28 KB | 469 KB | 467 KB |
+| record | 435 B | 345 B | 936 B |
+| proxy graphics | 8 chunks (one polyline) | 4 chunks, nothing drawn | 26 chunks |
+| style reference | null | null | 257 (Civil 3D's default style, no name stored) |
+| companion references | null | null | null |
+| registry | none | created, empty (BCA) | created, empty (BCA) |
+| class number | 518 | 518 | 518 |
+
+- Civil 3D builds its whole drawing infrastructure when it opens a plain
+  drawing (both re-saves grew to the size of S65, with one alignment style,
+  257).
+- It regenerates the proxy graphics from the style on save. With no style
+  there is nothing to draw (S69: 4 attribute chunks, no geometry), which is
+  why the alignment was invisible. Civil 3D draws from the style and
+  geometry, not from the stored graphics.
+- AUDIT does not create a companion or registry entry; the companion
+  references stay null, as after S30's AUDIT (S32). The two unnamed AUDIT
+  errors are probably the two companion references, matching S30's two
+  errors.
+
+Conclusions: of all the references, **only the style is required**. The
+companion/registry entry, the label group and Civil 3D's settings are
+optional (Civil 3D creates the settings itself; AUDIT accepts null
+companions). A truly minimal file therefore needs the alignment record and
+one alignment style. The style could be our own minimal style record
+(not Autodesk's template content, D-015) — not yet tried.
+
+**Results.**
+
+- S66 (and S65): opened with no issues.
 - S67: opens without a RECOVER prompt. The alignment is listed in
   Prospector but not drawn in the viewport. **Selecting it crashes Civil 3D**
   (unhandled access violation reading 0x0098), so a null style reference is

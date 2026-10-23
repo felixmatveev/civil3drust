@@ -45,7 +45,7 @@ other records shift by the sizes of the variable parts.
 | 3490–3858 | **post-cache block** (369 bits), see 1.2 | constant except GUID copy 2 | yes |
 | 3859–4394 | **string stream**: class name, description ×2, name, empty strings (8 + 3 per arc) | decoded | yes |
 | 4395–4411 | string-stream size (16 bits) + flag | decoded | yes |
-| 4412–4527 | **handle stream**: layer, null, companion ×2, null, style, null | decoded | yes (companion refs: see §2) |
+| 4412–4527 | **handle stream**: layer, null, companion ×2, null, style, null | decoded | layer and **style required** (null style: invisible, crash on select, S67–S69); companion refs may be null (§2) |
 
 ### 1.1 Section 2 (graphics end → element count)
 
