@@ -81,6 +81,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S67 | `S67_S64_bare_alignment.dwg` | civil3drust | S64 + one alignment record "Bare" with null style and companion references, plus its class entry (`examples/exp_bare`, record built from S58 1089 in S24). | 27899 | `34cd9d9ddf1c9363` |
 | S68 | `S68_S67_civ3d_audit_resaved.dwg` | Civil 3D 2024 | S67 opened (no RECOVER prompt; selecting the alignment crashed), AUDIT (3 errors fixed: null style → Standard), saved. | 467487 | `e24a5b247bbd3daf` |
 | S69 | `S69_S67_civ3d_resaved_no_audit.dwg` | Civil 3D 2024 | S67 opened and saved without AUDIT. | 468994 | `0db530a212f325fc` |
+| S70 | `S70_S64_bare_alignment_test_style.dwg` | civil3drust | S64 + `TEST STYLE` copied from S24 (owner and default-style pointer null, DASHED2 → Continuous) + alignment "Bare" using it (`examples/exp_bare … FA9`). | 28507 | `6a8fe5fa20a70403` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

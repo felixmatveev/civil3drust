@@ -16,6 +16,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   assigns the Standard style: the style reference is required.
 - Samples S64 (empty AutoCAD drawing) and S65 (its Civil 3D save).
 
+- `exp_bare` optional style argument and S70: the alignment plus a copy of
+  `TEST STYLE` in a plain AutoCAD drawing.
+
 ### Fixed
 - `create_alignment` wrote the donor's class numbers into the new records;
   it now writes the target's (`set_object_type`), so donor and target can

@@ -1121,6 +1121,16 @@ companions). A truly minimal file therefore needs the alignment record and
 one alignment style. The style could be our own minimal style record
 (not Autodesk's template content, D-015) — not yet tried.
 
+**S70** = S64 + `TEST STYLE` (the owner's style from S24, FA9, as 248) +
+the alignment pointing at it (`exp_bare … FA9`, 29 KB). Classes added:
+`AECC_ALIGNMENT_STYLE` (518) and `AECC_ALIGNMENT` (519). The style's
+references were mapped to S64: layer 0 (10) and ByBlock (14) kept; its
+two `DASHED2` linetype references (488, not in S64) → Continuous (16); its
+owner (the style collection 48B) and the soft pointer to the default style
+(48C) null, since S64 has neither. Question: does Civil 3D accept a style
+without a collection (adopt it, AUDIT it, or remove it), and does the
+alignment then draw and select normally?
+
 **Results.**
 
 - S66 (and S65): opened with no issues.
