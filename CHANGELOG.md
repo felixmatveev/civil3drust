@@ -26,6 +26,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   drawings postponed (D-030, alignment-map §6).
 
 ### Fixed
+- `set_design_speeds` now adds one (empty) comment string per design-speed
+  entry; without it Civil 3D showed garbage as the comment (S76). Test
+  drawing S77.
 - `create_alignment` wrote the donor's class numbers into the new records;
   it now writes the target's (`set_object_type`), so donor and target can
   come from different templates.

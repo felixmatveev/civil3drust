@@ -11,7 +11,8 @@
 //!
 //! Speeds are stored in the drawing's speed unit (mph in the samples). Every
 //! alignment has at least one entry: Civil 3D's default is 60 at the start
-//! station, which is why "BD 60" looked like a constant (S24–S73). One entry
+//! station, which is why "BD 60" looked like a constant (S24–S73). Each entry
+//! has a comment string in the record's string stream (S76); one entry
 //! carries the alignment's identity GUID ("GUID copy 2"); the others have
 //! their own random GUIDs (S74 `mixed speed`). See
 //! `docs/alignment-object.md`, "Design speeds".
@@ -19,6 +20,7 @@
 use crate::aecc_build::{guid_v4, Bits};
 use crate::aecc_elements::{decode_elements, Element};
 use crate::raw::{self, RawRecord};
+use crate::string_stream;
 use std::fmt;
 
 /// One design-speed entry.
@@ -167,5 +169,13 @@ pub fn set_design_speeds(
     let new_data_end = data_end + new_stop - stop;
     let bytes = w.into_bytes();
     let hb = bytes.len() * 8 - new_data_end;
-    Ok((bytes, hb))
+    // Each entry has a comment string (empty here) in the string stream:
+    // with too few strings Civil 3D reads the comment from the bits before
+    // the stream (S75 -> S76). The other strings around them are empty too,
+    // so adding or removing empty strings at the end is enough.
+    let ss = string_stream::parse(&bytes, hb).map_err(|e| err(e.to_string()))?;
+    let count = (ss.strings.len() + speeds.len())
+        .checked_sub(old.len())
+        .ok_or_else(|| err("string stream too short"))?;
+    string_stream::set_string_count(&bytes, hb, count).map_err(|e| err(e.to_string()))
 }

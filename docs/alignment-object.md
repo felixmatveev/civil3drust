@@ -1234,6 +1234,22 @@ speeds reproduces Civil 3D's bits exactly (test).
 `set_speeds`. The interval-cache region is left in its one-interval form,
 so this also asks whether Civil 3D recomputes it.
 
+**Result (S76).** No errors, and both speed lists are kept. But the new
+two-speed alignment showed a garbage comment ("ڠ₢ꒀ樟ᾤ聪ᾤꁒ쀏") in the speed
+grid, and the re-saved record has 13 strings, the last one that text.
+**Each design-speed entry has a comment string** in the string stream.
+Our record still had the one-entry count (12), so Civil 3D read the
+missing comment from the bits before the stream. `set_design_speeds` now
+adds or removes one empty string per entry. That works because all the
+strings around them are empty; where the comments sit among the empty
+strings is not known yet. Civil 3D left the interval field after the
+elements at the one-interval value. So that field (BL 2 and 2 extra
+strings in S74 `mixed speed`) is not caused by the speeds; it came from
+some other edit in S74 and is still open.
+
+S77 = S75 regenerated with the fix, plus `Speeds 50-40-30` ((0, 50),
+(150, 40), (300, 30)).
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length

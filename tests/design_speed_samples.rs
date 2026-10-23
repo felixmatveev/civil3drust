@@ -54,4 +54,12 @@ fn rewrite_to_two_speeds() {
     };
     assert_eq!(pairs(&r2), [(0.0, 60.0), (200.0, 30.0)]);
     assert_eq!(raw::object_name(&r2.data), raw::object_name(&r.data));
+    // One comment string per entry (S76).
+    let n = |r: &raw::RawRecord| {
+        civil3drust::string_stream::parse(&r.data, r.handle_bits)
+            .unwrap()
+            .strings
+            .len()
+    };
+    assert_eq!(n(&r2), n(&r) + 1);
 }

@@ -87,6 +87,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S73 | `S73_S64_bare_alignment_test_style_owned.dwg` | civil3drust | As S70, but the style is owned by a new dictionary `CIVIL3DRUST_STYLES` in the named object dictionary (`examples/exp_bare … FA9`). | 28763 | `a0e00161db900dc6` |
 | S74 | `S74_O2_design_speeds.dwg` | Civil 3D 2024 | O2: alignments `60MPH` (60 mph), `30MPH` (30 mph), `mixed speed` (60 mph from 0+00, 30 mph from 2+00). | 477571 | `fc6e6130c6b103f2` |
 | S75 | `S75_S24_created_design_speeds.dwg` | civil3drust | S24 + `Speed 30` (0:30) and `Speeds 60-30` (0:60 200:30), (0,−100)/(0,−200) → (500,·), template S58 1089; `create_alignment` then `set_speeds`. | 450506 | `5702d205a84eeae7` |
+| S76 | `S76_S75_civ3d_resaved.dwg` | Civil 3D 2024 | S75 opened (no errors; garbage comment in the second speed row of `Speeds 60-30`), saved. | 473889 | `29fbfa3751cf8de8` |
+| S77 | `S77_S24_created_design_speeds_v2.dwg` | civil3drust | As S75 with one comment string per speed entry, plus `Speeds 50-40-30` (0:50 150:40 300:30). | 451694 | `29fbde1589833fe6` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8
