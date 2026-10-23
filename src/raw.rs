@@ -372,6 +372,10 @@ fn structured_name(data: &[u8]) -> Option<String> {
             _ => break,
         };
         if chars + 16 * n > bit_len(data) {
+            // Past the end of a short stream: keep what was read.
+            if strings.len() >= 4 {
+                break;
+            }
             return None;
         }
         let units: Vec<u16> = (0..n)
@@ -380,7 +384,11 @@ fn structured_name(data: &[u8]) -> Option<String> {
                     | (get_byte(data, chars + 16 * i + 8) as u16) << 8
             })
             .collect();
-        strings.push(String::from_utf16(&units).ok()?);
+        match String::from_utf16(&units) {
+            Ok(t) => strings.push(t),
+            Err(_) if strings.len() >= 4 => break,
+            Err(_) => return None,
+        }
         bit = chars + 16 * n;
     }
     if strings.len() < 4 || !strings[0].starts_with("AeccImp") || strings[1] != strings[2] {

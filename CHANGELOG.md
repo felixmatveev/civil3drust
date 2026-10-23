@@ -29,7 +29,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 - `alignment_type` on records with several design speeds (S79).
-- `raw::object_name` with design-criteria strings after the name.
+- `raw::object_name` with design-criteria strings after the name; it no
+  longer gives up when reading past the end of a short string stream
+  (the previous commit broke `string_stream::tests::description_round_trip`).
 - `set_design_speeds` now adds one (empty) comment string per design-speed
   entry; without it Civil 3D showed garbage as the comment (S76). Test
   drawing S77.
