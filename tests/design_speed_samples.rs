@@ -54,14 +54,14 @@ fn rewrite_to_two_speeds() {
     };
     assert_eq!(pairs(&r2), [(0.0, 60.0), (200.0, 30.0)]);
     assert_eq!(raw::object_name(&r2.data), raw::object_name(&r.data));
-    // One comment string per entry (S76).
+    // Three strings per speed: its comment and its interval's two.
     let n = |r: &raw::RawRecord| {
         civil3drust::string_stream::parse(&r.data, r.handle_bits)
             .unwrap()
             .strings
             .len()
     };
-    assert_eq!(n(&r2), n(&r) + 1);
+    assert_eq!(n(&r2), n(&r) + 3);
 }
 
 /// Editing Civil 3D's own two-entry table (S74 `mixed speed`), whose entry
@@ -169,4 +169,57 @@ fn move_start_shifts_speeds() {
     let s84 = rec("samples/S84_S83_civ3d_resaved.dwg", 0xFB3);
     assert_eq!(first_interval_station(&s84), Some(100.0));
     assert_eq!(pairs(&s84), [(100.0, 60.0)]);
+}
+
+/// The interval block computed from the geometry reproduces Civil 3D's
+/// records bit for bit (S79 `DESING OFF` two intervals, S84 one). (S24's
+/// first element ends at a fillet; Civil 3D's interval holds its length
+/// and end point with last-digit rounding differences, 88.19660112501052
+/// vs …053 and y −2.1e−14 vs 0, so it is not compared bit for bit.)
+#[test]
+fn intervals_match_civil3d() {
+    for (f, h, speeds) in [
+        (
+            "samples/S79_O3_design_criteria.dwg",
+            0xFB6,
+            vec![(0.0, 60.0), (200.0, 30.0)],
+        ),
+        (
+            "samples/S84_S83_civ3d_resaved.dwg",
+            0xFB3,
+            vec![(100.0, 60.0)],
+        ),
+    ] {
+        let r = rec(f, h);
+        let (d, hb) = set_design_speeds(&r, &speeds, 1).unwrap();
+        let data_end = r.data.len() * 8 - r.handle_bits;
+        assert_eq!(d.len() * 8 - hb, data_end, "{f}");
+        for b in 0..data_end {
+            assert_eq!(raw::get_bit(&d, b), raw::get_bit(&r.data, b), "{f} bit {b}");
+        }
+    }
+}
+
+/// Adding speeds to an alignment without any (S82 `100 PLUS`, start −1+00).
+#[test]
+fn add_speeds_to_empty() {
+    let r = rec("samples/S82_O4_start_station.dwg", 0xFB6);
+    assert!(design_speeds(&r).unwrap().is_empty());
+    let (d, hb) = set_design_speeds(&r, &[(-100.0, 40.0), (150.0, 25.0)], 3).unwrap();
+    let r2 = raw::RawRecord {
+        data: d,
+        handle_bits: hb,
+        ..r.clone()
+    };
+    assert_eq!(pairs(&r2), [(-100.0, 40.0), (150.0, 25.0)]);
+    let n = |r: &raw::RawRecord| {
+        civil3drust::string_stream::parse(&r.data, r.handle_bits)
+            .unwrap()
+            .strings
+            .len()
+    };
+    assert_eq!(n(&r2), n(&r) + 6);
+    assert_eq!(raw::object_name(&r2.data).as_deref(), Some("100 PLUS"));
+    // Outside the alignment: refused.
+    assert!(set_design_speeds(&r, &[(-200.0, 40.0)], 3).is_err());
 }

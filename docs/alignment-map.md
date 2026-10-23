@@ -41,7 +41,7 @@ other records shift by the sizes of the variable parts.
 | 2873–3000 | **identity GUID** (v4), copy 1 | decoded (random) | yes — write a random v4 GUID (a zero GUID is accepted but changes how Civil 3D saves the record, S57 X5) |
 | 3001–3017 | 17 bits `10100000010101010` | constant | yes (constant) |
 | 3018–3083 | station at the end of element 0 (BD) | decoded; derived | yes |
-| 3084–3489 | **element-0 cache**: BL 1, BL 0, BL next-ID; start, end, start (6 RD) | decoded; derived | yes |
+| 3084–3489 | rest of the **first design-speed interval**: BL 1, BL 0, BL next element; element start, element end, point (6 RD) — see alignment-object.md "The interval block" | decoded; derived from speeds + geometry | written by `set_design_speeds` |
 | 3490–3858 | **post-cache block** (369 bits), see 1.2 | constant except GUID copy 2 | yes |
 | 3859–4394 | **string stream**: class name, description ×2, name, empty strings (8 + 3 per arc) | decoded | yes |
 | 4395–4411 | string-stream size (16 bits) + flag | decoded | yes |

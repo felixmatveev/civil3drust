@@ -18,7 +18,8 @@
 //! `docs/alignment-object.md`, "Design speeds".
 
 use crate::aecc_build::{guid_v4, Bits};
-use crate::aecc_elements::{decode_elements, Element};
+use crate::aecc_elements::{decode_elements, Element, Segment};
+use crate::alignment::Point2;
 use crate::raw::{self, RawRecord};
 use crate::string_stream;
 use std::fmt;
@@ -132,17 +133,21 @@ pub fn design_speeds(rec: &RawRecord) -> Result<Vec<DesignSpeed>, SpeedError> {
     locate(rec).map(|x| x.2)
 }
 
-/// Rewrite the design-speed table with `(station, speed)` entries. The
-/// first entry gets the identity GUID, the others keep the old entries'
-/// GUIDs in order or get random version-4 GUIDs from `seed`. Returns the new
-/// bytes and handle-stream size (the record grows or shrinks).
+/// Rewrite the design speeds with `(station, speed)` entries: the interval
+/// block after the elements (one interval per speed, computed from the
+/// geometry) and the table. The entries keep the old GUIDs in order (the
+/// first old interval's GUID first) and get random version-4 GUIDs from
+/// `seed` after that. Works on alignments without design speeds too.
+/// Speeds must start on tangents (the interval layout on curves is not
+/// known yet) and within the alignment. Returns the new bytes and
+/// handle-stream size.
 pub fn set_design_speeds(
     rec: &RawRecord,
     speeds: &[(f64, f64)],
     seed: u64,
 ) -> Result<(Vec<u8>, usize), SpeedError> {
     if speeds.is_empty() {
-        return Err(err("at least one design speed is required"));
+        return clear_design_speeds(rec);
     }
     if speeds
         .iter()
@@ -150,57 +155,136 @@ pub fn set_design_speeds(
     {
         return Err(err("stations must be finite and speeds positive"));
     }
-    let (start, stop, old) = locate(rec)?;
-    if old.is_empty() {
-        return Err(err(
-            "the alignment has no design speeds; adding them needs the interval block, \
-             which is not written yet",
-        ));
-    }
+    let (_, stop, old) = locate(rec)?;
+    let (end, first) = identity(rec)?;
     let data = &rec.data;
-    // The first entry gets the identity GUID; the others reuse the old
-    // entries' GUIDs in order, then fresh ones. (Other copies of entry
-    // GUIDs exist outside the table, S74 `mixed speed`, so the identity is
-    // taken from copy 1, not searched by value.)
-    let (_, keep) = identity(rec)?;
-    let mut others = old.iter().map(|e| e.id).filter(|id| *id != keep);
-    let total = raw::bit_len(data);
-    let data_end = total - rec.handle_bits;
+    let old_intervals = old_interval_count(data, end)?;
+    // GUIDs: old ones first (the first interval's, then the rest in table
+    // order), then fresh ones.
+    let mut ids: Vec<[u8; 16]> = Vec::new();
+    if old_intervals > 0 {
+        ids.push(first);
+    }
+    for e in &old {
+        if !ids.contains(&e.id) {
+            ids.push(e.id);
+        }
+    }
+    let ids: Vec<[u8; 16]> = (0..speeds.len())
+        .map(|i| {
+            ids.get(i)
+                .copied()
+                .unwrap_or_else(|| guid_v4(seed.wrapping_add(i as u64)))
+        })
+        .collect();
     let mut w = Bits::default();
-    w.copy(data, 0, start);
+    write_intervals(rec, &mut w, speeds, &ids)?;
     w.bl(0);
     w.bl(1);
     w.bl(speeds.len() as i32);
-    for (i, (station, speed)) in speeds.iter().enumerate() {
+    for ((station, speed), id) in speeds.iter().zip(&ids) {
         w.bl(1);
         w.bd(*station);
         w.bd(*speed);
-        let id = if i == 0 {
-            keep
-        } else {
-            others
-                .next()
-                .unwrap_or_else(|| guid_v4(seed.wrapping_add(i as u64)))
-        };
         for b in id {
-            w.byte(b);
+            w.byte(*b);
         }
     }
-    let new_stop = w.len();
-    w.copy(data, stop, total);
-    let new_data_end = data_end + new_stop - stop;
-    let bytes = w.into_bytes();
-    let hb = bytes.len() * 8 - new_data_end;
-    // Each entry has a comment string (empty here) in the string stream:
-    // with too few strings Civil 3D reads the comment from the bits before
-    // the stream (S75 -> S76). The other strings around them are empty too,
-    // so adding or removing empty strings at the end is enough.
+    let (bytes, hb) = splice(data, rec.handle_bits, end, stop, w);
+    // Strings: three per speed with an interval (the speed's comment and
+    // the interval's two), one per speed without (S76, S79, S82).
     let ss = string_stream::parse(&bytes, hb).map_err(|e| err(e.to_string()))?;
-    let count = (ss.strings.len() + speeds.len())
-        .checked_sub(old.len())
+    let base = ss
+        .strings
+        .len()
+        .checked_sub(3 * old_intervals + old.len().saturating_sub(old_intervals))
         .ok_or_else(|| err("string stream too short"))?;
-    string_stream::set_string_count(&bytes, hb, count).map_err(|e| err(e.to_string()))
+    string_stream::set_string_count(&bytes, hb, base + 3 * speeds.len())
+        .map_err(|e| err(e.to_string()))
 }
+
+/// Number of intervals: after the elements come BL 0 ×3 and the count.
+fn old_interval_count(data: &[u8], end: usize) -> Result<usize, SpeedError> {
+    if (0..6).any(|i| raw::get_bit(data, end + i) != EMPTY_INTERVALS[i]) {
+        return Err(err("interval block not where expected"));
+    }
+    let (n, _) = raw::read_bl(data, end + 6).ok_or_else(|| err("interval count"))?;
+    usize::try_from(n).map_err(|_| err("interval count"))
+}
+
+/// Write the interval block: BL 0 ×3, BL n, then per speed its GUID, 13
+/// constant bits, BD station, BD distance from the start, BD length to the
+/// end of the element, BL 1, BL 0, BL the next element's ID, and RD
+/// element start x, y, element end x, y, point x, y (S24, S74, S79, S84).
+fn write_intervals(
+    rec: &RawRecord,
+    w: &mut Bits,
+    speeds: &[(f64, f64)],
+    ids: &[[u8; 16]],
+) -> Result<(), SpeedError> {
+    let d = decode_elements(rec).map_err(|e| err(e.to_string()))?;
+    let start = crate::aecc_station::start_station(rec).unwrap_or(0.0);
+    let total: f64 = d.elements.iter().map(|e| e.segment.length()).sum();
+    for _ in 0..3 {
+        w.bl(0);
+    }
+    w.bl(speeds.len() as i32);
+    for ((station, _), id) in speeds.iter().zip(ids) {
+        let dist = station - start;
+        if dist < -1e-9 || dist > total + 1e-9 {
+            return Err(err(format!(
+                "speed station {station} is outside the alignment ({start} to {})",
+                start + total
+            )));
+        }
+        // The element containing the point (at an element boundary, the
+        // next one, except at the very end).
+        let mut acc = 0.0;
+        let mut found = None;
+        for (i, e) in d.elements.iter().enumerate() {
+            let len = e.segment.length();
+            let last = i + 1 == d.elements.len();
+            if dist < acc + len - 1e-9 || last {
+                found = Some((e, (dist - acc).clamp(0.0, len), len));
+                break;
+            }
+            acc += len;
+        }
+        let (e, t, len) = found.ok_or_else(|| err("no elements"))?;
+        let (a, b) = match e.segment {
+            Segment::Line { start, end } => (start, end),
+            Segment::Arc { .. } => {
+                return Err(err(format!(
+                    "speed station {station} starts on a curve; the interval layout \
+                     for curves is not known yet (needs a sample)"
+                )))
+            }
+        };
+        let f = if len > 0.0 { t / len } else { 0.0 };
+        let p = Point2::new(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f);
+        let after = match &e.record {
+            Element::Tangent(t) => t.after,
+            Element::Arc(x) => x.after,
+        };
+        for byte in id {
+            w.byte(*byte);
+        }
+        w.bits(INTERVAL_CONSTANT, 13);
+        w.bd(*station);
+        w.bd(dist.max(0.0));
+        w.bd(len - t);
+        w.bl(1);
+        w.bl(0);
+        w.bl(after);
+        for v in [a.x, a.y, b.x, b.y, p.x, p.y] {
+            w.rd(v);
+        }
+    }
+    Ok(())
+}
+
+/// The 13 bits after each interval's GUID, the same in every sample.
+const INTERVAL_CONSTANT: u64 = 0b1010000001010;
 
 /// Remove all design speeds, as Civil 3D does when the start station
 /// changes (S82): the interval block after the elements becomes four BL 0,

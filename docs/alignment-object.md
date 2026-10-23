@@ -1400,6 +1400,37 @@ station) by the same amount; alignments without speeds stay without.
 `--clear-speeds`. S85: S24 + `Shift +100` (60 at 1+00), `Shift -100 two
 speeds` (60 at −1+00, 30 at 1+00) and `Shift +250 three speeds` (50 at
 2+50, 40 at 4+00, 30 at 5+50).
+Result (S86): no AUDIT errors; Civil 3D kept all shifted speeds and did
+not rewrite the intervals on a plain save.
+
+### The interval block (S24, S74, S79, S84)
+
+After the element records:
+
+```text
+BL 0, BL 0, BL 0, BL n,
+n × { 16-byte GUID (the matching design-speed entry's),
+      13 bits 1010000001010,
+      BD station, BD distance from the start, BD length to the element end,
+      BL 1, BL 0, BL ID of the next element (after-link),
+      RD element start x, y, element end x, y, point x, y },
+```
+
+then the design-speed table. Every interval in the samples starts on a
+tangent; `BL 1, BL 0` may encode the element kind, so curves need a
+sample. Civil 3D orders the intervals by creation (S74: 2+00 first).
+Each speed with an interval has three strings (comment + two), a speed
+without an interval one.
+
+`set_design_speeds` now writes the whole block from the geometry (one
+interval per speed, table order), so it also adds speeds to alignments
+that have none. It reproduces Civil 3D's records bit for bit for S79
+`DESING OFF` (two intervals) and S84; S24 differs only by Civil 3D's
+last-digit rounding at a fillet tangent point. Speeds on curves and
+outside the alignment are refused.
+
+S87 = S82 with speeds added: `ZERO START` 0:60 100:50 250:40 400:30
+(had one), `100 PLUS` −100:40 150:25 and `100 MINUS` 100:55 (had none).
 
 ## Open questions
 

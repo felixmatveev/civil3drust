@@ -97,6 +97,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S83 | `S83_S24_created_start_stations.dwg` | civil3drust | S24 + `Start 100 speeds kept`, `Start 100 no speeds`, `Start -100 no speeds` (`create_alignment`, template S58 1089, then `set_start` with/without `--clear-speeds`). | 451216 | `69a7b98a874f85ee` |
 | S84 | `S84_S83_civ3d_resaved.dwg` | Civil 3D 2024 | S83 opened (AUDIT no errors), saved: the kept speed moved to 1+00. | 473767 | `56b0de4bc2d59d69` |
 | S85 | `S85_S24_created_start_shift_speeds.dwg` | civil3drust | S24 + `Shift +100`, `Shift -100 two speeds`, `Shift +250 three speeds`: speeds set, then `set_start` shifting them (D-031). | 452148 | `f0b71d92e532a645` |
+| S86 | `S86_S85_civ3d_resaved.dwg` | Civil 3D 2024 | S85 opened (no AUDIT errors), saved. | 473806 | `6e1eeda89a402ff7` |
+| S87 | `S87_S82_speeds_added.dwg` | civil3drust | S82 with speeds written by `set_speeds`: `ZERO START` 0:60 100:50 250:40 400:30, `100 PLUS` −100:40 150:25, `100 MINUS` 100:55 (the last two had none). | 453254 | `cbefe388af2ebd86` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

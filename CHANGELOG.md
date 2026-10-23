@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Interval block decoded (one interval per design speed: GUID, station,
+  distance, length to element end, next element, element and point
+  coordinates). `set_design_speeds` writes it from the geometry, adds
+  speeds to alignments without any, and reproduces Civil 3D's records
+  (S79, S84). Test drawing S87.
 - O4 findings (S82): start station confirmed; alignments without design
   speeds have no interval block, which shows that the two "identity GUID"
   copies belong to the first design-speed interval and entry.
