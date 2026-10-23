@@ -78,7 +78,32 @@ pub fn of_record(rec: &RawRecord) -> Vec<HandleRef> {
     if rec.handle_bits == 0 || rec.handle_bits > total {
         return Vec::new();
     }
-    parse(&rec.data, total - rec.handle_bits, total, rec.handle)
+    let mut refs = parse(&rec.data, total - rec.handle_bits, total, rec.handle);
+    // A whole zero byte at the end is padding, not a reference (code 0 is
+    // never used in these streams; S56 had one from accumulated padding).
+    while refs.last().is_some_and(|r| r.code == 0 && r.counter == 0) {
+        refs.pop();
+    }
+    refs
+}
+
+/// Drop padding after the last reference of the handle stream and re-pad
+/// to a whole byte with zero bits. Returns the new bytes and
+/// handle-stream size.
+pub fn trim_padding(data: &[u8], handle_bits: usize, own: u64) -> (Vec<u8>, usize) {
+    let total = raw::bit_len(data);
+    let start = total - handle_bits;
+    let mut refs = parse(data, start, total, own);
+    while refs.last().is_some_and(|r| r.code == 0 && r.counter == 0) {
+        refs.pop();
+    }
+    let end = refs.last().map(|r| r.bit + r.bits()).unwrap_or(start);
+    let mut bits: Vec<u8> = (0..end).map(|b| raw::get_bit(data, b)).collect();
+    while !bits.len().is_multiple_of(8) {
+        bits.push(0);
+    }
+    let hb = bits.len() - start;
+    (pack(&bits), hb)
 }
 
 /// Rewrite the absolute reference `r` in `data` to point at `handle`.

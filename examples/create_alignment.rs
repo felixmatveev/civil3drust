@@ -2,7 +2,7 @@
 //!
 //! Usage:
 //!   cargo run --release --example create_alignment -- donor.dwg target.dwg out.dwg <name> "x,y x,y"
-//!       [--style <name|hex>] [--template <hex>] [--no-label-group] [--no-parcel-entry]
+//!       [--style <name|hex>] [--template <hex>] [--no-label-group] [--no-parcel-entry] [--no-graphics]
 //!
 //! `donor.dwg` is any drawing with an alignment made by Civil 3D (the
 //! template; default: its alignment with the highest handle, or
@@ -68,6 +68,7 @@ fn main() {
     });
     let no_label = a.iter().any(|x| x == "--no-label-group");
     let no_parcel = a.iter().any(|x| x == "--no-parcel-entry");
+    let no_graphics = a.iter().any(|x| x == "--no-graphics");
     let a: Vec<String> = a.into_iter().filter(|x| !x.starts_with("--no-")).collect();
     if a.len() != 6 {
         eprintln!(
@@ -110,6 +111,7 @@ fn main() {
             parcel_entry: !no_parcel,
             style,
             template,
+            graphics: !no_graphics,
         },
     )
     .unwrap_or_else(|e| fail(e));

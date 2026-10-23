@@ -75,6 +75,7 @@ owner for this study, or generated from them. All are in
 | S54 | `S52_civ3d_resaved.dwg` | S52 opened in Civil 3D (AUDIT 0 errors), saved. |
 | S55 | `S53_civ3d_resaved.dwg` | S53 opened in Civil 3D (AUDIT 0 errors), saved after S54. |
 | S56 | `S24_minimal_experiments.dwg` (generated) | Experiments X0–X5: which parts can be empty ([alignment-map.md](alignment-map.md)). |
+| S57 | `S56_civ3d_resaved.dwg` | S56 opened in Civil 3D (AUDIT 0 errors), saved; results in [alignment-map.md](alignment-map.md) §4. |
 
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.

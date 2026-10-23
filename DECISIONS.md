@@ -477,3 +477,20 @@ cache writers. The S56 experiments decide which caches can be omitted.
 
 **Alternatives.** Keep copying a donor's binary block: works, but it
 hides what matters and drags undecoded data into every new object.
+
+## D-027: Proxy graphics optional, on by default
+Date: 2026-10-23 · Status: accepted
+
+**Context.** S56/S57: Civil 3D accepts an alignment without proxy graphics
+and regenerates them. The graphics are what AutoCAD, viewers and other
+programs without Civil 3D draw (OpenCADStudio shows them; BricsCAD Lite did
+not open S56 at all, reason unknown).
+
+**Decision.** `create_alignment` writes graphics by default (one polyline
+per tangent, D-024) and can omit them (`graphics: false`). The 66-bit
+section-2 field is treated as a cache (copied as is; Civil 3D rewrites
+it). The identity GUID is always a random v4 value.
+
+**Alternatives.** Always omit graphics: smaller, closer to D-026, but the
+alignment would be invisible outside Civil 3D until Civil 3D re-saves the
+file.

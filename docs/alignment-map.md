@@ -31,14 +31,14 @@ other records shift by the sizes of the variable parts.
 | 0–17 | object type (class number) | constant per drawing | yes — taken from the target's class table |
 | 18–41 | own handle (`0x0n` + n bytes) | decoded | yes — `handle_refs::set_own_handle` |
 | 42–43 | EED size `10` (no extended data) | constant | yes |
-| 44 | has-graphics flag | decoded | test: X2 clears it |
+| 44 | has-graphics flag | decoded | yes (0 = no graphics, accepted: S57) |
 | 45–55 | graphics size (BLL, bytes) | decoded | only with graphics |
-| 56–1783 | **proxy graphics** (display cache): 7 attribute chunks, one polyline per tangent, an attribute triple after each arc | decoded; derived from geometry | maybe not — test X2 |
+| 56–1783 | **proxy graphics** (display cache): 7 attribute chunks, one polyline per tangent, an attribute triple after each arc | decoded; derived from geometry | **no** — Civil 3D regenerates it (S57); kept by default for programs without Civil 3D |
 | 1784–2196 | **section 2** (413 bits), see 1.1 | mostly constant | yes |
 | 2197–2206 | element count (BL) | decoded | yes |
 | 2207–2856 | **element records**, each with an 11-bit kind prefix (tangent `…010`, arc `…100`) | decoded | yes — the geometry |
 | 2857–2872 | 16 bits `1010100100000001` | constant | yes (constant) |
-| 2873–3000 | **identity GUID** (v4), copy 1 | decoded (random) | test X3: zeroed |
+| 2873–3000 | **identity GUID** (v4), copy 1 | decoded (random) | yes — write a random v4 GUID (a zero GUID is accepted but changes how Civil 3D saves the record, S57 X5) |
 | 3001–3017 | 17 bits `10100000010101010` | constant | yes (constant) |
 | 3018–3083 | station at the end of element 0 (BD) | decoded; derived | yes |
 | 3084–3489 | **element-0 cache**: BL 1, BL 0, BL next-ID; start, end, start (6 RD) | decoded; derived | yes |
@@ -52,7 +52,7 @@ other records shift by the sizes of the variable parts.
 | bits (relative) | content | status |
 |---|---|---|
 | 0–164 | | constant (all 13 records compared) |
-| 165–230 | 66-bit field | **varies (unknown)**; random-looking, not a double or timestamp; copying the donor's was accepted (S45, S50) — test X1: zero |
+| 165–230 | 66-bit field | **cache / don't care**: zeros accepted (S56 X1) and Civil 3D writes a new value on every save (S57) |
 | 231–396 | almost all zero bits | constant |
 | 397 | flag | 1 in S5–S12, 0 in S2 and S24–S55 (per template / session); untested |
 | 398–412 | (includes the start station BD at −22 from the end) | constant at start station 0 |
@@ -120,7 +120,28 @@ S56 is S24 plus six alignments, each with one part emptied
 | X5 minimal | X1 + X2 + X3 + X4 | all together |
 
 If Civil 3D rejects a change, RECOVER removes only that alignment.
-Results go back into the tables above.
+
+**Results (S57).** The file opens with AUDIT 0 errors and **all six
+alignments are kept**, including X5 (everything emptied). On save Civil 3D
+rebuilds what was removed:
+
+| alignment | after the Civil 3D save |
+|---|---|
+| all | the section-2 66-bit field is rewritten with a new value in every alignment (Civil 3D's own included), so it is a cache; the +44-bit section-2 field is added to every alignment |
+| X0, X1, X3, X4 | new identity GUID (also replacing our generated ones), as in S47 |
+| X2 no-graphics | proxy graphics regenerated (13 chunks, same as the others) |
+| X3 zero-guid | new GUID assigned |
+| X5 minimal | graphics regenerated, but the GUID **stays zero** and Civil 3D adds a 617-bit block and 2 strings after the cache that no other record has |
+
+Conclusions: proxy graphics, the 66-bit field and the label group are not
+needed; the GUID should be a real random value (a zero GUID is accepted but
+sends Civil 3D down a different path). Separately, a parsing slip in S56's
+generated records — one stray zero byte after the handle stream, from
+padding kept through several rewrite steps — was ignored by Civil 3D; the
+writers now trim it (`handle_refs::trim_padding`).
+
+Civil 3D saving to DXF writes no AECC entities at all (the DXF saved with
+S57 has an empty ENTITIES section), so DXF cannot carry alignments.
 
 ## 5. Hypothesis: the constant blocks are default options
 

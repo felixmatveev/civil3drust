@@ -18,7 +18,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 - D-026: alignments are modelled as minimal parameters; caches are
   derived when writing, kept in separate writers if needed.
 - `examples/exp_minimal.rs` and sample S56: six alignments, each with one
-  part emptied (section-2 field, graphics, GUID, label group, all).
+  part emptied (section-2 field, graphics, GUID, label group, all). All
+  accepted by Civil 3D (S57): graphics, the 66-bit field and the label group
+  are caches/optional; the GUID should be random.
 - `aecc_registry` module: parse the companion registry (keys, companions,
   ID strings, sorted by ID string) and rebuild it with an entry added or
   removed; matches Civil 3D's records (S24→S25→S44→S48). D-025.
@@ -75,7 +77,14 @@ versions follow [Semantic Versioning](https://semver.org/).
   (Civil 3D two-tangent alignment), S45 (generated, equals S44's record
   apart from the identity), S46 (five PIs, two curves).
 
+- `CreateOptions::graphics` / `--no-graphics` and `aecc_build::strip_graphics`:
+  create an alignment without proxy graphics (Civil 3D regenerates them,
+  S57). D-027.
+
 ### Fixed
+- Created records could end with a stray zero byte after the handle
+  stream (padding kept through several rewrites, S56); writers trim it
+  (`handle_refs::trim_padding`) and `of_record` ignores trailing padding.
 - Created alignments no longer reuse the donor alignment's identity value;
   the new value is a proper version-4 GUID (S45's had version nibble 5).
   New companion ID strings carry the '4' at position 13 like Civil 3D's.

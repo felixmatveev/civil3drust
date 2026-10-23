@@ -89,6 +89,9 @@ pub struct CreateOptions {
     /// Handle of the template alignment in the donor; default: the donor's
     /// alignment with the highest handle that has a companion.
     pub template: Option<u64>,
+    /// Write proxy graphics (the display cache). Civil 3D regenerates them
+    /// (S57), but AutoCAD and viewers without Civil 3D draw only these.
+    pub graphics: bool,
 }
 
 impl Default for CreateOptions {
@@ -98,6 +101,7 @@ impl Default for CreateOptions {
             parcel_entry: true,
             style: None,
             template: None,
+            graphics: true,
         }
     }
 }
@@ -330,6 +334,13 @@ pub fn create_alignment(
         .map_err(|e| lay(e.to_string()))?;
     let (align, align_hb) =
         string_stream::set_name(&align, hb, &old_name, name).map_err(|e| lay(e.to_string()))?;
+    // Each rewrite step keeps the previous padding; trim it so no stray
+    // zero byte follows the last reference (S56).
+    let (mut align, mut align_hb) = handle_refs::trim_padding(&align, align_hb, align_h);
+    if !opts.graphics {
+        (align, align_hb) =
+            aecc_build::strip_graphics(&align, align_hb).map_err(|e| lay(e.to_string()))?;
+    }
 
     // Label group: own handle, reference to the alignment.
     let label_rec = match &label {

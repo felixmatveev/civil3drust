@@ -506,6 +506,31 @@ pub fn set_geometry(
     ))
 }
 
+/// Remove the proxy graphics: clear has-graphics (bit 44) and drop the
+/// graphics size and stream. Civil 3D regenerates them on open and save
+/// (S56 X2 → S57); other programs show nothing until then. Returns the new
+/// bytes and handle-stream size.
+pub fn strip_graphics(data: &[u8], handle_bits: usize) -> Result<(Vec<u8>, usize), BuildError> {
+    let g = pg::find(data, 4096).ok_or_else(|| layout("no proxy graphics"))?;
+    if raw::get_bit(data, EED_BIT) != 1
+        || raw::get_bit(data, EED_BIT + 1) != 0
+        || raw::get_bit(data, EED_BIT + 2) != 1
+    {
+        return Err(layout("graphics flag not where expected"));
+    }
+    let total = raw::bit_len(data);
+    let data_end = total - handle_bits;
+    let mut w = Bits::default();
+    w.copy(data, 0, EED_BIT + 2);
+    w.bit(0);
+    let shift = g.end_bit() - w.len();
+    w.copy(data, g.end_bit(), total);
+    let new_data_end = data_end - shift;
+    let bytes = w.into_bytes();
+    let hb = bytes.len() * 8 - new_data_end;
+    Ok((bytes, hb))
+}
+
 /// Offset of the first copy of the alignment's 128-bit identity value
 /// after the last element record. It is a random (version 4) GUID in
 /// little-endian GUID layout — every value Civil 3D wrote has version

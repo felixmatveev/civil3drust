@@ -535,3 +535,71 @@ fn registry_entries_match_civil3d() {
         assert_eq!(content(&d2, hb2), content(&ra.data, ra.handle_bits));
     }
 }
+
+/// No stray padding byte after the handle stream of created records (S56
+/// had one); the alignment references parse as the usual seven.
+#[test]
+fn created_handle_stream_has_no_padding_ref() {
+    let donor = raw::open("samples/S25_ZERO_CIVIL_second_alignment.dwg").unwrap();
+    for name in ["X0 control", "X", "A longer name to shift padding"] {
+        let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+        let pis = [
+            Point2::new(0.0, 0.0),
+            Point2::new(100.0, 0.0),
+            Point2::new(200.0, 40.0),
+        ];
+        let c = create_alignment(
+            &mut t.doc,
+            &donor.doc,
+            name,
+            &pis,
+            &[Some(30.0)],
+            1,
+            CreateOptions::default(),
+        )
+        .unwrap();
+        let a = raw::records(&t.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == c.alignment)
+            .unwrap();
+        let total = a.data.len() * 8;
+        let raw_refs = handle_refs::parse(&a.data, total - a.handle_bits, total, a.handle);
+        assert_eq!(raw_refs.len(), 7, "{name}");
+        assert!(
+            a.handle_bits
+                - (raw_refs.last().unwrap().bit + raw_refs.last().unwrap().bits()
+                    - (total - a.handle_bits))
+                < 8
+        );
+        assert_eq!(alignment_refs(&a).unwrap().companion.handle, c.companion);
+    }
+}
+
+#[test]
+fn create_without_graphics() {
+    let donor = raw::open("samples/S25_ZERO_CIVIL_second_alignment.dwg").unwrap();
+    let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+    let pis = [
+        Point2::new(0.0, 0.0),
+        Point2::new(100.0, 0.0),
+        Point2::new(200.0, 40.0),
+    ];
+    let opts = CreateOptions {
+        graphics: false,
+        ..Default::default()
+    };
+    let c = create_alignment(&mut t.doc, &donor.doc, "NG", &pis, &[Some(30.0)], 1, opts).unwrap();
+    let dir = std::env::temp_dir().join("civil3drust-no-graphics.dwg");
+    acadrust::DwgWriter::write_to_file(&dir, &t.doc).unwrap();
+    let re = raw::open(&dir).unwrap();
+    let a = raw::records(&re.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == c.alignment)
+        .unwrap();
+    assert!(civil3drust::proxy_graphics::find(&a.data, 4096).is_none());
+    assert_eq!(raw::get_bit(&a.data, 44), 0);
+    let d = decode_elements(&a).unwrap();
+    assert_eq!(d.name.as_deref(), Some("NG"));
+    assert_eq!(alignment_refs(&a).unwrap().companion.handle, c.companion);
+    let _ = std::fs::remove_file(dir);
+}
