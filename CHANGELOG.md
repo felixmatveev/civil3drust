@@ -12,6 +12,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   `aecc_build::alignment_type` / `set_alignment_type`,
   `CreateOptions::alignment_type`, `create_alignment --type`. Test drawings
   S60 (generated types 1 and 4) and S61 (types 2, 3, 5).
+- Samples S62/S63: Civil 3D accepted generated Centerline and Miscellaneous
+  alignments (S60 → S62) and removed alignments with type values 2, 3, 5
+  on RECOVER (S61 → S63).
 - `docs/alignment-map.md`: region-by-region map of the alignment record and
   the records created with it — decoded / constant / varying / optional,
   and what a new alignment needs. Built by comparing every Civil 3D

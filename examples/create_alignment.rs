@@ -12,7 +12,8 @@
 //! `x,y,r` gets a free curve (fillet) of radius `r`. `--style` picks an
 //! alignment style of the target (default: the template's, which must then
 //! exist in the target). `--type` sets the alignment type (1 = Centerline,
-//! 4 = Miscellaneous, other numbers stored as given; S58/S59).
+//! 4 = Miscellaneous; S58–S62). Other numbers are written as given for
+//! experiments: 2, 3 and 5 on a plain alignment are rejected (S61/S63).
 
 use civil3drust::aecc_create::{create_alignment, CreateOptions};
 use civil3drust::aecc_elements::decode_elements;

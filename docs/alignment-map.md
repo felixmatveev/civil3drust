@@ -181,4 +181,4 @@ geometry; the bits that change name the option.
 
 | option | result |
 |---|---|
-| O1 alignment type | **decoded** (S58 Centerline, S59 Miscellaneous): one BL in the post-cache block, 1 = Centerline, 4 = Miscellaneous; the "constant" block was this option at its default. Verification pending: S60 (generated types 1 and 4), S61 (generated types 2, 3, 5). |
+| O1 alignment type | **decoded** (S58 Centerline, S59 Miscellaneous): one BL in the post-cache block, 1 = Centerline, 4 = Miscellaneous; the "constant" block was this option at its default. Verified: generated types 1 and 4 accepted and kept (S60 → S62); values 2, 3, 5 on a plain alignment are rejected and removed by RECOVER (S61 → S63), so they need a parent or other data. |
