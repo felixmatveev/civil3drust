@@ -7,6 +7,11 @@ templates, 1–6 elements, tangents and free curves), compared region by
 region. Details and evidence for each finding are in
 [`alignment-object.md`](alignment-object.md).
 
+Design direction (D-026): an alignment is modelled by its meaningful
+parameters only (name, description, style, start station, PIs, curves);
+the regions marked *derived* below are caches computed when writing, and
+are candidates for omission (S56).
+
 Status legend:
 
 - **decoded** — meaning known; civil3drust computes it.

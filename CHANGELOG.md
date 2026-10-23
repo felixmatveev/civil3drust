@@ -12,6 +12,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   and what a new alignment needs. Built by comparing every Civil 3D
   alignment record in S2–S55: outside the geometry almost everything is
   constant across both templates.
+- D-026: alignments are modelled as minimal parameters; caches are
+  derived when writing, kept in separate writers if needed.
 - `examples/exp_minimal.rs` and sample S56: six alignments, each with one
   part emptied (section-2 field, graphics, GUID, label group, all).
 - `aecc_registry` module: parse the companion registry (keys, companions,

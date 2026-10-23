@@ -457,3 +457,23 @@ given; the label group is written only when its label style exists.
 drawings. Write companions and the registry from scratch: companions still
 contain undecoded parcel data, which Civil 3D regenerates anyway (S35), so
 copying a template companion is enough.
+
+## D-026: Model alignments as minimal parameters; caches are derived
+Date: 2026-10-22 · Status: accepted (direction)
+
+**Context.** The record map (docs/alignment-map.md) shows most of an
+alignment record is either constant or derived from the geometry: proxy
+graphics, the element-0 station and cache, the companion's points, the
+element-ID list Civil 3D adds on save. Civil 3D regenerates several of
+these itself (S35, S47, S51, S54/S55).
+
+**Decision.** civil3drust's model of an alignment is the minimal set of
+meaningful parameters — name, description, style, start station, PIs and
+curve definitions (and later profiles, station equations). Everything else
+is either a documented constant or a cache computed from the parameters
+when writing. Caches are kept out of the model; if some must be written
+for Civil 3D to accept a file, they live in separate, clearly labelled
+cache writers. The S56 experiments decide which caches can be omitted.
+
+**Alternatives.** Keep copying a donor's binary block: works, but it
+hides what matters and drags undecoded data into every new object.
