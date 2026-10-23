@@ -7,6 +7,13 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `docs/alignment-map.md`: region-by-region map of the alignment record and
+  the records created with it — decoded / constant / varying / optional,
+  and what a new alignment needs. Built by comparing every Civil 3D
+  alignment record in S2–S55: outside the geometry almost everything is
+  constant across both templates.
+- `examples/exp_minimal.rs` and sample S56: six alignments, each with one
+  part emptied (section-2 field, graphics, GUID, label group, all).
 - `aecc_registry` module: parse the companion registry (keys, companions,
   ID strings, sorted by ID string) and rebuild it with an entry added or
   removed; matches Civil 3D's records (S24→S25→S44→S48). D-025.

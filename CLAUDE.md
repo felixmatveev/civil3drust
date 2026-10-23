@@ -45,3 +45,5 @@ samples and steps that produced it.
 - `cargo run --release --example style_components -- in.dwg [out.dwg <style> <component> on|off]`
 - `cargo run --release --example create_alignment -- donor.dwg target.dwg out.dwg <name> "x,y x,y,r ..." [--style <name|hex>] [--template <hex>] [--no-label-group] [--no-parcel-entry]`
 - `cargo run --release --example set_name -- in.dwg out.dwg <alignment> <new name|-> [--description "text"]`
+- `cargo run --release --example exp_minimal -- donor.dwg target.dwg out.dwg` (experiment S56)
+- Record map: `docs/alignment-map.md`

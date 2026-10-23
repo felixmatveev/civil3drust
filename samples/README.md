@@ -67,6 +67,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S53 | `S53_S24_created_E1_E2.dwg` | generated | S24 plus two alignments created one after the other: `E1 tangents` (0,−400) (120,−400) (200,−350) and `E2 curves` (0,−500) (100,−500, R40) (200,−450) (300,−500, R25) (400,−500). Opened in Civil 3D: AUDIT 0 errors. | 450987 | `b220929ee8151802` |
 | S54 | `S54_S52_civ3d_resaved.dwg` | Civil 3D 2024 | S52 opened (AUDIT 0 errors), saved. | 473836 | `0b638a28742c0d39` |
 | S55 | `S55_S53_civ3d_resaved.dwg` | Civil 3D 2024 | S53 opened (AUDIT 0 errors), saved (after S54, same session). | 474145 | `cd25f65e6108315c` |
+| S56 | `S56_S24_minimal_experiments.dwg` | generated | S24 plus six alignments X0–X5, each with one part emptied (zeroed section-2 field, no graphics, zeroed GUID, no label group, all) by `examples/exp_minimal`. Not yet opened in Civil 3D. | 454664 | `cfb42e65d3e13ca3` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8
