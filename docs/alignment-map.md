@@ -65,7 +65,8 @@ section in records that carry the extra field.
 
 | content | status |
 |---|---|
-| 369 bits, including a BD 60 and other fixed fields | constant (9 records) |
+| design-speed table: BL 0, BL 1, BL n, n × {BL 1, BD station, BD speed, GUID} (one entry, 60 at 0, is the template default) | decoded (O2, S74) |
+| 369 bits, including a BD 60 and other fixed fields | constant (9 records) — the default design-speed entry |
 | after GUID copy 2: BD 100, BL 0, BL n, n BDs, **BL alignment type** (1 Centerline, 4 Miscellaneous), BL 2, 2, 2, 0, 1\|3 | decoded (O1, S58/S59) |
 | GUID copy 2 at ~bit 100 of the block | decoded (same value as copy 1) |
 | 1 bit (block bit 340) | 0 in all samples (in S59 the block differs only in the type BL) |
@@ -181,6 +182,7 @@ geometry; the bits that change name the option.
 
 | option | result |
 |---|---|
+| O2 design speed | **decoded** (S74): the table at the start of the post-cache block; the "BD 60" constant was the default entry. Two speeds also split the interval cache after the elements (not decoded). Test: S75 (generated, cache not updated). |
 | O1 alignment type | **decoded** (S58 Centerline, S59 Miscellaneous): one BL in the post-cache block, 1 = Centerline, 4 = Miscellaneous; the "constant" block was this option at its default. Verified: generated types 1 and 4 accepted and kept (S60 → S62); values 2, 3, 5 on a plain alignment are rejected and removed by RECOVER (S61 → S63), so they need a parent or other data. |
 
 ## 6. Minimal drawings (S64–S73, postponed)

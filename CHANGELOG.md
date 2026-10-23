@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Design speeds (O2, S74): `aecc_design_speed` reads and rewrites the
+  design-speed table (station, speed, GUID per entry) at the start of the
+  post-cache block; `examples/set_speeds`; test drawing S75.
 - Creating alignments in Civil 3D drawings that never had one (S65 → S66):
   `aecc_registry` parses the empty registry, and `aecc_create::ensure_class`
   adds a missing class entry with the next positional number.

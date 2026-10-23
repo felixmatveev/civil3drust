@@ -1188,6 +1188,52 @@ infrastructure are not required to open the file: Civil 3D creates the
 infrastructure itself. The other two AUDIT errors are not named in its
 output; the resaved files (with and without AUDIT) will show them.
 
+## Design speeds (O2: S74, S75)
+
+**Sample.** S74 (owner, Civil 3D 2024): three one-tangent alignments with
+design speeds set in Civil 3D: `60MPH` (1063, 60 mph), `30MPH` (106A,
+30 mph), `mixed speed` (1074: 60 mph from 0+00, 30 mph from 2+00).
+
+**Steps.** Search of every bit offset for the doubles 60, 30, 200 (and
+the metric equivalents); region comparison with S58 (same template, no
+speed set); field walk (BL/BD) around the hits.
+
+**Finding.** The design speeds are the start of the post-cache block:
+
+```text
+BL 0, BL 1, BL n,
+n × { BL 1, BD start station, BD speed, 16-byte GUID },
+BD 100, BL 0, BL m, m × BD (element IDs), BL alignment type, …
+```
+
+- Speeds are stored in the drawing's unit (mph here), as entered.
+- Every alignment has at least one entry. `60MPH` is bit-identical to
+  S58's record outside the geometry, caches and GUID: **60 at station 0 is
+  Civil 3D's default in this template**, which is why the "BD 60" looked
+  constant in S24–S73. The S1–S19 template's default is 100 (S2–S4).
+- One entry carries the alignment's identity GUID: that's "GUID copy 2". In
+  `mixed speed` it is the entry at 2+00, so it is probably the entry that
+  existed first; the new entry at 0+00 got its own random v4 GUID.
+- With two speeds, Civil 3D also changed the region right after the
+  element records: the 16-bit field before GUID copy 1 ends `…0010`
+  instead of `…0001` (probably BL 2 vs 1), and the fields up to the cache
+  hold 200 and the remaining length 311.76, so the station cache is split
+  at the speed change. This looks derived (interval cache) and is not
+  decoded. The cache parser of `exp_minimal`/`create_alignment` does not
+  read this form.
+- S1 (LandXML import), S9 (station equation) and S57 X5 (zero GUID) have a
+  different layout here; the reader does not find their table.
+
+**Code.** `aecc_design_speed::{design_speeds, set_design_speeds}`
+(rewrites the table, keeping the identity GUID on the first entry; the
+record grows or shrinks), `examples/set_speeds`. Rewriting the same
+speeds reproduces Civil 3D's bits exactly (test).
+
+**Test.** S75 = S24 + `Speed 30` (one entry, 30) and `Speeds 60-30`
+((0, 60), (200, 30)), created by `create_alignment` and edited by
+`set_speeds`. The interval-cache region is left in its one-interval form,
+so this also asks whether Civil 3D recomputes it.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
