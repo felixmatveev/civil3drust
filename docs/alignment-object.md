@@ -1322,7 +1322,7 @@ Alignment Properties, which adds the user-name string).**
 - `C2 checkset` (not opened): kept as written, flags `111`.
 - `C1 flags` (opened): Civil 3D changed its bits from `111 0111` to
   `100 0101` (19…13 bits before the section-2 end): flag 1 kept, flags 2
-  and 3 cleared, and the bit 15 before the end cleared too. C1 had no
+  and 3 cleared, and the bit 14 before the end cleared too. C1 had no
   criteria file strings and no check set, so the likely mapping is:
 
   | bits before section-2 end | probable meaning | default |
@@ -1330,9 +1330,14 @@ Alignment Properties, which adds the user-name string).**
   | 19 | use criteria-based design | 0 |
   | 18 | use design criteria file | 0 |
   | 17 | use design check set | 0 |
-  | 15 | check for tangency between elements | 1 |
+  | 14 | check for tangency between elements | 1 |
 
-  (To be confirmed: what the dialog showed for C1.)
+  ("probable" → confirmed, see below.)
+
+  **Confirmed** by the owner's screenshot of C1's Design Criteria tab:
+  criteria-based design checked; design criteria file, design check set
+  and check for tangency unchecked. `aecc_criteria::Criteria` names the
+  four bits.
 - `C0 control`: unchanged apart from the edited-record form; every
   alignment now references check set 4D3 (set on save).
 

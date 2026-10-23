@@ -13,7 +13,7 @@
 
 use acadrust::entities::EntityType;
 use civil3drust::aecc_create::{create_alignment, CreateOptions};
-use civil3drust::aecc_criteria::{criteria_flags, set_criteria_flags};
+use civil3drust::aecc_criteria::{criteria, set_criteria, Criteria};
 use civil3drust::alignment::Point2;
 use civil3drust::{handle_refs, raw, string_stream};
 
@@ -68,7 +68,13 @@ fn main() {
         let mut d = rec.data.clone();
         let mut hb = rec.handle_bits;
         if k >= 1 {
-            set_criteria_flags(&rec, &mut d, [true; 3]).unwrap_or_else(|e| fail(e));
+            let on = Criteria {
+                criteria_based: true,
+                criteria_file: true,
+                check_set: true,
+                check_tangency: true,
+            };
+            set_criteria(&rec, &mut d, on).unwrap_or_else(|e| fail(e));
         }
         if k >= 2 {
             let r = raw::RawRecord {
@@ -112,10 +118,10 @@ fn main() {
         let refs = handle_refs::of_record(&r);
         let ss = string_stream::parse(&r.data, r.handle_bits).unwrap();
         println!(
-            "[{:X}] {:<12} flags {:?} last ref {:X} strings {}",
+            "[{:X}] {:<12} {:?} last ref {:X} strings {}",
             r.handle,
             raw::object_name(&r.data).unwrap_or_default(),
-            criteria_flags(&r).unwrap_or_else(|e| fail(e)),
+            criteria(&r).unwrap_or_else(|e| fail(e)),
             refs.last().map(|x| x.handle).unwrap_or(0),
             ss.strings.len()
         );
