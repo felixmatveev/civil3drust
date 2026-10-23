@@ -1257,7 +1257,7 @@ Owner: S77 looks correct in Civil 3D.
 elements, so finding the identity GUID by value picked the wrong entry.
 `set_design_speeds` now reads the identity from copy 1 (16 bits after the
 elements), gives it to the first entry, and reuses the other old GUIDs in
-order before generating new ones.
+order before generating new ones. Owner: S78 works in Civil 3D.
 
 ## Open questions
 

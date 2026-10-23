@@ -32,6 +32,7 @@ versions follow [Semantic Versioning](https://semver.org/).
 - `set_design_speeds` on Civil 3D's multi-speed tables: the identity GUID
   is read from its first copy instead of searched by value (entry GUIDs
   also occur outside the table); old entry GUIDs are reused. Sample S78.
+  O2 verified in Civil 3D (S77, S78).
 - `create_alignment` wrote the donor's class numbers into the new records;
   it now writes the target's (`set_object_type`), so donor and target can
   come from different templates.
