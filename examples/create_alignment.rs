@@ -2,7 +2,8 @@
 //!
 //! Usage:
 //!   cargo run --release --example create_alignment -- donor.dwg target.dwg out.dwg <name> "x,y x,y"
-//!       [--style <name|hex>] [--template <hex>] [--no-label-group] [--no-parcel-entry] [--no-graphics]
+//!       [--style <name|hex>] [--template <hex>] [--type <centerline|misc|n>]
+//!       [--no-label-group] [--no-parcel-entry] [--no-graphics]
 //!
 //! `donor.dwg` is any drawing with an alignment made by Civil 3D (the
 //! template; default: its alignment with the highest handle, or
@@ -10,7 +11,8 @@
 //! a new registry entry, the given name and PIs (any number). A PI written
 //! `x,y,r` gets a free curve (fillet) of radius `r`. `--style` picks an
 //! alignment style of the target (default: the template's, which must then
-//! exist in the target).
+//! exist in the target). `--type` sets the alignment type (1 = Centerline,
+//! 4 = Miscellaneous, other numbers stored as given; S58/S59).
 
 use civil3drust::aecc_create::{create_alignment, CreateOptions};
 use civil3drust::aecc_elements::decode_elements;
@@ -66,6 +68,13 @@ fn main() {
         u64::from_str_radix(h.trim_start_matches("0x"), 16)
             .unwrap_or_else(|_| fail("--template takes a hex handle"))
     });
+    let alignment_type = take("--type").map(|t| match t.to_ascii_lowercase().as_str() {
+        "centerline" => civil3drust::aecc_build::TYPE_CENTERLINE,
+        "misc" | "miscellaneous" => civil3drust::aecc_build::TYPE_MISCELLANEOUS,
+        n => n
+            .parse()
+            .unwrap_or_else(|_| fail("--type takes centerline, misc or a number")),
+    });
     let no_label = a.iter().any(|x| x == "--no-label-group");
     let no_parcel = a.iter().any(|x| x == "--no-parcel-entry");
     let no_graphics = a.iter().any(|x| x == "--no-graphics");
@@ -112,6 +121,7 @@ fn main() {
             style,
             template,
             graphics: !no_graphics,
+            alignment_type,
         },
     )
     .unwrap_or_else(|e| fail(e));
@@ -147,8 +157,11 @@ fn main() {
                         format!("({:.3},{:.3})", s.x, s.y)
                     })
                     .collect();
+                let t = civil3drust::aecc_build::alignment_type(&rec)
+                    .map(|t| t.to_string())
+                    .unwrap_or_else(|_| "?".into());
                 println!(
-                    "  [{:X}] {}: length {:.4}, starts {}",
+                    "  [{:X}] {} (type {t}): length {:.4}, starts {}",
                     rec.handle,
                     d.name.as_deref().unwrap_or("?"),
                     d.length(),

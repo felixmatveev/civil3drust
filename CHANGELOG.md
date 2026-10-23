@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Alignment type (O1, samples S58/S59): a BL in the post-cache block after
+  GUID copy 2, 1 = Centerline, 4 = Miscellaneous.
+  `aecc_build::alignment_type` / `set_alignment_type`,
+  `CreateOptions::alignment_type`, `create_alignment --type`. Test drawings
+  S60 (generated types 1 and 4) and S61 (types 2, 3, 5).
 - `docs/alignment-map.md`: region-by-region map of the alignment record and
   the records created with it — decoded / constant / varying / optional,
   and what a new alignment needs. Built by comparing every Civil 3D

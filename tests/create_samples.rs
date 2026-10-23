@@ -603,3 +603,48 @@ fn create_without_graphics() {
     assert_eq!(alignment_refs(&a).unwrap().companion.handle, c.companion);
     let _ = std::fs::remove_file(dir);
 }
+
+/// O1: S58 (Centerline) and S59 (Miscellaneous) differ in the type BL after
+/// GUID copy 2; every other Civil 3D record in the samples is a centerline.
+#[test]
+fn alignment_type_field() {
+    use civil3drust::aecc_build::{alignment_type, TYPE_CENTERLINE, TYPE_MISCELLANEOUS};
+    let ty = |f: &str| {
+        let o = raw::open(f).unwrap();
+        let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == 0x1089)
+            .unwrap();
+        alignment_type(&r).unwrap()
+    };
+    assert_eq!(ty("samples/S58_O1_centerline.dwg"), TYPE_CENTERLINE);
+    assert_eq!(ty("samples/S59_O1_miscellaneous.dwg"), TYPE_MISCELLANEOUS);
+    // Records with the element-ID list before the type (S51 FB3).
+    let o = raw::open("samples/S51_S50_civ3d_resaved.dwg").unwrap();
+    for r in raw::records(&o.doc, "AECC_ALIGNMENT") {
+        assert_eq!(
+            alignment_type(&r).unwrap(),
+            TYPE_CENTERLINE,
+            "{:X}",
+            r.handle
+        );
+    }
+}
+
+#[test]
+fn create_with_alignment_type() {
+    use civil3drust::aecc_build::{alignment_type, TYPE_MISCELLANEOUS};
+    let donor = raw::open("samples/S58_O1_centerline.dwg").unwrap();
+    let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+    let pis = [Point2::new(0.0, -200.0), Point2::new(300.0, -200.0)];
+    let opts = CreateOptions {
+        alignment_type: Some(TYPE_MISCELLANEOUS),
+        ..Default::default()
+    };
+    let c = create_alignment(&mut t.doc, &donor.doc, "M", &pis, &[], 7, opts).unwrap();
+    let r = raw::records(&t.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == c.alignment)
+        .unwrap();
+    assert_eq!(alignment_type(&r).unwrap(), TYPE_MISCELLANEOUS);
+}

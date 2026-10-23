@@ -494,3 +494,17 @@ it). The identity GUID is always a random v4 value.
 **Alternatives.** Always omit graphics: smaller, closer to D-026, but the
 alignment would be invisible outside Civil 3D until Civil 3D re-saves the
 file.
+
+## D-028: Alignment type values named only from samples
+
+**Context.** O1 (S58/S59) showed the alignment type is a small integer:
+1 = Centerline, 4 = Miscellaneous. Civil 3D offers more types (Offset,
+Curb Return, Rail).
+
+**Decision.** civil3drust names only values confirmed by our own samples
+(`TYPE_CENTERLINE`, `TYPE_MISCELLANEOUS`); others are stored and reported
+as plain numbers until a sample (S61) shows which type they are.
+`create_alignment` keeps the template's type unless one is given.
+
+**Alternatives.** An enum with all types guessed from their order in the
+Civil 3D UI: convenient, but not backed by a sample.

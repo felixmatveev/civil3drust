@@ -563,6 +563,20 @@ pub fn set_identity(
     data: &mut [u8],
     seed: u64,
 ) -> Result<(usize, usize), BuildError> {
+    let (a, b) = identity_copies(rec, data)?;
+    let fresh = guid_v4(seed);
+    for pos in [a, b] {
+        for (i, v) in fresh.iter().enumerate() {
+            raw::set_byte(data, pos + 8 * i, *v);
+        }
+    }
+    Ok((a, b))
+}
+
+/// Bit offsets of the two copies of the identity GUID in `data` (laid out
+/// like `rec`): copy 1 right after the element records, copy 2 found by
+/// value in the post-cache block.
+fn identity_copies(rec: &RawRecord, data: &[u8]) -> Result<(usize, usize), BuildError> {
     let decoded = decode_elements(rec).map_err(|e| layout(e.to_string()))?;
     let end = decoded
         .elements
@@ -579,13 +593,55 @@ pub fn set_identity(
     let b = (a + 128..n.saturating_sub(128))
         .find(|&b| (0..16).all(|i| raw::get_byte(data, b + 8 * i) == old[i]))
         .ok_or_else(|| layout("second copy of the identity value not found"))?;
-    let fresh = guid_v4(seed);
-    for pos in [a, b] {
-        for (i, v) in fresh.iter().enumerate() {
-            raw::set_byte(data, pos + 8 * i, *v);
-        }
-    }
     Ok((a, b))
+}
+
+/// Alignment type values seen in samples (O1, S58/S59). Other values are
+/// kept as numbers until a sample names them.
+pub const TYPE_CENTERLINE: i32 = 1;
+pub const TYPE_MISCELLANEOUS: i32 = 4;
+
+/// Bit offset of the alignment-type BL. After GUID copy 2 the record has
+/// BD 100, BL 0, BL n, n BDs (element IDs 1..n, present after some saves),
+/// then the type BL (docs/alignment-object.md, "Alignment type").
+fn type_bit(rec: &RawRecord, data: &[u8]) -> Result<usize, BuildError> {
+    let (_, b) = identity_copies(rec, data)?;
+    let bad = || layout("alignment-type field not found");
+    let (_, q) = raw::read_bd(data, b + 128).ok_or_else(bad)?;
+    let (_, q) = raw::read_bl(data, q).ok_or_else(bad)?;
+    let (n, mut q) = raw::read_bl(data, q).ok_or_else(bad)?;
+    if !(0..=10_000).contains(&n) {
+        return Err(bad());
+    }
+    for _ in 0..n {
+        q = raw::read_bd(data, q).ok_or_else(bad)?.1;
+    }
+    Ok(q)
+}
+
+/// The alignment type (1 = Centerline, 4 = Miscellaneous; see
+/// [`TYPE_CENTERLINE`]).
+pub fn alignment_type(rec: &RawRecord) -> Result<i32, BuildError> {
+    let q = type_bit(rec, &rec.data)?;
+    raw::read_bl(&rec.data, q)
+        .map(|x| x.0)
+        .ok_or_else(|| layout("alignment-type field not found"))
+}
+
+/// Set the alignment type in place. Values 1..=255 share the stored size
+/// (`01` + one byte), so the record keeps its length.
+pub fn set_alignment_type(rec: &RawRecord, data: &mut [u8], value: i32) -> Result<(), BuildError> {
+    if !(1..=255).contains(&value) {
+        return Err(layout(format!(
+            "alignment type {value} out of range 1..=255"
+        )));
+    }
+    let q = type_bit(rec, data)?;
+    if (raw::get_bit(data, q), raw::get_bit(data, q + 1)) != (0, 1) {
+        return Err(layout("alignment-type field is not a one-byte BL"));
+    }
+    raw::set_byte(data, q + 2, value as u8);
+    Ok(())
 }
 
 /// Elements in path order (following `after` from the one with

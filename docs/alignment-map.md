@@ -66,10 +66,11 @@ section in records that carry the extra field.
 | content | status |
 |---|---|
 | 369 bits, including a BD 60 and other fixed fields | constant (9 records) |
+| after GUID copy 2: BD 100, BL 0, BL n, n BDs, **BL alignment type** (1 Centerline, 4 Miscellaneous), BL 2, 2, 2, 0, 1\|3 | decoded (O1, S58/S59) |
 | GUID copy 2 at ~bit 100 of the block | decoded (same value as copy 1) |
-| 1 bit (block bit 340) | 0 in all samples |
+| 1 bit (block bit 340) | 0 in all samples (in S59 the block differs only in the type BL) |
 | +208 bits with +8 empty strings (S12, S48) | **optional** — absent in S45/S50 |
-| element-ID list (BDs 2…n, S51, S12) | **optional** — Civil 3D adds it on save |
+| element-ID list (BL n + BDs 1…n before the type, S12, S48, S51) | **optional** — Civil 3D adds it on save |
 | station-equation data (S9: +196 bits in section 2, more after the cache) | **optional** — only with station equations |
 
 ## 2. Other records created with an alignment
@@ -175,3 +176,9 @@ centerline, no design criteria). Evidence so far:
 
 Each sample is compared with the plain S24-style alignment of the same
 geometry; the bits that change name the option.
+
+### Results
+
+| option | result |
+|---|---|
+| O1 alignment type | **decoded** (S58 Centerline, S59 Miscellaneous): one BL in the post-cache block, 1 = Centerline, 4 = Miscellaneous; the "constant" block was this option at its default. Verification pending: S60 (generated types 1 and 4), S61 (generated types 2, 3, 5). |

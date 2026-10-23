@@ -92,6 +92,9 @@ pub struct CreateOptions {
     /// Write proxy graphics (the display cache). Civil 3D regenerates them
     /// (S57), but AutoCAD and viewers without Civil 3D draw only these.
     pub graphics: bool,
+    /// Alignment type value (1 = Centerline, 4 = Miscellaneous);
+    /// default: the template's.
+    pub alignment_type: Option<i32>,
 }
 
 impl Default for CreateOptions {
@@ -102,6 +105,7 @@ impl Default for CreateOptions {
             style: None,
             template: None,
             graphics: true,
+            alignment_type: None,
         }
     }
 }
@@ -332,6 +336,9 @@ pub fn create_alignment(
     };
     aecc_build::set_identity(&rec, &mut align, seed.rotate_left(17))
         .map_err(|e| lay(e.to_string()))?;
+    if let Some(t) = opts.alignment_type {
+        aecc_build::set_alignment_type(&rec, &mut align, t).map_err(|e| lay(e.to_string()))?;
+    }
     let (align, align_hb) =
         string_stream::set_name(&align, hb, &old_name, name).map_err(|e| lay(e.to_string()))?;
     // Each rewrite step keeps the previous padding; trim it so no stray
