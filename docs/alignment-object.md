@@ -1411,7 +1411,7 @@ After the element records:
 BL 0, BL 0, BL 0, BL n,
 n × { 16-byte GUID (the matching design-speed entry's),
       13 bits 1010000001010,
-      BD station, BD distance from the start, BD length to the element end,
+      BD station, BD distance from the element's start, BD length to the element end,
       BL 1, BL 0, BL ID of the next element (after-link),
       RD element start x, y, element end x, y, point x, y },
 ```
@@ -1432,6 +1432,43 @@ outside the alignment are refused.
 S87 = S82 with speeds added: `ZERO START` 0:60 100:50 250:40 400:30
 (had one), `100 PLUS` −100:40 150:25 and `100 MINUS` 100:55 (had none).
 Result (S88): no AUDIT errors, all speeds shown as written. O4 done.
+
+## Layout tools (O5: S89)
+
+**Sample.** S89 (owner): an alignment drawn with the layout tools in the
+S1–S19 template (read in failsafe mode: its `PRESSUREPARTERRORBLOCK`
+3DSOLID is dropped by acadrust 0.6.5 — saving such a file loses it). Five
+elements: 1 fixed tangent (two points), 2 fixed curve (three points),
+3 a tangent from the curve's end to a point, 5 a free curve (radius),
+4 a tangent; design speeds 60 at 0+00 and 30 at 2+85.63 (on curve 2).
+
+**Findings.**
+
+- **Floating tangent** (element 3): same 11-bit prefix and header as a
+  tangent, but the BL after the header is **4** (fixed tangents: 0) and
+  only the **end point** follows (2 RD). It starts where the previous
+  element ends (tangent to curve 2). `TangentRecord::kind`
+  (`KIND_FIXED` 0, `KIND_FLOATING` 4); the decoder fills in the start from
+  the previous element. The BL after the header is thus the element's
+  constraint/creation kind.
+- Records are stored in ID order (1, 2, 3, 4, 5) even when the path order
+  differs (1, 2, 3, 5, 4).
+- **Interval on a curve** (the 2+85.63 speed): `BD 285.63, BD 84.6364
+  (distance from the element's start — so for tangents too the second
+  distance is from the element start, not the alignment start), BD
+  84.628, BL 2, BL 1, BL 3 (next element)`, then 6 RD: the curve's start,
+  a point on the circle 84.628 further on, and the point at the station.
+  The third distance on a curve does not follow the tangent rule (length
+  to the element's end would be 35.72); not decoded.
+- civil3drust therefore writes intervals only for speeds on tangents;
+  speeds on curves get a table entry and one string. A speed table
+  without any interval (only curve speeds) is written as interval
+  count 0 followed by the entries.
+
+S90 = S24 + three alignments with a 90° curve of radius 80 (curve
+2+20–3+45.66): `Curve speed` 0:60 260:30 (the second on the curve, no
+interval), `Tangent speeds` 0:60 400:30 (control), `Only curve speed`
+260:40 (no intervals at all).
 
 ## Open questions
 

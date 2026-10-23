@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Floating tangents (O5, S89): element kind 4 with only the end point;
+  `TangentRecord::kind`, `end_bit()`. Speeds on curves are written
+  without an interval; speed tables without intervals are read. Test
+  drawing S90.
 - Interval block decoded (one interval per design speed: GUID, station,
   distance, length to element end, next element, element and point
   coordinates). `set_design_speeds` writes it from the geometry, adds
@@ -45,6 +49,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   drawings postponed (D-030, alignment-map §6).
 
 ### Fixed
+- Interval distance is measured from the element's start, not the
+  alignment's (S89).
 - Start-station reader failed on alignments with Design Criteria bits set
   (S79–S82).
 - `alignment_type` on records with several design speeds (S79).

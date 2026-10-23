@@ -286,7 +286,7 @@ pub fn element_records(data: &[u8]) -> Vec<Element> {
     let n = raw::bit_len(data);
     while bit + 34 <= n {
         if let Some(t) = aecc_alignment::record_at(data, bit) {
-            bit = t.coords_bit + 256;
+            bit = t.end_bit();
             out.push(Element::Tangent(t));
         } else if let Some(a) = arc_at(data, bit) {
             bit = a.end_bit;
@@ -445,7 +445,28 @@ impl DecodedElements {
 
 /// Decode an alignment of tangents and arcs (read-only).
 pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> {
-    let chained = chain(&element_records(&rec.data))?;
+    let mut chained = chain(&element_records(&rec.data))?;
+    // Floating tangents store only their end point; they start where the
+    // previous element ends (S89).
+    for i in 1..chained.len() {
+        let prev_end = match &chained[i - 1] {
+            Element::Tangent(t) => Some(t.end),
+            Element::Arc(a) => match a.def {
+                ArcDef::ThreePoint { end, .. } => Some(end),
+                ArcDef::Free { .. } => None,
+            },
+        };
+        if let Element::Tangent(t) = &mut chained[i] {
+            if t.kind == aecc_alignment::KIND_FLOATING {
+                t.start = prev_end.ok_or_else(|| {
+                    DecodeError::BrokenChain(format!(
+                        "floating tangent {} follows a free arc (not supported)",
+                        t.id
+                    ))
+                })?;
+            }
+        }
+    }
     let elements = resolve(&chained)?;
     for w in elements.windows(2) {
         let (e, s) = (w[0].segment.end(), w[1].segment.start());

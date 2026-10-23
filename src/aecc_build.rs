@@ -252,6 +252,7 @@ pub fn plan(pis: &[Point2], radii: &[Option<f64>]) -> Result<Vec<Element>, Build
         els.push(match kind {
             'T' => Element::Tangent(TangentRecord {
                 header_bit: 0,
+                kind: crate::aecc_alignment::KIND_FIXED,
                 coords_bit: 0,
                 id,
                 before,
@@ -346,7 +347,7 @@ pub fn set_geometry(
         .elements
         .iter()
         .map(|e| match &e.record {
-            Element::Tangent(t) => (t.header_bit, t.coords_bit + 256),
+            Element::Tangent(t) => (t.header_bit, t.end_bit()),
             Element::Arc(a) => (a.header_bit, a.end_bit),
         })
         .collect();
@@ -582,7 +583,7 @@ fn identity_copies(rec: &RawRecord, data: &[u8]) -> Result<(usize, usize), Build
         .elements
         .iter()
         .map(|e| match &e.record {
-            Element::Tangent(t) => t.coords_bit + 256,
+            Element::Tangent(t) => t.end_bit(),
             Element::Arc(a) => a.end_bit,
         })
         .max()

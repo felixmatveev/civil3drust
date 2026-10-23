@@ -65,14 +65,32 @@ impl Linked for TangentRecord {
 pub struct TangentRecord {
     /// Bit offset of the header BL.
     pub header_bit: usize,
-    /// Bit offset of the first of the four coordinate doubles.
+    /// Bit offset of the first coordinate double (four for a fixed tangent,
+    /// two — the end point — for a floating one).
     pub coords_bit: usize,
+    /// The BL after the header: 0 = fixed tangent (start and end point),
+    /// 4 = floating tangent (end point only; starts tangent to the previous
+    /// element, S89). For a floating tangent `start` is filled in from the
+    /// previous element by `aecc_elements::decode_elements` (NaN before).
+    pub kind: i32,
     pub id: i32,
     pub before: i32,
     pub after: i32,
     pub start: Point2,
     pub end: Point2,
 }
+
+impl TangentRecord {
+    /// Bit offset just after the record.
+    pub fn end_bit(&self) -> usize {
+        self.coords_bit + if self.kind == KIND_FLOATING { 128 } else { 256 }
+    }
+}
+
+/// Element kind (the BL after the header) of a fixed tangent.
+pub const KIND_FIXED: i32 = 0;
+/// Element kind of a floating tangent: end point only (S89 element 3).
+pub const KIND_FLOATING: i32 = 4;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DecodeError {
@@ -123,7 +141,7 @@ pub fn tangent_records(data: &[u8], from: usize) -> Vec<TangentRecord> {
     let n = raw::bit_len(data);
     while bit + 34 <= n {
         if let Some(rec) = record_at(data, bit) {
-            bit = rec.coords_bit + 256;
+            bit = rec.end_bit();
             out.push(rec);
         } else {
             bit += 1;
@@ -144,13 +162,38 @@ pub(crate) fn record_at(data: &[u8], bit: usize) -> Option<TangentRecord> {
     if h != ELEMENT_HEADER {
         return None;
     }
-    let (zero, k) = raw::read_bl(data, k)?;
+    let (kind, k) = raw::read_bl(data, k)?;
     let (id, k) = raw::read_bl(data, k)?;
     let (before, k) = raw::read_bl(data, k)?;
     let (after, k) = raw::read_bl(data, k)?;
     let small = |v: i32| (0..100_000).contains(&v);
-    if zero != 0 || id < 1 || !small(id) || !small(before) || !small(after) {
+    if !(kind == KIND_FIXED || kind == KIND_FLOATING)
+        || id < 1
+        || !small(id)
+        || !small(before)
+        || !small(after)
+    {
         return None;
+    }
+    if kind == KIND_FLOATING {
+        // A floating tangent always follows another element.
+        if before == 0 || k + 128 > raw::bit_len(data) {
+            return None;
+        }
+        let end = Point2::new(raw::get_f64(data, k), raw::get_f64(data, k + 64));
+        if !end.x.is_finite() || !end.y.is_finite() {
+            return None;
+        }
+        return Some(TangentRecord {
+            header_bit: bit,
+            coords_bit: k,
+            kind,
+            id,
+            before,
+            after,
+            start: Point2::new(f64::NAN, f64::NAN),
+            end,
+        });
     }
     if k + 256 > raw::bit_len(data) {
         return None;
@@ -167,6 +210,7 @@ pub(crate) fn record_at(data: &[u8], bit: usize) -> Option<TangentRecord> {
     Some(TangentRecord {
         header_bit: bit,
         coords_bit: k,
+        kind,
         id,
         before,
         after,

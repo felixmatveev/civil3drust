@@ -100,6 +100,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S86 | `S86_S85_civ3d_resaved.dwg` | Civil 3D 2024 | S85 opened (no AUDIT errors), saved. | 473806 | `6e1eeda89a402ff7` |
 | S87 | `S87_S82_speeds_added.dwg` | civil3drust | S82 with speeds written by `set_speeds`: `ZERO START` 0:60 100:50 250:40 400:30, `100 PLUS` −100:40 150:25, `100 MINUS` 100:55 (the last two had none). | 453254 | `cbefe388af2ebd86` |
 | S88 | `S88_S87_civ3d_resaved.dwg` | Civil 3D 2024 | S87 opened (no AUDIT errors, speeds as written), saved. | 474753 | `225160d6eee17eb3` |
+| S89 | `S89_O5_layout_tangents_curves.dwg` | Civil 3D 2024 | O5: alignment by layout tools in the S1–S19 template (3DSOLID: failsafe read): fixed tangent, fixed curve (3 points), floating tangent, free curve, tangent; speeds 0:60, 285.63:30 (on the curve). | 979503 | `e1945d49168d978b` |
+| S90 | `S90_S24_curve_speeds.dwg` | civil3drust | S24 + `Curve speed` (0:60 260:30), `Tangent speeds` (0:60 400:30), `Only curve speed` (260:40), each 0,y → 300,y (R 80) → 300,y−300; `create_alignment` + `set_speeds`. | 452303 | `a74e467d6b320427` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

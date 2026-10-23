@@ -132,7 +132,7 @@ fn create_multi_pi_with_curves() {
             .elements
             .iter()
             .map(|e| match &e.record {
-                civil3drust::aecc_elements::Element::Tangent(t) => t.coords_bit + 256,
+                civil3drust::aecc_elements::Element::Tangent(t) => t.end_bit(),
                 civil3drust::aecc_elements::Element::Arc(a) => a.end_bit,
             })
             .max()
@@ -313,7 +313,7 @@ fn two_tangents_match_civil3d_s44() {
             .elements
             .iter()
             .map(|e| match &e.record {
-                Element::Tangent(t) => (t.header_bit, t.coords_bit + 256),
+                Element::Tangent(t) => (t.header_bit, t.end_bit()),
                 Element::Arc(a) => (a.header_bit, a.end_bit),
             })
             .collect();
@@ -387,7 +387,7 @@ fn curves_match_civil3d_s49() {
             .elements
             .iter()
             .map(|e| match &e.record {
-                Element::Tangent(t) => (t.header_bit, t.coords_bit + 256),
+                Element::Tangent(t) => (t.header_bit, t.end_bit()),
                 Element::Arc(a) => (a.header_bit, a.end_bit),
             })
             .collect();

@@ -89,10 +89,9 @@ pub fn locate(rec: &RawRecord) -> Result<(usize, usize, Vec<DesignSpeed>), Speed
     // No design speeds (S1, S9, S82 FB6/FB9): no intervals (four BL 0)
     // and an empty table right after them.
     if (0..EMPTY_INTERVALS.len()).all(|i| raw::get_bit(data, end + i) == EMPTY_INTERVALS[i]) {
+        // (Also speeds without intervals, e.g. only on curves, S90.)
         if let Some((v, q)) = parse_at(data, end + EMPTY_INTERVALS.len()) {
-            if v.is_empty() {
-                return Ok((end + EMPTY_INTERVALS.len(), q, v));
-            }
+            return Ok((end + EMPTY_INTERVALS.len(), q, v));
         }
     }
     let data_end = raw::bit_len(data) - rec.handle_bits;
@@ -116,7 +115,7 @@ fn identity(rec: &RawRecord) -> Result<(usize, [u8; 16]), SpeedError> {
         .elements
         .iter()
         .map(|e| match &e.record {
-            Element::Tangent(t) => t.coords_bit + 256,
+            Element::Tangent(t) => t.end_bit(),
             Element::Arc(a) => a.end_bit,
         })
         .max()
@@ -138,8 +137,8 @@ pub fn design_speeds(rec: &RawRecord) -> Result<Vec<DesignSpeed>, SpeedError> {
 /// geometry) and the table. The entries keep the old GUIDs in order (the
 /// first old interval's GUID first) and get random version-4 GUIDs from
 /// `seed` after that. Works on alignments without design speeds too.
-/// Speeds must start on tangents (the interval layout on curves is not
-/// known yet) and within the alignment. Returns the new bytes and
+/// Speeds starting on curves get a table entry but no interval (the curve
+/// form is not decoded, S89). Speeds must lie within the alignment. Returns the new bytes and
 /// handle-stream size.
 pub fn set_design_speeds(
     rec: &RawRecord,
@@ -178,7 +177,7 @@ pub fn set_design_speeds(
         })
         .collect();
     let mut w = Bits::default();
-    write_intervals(rec, &mut w, speeds, &ids)?;
+    let with_interval = write_intervals(rec, &mut w, speeds, &ids)?;
     w.bl(0);
     w.bl(1);
     w.bl(speeds.len() as i32);
@@ -199,7 +198,7 @@ pub fn set_design_speeds(
         .len()
         .checked_sub(3 * old_intervals + old.len().saturating_sub(old_intervals))
         .ok_or_else(|| err("string stream too short"))?;
-    string_stream::set_string_count(&bytes, hb, base + 3 * speeds.len())
+    string_stream::set_string_count(&bytes, hb, base + 2 * with_interval + speeds.len())
         .map_err(|e| err(e.to_string()))
 }
 
@@ -213,22 +212,22 @@ fn old_interval_count(data: &[u8], end: usize) -> Result<usize, SpeedError> {
 }
 
 /// Write the interval block: BL 0 ×3, BL n, then per speed its GUID, 13
-/// constant bits, BD station, BD distance from the start, BD length to the
+/// constant bits, BD station, BD distance from the element start, BD length to the
 /// end of the element, BL 1, BL 0, BL the next element's ID, and RD
-/// element start x, y, element end x, y, point x, y (S24, S74, S79, S84).
+/// element start x, y, element end x, y, point x, y (S24, S74, S79, S84);
+/// the distance is measured from the element's start (S89). Returns the
+/// number of intervals written (speeds on tangents).
 fn write_intervals(
     rec: &RawRecord,
     w: &mut Bits,
     speeds: &[(f64, f64)],
     ids: &[[u8; 16]],
-) -> Result<(), SpeedError> {
+) -> Result<usize, SpeedError> {
     let d = decode_elements(rec).map_err(|e| err(e.to_string()))?;
     let start = crate::aecc_station::start_station(rec).unwrap_or(0.0);
     let total: f64 = d.elements.iter().map(|e| e.segment.length()).sum();
-    for _ in 0..3 {
-        w.bl(0);
-    }
-    w.bl(speeds.len() as i32);
+    let mut intervals = Bits::default();
+    let mut count = 0;
     for ((station, _), id) in speeds.iter().zip(ids) {
         let dist = station - start;
         if dist < -1e-9 || dist > total + 1e-9 {
@@ -251,14 +250,12 @@ fn write_intervals(
             acc += len;
         }
         let (e, t, len) = found.ok_or_else(|| err("no elements"))?;
-        let (a, b) = match e.segment {
-            Segment::Line { start, end } => (start, end),
-            Segment::Arc { .. } => {
-                return Err(err(format!(
-                    "speed station {station} starts on a curve; the interval layout \
-                     for curves is not known yet (needs a sample)"
-                )))
-            }
+        // Speeds starting on a curve get no interval: the curve form (S89:
+        // BL 2, BL 1 and a third distance whose rule is not known) is not
+        // written; Civil 3D accepts table entries without intervals (S77)
+        // and rebuilds the block when the alignment is edited (S79).
+        let Segment::Line { start: a, end: b } = e.segment else {
+            continue;
         };
         let f = if len > 0.0 { t / len } else { 0.0 };
         let p = Point2::new(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f);
@@ -267,20 +264,30 @@ fn write_intervals(
             Element::Arc(x) => x.after,
         };
         for byte in id {
-            w.byte(*byte);
+            intervals.byte(*byte);
         }
-        w.bits(INTERVAL_CONSTANT, 13);
-        w.bd(*station);
-        w.bd(dist.max(0.0));
-        w.bd(len - t);
-        w.bl(1);
-        w.bl(0);
-        w.bl(after);
+        intervals.bits(INTERVAL_CONSTANT, 13);
+        intervals.bd(*station);
+        // Distance from the element's start (S89: 84.64 on its second
+        // element), then the length to the element's end.
+        intervals.bd(t);
+        intervals.bd(len - t);
+        intervals.bl(1);
+        intervals.bl(0);
+        intervals.bl(after);
         for v in [a.x, a.y, b.x, b.y, p.x, p.y] {
-            w.rd(v);
+            intervals.rd(v);
         }
+        count += 1;
     }
-    Ok(())
+    for _ in 0..3 {
+        w.bl(0);
+    }
+    w.bl(count as i32);
+    let n = intervals.len();
+    let bytes = intervals.into_bytes();
+    w.copy(&bytes, 0, n);
+    Ok(count)
 }
 
 /// The 13 bits after each interval's GUID, the same in every sample.
@@ -364,6 +371,9 @@ pub fn shift_design_speeds(rec: &RawRecord, delta: f64) -> Result<(Vec<u8>, usiz
     }
     let (data, hb) = splice(&rec.data, rec.handle_bits, start, stop, t);
     let (end, _) = identity(rec)?;
+    if old_interval_count(&data, end)? == 0 {
+        return Ok((data, hb));
+    }
     let at = end + FIRST_INTERVAL_STATION;
     let (station, after) = raw::read_bd(&data, at).ok_or_else(|| err("interval station"))?;
     let mut s = Bits::default();
@@ -373,9 +383,9 @@ pub fn shift_design_speeds(rec: &RawRecord, delta: f64) -> Result<(Vec<u8>, usiz
 
 /// The first interval's station (None without design speeds).
 pub fn first_interval_station(rec: &RawRecord) -> Option<f64> {
-    if locate(rec).ok()?.2.is_empty() {
+    let (end, _) = identity(rec).ok()?;
+    if old_interval_count(&rec.data, end).ok()? == 0 {
         return None;
     }
-    let (end, _) = identity(rec).ok()?;
     raw::read_bd(&rec.data, end + FIRST_INTERVAL_STATION).map(|x| x.0)
 }
