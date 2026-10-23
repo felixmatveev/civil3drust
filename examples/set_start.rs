@@ -3,12 +3,12 @@
 //! Usage:
 //!   cargo run --release --example set_start -- in.dwg out.dwg <alignment> <station> [--clear-speeds]
 //!
-//! Civil 3D removes all design speeds when the start station changes (S82);
-//! `--clear-speeds` does the same. docs/alignment-object.md, "Start station".
+//! Design speeds are kept and shifted with the start (D-031); Civil 3D
+//! instead removes them (S82), which `--clear-speeds` does. docs/alignment-object.md, "Start station".
 
 use acadrust::entities::EntityType;
 use civil3drust::aecc_design_speed::clear_design_speeds;
-use civil3drust::aecc_station::{set_start_station, start_station};
+use civil3drust::aecc_station::{move_start_station, set_start_station, start_station};
 use civil3drust::{handle_refs, raw};
 
 fn fail(msg: impl std::fmt::Display) -> ! {
@@ -39,8 +39,12 @@ fn main() {
         rec2.data = d;
         rec2.handle_bits = hb;
     }
-    let (d, hb) =
-        set_start_station(&rec2, station).unwrap_or_else(|| fail("start station not found"));
+    let moved = if clear {
+        set_start_station(&rec2, station)
+    } else {
+        move_start_station(&rec2, station)
+    };
+    let (d, hb) = moved.unwrap_or_else(|| fail("start station not found"));
     let (d, hb) = handle_refs::trim_padding(&d, hb, rec.handle);
     for e in o.doc.entities_mut() {
         if let EntityType::Unknown(u) = e {
@@ -57,9 +61,11 @@ fn main() {
         .find(|r| r.handle == rec.handle)
         .unwrap();
     println!(
-        "[{:X}] start station {:?}, design speeds {:?}",
+        "[{:X}] start station {:?}, design speeds {:?}, first interval station {:?}",
         r.handle,
         start_station(&r),
-        civil3drust::aecc_design_speed::design_speeds(&r).map(|v| v.len())
+        civil3drust::aecc_design_speed::design_speeds(&r)
+            .map(|v| v.iter().map(|e| (e.station, e.speed)).collect::<Vec<_>>()),
+        civil3drust::aecc_design_speed::first_interval_station(&r)
     );
 }

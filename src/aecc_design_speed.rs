@@ -233,3 +233,65 @@ pub fn clear_design_speeds(rec: &RawRecord) -> Result<(Vec<u8>, usize), SpeedErr
         .ok_or_else(|| err("string stream too short"))?;
     string_stream::set_string_count(&bytes, hb, count).map_err(|e| err(e.to_string()))
 }
+
+/// Bit offset of the first interval's station BD after the element
+/// records: BL 0 ×3, BL n (here n ≥ 1, 10 bits), GUID, 13 constant bits.
+const FIRST_INTERVAL_STATION: usize = 16 + 128 + 13;
+
+/// Replace bits `[from, to)` of a record with `with`, keeping the handle
+/// stream; returns the new bytes and handle-stream size.
+fn splice(data: &[u8], handle_bits: usize, from: usize, to: usize, with: Bits) -> (Vec<u8>, usize) {
+    let total = raw::bit_len(data);
+    let data_end = total - handle_bits;
+    let mut w = Bits::default();
+    w.copy(data, 0, from);
+    let inserted = with.len();
+    let bytes_with = with.into_bytes();
+    w.copy(&bytes_with, 0, inserted);
+    w.copy(data, to, total);
+    let new_data_end = data_end + from + inserted - to;
+    let bytes = w.into_bytes();
+    let hb = bytes.len() * 8 - new_data_end;
+    (bytes, hb)
+}
+
+/// Shift every design-speed station by `delta`, keeping order, speeds and
+/// GUIDs; the first interval's station after the elements is shifted too
+/// (its distance and length stay). This is what civil3drust does when the
+/// start station changes (D-031); Civil 3D instead removes the speeds
+/// (S82). Civil 3D rebuilds the other intervals on save (S77 → S79).
+pub fn shift_design_speeds(rec: &RawRecord, delta: f64) -> Result<(Vec<u8>, usize), SpeedError> {
+    let (start, stop, old) = locate(rec)?;
+    if old.is_empty() || delta == 0.0 {
+        return Ok((rec.data.clone(), rec.handle_bits));
+    }
+    // Table first (later in the record), then the interval station.
+    let mut t = Bits::default();
+    t.bl(0);
+    t.bl(1);
+    t.bl(old.len() as i32);
+    for e in &old {
+        t.bl(1);
+        t.bd(e.station + delta);
+        t.bd(e.speed);
+        for b in e.id {
+            t.byte(b);
+        }
+    }
+    let (data, hb) = splice(&rec.data, rec.handle_bits, start, stop, t);
+    let (end, _) = identity(rec)?;
+    let at = end + FIRST_INTERVAL_STATION;
+    let (station, after) = raw::read_bd(&data, at).ok_or_else(|| err("interval station"))?;
+    let mut s = Bits::default();
+    s.bd(station + delta);
+    Ok(splice(&data, hb, at, after, s))
+}
+
+/// The first interval's station (None without design speeds).
+pub fn first_interval_station(rec: &RawRecord) -> Option<f64> {
+    if locate(rec).ok()?.2.is_empty() {
+        return None;
+    }
+    let (end, _) = identity(rec).ok()?;
+    raw::read_bd(&rec.data, end + FIRST_INTERVAL_STATION).map(|x| x.0)
+}

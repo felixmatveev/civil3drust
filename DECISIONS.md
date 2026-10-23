@@ -538,3 +538,18 @@ template-based approach; findings so far are in alignment-map.md §6.
 
 **Alternatives.** Build Civil 3D's style collection chain now: more
 unknown records before the alignment work is finished.
+
+## D-031: Design speeds move with the start station
+
+**Context.** Civil 3D removes all design speeds when the start station of
+an alignment changes (S82, owner checked), even when they would still lie
+on the alignment.
+
+**Decision.** civil3drust keeps the design speeds and shifts their
+stations by the change of the start station (the speeds stay at the same
+places along the alignment). Alignments without design speeds stay
+without. Civil 3D's behaviour is available as an option
+(`clear_design_speeds`, `set_start --clear-speeds`).
+
+**Alternatives.** Copy Civil 3D (wipe the speeds): matches Autodesk, but
+loses user data for no reason; the owner prefers the better behaviour.

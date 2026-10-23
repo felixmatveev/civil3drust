@@ -13,6 +13,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 - `aecc_station` (start station read/write), `clear_design_speeds`,
   reading alignments without design speeds, `examples/set_start`,
   experiment S83.
+- D-031: changing the start station shifts the design speeds instead of
+  removing them (`move_start_station`, `shift_design_speeds`,
+  `first_interval_station`); test drawing S85.
 - Design criteria (O3, S79): `aecc_criteria` reads and sets the three
   criteria flags; `examples/exp_criteria` and experiment S80. S81: the
   generated full criteria set works in Civil 3D. `aecc_criteria::Criteria`

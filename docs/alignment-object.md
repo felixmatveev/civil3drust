@@ -1386,6 +1386,21 @@ speeds` and `Start -100 no speeds` (speeds cleared as Civil 3D does).
 Question: are both forms accepted, and what does Civil 3D show for the
 kept speed?
 
+**Result (S84).** AUDIT: no errors. Civil 3D kept the speed of
+`Start 100 speeds kept` and moved it to 1+00 (table 0:60 → 100:60), and
+rewrote the first interval: its fields after the 13 constant bits are
+three BDs, **station, distance from the start, length to the end of the
+element** — S84: (100, 0, 500); S24: (0, 0, 88.20); S74 `mixed speed`:
+(200, 200, 311.76). The other two kept their empty form.
+
+**civil3drust behaviour (D-031):** changing the start station keeps the
+design speeds and shifts their stations (and the first interval's
+station) by the same amount; alignments without speeds stay without.
+`aecc_station::move_start_station`, `set_start` without
+`--clear-speeds`. S85: S24 + `Shift +100` (60 at 1+00), `Shift -100 two
+speeds` (60 at −1+00, 30 at 1+00) and `Shift +250 three speeds` (50 at
+2+50, 40 at 4+00, 30 at 5+50).
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length

@@ -3,8 +3,8 @@
 //! The start station (the station of the reference point when it is the
 //! alignment's start) is a BD that ends 20 bits before the end of section
 //! 2. Civil 3D removes all design speeds when the start station changes
-//! (S82, owner checked); [`set_start_station`] leaves that to the caller
-//! (`aecc_design_speed::clear_design_speeds`).
+//! (S82, owner checked); civil3drust keeps them and shifts their stations
+//! with the start (D-031, [`move_start_station`]).
 
 use crate::aecc_alignment;
 use crate::aecc_build::Bits;
@@ -47,4 +47,17 @@ pub fn set_start_station(rec: &RawRecord, station: f64) -> Option<(Vec<u8>, usiz
     let bytes = w.into_bytes();
     let hb = bytes.len() * 8 - new_data_end;
     Some((bytes, hb))
+}
+
+/// Change the start station and shift the design speeds with it (D-031).
+/// Alignments without design speeds stay without.
+pub fn move_start_station(rec: &RawRecord, station: f64) -> Option<(Vec<u8>, usize)> {
+    let old = start_station(rec)?;
+    let (data, hb) = crate::aecc_design_speed::shift_design_speeds(rec, station - old).ok()?;
+    let r = RawRecord {
+        data,
+        handle_bits: hb,
+        ..rec.clone()
+    };
+    set_start_station(&r, station)
 }

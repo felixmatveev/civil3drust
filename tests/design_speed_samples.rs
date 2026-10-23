@@ -141,3 +141,32 @@ fn clear_then_set_start_matches_civil3d_form() {
         Some(-100.0)
     );
 }
+
+/// D-031: moving the start station shifts the design speeds with it.
+#[test]
+fn move_start_shifts_speeds() {
+    use civil3drust::aecc_design_speed::first_interval_station;
+    use civil3drust::aecc_station::{move_start_station, start_station};
+    let r = rec("samples/S77_S24_created_design_speeds_v2.dwg", 0xFB9);
+    let (d, hb) = move_start_station(&r, 250.0).unwrap();
+    let r2 = raw::RawRecord {
+        data: d,
+        handle_bits: hb,
+        ..r.clone()
+    };
+    assert_eq!(start_station(&r2), Some(250.0));
+    assert_eq!(pairs(&r2), [(250.0, 50.0), (400.0, 40.0), (550.0, 30.0)]);
+    assert_eq!(first_interval_station(&r2), Some(250.0));
+    let ids = |r: &raw::RawRecord| {
+        design_speeds(r)
+            .unwrap()
+            .iter()
+            .map(|e| e.id)
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(ids(&r2), ids(&r));
+    // Civil 3D's own interval fields: station, distance, length (S84, S74).
+    let s84 = rec("samples/S84_S83_civ3d_resaved.dwg", 0xFB3);
+    assert_eq!(first_interval_station(&s84), Some(100.0));
+    assert_eq!(pairs(&s84), [(100.0, 60.0)]);
+}
