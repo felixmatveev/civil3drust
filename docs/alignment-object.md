@@ -1152,6 +1152,18 @@ entry `TEST STYLE` → 248, and the style's owner reference points at 249.
 Question: is an owned style kept and used, even though it is outside
 Civil 3D's own style collection?
 
+**Result.** S73 opens normally; AUDIT finds and fixes 2 errors (as in S70);
+the alignment is shown with Standard, not TEST STYLE. So an owned style
+outside Civil 3D's collection is not used either: Civil 3D accepts only
+alignment styles from its own style collection (under its tree nodes).
+(No re-save of S73 was kept.)
+
+**Status: postponed (D-030).** A minimal drawing would need our style in
+Civil 3D's own style collection, which means writing that part of Civil 3D's
+infrastructure. Civil 3D adds its full infrastructure (~440 KB) on the
+first save anyway, so for now new alignments go into drawings Civil 3D has
+saved (S65/S66 approach).
+
 **Results.**
 
 - S66 (and S65): opened with no issues.

@@ -524,3 +524,17 @@ is consistent with D-015.
 
 **Alternatives.** Hard-coding the class entries: no donor needed, but the
 flags and version fields would be guesses until compared across samples.
+
+## D-030: Minimal drawings postponed
+
+**Context.** S64–S73: Civil 3D opens a plain AutoCAD drawing holding only an
+alignment, but uses only alignment styles from its own style collection,
+and it adds its full infrastructure on the first save anyway.
+
+**Decision.** For now alignments are created in drawings Civil 3D has
+saved at least once (S65/S66). Minimal drawings (alignment, our own style,
+a minimal collection) are a later goal and an advantage over the standard
+template-based approach; findings so far are in alignment-map.md §6.
+
+**Alternatives.** Build Civil 3D's style collection chain now: more
+unknown records before the alignment work is finished.

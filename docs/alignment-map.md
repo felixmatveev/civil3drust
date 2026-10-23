@@ -182,3 +182,15 @@ geometry; the bits that change name the option.
 | option | result |
 |---|---|
 | O1 alignment type | **decoded** (S58 Centerline, S59 Miscellaneous): one BL in the post-cache block, 1 = Centerline, 4 = Miscellaneous; the "constant" block was this option at its default. Verified: generated types 1 and 4 accepted and kept (S60 → S62); values 2, 3, 5 on a plain alignment are rejected and removed by RECOVER (S61 → S63), so they need a parent or other data. |
+
+## 6. Minimal drawings (S64–S73, postponed)
+
+| finding | sample |
+|---|---|
+| Civil 3D builds its infrastructure (settings, styles, registry) when it opens or saves a plain AutoCAD drawing | S64 → S65, S67 → S68/S69 |
+| an alignment record alone opens; the companion may stay null | S67 |
+| null style: invisible, crash on select; AUDIT assigns the default style | S67 → S68 |
+| a style without an owner is dropped; an owned style outside Civil 3D's collection is ignored; both fall back to the default style | S70 → S71/S72, S73 |
+
+Next step when resumed: write the alignment style into a minimal copy of
+Civil 3D's style collection (tree node → collection → style).
