@@ -1469,6 +1469,8 @@ S90 = S24 + three alignments with a 90° curve of radius 80 (curve
 2+20–3+45.66): `Curve speed` 0:60 260:30 (the second on the curve, no
 interval), `Tangent speeds` 0:60 400:30 (control), `Only curve speed`
 260:40 (no intervals at all).
+Result (S91): no AUDIT errors, all speeds shown as written; on a plain
+save Civil 3D keeps the records as they are (no intervals added).
 
 ## Open questions
 

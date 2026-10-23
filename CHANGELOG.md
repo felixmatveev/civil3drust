@@ -10,7 +10,7 @@ versions follow [Semantic Versioning](https://semver.org/).
 - Floating tangents (O5, S89): element kind 4 with only the end point;
   `TangentRecord::kind`, `end_bit()`. Speeds on curves are written
   without an interval; speed tables without intervals are read. Test
-  drawing S90.
+  drawing S90, accepted by Civil 3D (S91).
 - Interval block decoded (one interval per design speed: GUID, station,
   distance, length to element end, next element, element and point
   coordinates). `set_design_speeds` writes it from the geometry, adds
