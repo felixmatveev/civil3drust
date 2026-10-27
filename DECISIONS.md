@@ -553,3 +553,24 @@ without. Civil 3D's behaviour is available as an option
 
 **Alternatives.** Copy Civil 3D (wipe the speeds): matches Autodesk, but
 loses user data for no reason; the owner prefers the better behaviour.
+
+## D-032: Hex viewer maps records in the decompressed objects section
+
+**Context.** A hex view that labels bytes by object needs a byte offset
+for each record. From R2004 on, sections are stored as compressed pages,
+so raw file offsets do not correspond to records at all.
+
+**Decision.** `hexview` reads the decompressed `AcDb:AcDbObjects` buffer
+with acadrust's public `get_section_buffer`, locates records through the
+handle map (`read_handles`) and frames them per the public ODA spec
+(`MS size, R2010+ MC handle bits, data, CRC16`). That pane carries the
+overlay; the raw file is overlaid only for R2000, where the section is
+stored uncompressed. Labels come from acadrust's document (who decodes the
+record) and civil3drust's decoders; the DWG type code is read from the
+record itself so unmapped records still get a class name.
+
+**Alternatives.** Overlay compressed pages in the raw file: possible only
+as "this page belongs to section X", which says nothing about objects.
+Patch acadrust to report offsets while reading: duplicates what the handle
+map already gives.
+

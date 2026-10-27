@@ -1,0 +1,15 @@
+[package]
+name = "civil3drust-hexview"
+version = "0.1.0"
+edition = "2021"
+license = "MPL-2.0"
+publish = false
+description = "Hex viewer for DWG files with acadrust / civil3drust record overlay"
+
+[workspace]
+
+[dependencies]
+civil3drust = { path = ".." }
+acadrust = "0.6.5"
+eframe = "0.37.0"
+rfd = "0.17.2"

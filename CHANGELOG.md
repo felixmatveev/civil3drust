@@ -7,6 +7,15 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `hexview/`: egui hex viewer for DWG files. Offset / hex / decoded
+  columns; every object record from the handle map is outlined and
+  labelled (blue = acadrust, red = AECC via civil3drust, amber = opaque,
+  gray = unmapped). Detail windows show frame offsets, CRC check,
+  civil3drust's decoded fields with bit offsets, handle references and
+  acadrust's `Debug` view. Bottom bar decodes the bytes at the cursor.
+  Records are mapped in the decompressed `AcDb:AcDbObjects` section
+  (and in the raw file for R2000). `--dump` for a text listing, `--goto`
+  to open at an offset or handle. D-032.
 - Floating tangents (O5, S89): element kind 4 with only the end point;
   `TangentRecord::kind`, `end_bit()`. Speeds on curves are written
   without an interval; speed tables without intervals are read. Test

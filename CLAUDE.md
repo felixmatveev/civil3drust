@@ -50,4 +50,5 @@ samples and steps that produced it.
 - `cargo run --release --example exp_minimal -- donor.dwg target.dwg out.dwg` (experiment S56)
 - `cargo run --release --example exp_bare -- donor.dwg base.dwg plain.dwg out.dwg [style-hex]` (experiments S67, S70)
 - `cargo run --release --example exp_criteria -- donor.dwg target.dwg out.dwg <check-set-hex>` (experiment S80)
+- `cd hexview && cargo run --release -- file.dwg [--goto <hex offset|#handle>]` (hex view with record overlay; `--dump file.dwg` for text)
 - Record map: `docs/alignment-map.md`
