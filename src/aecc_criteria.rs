@@ -34,10 +34,7 @@ impl std::error::Error for CriteriaError {}
 /// the first element record's header (21 bits for the counts seen).
 pub fn section2_end(rec: &RawRecord) -> Result<usize, CriteriaError> {
     let d = decode_elements(rec).map_err(|e| CriteriaError(e.to_string()))?;
-    d.elements
-        .iter()
-        .map(|e| e.record.header_bit())
-        .min()
+    d.first_record_bit()
         .and_then(|b| b.checked_sub(21))
         .ok_or_else(|| CriteriaError("no elements".into()))
 }

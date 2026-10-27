@@ -667,21 +667,25 @@ destroys element identity and constraints, and its station cache layout
 predates the interval block. Copy Civil 3D's stale speed state exactly:
 reproduces a state that crashes Civil 3D's editor.
 
-## D-037: Gapped alignments decode as ordered pieces
+## D-037: Only the first chain is the alignment; detached pieces are kept
 
 **Context.** Deleting the tangent between two curves in Civil 3D (S100)
-leaves two disconnected pieces in one alignment: two records without a
-predecessor. The decoder required a single chain.
+leaves two disconnected pieces in one alignment record: two records
+without a predecessor. The decoder required a single chain. The owner
+checked Civil 3D: only the chain from the first element is the
+alignment (stations 0+00–3+45.66); the other piece is drawn but has no
+stations and every operation ignores it — a placeholder for a later
+join.
 
-**Decision.** Records are grouped into connected pieces; the piece that
-starts at the first-element ID (section 2, S94) comes first, the others in
-storage order. `DecodedElements` keeps one flat element list plus the
-indices where pieces start (`gaps`), so existing callers keep working on
-continuous alignments. Stations run on continuously over the pieces until
-a sample shows how Civil 3D stations past a gap; edits that would put a
-design speed after a gap, and edits of alignments that already have gaps,
-are refused.
+**Decision.** Records are grouped into connected pieces. The piece that
+starts at the first-element ID (section 2, S94) is the alignment
+(`DecodedElements::elements`); length, stations, design speeds and
+element edits refer to it alone. The other pieces are kept in
+`DecodedElements::detached`: decoded, drawn in rebuilt graphics, counted
+in the element count and copied unchanged by edits, but never edited
+(refused) or stationed. A first version counted stations across the gap;
+replaced the same day after the owner's check.
 
-**Alternatives.** A list of pieces in `DecodedElements`: more precise, but
-changes every caller for a rare case. Refusing to decode gapped
-alignments: hides geometry Civil 3D shows.
+**Alternatives.** Station across the gap: not what Civil 3D does.
+Refusing to decode such alignments: hides geometry Civil 3D shows and
+blocks edits of the alignment proper.

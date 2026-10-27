@@ -189,23 +189,10 @@ fn write_elements(
     plan: &[Planned],
 ) -> Result<RawRecord, ElementEditError> {
     let data = &rec.data;
-    let first = d
-        .elements
-        .iter()
-        .map(|e| e.record.header_bit())
-        .min()
-        .ok_or_else(|| err("no elements"))?;
-    let last_end = d
-        .elements
-        .iter()
-        .map(|e| match &e.record {
-            Element::Tangent(t) => t.end_bit(),
-            Element::Arc(a) => a.end_bit,
-        })
-        .max()
-        .unwrap();
+    let first = d.first_record_bit().ok_or_else(|| err("no elements"))?;
+    let last_end = d.records_end_bit().unwrap();
     let count_bit = first - 11 - 10;
-    if raw::read_bl(data, count_bit) != Some((d.elements.len() as i32, first - 11)) {
+    if raw::read_bl(data, count_bit) != Some((d.record_count() as i32, first - 11)) {
         return Err(err("element count not where expected"));
     }
     let mut w = Bits::default();
@@ -250,8 +237,7 @@ fn write_elements(
     let hb = bytes.len() * 8 - new_data_end;
 
     let arcs_old = d
-        .elements
-        .iter()
+        .all()
         .filter(|e| matches!(e.record, Element::Arc(_)))
         .count();
     let arcs_new = plan
@@ -337,7 +323,8 @@ fn finish(
         }
     }
     let (bytes, hb, graphics_rebuilt) =
-        replace_graphics(&new, &decoded.elements).map_err(|e| err(e.to_string()))?;
+        replace_graphics(&new, &decoded.all().cloned().collect::<Vec<_>>())
+            .map_err(|e| err(e.to_string()))?;
     let mut r = RawRecord {
         data: bytes,
         handle_bits: hb,
@@ -373,21 +360,6 @@ fn finish(
         .map(|s| (s.station, s.speed))
         .collect();
     let speeds = clamp_speeds(&old_speeds, start, start + length);
-    if let Some(&g) = decoded.gaps.first() {
-        // How Civil 3D stations the pieces after a gap is not known yet:
-        // keep every speed within the first piece.
-        let first_end = start
-            + decoded.elements[..g]
-                .iter()
-                .map(|e| e.segment.length())
-                .sum::<f64>();
-        if speeds.iter().any(|s| s.0 > first_end + 1e-9) {
-            return Err(err(
-                "the edit leaves a gap and a design speed lies after it \
-                 (stationing across gaps is not known yet)",
-            ));
-        }
-    }
     if !old_speeds.is_empty() {
         let (bytes, hb) = set_design_speeds(&r, &speeds, seed).map_err(|e| err(e.to_string()))?;
         r = RawRecord {
@@ -420,23 +392,28 @@ fn finish(
 }
 
 fn stored(d: &DecodedElements) -> Vec<&ResolvedElement> {
-    let mut v: Vec<&ResolvedElement> = d.elements.iter().collect();
+    let mut v: Vec<&ResolvedElement> = d.all().collect();
     v.sort_by_key(|e| e.record.header_bit());
     v
 }
 
 /// Remove element `id` from the alignment `rec`.
 ///
-/// Supported (as Civil 3D does it, S94/S95):
+/// Supported (as Civil 3D does it, S94/S95/S99/S100):
 /// - the first element: the next one becomes the first; a free curve
-///   there becomes a floating curve from its PC, a tangent keeps its line
-///   and starts where it started before; stationing is kept;
-/// - the last element, when the one before it is a tangent, a floating
-///   tangent or a three-point curve;
-/// - a free curve between two tangents: they then meet at their PI.
+///   there becomes a floating curve from its PC (15), a tangent keeps its
+///   line and starts where it started before; stationing is kept;
+/// - the last element: a free curve before it becomes a floating curve to
+///   its PT (13), a tangent keeps its line;
+/// - a free curve between two tangents: they then meet at their PI;
+/// - a tangent between two free curves: the curves become 13 and 15 and
+///   everything after the gap becomes a detached piece, which Civil 3D
+///   ignores (no stations, no speeds); design speeds past the new end are
+///   dropped.
 ///
-/// Anything else (an interior tangent, a curve whose definition depends
-/// on the removed element) is refused. `seed` seeds new design-speed IDs.
+/// Anything else (other interior tangents, a floating curve losing the
+/// element it is tangent to, elements of a detached piece) is refused.
+/// Detached pieces are kept as stored. `seed` seeds new design-speed IDs.
 /// Returns the new record bytes and handle-stream size.
 pub fn remove_element(
     rec: &RawRecord,
@@ -453,8 +430,10 @@ pub fn remove_element(
     if n == 1 {
         return Err(err("cannot remove the only element"));
     }
-    if !d.gaps.is_empty() {
-        return Err(err("the alignment already has gaps (not supported yet)"));
+    if d.detached.iter().flatten().any(|e| e.record.id() == id) {
+        return Err(err(format!(
+            "element {id} is in a detached piece, not part of the alignment"
+        )));
     }
     let start = d.stored_start_station.unwrap_or(0.0);
     let mut rewrites: Vec<(i32, i32, i32, Rewrite)> = Vec::new(); // id, before, after
@@ -463,6 +442,15 @@ pub fn remove_element(
     let mut new_first = None;
     if idx == 0 {
         let next = &d.elements[1];
+        if let Element::Arc(a) = &next.record {
+            if matches!(a.def, ArcDef::FloatingEnd { .. }) {
+                return Err(err(format!(
+                    "curve {} would lose the element it is tangent to \
+                     (no sample of that form yet)",
+                    a.id
+                )));
+            }
+        }
         let rw = match &next.record {
             Element::Arc(a) if matches!(a.def, ArcDef::Free { .. }) => {
                 floating.push(a.id);
@@ -592,9 +580,7 @@ pub fn add_free_curve(
         return Err(err(format!("bad radius {radius}")));
     }
     let d = decode_elements(rec).map_err(|e| err(e.to_string()))?;
-    if !d.gaps.is_empty() {
-        return Err(err("the alignment has gaps (not supported yet)"));
-    }
+
     let idx = d
         .elements
         .iter()
@@ -622,7 +608,7 @@ pub fn add_free_curve(
             a.id, b.id
         )));
     }
-    let new_id = d.elements.iter().map(|e| e.record.id()).max().unwrap_or(0) + 1;
+    let new_id = d.all().map(|e| e.record.id()).max().unwrap_or(0) + 1;
     let plan: Vec<Planned> = stored(&d)
         .into_iter()
         .map(|e| {

@@ -111,15 +111,7 @@ const EMPTY_INTERVALS: [u8; 8] = [1, 0, 1, 0, 1, 0, 1, 0];
 /// after them).
 fn identity(rec: &RawRecord) -> Result<(usize, [u8; 16]), SpeedError> {
     let d = decode_elements(rec).map_err(|e| err(e.to_string()))?;
-    let end = d
-        .elements
-        .iter()
-        .map(|e| match &e.record {
-            Element::Tangent(t) => t.end_bit(),
-            Element::Arc(a) => a.end_bit,
-        })
-        .max()
-        .ok_or_else(|| err("no elements"))?;
+    let end = d.records_end_bit().ok_or_else(|| err("no elements"))?;
     let mut id = [0u8; 16];
     for (i, b) in id.iter_mut().enumerate() {
         *b = raw::get_byte(&rec.data, end + 16 + 8 * i);

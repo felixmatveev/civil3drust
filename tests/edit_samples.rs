@@ -280,7 +280,7 @@ fn s99_last_tangent_after_free_curve_deleted() {
     use civil3drust::aecc_elements::ARC_FLOATING_END;
     let r = record("samples/S99_S98_last_tangent_deleted.dwg", 0xFB3);
     let d = decode_elements(&r).unwrap();
-    assert!(d.gaps.is_empty());
+    assert!(d.detached.is_empty());
     assert_eq!(chain_of(&r), [(4, 0, 2), (2, 4, 5), (5, 2, 0)]);
     let Element::Arc(a5) = &d.elements[2].record else {
         panic!()
@@ -310,32 +310,36 @@ fn s99_last_tangent_after_free_curve_deleted() {
 }
 
 #[test]
-fn s100_interior_tangent_deleted_leaves_a_gap() {
+fn s100_interior_tangent_deleted_leaves_a_detached_piece() {
     let r = record("samples/S100_S98_interior_tangent_deleted.dwg", 0xFB9);
     let d = decode_elements(&r).unwrap();
-    assert_eq!(chain_of(&r), [(1, 0, 4), (4, 1, 0), (5, 0, 3), (3, 5, 0)]);
-    assert_eq!(d.gaps, [2]);
-    assert!(
-        d.elements[1]
-            .segment
-            .end()
-            .distance_to(Point2::new(300.0, -880.0))
-            < 1e-9
-    );
-    assert!(
-        d.elements[2]
-            .segment
-            .start()
-            .distance_to(Point2::new(300.0, -1020.0))
-            < 1e-9
-    );
-    assert!((d.length() - 691.3274).abs() < 1e-3);
+    // Only the chain from the first element is the alignment (stations
+    // 0+00 to 3+45.66, owner's screenshot); A5 T3 is a detached piece.
+    assert_eq!(chain_of(&r), [(1, 0, 4), (4, 1, 0)]);
+    assert_eq!(d.detached.len(), 1);
+    let ids: Vec<i32> = d.detached[0].iter().map(|e| e.record.id()).collect();
+    assert_eq!(ids, [5, 3]);
+    let a4_end = d.elements[1].segment.end();
+    assert!(a4_end.distance_to(Point2::new(300.0, -880.0)) < 1e-9);
+    let a5_start = d.detached[0][0].segment.start();
+    assert!(a5_start.distance_to(Point2::new(300.0, -1020.0)) < 1e-9);
+    assert!((d.length() - 345.6637).abs() < 1e-3);
 
     let s98 = record("samples/S98_S97_civ3d_audit_resaved.dwg", 0xFB9);
     let (b, hb, rep) = remove_element(&s98, 2, 7).unwrap();
     assert_eq!(rep.floating, [4, 5]);
     let ours = edited(&s98, (b, hb));
     assert_eq!(element_list_bits(&ours), element_list_bits(&r));
-    // Editing a gapped alignment is refused for now.
+    // Elements of the detached piece can't be edited; the alignment can,
+    // and the detached piece is kept as it is.
+    assert!(remove_element(&ours, 3, 7).is_err());
+    // T1 can't go: A4 (13) would lose the tangent it starts from.
     assert!(remove_element(&ours, 1, 7).is_err());
+    let (b2, hb2, rep2) = remove_element(&ours, 4, 7).unwrap();
+    assert_eq!(rep2.elements, 1);
+    assert!((rep2.length - 220.0).abs() < 1e-9);
+    let after = decode_elements(&edited(&ours, (b2, hb2))).unwrap();
+    assert_eq!(after.detached.len(), 1);
+    let ids: Vec<i32> = after.detached[0].iter().map(|e| e.record.id()).collect();
+    assert_eq!(ids, [5, 3]);
 }

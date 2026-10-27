@@ -300,6 +300,11 @@ pub fn set_geometry(
 ) -> Result<(Vec<u8>, usize, GeometryReport), BuildError> {
     let data = &rec.data;
     let decoded = decode_elements(rec).map_err(|e| layout(e.to_string()))?;
+    if !decoded.detached.is_empty() {
+        return Err(layout(
+            "the alignment has detached pieces; rebuilding from PIs would drop them",
+        ));
+    }
     let start_station = decoded.stored_start_station.unwrap_or(0.0);
 
     // --- New elements, resolved and checked. ---
@@ -623,13 +628,7 @@ pub fn set_identity(
 fn identity_copies(rec: &RawRecord, data: &[u8]) -> Result<(usize, usize), BuildError> {
     let decoded = decode_elements(rec).map_err(|e| layout(e.to_string()))?;
     let end = decoded
-        .elements
-        .iter()
-        .map(|e| match &e.record {
-            Element::Tangent(t) => t.end_bit(),
-            Element::Arc(a) => a.end_bit,
-        })
-        .max()
+        .records_end_bit()
         .ok_or_else(|| layout("no elements"))?;
     let a = end + IDENTITY_AFTER_ELEMENTS;
     let old: Vec<u8> = (0..16).map(|i| raw::get_byte(data, a + 8 * i)).collect();

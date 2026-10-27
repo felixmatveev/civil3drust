@@ -611,17 +611,40 @@ pub struct DecodedElements {
     pub handle: u64,
     pub name: Option<String>,
     pub stored_start_station: Option<f64>,
-    /// Elements in chain order; with gaps, piece after piece.
+    /// The alignment proper: the chain starting at the first-element ID,
+    /// in path order. Stations, length and design speeds refer to it only.
     pub elements: Vec<ResolvedElement>,
-    /// Indices into `elements` where a new, disconnected piece starts
-    /// (empty for a continuous alignment). Civil 3D leaves a gap when an
-    /// interior tangent between two curves is deleted (S100).
-    pub gaps: Vec<usize>,
+    /// Disconnected pieces left by deleting an interior tangent (S100).
+    /// Civil 3D draws them but ignores them otherwise: no stations, not
+    /// part of the alignment until joined again (owner, S100).
+    pub detached: Vec<Vec<ResolvedElement>>,
 }
 
 impl DecodedElements {
+    /// Length of the alignment proper (detached pieces excluded).
     pub fn length(&self) -> f64 {
         self.elements.iter().map(|e| e.segment.length()).sum()
+    }
+    /// Every element record: the alignment, then the detached pieces.
+    pub fn all(&self) -> impl Iterator<Item = &ResolvedElement> {
+        self.elements.iter().chain(self.detached.iter().flatten())
+    }
+    /// Number of element records stored (the element count).
+    pub fn record_count(&self) -> usize {
+        self.elements.len() + self.detached.iter().map(Vec::len).sum::<usize>()
+    }
+    /// Bit offset of the first record's header in storage order.
+    pub fn first_record_bit(&self) -> Option<usize> {
+        self.all().map(|e| e.record.header_bit()).min()
+    }
+    /// Bit offset just after the last record in storage order.
+    pub fn records_end_bit(&self) -> Option<usize> {
+        self.all()
+            .map(|e| match &e.record {
+                Element::Tangent(t) => t.end_bit(),
+                Element::Arc(a) => a.end_bit,
+            })
+            .max()
     }
 }
 
@@ -629,7 +652,8 @@ impl DecodedElements {
 pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> {
     let records = element_records(&rec.data);
     // The path's first element ID ends section 2 (BL right before the
-    // element count, S94); it names the first piece when there are gaps.
+    // element count, S94); it names the alignment's chain when there are
+    // detached pieces (S100).
     let head = records
         .iter()
         .map(Element::header_bit)
@@ -637,15 +661,9 @@ pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> 
         .and_then(|b| b.checked_sub(31))
         .filter(|&b| raw::get_bit(&rec.data, b) == 0 && raw::get_bit(&rec.data, b + 1) == 1)
         .map(|b| raw::get_byte(&rec.data, b + 2) as i32);
-    let pieces = aecc_alignment::chain_pieces(&records, head)?;
-    let mut gaps = Vec::new();
-    let mut elements = Vec::new();
-    for piece in pieces {
-        if !elements.is_empty() {
-            gaps.push(elements.len());
-        }
-        elements.extend(resolve_piece(piece)?);
-    }
+    let mut pieces = aecc_alignment::chain_pieces(&records, head)?.into_iter();
+    let elements = resolve_piece(pieces.next().expect("at least one piece"))?;
+    let detached = pieces.map(resolve_piece).collect::<Result<Vec<_>, _>>()?;
     // The station precedes the first record in storage order, which is
     // not the first in the chain once element 1 is deleted (S94).
     let first_stored = records.iter().map(Element::header_bit).min().unwrap_or(0);
@@ -655,7 +673,7 @@ pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> 
         name: aecc_alignment::record_name(&rec.data),
         stored_start_station,
         elements,
-        gaps,
+        detached,
     })
 }
 

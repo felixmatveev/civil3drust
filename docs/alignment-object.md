@@ -1675,23 +1675,27 @@ T2). Both curves become one-sided: A4 → code 13 with its old PT
 (300, −880), after 0; A5 → code 15 with its old PC (300, −1020), before
 0. Nothing joins them: the alignment now has **two pieces with a gap**
 (T1 A4 | A5 T3), two records with no predecessor. The first-element IDs
-in section 2 stay 1, so they name the first piece. The interval and speed
-(0:60 on T1) are unchanged. How Civil 3D stations the second piece is not
-known yet.
+in section 2 stay 1. The interval and speed (0:60 on T1) are unchanged.
+**Civil 3D treats only the chain from the first element as the
+alignment** (owner, S100): stations run 0+00 to 3+45.66 on T1 A4 and stop
+there; A5 T3 is drawn but has no stations and is ignored by every
+operation — a placeholder until it is joined again.
 
 **Decoder.** Code 13 is read as `ArcDef::FloatingEnd` and resolved as
 the curve leaving the previous tangent's line and ending at the point.
-`chain_pieces` orders the records into connected pieces, the one starting
-at the first-element ID first; `DecodedElements::gaps` lists where pieces
-start, and stations are counted continuously over the pieces until a
-sample shows Civil 3D's rule.
+`chain_pieces` orders the records into connected pieces; the one starting
+at the first-element ID is the alignment (`DecodedElements::elements`:
+length, stations, speeds), the others are kept as
+`DecodedElements::detached` — read, drawn and preserved, but not part of
+the alignment, as in Civil 3D.
 
 **`remove_element`** now also removes the last tangent after a free
 curve (S99 form) and an interior tangent between two free curves (S100
-form, leaving a gap; refused if a design speed would lie after the gap).
-Both replays reproduce Civil 3D's element lists **bit for bit** (tests
-`s99_…`, `s100_…`). Editing an alignment that already has gaps is
-refused for now.
+form: the rest becomes a detached piece; speeds past the new end are
+dropped). Both replays reproduce Civil 3D's element lists **bit for bit**
+(tests `s99_…`, `s100_…`). On an alignment with detached pieces the
+alignment itself can still be edited and the detached records are kept
+as stored; elements of a detached piece can't be edited.
 
 ## Open questions
 
