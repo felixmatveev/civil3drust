@@ -1472,6 +1472,35 @@ interval), `Tangent speeds` 0:60 400:30 (control), `Only curve speed`
 Result (S91): no AUDIT errors, all speeds shown as written; on a plain
 save Civil 3D keeps the records as they are (no intervals added).
 
+## Adding and removing elements (O6: S92 → S93 …)
+
+**Baseline (S93).** S92's generated `Edit base` (FB3: T1 A4 T2 A5 T3,
+two free curves R 80) opened in Civil 3D, AUDIT, saved unchanged.
+`hexview --diff S92 S93 --filter FB3`: the record grows 820 → 826 bytes,
+ten differing regions, all explained:
+
+- **Element records unchanged** apart from the arc flag bit (34 bits
+  after each arc header): 0 → 1 for both arcs (open question 11). Our
+  exact coordinates (220, 0), (300, −80), … are kept in the records.
+- **Derived points recomputed in floating point.** Civil 3D recomputes
+  the tangent end points from the fillets and writes its own rounding
+  wherever a derived copy is stored: in the proxy graphics (T1 end
+  220 → 220.00000000000003, 0 → 2.842e−14; T2 start y −79.99999999999999
+  → −79.99999999999997, end y −220 → −219.99999999999997), in the station
+  at the end of element 0 (220 → 220.00000000000003) and in the element-0
+  cache (its end point, same two values). These are ulp differences and
+  confirm the copies are derived.
+- **Section 2**: the 66-bit cache field rewritten and the 44-bit extra
+  field added (open question 1, as in S8, S51, S57).
+- **Handle stream**: same references; Civil 3D pads the last byte with
+  1-bits (we pad with 0).
+- **Unchanged**: the interval GUID, the speed table, the string stream;
+  no element-ID list was added (S51 got one after a geometry edit, so it
+  marks edited geometry, not every save).
+
+So S93 is a clean baseline: the edits S94–S97 are compared with S93, not
+S92.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
@@ -1482,7 +1511,8 @@ save Civil 3D keeps the records as they are (no intervals added).
     element IDs after the first, added by Civil 3D on save; optional.
 11. The flag bit after the arc header (1 in S10, S14, S15; 0 in S11–S13).
     Civil 3D set it after geometry edits it saved (S14, S15) but not after
-    its own radius edit (S12).
+    its own radius edit (S12); it also sets it when re-saving our
+    generated free arcs unchanged (S92 → S93).
 12. The volatile header field: identical in S12 and S14 (same content,
     different save sessions), so probably computed from the content.
 2. ~~Where the start station is stored~~ — answered by S9: a BD ending 41

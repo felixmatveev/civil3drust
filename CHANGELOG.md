@@ -9,6 +9,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ### Added
 - Sample S92: base alignment for the O6 add/remove-elements series
   (`docs/alignment-object.md`, *Next samples*).
+- Sample S93 (Civil 3D re-save of S92) and its findings: element records
+  kept, derived points recomputed with Civil 3D's rounding.
 - hexview: comparison of two drawings (**Compare with…**, `--compare`,
   `--diff a.dwg b.dwg`). Records are matched by handle; changed records
   get a bit-level diff of the data stream (regions as bit ranges with
