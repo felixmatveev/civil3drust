@@ -10,6 +10,6 @@ description = "Hex viewer for DWG files with acadrust / civil3drust record overl
 
 [dependencies]
 civil3drust = { path = ".." }
-acadrust = "0.6.5"
+acadrust = "0.6.7"
 eframe = "0.37.0"
 rfd = "0.17.2"

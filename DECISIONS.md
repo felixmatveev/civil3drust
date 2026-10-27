@@ -574,3 +574,26 @@ as "this page belongs to section X", which says nothing about objects.
 Patch acadrust to report offsets while reading: duplicates what the handle
 map already gives.
 
+## D-033: acadrust 0.6.7, with Architecture records restored to raw
+
+**Context.** acadrust 0.6.7 reads every class whose DXF name starts with
+`AEC` into its Architecture types, which catches all Civil 3D `AECC_*`
+classes, and it re-encodes those records on save instead of writing them
+verbatim (docs/acadrust-0.6.7.md). civil3drust found no AECC records under
+0.6.7, and its edits rely on records being saved byte for byte. 0.6.7 also
+reads the `PRESSUREPARTERRORBLOCK` `3DSOLID` that 0.6.5 dropped.
+
+**Decision.** Move to 0.6.7 and have `raw::open` convert every
+Architecture-typed record with DWG bytes back into an `Unknown` record
+(`raw::restore_raw_records`), for real Architecture classes (`AEC_*`) as
+well as `AECC_*`. civil3drust never edits Architecture objects, and a
+verbatim copy is the safest thing to hand back to Civil 3D. The upgrade is
+accepted on the evidence of the fingerprint comparison over all samples.
+
+**Alternatives.** Stay on 0.6.5 pinned exactly: safe but keeps dropping the
+solid. Read the bytes from the Architecture types and keep them: civil3drust
+could read records, but every save would go through acadrust's
+Architecture re-encoder, which has never been checked against Civil 3D.
+Ask acadrust to exclude `AECC_` from its prefix test: worth reporting, but
+the conversion is needed meanwhile and keeps working afterwards.
+

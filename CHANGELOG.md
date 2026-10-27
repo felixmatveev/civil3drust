@@ -6,7 +6,24 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- acadrust 0.6.5 → 0.6.7 (library, viewer, hexview). 0.6.7 reads every
+  `AEC*` class, all `AECC_*` included, into its Architecture types and
+  re-encodes them on save; `raw::open` now restores them to raw records
+  (`raw::restore_raw_records`) so they are still read, edited and saved
+  byte for byte (D-033). All 91 samples: identical raw records on read and
+  after a save round trip, identical `alignments` output, same test
+  results (docs/acadrust-0.6.7.md).
+
+### Fixed
+- The `3DSOLID` in `PRESSUREPARTERRORBLOCK` (S1, S5, S6, S11, S12, S15,
+  S89) is read and kept on save; those drawings no longer need failsafe
+  mode (acadrust 0.6.7).
+
 ### Added
+- `raw::set_record` (replace a raw record's bytes and handle-stream size),
+  `examples/fingerprint` (raw-record hashes before/after a save, for
+  comparing acadrust versions), `tests/acadrust_compat.rs`.
 - `hexview/`: egui hex viewer for DWG files. Offset / hex / decoded
   columns; every object record from the handle map is outlined and
   labelled (blue = acadrust, red = AECC via civil3drust, amber = opaque,

@@ -6,6 +6,13 @@
 //! back verbatim. This module exposes those bytes plus bit-level helpers for
 //! studying them.
 //!
+//! From acadrust 0.6.7 on, every class whose DXF name starts with `AEC`
+//! (Architecture classes, but also all `AECC_*` Civil 3D classes) is read
+//! into acadrust's Architecture types instead, and those are re-encoded on
+//! save rather than written verbatim. [`open`] turns them back into
+//! `Unknown` records ([`restore_raw_records`]), so the bytes civil3drust
+//! reads and edits are the bytes that get saved (D-033).
+//!
 //! DWG object data is a bit stream: bytes are consumed most-significant bit
 //! first, and a raw multi-byte value (a "RD" double or "RL" long in the
 //! public ODA specification) is a run of whole stream bytes taken at any bit
@@ -13,8 +20,9 @@
 //! arbitrary bit offsets.
 
 use acadrust::document::CadDocument;
-use acadrust::entities::EntityType;
+use acadrust::entities::{EntityType, ExtendedEntityData, UnknownEntity};
 use acadrust::objects::ObjectType;
+use acadrust::types::Handle;
 use std::path::Path;
 
 /// One AECC record as stored in the file.
@@ -118,6 +126,83 @@ pub fn record_data_mut(doc: &mut CadDocument, handle: u64) -> Option<&mut Vec<u8
     })
 }
 
+/// Replace the bytes and handle-stream size of the raw record `handle`
+/// (entity or object). Returns false if there is no such raw record.
+pub fn set_record(doc: &mut CadDocument, handle: u64, data: Vec<u8>, handle_bits: usize) -> bool {
+    if let Some(EntityType::Unknown(u)) = doc.get_entity_mut(Handle::new(handle)) {
+        u.raw_dwg_data = Some(data);
+        u.dwg_handle_bits = handle_bits as i64;
+        return true;
+    }
+    if let Some(ObjectType::Unknown {
+        raw_dwg_data,
+        raw_dwg_handle_bits,
+        ..
+    }) = doc.objects.get_mut(&Handle::new(handle))
+    {
+        *raw_dwg_data = Some(data);
+        *raw_dwg_handle_bits = handle_bits as i64;
+        return true;
+    }
+    false
+}
+
+/// Turn records acadrust read into its Architecture types (`AEC*` classes,
+/// acadrust 0.6.7+) back into `Unknown` records with the same bytes, which
+/// acadrust writes verbatim. Returns how many records were converted.
+///
+/// The fields carried over are the ones acadrust's reader fills for an
+/// `Unknown` record of a non-Architecture class, so the result is what
+/// acadrust 0.6.5 produced. Records without DWG bytes are left alone.
+pub fn restore_raw_records(doc: &mut CadDocument) -> usize {
+    let mut n = 0;
+    for o in doc.objects.values_mut() {
+        let ObjectType::Arch(a) = o else { continue };
+        if a.raw_dwg_data.is_none() {
+            continue;
+        }
+        *o = ObjectType::Unknown {
+            type_name: a.dxf_name.clone(),
+            handle: a.handle,
+            owner: a.owner,
+            raw_dxf_codes: a.raw_dxf_codes.take(),
+            raw_dwg_data: a.raw_dwg_data.take(),
+            raw_dwg_handle_bits: a.raw_dwg_handle_bits,
+            raw_dwg_version: a.raw_dwg_version,
+        };
+        n += 1;
+    }
+    let arch_entities: Vec<Handle> = doc
+        .entities()
+        .filter_map(|e| match e {
+            EntityType::Extended(x) => match &x.data {
+                ExtendedEntityData::Arch(d) if d.raw_dwg_data.is_some() => Some(x.common.handle),
+                _ => None,
+            },
+            _ => None,
+        })
+        .collect();
+    for h in arch_entities {
+        let Some(e) = doc.get_entity_mut(h) else {
+            continue;
+        };
+        let EntityType::Extended(x) = e else { continue };
+        let ExtendedEntityData::Arch(d) = &mut x.data else {
+            continue;
+        };
+        let mut u = UnknownEntity::new(d.dxf_name.clone());
+        u.common = x.common.clone();
+        u.dwg_type_code = d.dwg_type_code;
+        u.dwg_handle_bits = d.dwg_handle_bits;
+        u.raw_dwg_data = d.raw_dwg_data.take();
+        u.raw_dxf_codes = d.raw_dxf_codes.take();
+        u.dwg_source_version = d.dwg_source_version;
+        *e = EntityType::Unknown(u);
+        n += 1;
+    }
+    n
+}
+
 /// Result of opening a DWG for study.
 pub struct Opened {
     pub doc: CadDocument,
@@ -127,23 +212,26 @@ pub struct Opened {
 }
 
 /// Open a DWG, falling back to acadrust's failsafe mode if a normal read
-/// fails (acadrust 0.6.5 cannot parse some 3DSOLID records).
+/// fails, and restore AEC/AECC records to raw form
+/// ([`restore_raw_records`]).
 pub fn open(path: impl AsRef<Path>) -> Result<Opened, acadrust::DxfError> {
     let path = path.as_ref();
-    match acadrust::DwgReader::from_file(path).and_then(|mut r| r.read()) {
-        Ok(doc) => Ok(Opened {
+    let mut opened = match acadrust::DwgReader::from_file(path).and_then(|mut r| r.read()) {
+        Ok(doc) => Opened {
             doc,
             failsafe_reason: None,
-        }),
+        },
         Err(e) => {
             let opts = acadrust::io::dwg::DwgReadOptions::failsafe();
             let doc = acadrust::DwgReader::from_file_with_options(path, opts)?.read()?;
-            Ok(Opened {
+            Opened {
                 doc,
                 failsafe_reason: Some(e.to_string()),
-            })
+            }
         }
-    }
+    };
+    restore_raw_records(&mut opened.doc);
+    Ok(opened)
 }
 
 /// Number of bits in `buf`.

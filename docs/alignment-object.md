@@ -8,7 +8,7 @@ change, and was re-saved by Civil 3D with civil3drust's geometry unchanged
 (S8, below).
 
 All offsets are **bit offsets into the record bytes as acadrust 0.6.5 stores
-them** (`raw::RawRecord::data`: the merged data/string/handle streams,
+them** (the same bytes under 0.6.7 after `raw::open`, D-033) (`raw::RawRecord::data`: the merged data/string/handle streams,
 without the size prefix and CRC). They are specific to each sample; what
 generalizes is the order and encoding of the sections, not the numbers.
 
@@ -1544,6 +1544,10 @@ parse. Reading falls back to failsafe mode and the solid is dropped, so a
 copy written by acadrust would lose it. S2 (a different, smaller drawing)
 does not have it. A lossless round trip of drawings from this template needs
 that acadrust issue fixed first.
+
+Update: acadrust 0.6.7 reads this solid; all seven affected samples (S1, S5,
+S6, S11, S12, S15, S89) now load without failsafe mode and keep it after a
+save (docs/acadrust-0.6.7.md).
 
 ## Provenance
 

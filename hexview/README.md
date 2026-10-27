@@ -46,8 +46,9 @@ DWG data is a bit stream, so field values inside a record are rarely
 byte-aligned; use the detail window's bit offsets rather than the ASCII
 column to find them.
 
-## Version pin
+## acadrust version
 
-The crate is pinned (via `Cargo.lock`) to the same acadrust version as
-civil3drust. acadrust 0.6.7 decodes `AEC_*` objects into its own types, so
-a newer acadrust would change which records show blue versus amber.
+hexview uses the same acadrust as civil3drust (0.6.7) and opens drawings
+with `civil3drust::raw::open`, which restores the records acadrust reads
+into its Architecture types (all `AEC*` classes, D-033) to raw records. So
+`AECC_*` records show red and `AEC_*` records amber, as under 0.6.5.

@@ -10,7 +10,7 @@ keywords = ["civil3d", "dwg", "cad", "alignment", "landxml"]
 categories = ["parser-implementations", "science"]
 
 [dependencies]
-acadrust = "0.6.5"
+acadrust = "0.6.7"
 
 [dev-dependencies]
 similar = "2"

@@ -24,9 +24,13 @@ samples and steps that produced it.
   used locally as a sanity check, described only generically in docs.
 
 ## Priorities
-- The acadrust 0.6.5 `3DSOLID` parsing problem (solids in
-  `PRESSUREPARTERRORBLOCK` dropped on save) is **extremely low priority**.
-  Don't work on it unless the owner asks; just keep warning about it.
+- acadrust is 0.6.7. It reads every `AEC*`/`AECC_*` class into its
+  Architecture types and re-encodes them on save; always open drawings with
+  `raw::open` (it restores raw records, D-033) and keep
+  `tests/acadrust_compat.rs` passing. Before bumping acadrust again, rerun
+  the `fingerprint` comparison in `docs/acadrust-0.6.7.md`.
+- 0.6.7 reads the `PRESSUREPARTERRORBLOCK` `3DSOLID` that 0.6.5 dropped;
+  no 0.6.7-written drawing has been opened in Civil 3D yet.
 - LandXML export is **low priority** for now.
 - Current focus: **creating alignments** in existing Civil 3D drawings
   (handle stream, style/label-set/site references, registration, adding
@@ -51,4 +55,5 @@ samples and steps that produced it.
 - `cargo run --release --example exp_bare -- donor.dwg base.dwg plain.dwg out.dwg [style-hex]` (experiments S67, S70)
 - `cargo run --release --example exp_criteria -- donor.dwg target.dwg out.dwg <check-set-hex>` (experiment S80)
 - `cd hexview && cargo run --release -- file.dwg [--goto <hex offset|#handle>]` (hex view with record overlay; `--dump file.dwg` for text)
+- `cargo run --release --example fingerprint -- file.dwg [roundtrip.dwg]` (raw-record hashes, for comparing acadrust versions)
 - Record map: `docs/alignment-map.md`

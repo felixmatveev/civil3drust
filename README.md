@@ -37,10 +37,12 @@ generated from a template (S17, 0,0 → 100,0 → 100,100 with an R = 50
 fillet) have also been produced; S17 opened with zero AUDIT errors and
 Civil 3D's LandXML export of it matches the intended geometry.
 
-Known limitation: acadrust 0.6.5 can't parse a `3DSOLID` in Civil 3D's
-internal `PRESSUREPARTERRORBLOCK`; reading falls back to failsafe mode and
-that solid is dropped on save. Civil 3D accepted the result, but a lossless
-round trip needs that fixed in acadrust.
+civil3drust uses acadrust 0.6.7. That version reads the `3DSOLID` in Civil
+3D's internal `PRESSUREPARTERRORBLOCK` that 0.6.5 dropped, so drawings from
+this template now round-trip without failsafe mode. It also reads every
+`AEC*` class, Civil 3D's included, into its Architecture types;
+`raw::open` turns those back into raw records so they are saved byte for
+byte (D-033, `docs/acadrust-0.6.7.md`).
 
 ## What's here now
 
