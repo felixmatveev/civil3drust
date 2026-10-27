@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Alignment style components named by view (Plan 0–7, Model 8–15,
+  Section 16; `aecc_style::component_name`, `component_index`);
+  `style_components` takes `plan:curve`-style names and groups the flags.
 - Sample S98: Civil 3D accepted all four element-edited alignments of S97
   (speeds editable); alignment style component 1 is the curve line.
 - Element edits in place (`aecc_element_edit`, D-036): `remove_element`

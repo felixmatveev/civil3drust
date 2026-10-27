@@ -568,9 +568,17 @@ results:
 | Layout | `11101111111000001` |
 | Offsets | `11100000000000000` |
 
-Component 0 is the line (S22). The others suggest 1–2 are curve and
-spiral, but only component 0 is confirmed; the names of the rest need one
-sample each.
+**Names (owner's screenshots of the Display tab, S98).** The 17 blocks
+are the three view directions in Civil 3D's order: **Plan** 0–7 — Line,
+Curve, Spiral, Arrow, Line Extensions, Curve Extensions, Tangent
+Extensions, Warning Symbol; **Model** 8–15 — the same eight; **Section**
+16 — Line Marker in Section (the longer last block). Confirmed bit by bit:
+0 (S21 → S22) and 1 (S97 → S98: plan Curve on; the screenshots show plan
+Line and Curve on, everything in Model and Section off = `11000000 00000000
+0`). Every style above reads sensibly this way, e.g. Basic = plan Line,
+Curve, Spiral, Warning Symbol + section marker; Proposed adds the line and
+curve extensions in plan and Line, Curve, Spiral in model; Offsets = plan
+Line, Curve, Spiral only.
 
 The default style of S2's and S24's template stores no name: its only
 strings are the created-by / modified-by pair (`raw::style_name` returns
@@ -1718,8 +1726,8 @@ same way):
 For style records: pairs saved from the **same** style edited in place
 (one property changed, Save As in between), so a bit diff isolates the
 property. Done: line visible (S21 → S22). Next: line colour, line layer,
-line linetype, then the curve and spiral components visible (to confirm
-components 1 and 2), each from the previous file.
+line linetype, then the spiral component visible (to confirm component 2;
+1 is confirmed by S98), each from the previous file.
 
 For styles (D-015): the owner creates **own** minimal styles in Civil 3D with
 *New* (not *Copy*), own names, generic values — e.g. alignment style
