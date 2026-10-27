@@ -1506,6 +1506,22 @@ save Civil 3D keeps the records as they are (no intervals added).
 
 ## Next samples
 
+**O6: adding and removing elements (current).** Each step is a Save As
+from the previous file in Civil 3D 2024, compared with `hexview --diff`:
+
+| Sample | From | Change in Civil 3D |
+|---|---|---|
+| S92 | S24 | generated: `Edit base` (FB3), 0,0 → 300,0 (R 80) → 300,−300 (R 80) → 600,−300; T1 A4 T2 A5 T3 |
+| S93 | S92 | opened (AUDIT), saved unchanged — the baseline |
+| S94 | S93 | first curve (A4) deleted |
+| S95 | S94 | free curve R 80 added back at that PI |
+| S96 | S95 | first tangent (T1) deleted |
+| S97 | S96 | floating curve added at the end, from the last tangent |
+
+Questions: new element IDs (reused or max + 1), the element-0 cache when
+element 0 goes, the ID-list block, the three strings per arc, and the
+floating-curve kind and parameters (open issue 2).
+
 For alignment creation (each a copy of S24 with one change, saved the
 same way):
 

@@ -103,6 +103,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S89 | `S89_O5_layout_tangents_curves.dwg` | Civil 3D 2024 | O5: alignment by layout tools in the S1–S19 template (3DSOLID: failsafe read): fixed tangent, fixed curve (3 points), floating tangent, free curve, tangent; speeds 0:60, 285.63:30 (on the curve). | 979503 | `e1945d49168d978b` |
 | S90 | `S90_S24_curve_speeds.dwg` | civil3drust | S24 + `Curve speed` (0:60 260:30), `Tangent speeds` (0:60 400:30), `Only curve speed` (260:40), each 0,y → 300,y (R 80) → 300,y−300; `create_alignment` + `set_speeds`. | 452303 | `a74e467d6b320427` |
 | S91 | `S91_S90_civ3d_resaved.dwg` | Civil 3D 2024 | S90 opened (no AUDIT errors, all speeds shown), saved. | 474086 | `94120d7106e31488` |
+| S92 | `S92_S24_created_two_curves.dwg` | civil3drust | O6 base: S24 + `Edit base` (FB3), 0,0 → 300,0 (R 80) → 300,−300 (R 80) → 600,−300, template S58 1089 (`create_alignment`). Elements T1 A4 T2 A5 T3. Start of the add/remove series (S93–S97). | 449923 | `686149058bfc1781` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

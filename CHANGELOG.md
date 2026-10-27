@@ -7,6 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Sample S92: base alignment for the O6 add/remove-elements series
+  (`docs/alignment-object.md`, *Next samples*).
 - hexview: comparison of two drawings (**Compare with…**, `--compare`,
   `--diff a.dwg b.dwg`). Records are matched by handle; changed records
   get a bit-level diff of the data stream (regions as bit ranges with
