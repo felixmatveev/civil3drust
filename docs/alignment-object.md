@@ -1540,6 +1540,18 @@ S93 plus the diff's regions (711 bytes, as Civil 3D wrote it) and decoded.
 - Graphics: T1's polyline and one attribute triple removed (348 → 252
   bytes); section-2 cache field rewritten; no element-ID list added.
 
+**In Civil 3D (owner, S94).** Alignment Properties shows the start
+station 2+20 and the 60 mph design speed still at 0+00, before the start.
+Editing that speed fails validation (“0+00.01 out of range — must be
+between 2+20.00 and 8+31.33”; 8+31.33 = 220 + 611.33 confirms the decoded
+length) and leaves Civil 3D unstable; left alone, the drawing works.
+So the stale speed and interval are a Civil 3D inconsistency, not a form
+to copy: when civil3drust removes elements it should move speeds that
+fall before the new start onto the start and rebuild the intervals
+(`set_design_speeds` already writes them from the geometry). The record
+rebuilt from S93 + the diff is byte-identical to S94's (test
+`s94_first_tangent_deleted`).
+
 **Decoder.** `aecc_elements` now chooses the arc layout by `n2` (29
 free, 15 floating with start point, 2 three-point), no longer by `p1`
 (S94's free arc A5 with `p1` 60 would have been read as a three-point

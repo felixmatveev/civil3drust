@@ -105,6 +105,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S91 | `S91_S90_civ3d_resaved.dwg` | Civil 3D 2024 | S90 opened (no AUDIT errors, all speeds shown), saved. | 474086 | `94120d7106e31488` |
 | S92 | `S92_S24_created_two_curves.dwg` | civil3drust | O6 base: S24 + `Edit base` (FB3), 0,0 → 300,0 (R 80) → 300,−300 (R 80) → 600,−300, template S58 1089 (`create_alignment`). Elements T1 A4 T2 A5 T3. Start of the add/remove series (S93–S97). | 449923 | `686149058bfc1781` |
 | S93 | `S93_S92_civ3d_resaved.dwg` | Civil 3D 2024 | O6 baseline: S92 opened (AUDIT), saved unchanged. | 473949 | `41b2d0bf88313fd6` |
+| S94 | `S94_S93_first_tangent_deleted.dwg` | Civil 3D 2024 | O6: S93 with the first tangent (T1) of `Edit base` deleted, saved. | 475718 | `a5f34d5149e23ac1` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

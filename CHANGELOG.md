@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Sample S94 (first tangent deleted in Civil 3D) with tests
+  `tests/edit_samples.rs` (floating curve, kept IDs and stations, `p1` as
+  the curve's design speed).
 - Floating curves (arc constraint code 15, S94): start point and radius,
   ending tangent to the next element (`ArcDef::Floating`,
   `curve_into_line`). Example `scan_elements` decodes a raw record dump.
