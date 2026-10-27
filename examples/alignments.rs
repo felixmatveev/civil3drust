@@ -66,6 +66,7 @@ fn main() {
                         Element::Arc(a) => match a.def {
                             ArcDef::ThreePoint { .. } => "by 3 points",
                             ArcDef::Free { .. } => "free, by radius",
+                            ArcDef::Floating { .. } => "floating, start point and radius",
                         },
                         Element::Tangent(_) => "?",
                     };

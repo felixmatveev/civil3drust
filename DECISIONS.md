@@ -618,3 +618,23 @@ button, with each region tied to the decoded field before it.
 records of 10⁴–10⁵ bits and fragmented on random-looking data (tried
 earlier, see O1 notes). A byte-level diff: simple, but misaligned after the
 first shift.
+
+## D-035: Arc layout by constraint code; floating curves take the short way
+
+**Context.** S94 (first tangent deleted in Civil 3D) turned the free curve
+after it into a floating curve: constraint code `n2` 15, radius, start
+point, ending tangent to the next element. The same edit set `p1` to 60
+on both arcs, and the decoder used `p1 == 60` to mean "three points", so
+a free arc with a design speed was misread. S89 shows `p1` is the design
+speed at the curve (60, then 30 after a speed change).
+
+**Decision.** The arc record layout is chosen by `n2` alone (29 free,
+15 floating with start point, 2 three-point; other codes: try free, then
+three-point). A floating curve is resolved from its start point, radius
+and the next tangent's line; the record stores no turning direction, so
+of the candidate curves the one with the smallest central angle is used.
+
+**Alternatives.** Keep `p1` as a hint: wrong as soon as any curve has a
+design speed. Store or guess the direction from the old geometry: no
+such field was found in S94's record (n1, p2, p3 are unchanged from the
+free form), and the short curve is the one Civil 3D displays.

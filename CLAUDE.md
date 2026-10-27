@@ -57,4 +57,5 @@ samples and steps that produced it.
 - `cd hexview && cargo run --release -- file.dwg [--goto <hex offset|#handle>] [--compare other.dwg]` (hex view with record overlay; `--dump file.dwg` for text)
 - `cd hexview && cargo run --release -- --diff a.dwg b.dwg [--show civil,opaque,unmapped,acad|all] [--filter text]` (record-by-record bit diff of two drawings)
 - `cargo run --release --example fingerprint -- file.dwg [roundtrip.dwg]` (raw-record hashes, for comparing acadrust versions)
+- `cargo run --release --example scan_elements -- record.bin [handle bits]` (decode a raw `AECC_ALIGNMENT` record dump)
 - Record map: `docs/alignment-map.md`

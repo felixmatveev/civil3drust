@@ -60,7 +60,24 @@ pub enum ArcDef {
     /// Only the radius (a BD at `radius_bit`); placed between the
     /// neighbouring tangents.
     Free { radius_bit: usize, radius: f64 },
+    /// Constraint code 15 (S94): the radius (BD at `radius_bit`) and the
+    /// start point (two raw doubles at `start_bit`); the curve ends tangent
+    /// to the next element. Seen when the tangent before a free curve was
+    /// deleted in Civil 3D.
+    Floating {
+        radius_bit: usize,
+        radius: f64,
+        start_bit: usize,
+        start: Point2,
+    },
 }
+
+/// Arc constraint codes (the BL `n2` in [`ArcParams`]), from samples.
+pub const ARC_THREE_POINT: i32 = 2;
+/// A free curve between two tangents (fillet).
+pub const ARC_FREE: i32 = 29;
+/// A curve with a fixed start point, tangent to the next element (S94).
+pub const ARC_FLOATING_START: i32 = 15;
 
 /// One arc element record.
 #[derive(Debug, Clone, PartialEq)]
@@ -156,6 +173,66 @@ pub fn fillet(
             length: radius * delta,
         },
     ))
+}
+
+/// A curve of radius `radius` from `start` that ends tangent to the line
+/// through `on_line` with direction `dir`, travelling along `dir`: returns
+/// (start, tangent point, geometry). Of the possible curves the one with
+/// the smallest central angle is taken (the record stores no direction;
+/// S94 has one candidate of 90° and one of 270°).
+pub fn curve_into_line(
+    start: Point2,
+    dir: (f64, f64),
+    on_line: Point2,
+    radius: f64,
+) -> Option<(Point2, Point2, ArcGeometry)> {
+    let l = dir.0.hypot(dir.1);
+    if l.is_nan() || l <= 0.0 || radius.is_nan() || radius <= 0.0 {
+        return None;
+    }
+    let u = (dir.0 / l, dir.1 / l);
+    let n = (-u.1, u.0); // left normal
+    let tau = std::f64::consts::TAU;
+    let mut best: Option<(Point2, Point2, ArcGeometry)> = None;
+    for side in [1.0, -1.0] {
+        // Centre on the line shifted by side·R along n, at distance R from start.
+        let o = Point2::new(
+            on_line.x + side * radius * n.0,
+            on_line.y + side * radius * n.1,
+        );
+        let t0 = (start.x - o.x) * u.0 + (start.y - o.y) * u.1;
+        let foot = Point2::new(o.x + t0 * u.0, o.y + t0 * u.1);
+        let h2 = radius * radius - foot.distance_to(start).powi(2);
+        if h2 < -1e-9 * radius * radius {
+            continue;
+        }
+        let h = h2.max(0.0).sqrt();
+        for sgn in [1.0, -1.0] {
+            let c = Point2::new(foot.x + sgn * h * u.0, foot.y + sgn * h * u.1);
+            let tp = Point2::new(c.x - side * radius * n.0, c.y - side * radius * n.1);
+            let ccw = side > 0.0; // centre left of the travel direction
+            let ang = |p: Point2| (p.y - c.y).atan2(p.x - c.x);
+            let sweep = if ccw {
+                (ang(tp) - ang(start)).rem_euclid(tau)
+            } else {
+                (ang(start) - ang(tp)).rem_euclid(tau)
+            };
+            if sweep <= 1e-12 {
+                continue;
+            }
+            let g = ArcGeometry {
+                center: c,
+                radius,
+                counter_clockwise: ccw,
+                sweep,
+                length: radius * sweep,
+            };
+            if best.is_none_or(|(_, _, b)| sweep < b.sweep) {
+                best = Some((start, tp, g));
+            }
+        }
+    }
+    best
 }
 
 /// A decoded element record of either kind.
@@ -260,12 +337,31 @@ fn arc_at(data: &[u8], bit: usize) -> Option<ArcRecord> {
             k2,
         ))
     };
-    let (def, end_bit) = if n2 == 29 || p1 == -1.0 {
-        free()?
-    } else if n2 == 2 || p1 == 60.0 {
-        three_point()?
-    } else {
-        free().or_else(three_point)?
+    let floating = || -> Option<(ArcDef, usize)> {
+        let (ArcDef::Free { radius_bit, radius }, k2) = free()? else {
+            return None;
+        };
+        if k2 + 128 > raw::bit_len(data) {
+            return None;
+        }
+        let start = Point2::new(raw::get_f64(data, k2), raw::get_f64(data, k2 + 64));
+        (start.x.is_finite() && start.y.is_finite()).then_some((
+            ArcDef::Floating {
+                radius_bit,
+                radius,
+                start_bit: k2,
+                start,
+            },
+            k2 + 128,
+        ))
+    };
+    // The layout follows the constraint code n2. p1 is not a layout
+    // marker: it is −1 or the design speed at the curve (S89, S94).
+    let (def, end_bit) = match n2 {
+        ARC_FREE => free()?,
+        ARC_FLOATING_START => floating()?,
+        ARC_THREE_POINT => three_point()?,
+        _ => free().or_else(three_point)?,
     };
     Some(ArcRecord {
         header_bit: bit,
@@ -384,6 +480,26 @@ pub fn resolve(chain: &[Element]) -> Result<Vec<ResolvedElement>, DecodeError> {
             .ok_or_else(|| unsupported(format!("free arc {id} has no valid fillet")))?;
             free[i] = Some(f);
         }
+        if let Element::Arc(ArcRecord {
+            def: ArcDef::Floating { radius, start, .. },
+            id,
+            ..
+        }) = e
+        {
+            let Some(Element::Tangent(b)) = chain.get(i + 1) else {
+                return Err(unsupported(format!(
+                    "floating arc {id} is not followed by a tangent"
+                )));
+            };
+            let f = curve_into_line(
+                *start,
+                (b.end.x - b.start.x, b.end.y - b.start.y),
+                b.start,
+                *radius,
+            )
+            .ok_or_else(|| unsupported(format!("floating arc {id} cannot reach its tangent")))?;
+            free[i] = Some(f);
+        }
     }
     let mut out = Vec::with_capacity(chain.len());
     for (i, e) in chain.iter().enumerate() {
@@ -409,7 +525,7 @@ pub fn resolve(chain: &[Element]) -> Result<Vec<ResolvedElement>, DecodeError> {
                     geometry: arc_through(start, mid, end)
                         .ok_or_else(|| unsupported(format!("arc {} is degenerate", a.id)))?,
                 },
-                ArcDef::Free { .. } => {
+                ArcDef::Free { .. } | ArcDef::Floating { .. } => {
                     let (pc, pt, g) = free[i].expect("resolved above");
                     Segment::Arc {
                         start: pc,
@@ -453,7 +569,7 @@ pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> 
             Element::Tangent(t) => Some(t.end),
             Element::Arc(a) => match a.def {
                 ArcDef::ThreePoint { end, .. } => Some(end),
-                ArcDef::Free { .. } => None,
+                ArcDef::Free { .. } | ArcDef::Floating { .. } => None,
             },
         };
         if let Element::Tangent(t) = &mut chained[i] {
@@ -476,7 +592,10 @@ pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> 
             });
         }
     }
-    let stored_start_station = aecc_alignment::start_station(&rec.data, chained[0].header_bit());
+    // The station precedes the first record in storage order, which is
+    // not the first in the chain once element 1 is deleted (S94).
+    let first_stored = chained.iter().map(Element::header_bit).min().unwrap_or(0);
+    let stored_start_station = aecc_alignment::start_station(&rec.data, first_stored);
     Ok(DecodedElements {
         handle: rec.handle,
         name: aecc_alignment::record_name(&rec.data),
@@ -708,5 +827,22 @@ mod tests {
         let (pc, _pt, g) = fillet(Point2::new(100.0, 0.0), (1.0, 0.0), (1.0, -1.0), 10.0).unwrap();
         assert!(!g.counter_clockwise);
         assert!(g.center.distance_to(Point2::new(pc.x, -10.0)) < 1e-9);
+    }
+
+    #[test]
+    fn floating_curve_into_line_takes_the_short_way_s94() {
+        // S94: start (220, 0), R 80, ending tangent to x = 300 heading −y.
+        let (s, t, g) = curve_into_line(
+            Point2::new(220.0, 0.0),
+            (0.0, -300.0),
+            Point2::new(300.0, 0.0),
+            80.0,
+        )
+        .unwrap();
+        assert_eq!(s, Point2::new(220.0, 0.0));
+        assert!(t.distance_to(Point2::new(300.0, -80.0)) < 1e-9);
+        assert!(g.center.distance_to(Point2::new(220.0, -80.0)) < 1e-9);
+        assert!(!g.counter_clockwise);
+        assert!((g.sweep - std::f64::consts::FRAC_PI_2).abs() < 1e-12);
     }
 }

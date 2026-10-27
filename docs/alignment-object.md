@@ -1501,6 +1501,53 @@ ten differing regions, all explained:
 So S93 is a clean baseline: the edits S94–S97 are compared with S93, not
 S92.
 
+**S94: first tangent deleted.** S93 with the first element (T1,
+0,0 → 220,0) deleted in Civil 3D. (The plan was to delete the first
+curve; T1 went instead, which is step S96 of the plan done early.) Read
+from `hexview --diff S93 S94 --filter FB3`: the record was rebuilt from
+S93 plus the diff's regions (711 bytes, as Civil 3D wrote it) and decoded.
+826 → 711 bytes:
+
+- **The record is removed, nothing is renumbered.** Element count BL
+  5 → 4; T1's record is gone; the others keep their IDs (2, 3, 4, 5) and
+  storage order (T2 T3 A4 A5), so the first stored record is no longer
+  the first in the chain and ID 1 is simply unused.
+- **Only the neighbour's link changes**: A4 before 1 → 0.
+- **The orphaned free curve becomes a floating curve.** A4's constraint
+  code `n2` goes 29 → 15 and the record grows by two raw doubles after the
+  radius BD: the curve's **start point** (220.00000000000003,
+  2.842e−14 — its old PC). Code 15 = fixed start point + radius, ending
+  tangent to the next element. The record stores no direction; of the two
+  possible curves (90° clockwise and 270°) civil3drust takes the shorter
+  (`curve_into_line`), which is the one Civil 3D shows.
+- **`p1` is the design speed at the curve, not a layout marker.** It
+  went −1 → 60 on both arcs (the alignment's 60 mph). S89 confirms:
+  curve 2 has 60 (speed 60 from 0+00), curve 5 has **30** (after the
+  30 mph change at 2+85.63); S10's 60 is its template's default speed.
+  −1 = not computed (curves made from a polyline, S11–S93); Civil 3D
+  fills it in when it re-solves the curves after an edit.
+- **Stationing is kept.** The start station becomes 220.00000000000003
+  (`00` + raw double, 20 bits before the end of section 2), so the
+  remaining elements keep their stations (the new start is 2+20). Five
+  bits before that BD differ as well (`00110` → `10010`; not decoded).
+- **Interval block**: both GUID copies (interval and speed entry) get new
+  values, but the interval itself is left stale — station 0, length to
+  the element end 220, next element 4, points (0, 0) → (220, 0): it still
+  describes the deleted tangent.
+- The 16 bits `1010100100000001` before GUID copy 1 are the interval
+  block's own header: `BL 0, BL 0, BL 0, BL n` with n = 1 (open issue 6
+  answered; already listed as the block's first fields).
+- Graphics: T1's polyline and one attribute triple removed (348 → 252
+  bytes); section-2 cache field rewritten; no element-ID list added.
+
+**Decoder.** `aecc_elements` now chooses the arc layout by `n2` (29
+free, 15 floating with start point, 2 three-point), no longer by `p1`
+(S94's free arc A5 with `p1` 60 would have been read as a three-point
+arc), resolves floating curves (`ArcDef::Floating`, `curve_into_line`),
+and reads the start station before the first record in **storage**
+order. S94's `Edit base` decodes as A4 (floating) T2 A5 T3, 611.33 long,
+start station 220.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
@@ -1543,9 +1590,9 @@ from the previous file in Civil 3D 2024, compared with `hexview --diff`:
 |---|---|---|
 | S92 | S24 | generated: `Edit base` (FB3), 0,0 → 300,0 (R 80) → 300,−300 (R 80) → 600,−300; T1 A4 T2 A5 T3 |
 | S93 | S92 | opened (AUDIT), saved unchanged — the baseline |
-| S94 | S93 | first curve (A4) deleted |
-| S95 | S94 | free curve R 80 added back at that PI |
-| S96 | S95 | first tangent (T1) deleted |
+| S94 | S93 | first tangent (T1) deleted — done |
+| S95 | S94 | second curve (A5, between the vertical tangent and the last one) deleted |
+| S96 | S95 | free curve R 80 added back at that PI |
 | S97 | S96 | floating curve added at the end, from the last tangent |
 
 Questions: new element IDs (reused or max + 1), the element-0 cache when

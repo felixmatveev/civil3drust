@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Floating curves (arc constraint code 15, S94): start point and radius,
+  ending tangent to the next element (`ArcDef::Floating`,
+  `curve_into_line`). Example `scan_elements` decodes a raw record dump.
 - Sample S92: base alignment for the O6 add/remove-elements series
   (`docs/alignment-object.md`, *Next samples*).
 - Sample S93 (Civil 3D re-save of S92) and its findings: element records
@@ -29,6 +32,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   results (docs/acadrust-0.6.7.md).
 
 ### Fixed
+- Arc records are read by their constraint code instead of `p1`, which is
+  the design speed at the curve (a free arc with a speed was misread).
+- The start station is read before the first record in storage order
+  (wrong once the first element is deleted).
 - The `3DSOLID` in `PRESSUREPARTERRORBLOCK` (S1, S5, S6, S11, S12, S15,
   S89) is read and kept on save; those drawings no longer need failsafe
   mode (acadrust 0.6.7).
