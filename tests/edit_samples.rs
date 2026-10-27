@@ -77,3 +77,48 @@ fn p1_is_the_design_speed_at_the_curve_s89() {
     // 60 mph from 0+00, 30 mph from 2+85.63 (on curve 2, before curve 5).
     assert_eq!(p1, [(2, 60.0), (5, 30.0)]);
 }
+
+fn chain(path: &str) -> Vec<(i32, i32, i32)> {
+    let d = decode_elements(&edit_base(path)).unwrap();
+    d.elements
+        .iter()
+        .map(|e| match &e.record {
+            Element::Tangent(t) => (t.id, t.before, t.after),
+            Element::Arc(a) => (a.id, a.before, a.after),
+        })
+        .collect()
+}
+
+#[test]
+fn s95_curve_between_tangents_deleted() {
+    assert_eq!(
+        chain("samples/S95_S94_second_curve_deleted.dwg"),
+        [(4, 0, 2), (2, 4, 3), (3, 2, 0)]
+    );
+    let d = decode_elements(&edit_base("samples/S95_S94_second_curve_deleted.dwg")).unwrap();
+    assert!((d.length() - 645.6637).abs() < 1e-3);
+}
+
+#[test]
+fn s96_curve_added_back_gets_id_5_and_is_stored_last() {
+    let r = edit_base("samples/S96_S95_curve_added.dwg");
+    assert_eq!(
+        chain("samples/S96_S95_curve_added.dwg"),
+        [(4, 0, 2), (2, 4, 5), (5, 2, 3), (3, 5, 0)]
+    );
+    let stored: Vec<i32> = civil3drust::aecc_elements::element_records(&r.data)
+        .iter()
+        .map(|e| match e {
+            Element::Tangent(t) => t.id,
+            Element::Arc(a) => a.id,
+        })
+        .collect();
+    assert_eq!(stored, [2, 3, 4, 5]);
+    let d = decode_elements(&r).unwrap();
+    let Element::Arc(a5) = &d.elements[2].record else {
+        panic!()
+    };
+    assert!(!a5.flag);
+    assert_eq!(a5.params.p1, -1.0);
+    assert!((d.length() - 611.3274).abs() < 1e-3);
+}

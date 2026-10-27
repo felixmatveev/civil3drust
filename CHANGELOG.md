@@ -7,6 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Samples S95 (curve between tangents deleted) and S96 (free curve added
+  back) with tests; element-edit rules in `docs/alignment-object.md`.
 - `tools/rebuild_from_report.py`: rebuild drawing B's record from A's
   record and a hexview diff report.
 - Sample S94 (first tangent deleted in Civil 3D) with tests

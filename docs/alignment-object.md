@@ -1580,6 +1580,34 @@ So removing an element is: drop its record and its strings, relink the
 neighbours, fix the count — exactly the reverse of what `set_geometry`
 writes for a fillet.
 
+The record rebuilt from the report matches S95's except for the 288
+graphics bits the old report cut off (bytes 168–199).
+
+**S96: free curve added back.** S95 with a free curve R 80 added at the
+PI (300, −300). The record is S94's again apart from:
+
+- the new curve gets **ID 5** and is stored **last** (T2 T3 A4 A5), its
+  neighbours relinked to it (T2 after 3 → 5, T3 before 2 → 5), count
+  3 → 4, three empty strings back (15 → 18). ID 5 is both the deleted
+  ID and the highest existing ID + 1 (IDs 2, 3, 4), so the sample can't
+  tell those apart; it is not the lowest free ID (1).
+- the new arc has flag bit 0 and `p1` −1, as Civil 3D's own fillets
+  made from a polyline (S11): flag and design speed are filled in only
+  when Civil 3D re-solves the curve (S93, S94).
+- graphics regenerated (416 bytes, 11 chunks; derived).
+- **the section-2 66-bit field equals S94's** bit for bit, although it
+  changed in S94 → S95: it is computed from the geometry, not a random or
+  per-save value (consistent with open question 12, S12 = S14).
+
+**Rules for element edits** (S94–S96): keep every other record and its
+ID; the storage order is creation order (new records go last); a new
+element takes an unused ID (highest + 1 is safe); relink the neighbours;
+element count and string count (3 per arc) follow; a free curve that
+loses a tangent becomes a floating curve (code 15) with its old PC as
+start point; deleting the first element keeps stationing (start station
+= old station of the new start). Civil 3D leaves the design-speed
+interval stale; civil3drust should rebuild it.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
@@ -1623,8 +1651,8 @@ from the previous file in Civil 3D 2024, compared with `hexview --diff`:
 | S92 | S24 | generated: `Edit base` (FB3), 0,0 → 300,0 (R 80) → 300,−300 (R 80) → 600,−300; T1 A4 T2 A5 T3 |
 | S93 | S92 | opened (AUDIT), saved unchanged — the baseline |
 | S94 | S93 | first tangent (T1) deleted — done |
-| S95 | S94 | second curve (A5, between the vertical tangent and the last one) deleted |
-| S96 | S95 | free curve R 80 added back at that PI |
+| S95 | S94 | second curve (A5) deleted — done |
+| S96 | S95 | free curve R 80 added back at that PI — done |
 | S97 | S96 | floating curve added at the end, from the last tangent |
 
 Questions: new element IDs (reused or max + 1), the element-0 cache when
