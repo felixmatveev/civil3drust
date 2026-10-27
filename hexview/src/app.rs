@@ -1,6 +1,7 @@
 //! The window: offset | hex | decoded columns, a record list, an inspector
 //! and per-record detail windows.
 
+use crate::compare::{self, Comparison, Kind};
 use crate::model::{self, Loaded, Origin, Pane, Span};
 use eframe::egui::{self, Align2, Color32, FontId, Pos2, Rect, Sense, Stroke, Vec2};
 use std::collections::HashMap;
@@ -8,7 +9,11 @@ use std::sync::mpsc::{channel, Receiver};
 
 const ROW: usize = 16;
 
-pub fn run(path: Option<String>, goto: Option<String>) -> eframe::Result {
+pub fn run(
+    path: Option<String>,
+    goto: Option<String>,
+    compare_with: Option<String>,
+) -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("civil3drust hexview")
@@ -25,6 +30,9 @@ pub fn run(path: Option<String>, goto: Option<String>) -> eframe::Result {
                 app.open(p);
             }
             app.pending_goto = goto;
+            if let Some(b) = compare_with {
+                app.open_compare(b);
+            }
             Ok(Box::new(app))
         }),
     )
@@ -67,6 +75,51 @@ struct App {
     actions: Vec<Action>,
     /// `--goto` from the command line, applied once the file is loaded.
     pending_goto: Option<String>,
+    cmp: CompareState,
+}
+
+/// The second drawing and its comparison with the first.
+struct CompareState {
+    other: Option<Loaded>,
+    loading: Option<(String, Receiver<Result<Loaded, String>>)>,
+    result: Option<Comparison>,
+    report: String,
+    /// Origins listed in the report: acadrust, civil3drust, opaque, unmapped.
+    show: [bool; 4],
+    /// Class / name / handle filter for the list and report.
+    filter: String,
+    dirty: bool,
+    open: bool,
+    copied: bool,
+    error: Option<String>,
+}
+
+impl Default for CompareState {
+    fn default() -> Self {
+        CompareState {
+            other: None,
+            loading: None,
+            result: None,
+            report: String::new(),
+            show: [false, true, true, true],
+            filter: String::new(),
+            dirty: false,
+            open: false,
+            copied: false,
+            error: None,
+        }
+    }
+}
+
+const ORIGINS: [(Origin, &str); 4] = [
+    (Origin::Acad, "acadrust"),
+    (Origin::Civil, "civil3drust"),
+    (Origin::Opaque, "opaque"),
+    (Origin::Unmapped, "unmapped"),
+];
+
+fn origin_index(o: Origin) -> usize {
+    ORIGINS.iter().position(|(x, _)| *x == o).unwrap_or(0)
 }
 
 impl App {
@@ -80,6 +133,57 @@ impl App {
         self.error = None;
     }
 
+    fn open_compare(&mut self, path: String) {
+        let (tx, rx) = channel();
+        let p = path.clone();
+        std::thread::spawn(move || {
+            let _ = tx.send(model::load(&p));
+        });
+        self.cmp.loading = Some((path, rx));
+        self.cmp.error = None;
+        self.cmp.open = true;
+    }
+
+    fn poll_compare(&mut self, ctx: &egui::Context) {
+        if let Some((path, rx)) = &self.cmp.loading {
+            match rx.try_recv() {
+                Ok(Ok(l)) => {
+                    self.cmp.other = Some(l);
+                    self.cmp.loading = None;
+                    self.cmp.result = None;
+                }
+                Ok(Err(e)) => {
+                    self.cmp.error = Some(format!("{path}: {e}"));
+                    self.cmp.loading = None;
+                }
+                Err(std::sync::mpsc::TryRecvError::Empty) => ctx.request_repaint(),
+                Err(_) => {
+                    self.cmp.error = Some(format!("{path}: loader stopped"));
+                    self.cmp.loading = None;
+                }
+            }
+        }
+        if let (Some(a), Some(b)) = (&self.loaded, &self.cmp.other) {
+            if self.cmp.result.is_none() {
+                self.cmp.result = Some(compare::compare(a, b));
+                self.cmp.dirty = true;
+            }
+            if self.cmp.dirty {
+                let show = self.cmp.show;
+                let c = self.cmp.result.as_ref().unwrap();
+                self.cmp.report = compare::report(
+                    c,
+                    a,
+                    b,
+                    &|o: Origin| show[origin_index(o)],
+                    &self.cmp.filter,
+                );
+                self.cmp.dirty = false;
+                self.cmp.copied = false;
+            }
+        }
+    }
+
     fn poll(&mut self, ctx: &egui::Context) {
         let Some((path, rx)) = &self.loading else {
             return;
@@ -87,6 +191,7 @@ impl App {
         match rx.try_recv() {
             Ok(Ok(l)) => {
                 self.loaded = Some(l);
+                self.cmp.result = None;
                 self.pane = 0;
                 self.cursor = None;
                 self.selected = None;
@@ -165,6 +270,23 @@ impl App {
                 {
                     self.open(p.display().to_string());
                 }
+            }
+            if self.loaded.is_some()
+                && ui
+                    .button("Compare with…")
+                    .on_hover_text("Open a second drawing and list the records that differ")
+                    .clicked()
+            {
+                if let Some(p) = rfd::FileDialog::new()
+                    .add_filter("Drawing", &["dwg", "DWG"])
+                    .add_filter("Any", &["*"])
+                    .pick_file()
+                {
+                    self.open_compare(p.display().to_string());
+                }
+            }
+            if self.cmp.other.is_some() && !self.cmp.open && ui.button("Comparison").clicked() {
+                self.cmp.open = true;
             }
             if let Some(l) = &self.loaded {
                 ui.label(format!("{}  [{}]", l.path, l.version));
@@ -518,6 +640,131 @@ impl App {
         self.actions.extend(acts);
     }
 
+    fn compare_window(&mut self, ctx: &egui::Context) {
+        if !self.cmp.open {
+            return;
+        }
+        let dark = ctx.global_style().visuals.dark_mode;
+        let mut open = true;
+        let mut acts = Vec::new();
+        let mut copy = None;
+        egui::Window::new("Comparison")
+            .id(egui::Id::NULL.with("compare-window"))
+            .open(&mut open)
+            .default_size([760.0, 620.0])
+            .resizable(true)
+            .show(ctx, |ui| {
+                if let Some((p, _)) = &self.cmp.loading {
+                    ui.horizontal(|ui| {
+                        ui.spinner();
+                        ui.label(format!("loading {p}"));
+                    });
+                }
+                if let Some(e) = &self.cmp.error {
+                    ui.colored_label(Color32::RED, e);
+                }
+                let Some(c) = &self.cmp.result else {
+                    return;
+                };
+                ui.label(format!("A: {}", c.a_title));
+                ui.label(format!("B: {}", c.b_title));
+                ui.horizontal_wrapped(|ui| {
+                    ui.label("List:");
+                    for (i, (o, name)) in ORIGINS.iter().enumerate() {
+                        let n = c.entries.iter().filter(|e| e.origin == *o).count();
+                        let text =
+                            egui::RichText::new(format!("{name} ({n})")).color(color(*o, dark));
+                        if ui.checkbox(&mut self.cmp.show[i], text).changed() {
+                            self.cmp.dirty = true;
+                        }
+                    }
+                    ui.separator();
+                    let r = ui.add(
+                        egui::TextEdit::singleline(&mut self.cmp.filter)
+                            .desired_width(160.0)
+                            .hint_text("class / name / #handle"),
+                    );
+                    if r.changed() {
+                        self.cmp.dirty = true;
+                    }
+                    ui.separator();
+                    ui.label(format!("{} identical", c.same));
+                    ui.separator();
+                    if ui
+                        .button("📋 Copy")
+                        .on_hover_text("Copy the report below to the clipboard")
+                        .clicked()
+                    {
+                        copy = Some(self.cmp.report.clone());
+                    }
+                    if self.cmp.copied {
+                        ui.weak(format!("copied {} characters", self.cmp.report.len()));
+                    }
+                });
+                ui.separator();
+                // Record list: click to show the record in A (or B's handle).
+                let show = self.cmp.show;
+                let filter = self.cmp.filter.clone();
+                let listed: Vec<&compare::Entry> = c
+                    .entries
+                    .iter()
+                    .filter(|e| show[origin_index(e.origin)] && compare::matches(e, &filter))
+                    .collect();
+                egui::ScrollArea::vertical()
+                    .id_salt("cmp-list")
+                    .max_height(160.0)
+                    .auto_shrink([false, true])
+                    .show(ui, |ui| {
+                        for e in listed {
+                            let tag = match e.kind {
+                                Kind::Changed => "~",
+                                Kind::OnlyA => "−A",
+                                Kind::OnlyB => "+B",
+                            };
+                            let text = egui::RichText::new(format!(
+                                "{tag:>2} #{:<6X} {}",
+                                e.handle, e.label
+                            ))
+                            .monospace()
+                            .color(color(e.origin, dark));
+                            let r = ui.selectable_label(false, text);
+                            if r.clicked() && e.a.is_some() {
+                                acts.push(Action::Handle(e.handle));
+                            }
+                            if e.a.is_none() {
+                                r.on_hover_text(
+                                    "only in B: not shown in the hex view (it shows A)",
+                                );
+                            }
+                        }
+                    });
+                ui.separator();
+                egui::ScrollArea::both()
+                    .id_salt("cmp-report")
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
+                        ui.add(
+                            egui::Label::new(
+                                egui::RichText::new(self.cmp.report.as_str()).monospace(),
+                            )
+                            .selectable(true),
+                        );
+                    });
+            });
+        if let Some(t) = copy {
+            ctx.copy_text(t);
+            self.cmp.copied = true;
+        }
+        self.cmp.open = open;
+        if !acts.is_empty() {
+            // Records are matched in the objects pane of A.
+            if let Some(p) = self.cmp.result.as_ref().and_then(|c| c.a_pane) {
+                self.pane = p;
+            }
+            self.actions.extend(acts);
+        }
+    }
+
     fn detail_windows(&mut self, ctx: &egui::Context) {
         let Some(l) = &self.loaded else { return };
         let dark = ctx.global_style().visuals.dark_mode;
@@ -670,6 +917,7 @@ impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
         self.poll(&ctx);
+        self.poll_compare(&ctx);
         if let Some(p) = ctx.input(|i| i.raw.dropped_files.first().map(|f| f.path().to_path_buf()))
         {
             self.open(p.display().to_string());
@@ -703,6 +951,7 @@ impl eframe::App for App {
         }
         egui::CentralPanel::default().show(ui, |ui| self.hex_view(ui));
         self.detail_windows(&ctx);
+        self.compare_window(&ctx);
         self.apply_actions();
     }
 }

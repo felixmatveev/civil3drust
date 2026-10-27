@@ -6,6 +6,15 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- hexview: comparison of two drawings (**Compare with…**, `--compare`,
+  `--diff a.dwg b.dwg`). Records are matched by handle; changed records
+  get a bit-level diff of the data stream (regions as bit ranges with
+  their bits and the decoded field before them), a separate handle-stream
+  comparison and the decoded fields whose values changed. Filters by kind
+  and by class/name/handle; a Copy button puts the report on the
+  clipboard (D-034).
+
 ### Changed
 - acadrust 0.6.5 → 0.6.7 (library, viewer, hexview). 0.6.7 reads every
   `AEC*` class, all `AECC_*` included, into its Architecture types and

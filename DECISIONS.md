@@ -597,3 +597,24 @@ Architecture re-encoder, which has never been checked against Civil 3D.
 Ask acadrust to exclude `AECC_` from its prefix test: worth reporting, but
 the conversion is needed meanwhile and keeps working afterwards.
 
+
+## D-034: hexview compares records with a recursive bit diff
+
+**Context.** The owner wants to compare two drawings in hexview and paste
+the differences into a conversation. DWG record data is a bit stream:
+when a field grows (a string, a bit-coded double going from 2 to 66 bits)
+everything after it shifts by a non-byte amount, so a byte diff or a
+position-by-position bit diff reports the whole rest of the record as
+changed.
+
+**Decision.** Records are matched by handle. Changed records are diffed at
+bit level: common prefix and suffix removed, then the longest common run
+of ≥ 64 bits (found through 64-bit keys) splits the window, recursively.
+The data stream and the handle stream are compared separately, and decoded
+fields are compared by value. The report is plain text, copied with one
+button, with each region tied to the decoded field before it.
+
+**Alternatives.** A full LCS/Myers diff over bits: exact but quadratic for
+records of 10⁴–10⁵ bits and fragmented on random-looking data (tried
+earlier, see O1 notes). A byte-level diff: simple, but misaligned after the
+first shift.
