@@ -1642,6 +1642,17 @@ without the element it is tangent to (no sample of the resulting form).
 S97 = S24 + four alignments edited this way (`Remove first` with speeds
 0:60 300:40, `Remove curve`, `Add curve`, `Chain` = S94–S96 replayed).
 
+**Result (S98).** The owner opened S97, ran AUDIT and checked all four
+alignments: geometry as written, start stations as written (2+20 for
+`Remove first` and `Chain`), design speeds shown as written (220:60 300:40,
+0:60, 0:60, 220:60) and **editable** — unlike Civil 3D's own S94, whose
+stale speed failed validation. On save Civil 3D kept every element record
+apart from the arc flag bit (0 → 1 on all our curves, as in S92 → S93);
+`p1` stayed −1 (no re-solve on a plain save) and the speeds were kept.
+The owner also turned on `TEST STYLE`'s curve component: the style's
+component flags go `10000…` → `11000…`, so **component 1 is the curve
+line** (component 0, the tangent line, from S21 → S22).
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
@@ -1688,7 +1699,7 @@ from the previous file in Civil 3D 2024, compared with `hexview --diff`:
 | S95 | S94 | second curve (A5) deleted — done |
 | S96 | S95 | free curve R 80 added back at that PI — done |
 | S97 | S24 | generated: civil3drust's element edits (see below) |
-| S98 | S97 | opened in Civil 3D (AUDIT), saved |
+| S98 | S97 | opened in Civil 3D (AUDIT), saved — done, all accepted |
 | later | S96 | floating curve added at the end, from the last tangent |
 
 Questions: new element IDs (reused or max + 1), the element-0 cache when

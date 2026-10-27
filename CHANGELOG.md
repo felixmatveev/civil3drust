@@ -7,6 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Sample S98: Civil 3D accepted all four element-edited alignments of S97
+  (speeds editable); alignment style component 1 is the curve line.
 - Element edits in place (`aecc_element_edit`, D-036): `remove_element`
   (first, last, or a free curve between tangents) and `add_free_curve`
   (at a PI between two tangents), keeping the other records; graphics,

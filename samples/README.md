@@ -109,6 +109,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S95 | `S95_S94_second_curve_deleted.dwg` | Civil 3D 2024 | O6: S94 with the curve between the vertical and the last tangent (A5) deleted, saved. | 473543 | `169304415ca2e00a` |
 | S96 | `S96_S95_curve_added.dwg` | Civil 3D 2024 | O6: S95 with a free curve R 80 added back at PI (300, −300), saved. | 474761 | `a8a68f797b40be66` |
 | S97 | `S97_S24_element_edits.dwg` | civil3drust | S24 + four alignments created as S92's shape (template S58 1089), then edited with `examples/edit_elements`: `Remove first` (speeds 0:60 300:40, remove 1), `Remove curve` (remove 5), `Add curve` (one curve, `curve 2 80`), `Chain` (remove 1, remove 5, curve 2 80 — S94–S96 replayed). | 454187 | `246f10384695f9a7` |
+| S98 | `S98_S97_civ3d_audit_resaved.dwg` | Civil 3D 2024 | S97 opened, AUDIT, all four edited alignments checked (geometry, start station, design speeds editable); `TEST STYLE` curve component turned on; saved. | 478060 | `2cfa8444aa8b21ee` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8
