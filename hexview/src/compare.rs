@@ -24,7 +24,7 @@ use std::fmt::Write as _;
 /// Bits shown per differing window or run before cutting it short.
 pub const MAX_BITS_SHOWN: usize = 512;
 /// Differing regions listed per record.
-const MAX_EDITS: usize = 24;
+const MAX_EDITS: usize = 200;
 /// Shortest run of equal bits used to split a differing window.
 const ANCHOR: usize = 64;
 
@@ -127,13 +127,23 @@ fn bits(d: &[u8]) -> Vec<u8> {
 }
 
 fn bit_text(b: &[u8]) -> String {
+    bit_text_max(b, MAX_BITS_SHOWN)
+}
+
+/// B-side bits in full: with drawing A, the report then rebuilds every
+/// changed record of B exactly.
+fn bit_text_full(b: &[u8]) -> String {
+    bit_text_max(b, usize::MAX)
+}
+
+fn bit_text_max(b: &[u8], max: usize) -> String {
     let mut s: String = b
         .iter()
-        .take(MAX_BITS_SHOWN)
+        .take(max)
         .map(|&x| if x == 1 { '1' } else { '0' })
         .collect();
-    if b.len() > MAX_BITS_SHOWN {
-        let _ = write!(s, "… (+{} bits)", b.len() - MAX_BITS_SHOWN);
+    if b.len() > max {
+        let _ = write!(s, "… (+{} bits)", b.len() - max);
     }
     s
 }
@@ -318,7 +328,7 @@ fn describe_change(out: &mut String, pa: &Pane, sa: &Span, pb: &Pane, sb: &Span)
                 near(&sa.fields, e.a.start)
             );
             let _ = writeln!(out, "       A: {}", bit_text(wa));
-            let _ = writeln!(out, "       B: {}", bit_text(wb));
+            let _ = writeln!(out, "       B: {}", bit_text_full(wb));
         }
         if edits.len() > MAX_EDITS {
             let _ = writeln!(out, "   … {} more regions", edits.len() - MAX_EDITS);
@@ -328,7 +338,7 @@ fn describe_change(out: &mut String, pa: &Pane, sa: &Span, pb: &Pane, sb: &Span)
     if ha != hb {
         let _ = writeln!(out, "   handle stream (A bit {ea}, B bit {eb}):");
         let _ = writeln!(out, "       A: {}", bit_text(ha));
-        let _ = writeln!(out, "       B: {}", bit_text(hb));
+        let _ = writeln!(out, "       B: {}", bit_text_full(hb));
     }
     // Decoded fields.
     let (fa, fb) = (field_map(&sa.fields), field_map(&sb.fields));

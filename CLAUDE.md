@@ -58,4 +58,5 @@ samples and steps that produced it.
 - `cd hexview && cargo run --release -- --diff a.dwg b.dwg [--show civil,opaque,unmapped,acad|all] [--filter text]` (record-by-record bit diff of two drawings)
 - `cargo run --release --example fingerprint -- file.dwg [roundtrip.dwg]` (raw-record hashes, for comparing acadrust versions)
 - `cargo run --release --example scan_elements -- record.bin [handle bits]` (decode a raw `AECC_ALIGNMENT` record dump)
+- `python3 tools/rebuild_from_report.py report.txt a_record.bin out.bin` (rebuild B's record from A's dump and a `--diff --filter <handle>` report)
 - Record map: `docs/alignment-map.md`

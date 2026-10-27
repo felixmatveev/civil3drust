@@ -7,6 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `tools/rebuild_from_report.py`: rebuild drawing B's record from A's
+  record and a hexview diff report.
 - Sample S94 (first tangent deleted in Civil 3D) with tests
   `tests/edit_samples.rs` (floating curve, kept IDs and stations, `p1` as
   the curve's design speed).
@@ -26,6 +28,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   clipboard (D-034).
 
 ### Changed
+- hexview diff reports print B's bits in full (A's still cut at 512) and
+  list up to 200 regions per record, so A plus the report rebuilds B.
 - acadrust 0.6.5 → 0.6.7 (library, viewer, hexview). 0.6.7 reads every
   `AEC*` class, all `AECC_*` included, into its Architecture types and
   re-encodes them on save; `raw::open` now restores them to raw records

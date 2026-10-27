@@ -1560,6 +1560,26 @@ and reads the start station before the first record in **storage**
 order. S94's `Edit base` decodes as A4 (floating) T2 A5 T3, 611.33 long,
 start station 220.
 
+**S95: a curve between two tangents deleted.** S94 with A5 (between
+T2 and T3) deleted. Read from the diff (record rebuilt from S94 + the
+report; 288 bits of the new graphics were cut off by the report, so only
+the graphics are incomplete), 711 → 730 bytes:
+
+- A5's record is removed (count 4 → 3); T2 after 5 → 3 and T3 before
+  5 → 2 — the two tangents are linked directly and **keep their stored
+  end points**, which still meet at the PI (300, −300). No tangent is
+  rewritten or merged; nothing is renumbered.
+- The string stream loses the arc's three empty strings (18 → 15).
+- A4 (floating) is untouched, `p1` stays 60; the interval block and the
+  speed table are unchanged (still the stale 0+00 interval).
+- Section-2 cache rewritten; graphics regenerated (252 → 316 bytes,
+  12 → 10 chunks; not decoded, derived).
+- Decodes as A4 T2 T3, length 645.66 (= 125.66 + 220 + 300).
+
+So removing an element is: drop its record and its strings, relink the
+neighbours, fix the count — exactly the reverse of what `set_geometry`
+writes for a fillet.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
