@@ -267,6 +267,68 @@ pub fn chain<T: Linked + Clone>(records: &[T]) -> Result<Vec<T>, DecodeError> {
     Ok(ordered)
 }
 
+/// Order element records into connected pieces: each record without a
+/// predecessor starts a piece; the piece starting with `head` (when given
+/// and present) comes first, the others follow in storage order. Every
+/// record must belong to exactly one piece.
+pub fn chain_pieces<T: Linked + Clone>(
+    records: &[T],
+    head: Option<i32>,
+) -> Result<Vec<Vec<T>>, DecodeError> {
+    if records.is_empty() {
+        return Err(DecodeError::NoTangents);
+    }
+    let mut heads: Vec<&T> = records.iter().filter(|r| r.before() == 0).collect();
+    if heads.is_empty() {
+        return Err(DecodeError::BrokenChain(
+            "0 elements have no predecessor".into(),
+        ));
+    }
+    if let Some(p) = head.and_then(|h| heads.iter().position(|r| r.id() == h)) {
+        let first = heads.remove(p);
+        heads.insert(0, first);
+    }
+    let mut pieces = Vec::new();
+    let mut used = 0;
+    for h in heads {
+        let mut piece = vec![h.clone()];
+        while piece.last().map_or(0, |r| r.after()) != 0 {
+            let cur = piece.last().expect("non-empty");
+            let next = records
+                .iter()
+                .find(|r| r.id() == cur.after())
+                .ok_or_else(|| {
+                    DecodeError::BrokenChain(format!(
+                        "element {} points to missing {}",
+                        cur.id(),
+                        cur.after()
+                    ))
+                })?;
+            if next.before() != cur.id() {
+                return Err(DecodeError::BrokenChain(format!(
+                    "element {} says it follows {}, not {}",
+                    next.id(),
+                    next.before(),
+                    cur.id()
+                )));
+            }
+            if piece.len() > records.len() {
+                return Err(DecodeError::BrokenChain("cycle".into()));
+            }
+            piece.push(next.clone());
+        }
+        used += piece.len();
+        pieces.push(piece);
+    }
+    if used != records.len() {
+        return Err(DecodeError::BrokenChain(format!(
+            "pieces hold {used} of {} elements",
+            records.len()
+        )));
+    }
+    Ok(pieces)
+}
+
 /// A decoded alignment record.
 #[derive(Debug, Clone)]
 pub struct DecodedAlignment {

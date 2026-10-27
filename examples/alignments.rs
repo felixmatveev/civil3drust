@@ -67,6 +67,7 @@ fn main() {
                             ArcDef::ThreePoint { .. } => "by 3 points",
                             ArcDef::Free { .. } => "free, by radius",
                             ArcDef::Floating { .. } => "floating, start point and radius",
+                            ArcDef::FloatingEnd { .. } => "floating, end point and radius",
                         },
                         Element::Tangent(_) => "?",
                     };

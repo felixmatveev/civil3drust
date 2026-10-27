@@ -7,6 +7,13 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Arc constraint 13 (`ArcDef::FloatingEnd`, S99): radius and end point,
+  starting tangent to the previous element.
+- Alignments with gaps decode (`chain_pieces`, `DecodedElements::gaps`,
+  S100).
+- `remove_element` removes the last tangent after a free curve (S99) and a
+  tangent between two free curves (S100, leaves a gap); both match Civil
+  3D bit for bit. Samples S99, S100.
 - Alignment style components named by view (Plan 0–7, Model 8–15,
   Section 16; `aecc_style::component_name`, `component_index`);
   `style_components` takes `plan:curve`-style names and groups the flags.

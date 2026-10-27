@@ -666,3 +666,22 @@ element it is tangent to) are refused.
 destroys element identity and constraints, and its station cache layout
 predates the interval block. Copy Civil 3D's stale speed state exactly:
 reproduces a state that crashes Civil 3D's editor.
+
+## D-037: Gapped alignments decode as ordered pieces
+
+**Context.** Deleting the tangent between two curves in Civil 3D (S100)
+leaves two disconnected pieces in one alignment: two records without a
+predecessor. The decoder required a single chain.
+
+**Decision.** Records are grouped into connected pieces; the piece that
+starts at the first-element ID (section 2, S94) comes first, the others in
+storage order. `DecodedElements` keeps one flat element list plus the
+indices where pieces start (`gaps`), so existing callers keep working on
+continuous alignments. Stations run on continuously over the pieces until
+a sample shows how Civil 3D stations past a gap; edits that would put a
+design speed after a gap, and edits of alignments that already have gaps,
+are refused.
+
+**Alternatives.** A list of pieces in `DecodedElements`: more precise, but
+changes every caller for a rare case. Refusing to decode gapped
+alignments: hides geometry Civil 3D shows.

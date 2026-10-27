@@ -30,7 +30,7 @@ use crate::aecc_build::{
 use crate::aecc_design_speed::{design_speeds, set_design_speeds};
 use crate::aecc_elements::{
     decode_elements, ArcDef, ArcParams, DecodedElements, Element, ResolvedElement, Segment,
-    ARC_FLOATING_START, ARC_FREE,
+    ARC_FLOATING_END, ARC_FLOATING_START, ARC_FREE,
 };
 use crate::alignment::Point2;
 use crate::raw::{self, RawRecord};
@@ -76,6 +76,9 @@ enum Rewrite {
     /// A free curve whose previous tangent is gone: constraint 15, start
     /// point = `start` (S94).
     FloatingFrom(Point2),
+    /// A free curve whose next tangent is gone: constraint 13, end point =
+    /// `end` (S99, S100).
+    FloatingTo(Point2),
     /// A tangent written as a fixed tangent with these points (keeps the
     /// same line; used when its neighbour on that side disappears).
     FixedTangent(Point2, Point2),
@@ -156,10 +159,22 @@ fn encode_kept(
             w.rd(start.x);
             w.rd(start.y);
         }
+        (Element::Arc(a), Rewrite::FloatingTo(end)) => {
+            let ArcDef::Free { radius, .. } = a.def else {
+                return Err(err(format!("arc {} is not a free curve", a.id)));
+            };
+            let params = ArcParams {
+                n2: ARC_FLOATING_END,
+                ..a.params
+            };
+            encode_free_arc(w, a.flag, &params, (a.id, before, after), radius);
+            w.rd(end.x);
+            w.rd(end.y);
+        }
         (Element::Arc(a), Rewrite::FixedTangent(..)) => {
             return Err(err(format!("arc {} cannot become a tangent", a.id)));
         }
-        (Element::Tangent(t), Rewrite::FloatingFrom(_)) => {
+        (Element::Tangent(t), Rewrite::FloatingFrom(_) | Rewrite::FloatingTo(_)) => {
             return Err(err(format!("tangent {} cannot become a curve", t.id)));
         }
     }
@@ -358,6 +373,21 @@ fn finish(
         .map(|s| (s.station, s.speed))
         .collect();
     let speeds = clamp_speeds(&old_speeds, start, start + length);
+    if let Some(&g) = decoded.gaps.first() {
+        // How Civil 3D stations the pieces after a gap is not known yet:
+        // keep every speed within the first piece.
+        let first_end = start
+            + decoded.elements[..g]
+                .iter()
+                .map(|e| e.segment.length())
+                .sum::<f64>();
+        if speeds.iter().any(|s| s.0 > first_end + 1e-9) {
+            return Err(err(
+                "the edit leaves a gap and a design speed lies after it \
+                 (stationing across gaps is not known yet)",
+            ));
+        }
+    }
     if !old_speeds.is_empty() {
         let (bytes, hb) = set_design_speeds(&r, &speeds, seed).map_err(|e| err(e.to_string()))?;
         r = RawRecord {
@@ -423,6 +453,9 @@ pub fn remove_element(
     if n == 1 {
         return Err(err("cannot remove the only element"));
     }
+    if !d.gaps.is_empty() {
+        return Err(err("the alignment already has gaps (not supported yet)"));
+    }
     let start = d.stored_start_station.unwrap_or(0.0);
     let mut rewrites: Vec<(i32, i32, i32, Rewrite)> = Vec::new(); // id, before, after
     let mut floating = Vec::new();
@@ -451,8 +484,13 @@ pub fn remove_element(
             }
             Element::Tangent(_) => Rewrite::Links,
             Element::Arc(a) => match a.def {
-                ArcDef::ThreePoint { .. } => Rewrite::Links,
-                _ => {
+                ArcDef::ThreePoint { .. } | ArcDef::FloatingEnd { .. } => Rewrite::Links,
+                // S99: the free curve keeps its end point (its old PT).
+                ArcDef::Free { .. } => {
+                    floating.push(a.id);
+                    Rewrite::FloatingTo(prev.segment.end())
+                }
+                ArcDef::Floating { .. } => {
                     return Err(err(format!(
                         "curve {} would lose the element it is tangent to \
                          (no sample of that form yet)",
@@ -464,29 +502,50 @@ pub fn remove_element(
         rewrites.push((prev.record.id(), prev.record.before(), 0, rw));
     } else {
         let (prev, next) = (&d.elements[idx - 1], &d.elements[idx + 1]);
-        let free_between_tangents = matches!(
-            &d.elements[idx].record,
-            Element::Arc(a) if matches!(a.def, ArcDef::Free { .. })
-        ) && matches!(prev.record, Element::Tangent(_))
-            && matches!(next.record, Element::Tangent(_));
-        if !free_between_tangents {
-            return Err(err(format!(
-                "element {id} is inside the alignment: only free curves between \
+        let free_arc = |e: &ResolvedElement| matches!(&e.record, Element::Arc(a) if matches!(a.def, ArcDef::Free { .. }));
+        // S100: a tangent between two free curves. Both curves become
+        // one-sided (13 keeps its end point, 15 its start point) and the
+        // alignment splits into two pieces with a gap between them.
+        if matches!(d.elements[idx].record, Element::Tangent(_)) && free_arc(prev) && free_arc(next)
+        {
+            floating.extend([prev.record.id(), next.record.id()]);
+            rewrites.push((
+                prev.record.id(),
+                prev.record.before(),
+                0,
+                Rewrite::FloatingTo(prev.segment.end()),
+            ));
+            rewrites.push((
+                next.record.id(),
+                0,
+                next.record.after(),
+                Rewrite::FloatingFrom(next.segment.start()),
+            ));
+        } else {
+            let free_between_tangents = matches!(
+                &d.elements[idx].record,
+                Element::Arc(a) if matches!(a.def, ArcDef::Free { .. })
+            ) && matches!(prev.record, Element::Tangent(_))
+                && matches!(next.record, Element::Tangent(_));
+            if !free_between_tangents {
+                return Err(err(format!(
+                    "element {id} is inside the alignment: only free curves between \
                  two tangents can be removed there"
-            )));
+                )));
+            }
+            rewrites.push((
+                prev.record.id(),
+                prev.record.before(),
+                next.record.id(),
+                Rewrite::Links,
+            ));
+            rewrites.push((
+                next.record.id(),
+                prev.record.id(),
+                next.record.after(),
+                Rewrite::Links,
+            ));
         }
-        rewrites.push((
-            prev.record.id(),
-            prev.record.before(),
-            next.record.id(),
-            Rewrite::Links,
-        ));
-        rewrites.push((
-            next.record.id(),
-            prev.record.id(),
-            next.record.after(),
-            Rewrite::Links,
-        ));
     }
     // A tangent kept as it was (its old stored start) must still meet a
     // free curve after it: only the first-element case rewrites a tangent
@@ -533,6 +592,9 @@ pub fn add_free_curve(
         return Err(err(format!("bad radius {radius}")));
     }
     let d = decode_elements(rec).map_err(|e| err(e.to_string()))?;
+    if !d.gaps.is_empty() {
+        return Err(err("the alignment has gaps (not supported yet)"));
+    }
     let idx = d
         .elements
         .iter()
@@ -597,7 +659,8 @@ pub fn add_free_curve(
 pub fn constraint_name(n2: i32) -> &'static str {
     match n2 {
         ARC_FREE => "free",
-        ARC_FLOATING_START => "floating",
+        ARC_FLOATING_START => "floating (start point)",
+        ARC_FLOATING_END => "floating (end point)",
         crate::aecc_elements::ARC_THREE_POINT => "fixed (three points)",
         _ => "unknown",
     }

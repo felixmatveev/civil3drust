@@ -1642,10 +1642,11 @@ optional element-ID list. Replayed on Civil 3D's own files:
   (ID 5, stored last, flag 0, `p1` −1).
 
 Supported: removing the first element, the last element (when the one
-before is a tangent or a three-point curve), and a free curve between
-two tangents; adding a free curve between two tangents that meet at a
-stored PI. Refused: interior tangents, and removals that leave a curve
-without the element it is tangent to (no sample of the resulting form).
+before is a tangent, a three-point curve or a free curve — S99), a free
+curve between two tangents, and a tangent between two free curves (S100);
+adding a free curve between two tangents that meet at a stored PI.
+Refused: other interior tangents and removals that leave a floating
+curve without the element it is tangent to (no sample of the form).
 
 S97 = S24 + four alignments edited this way (`Remove first` with speeds
 0:60 300:40, `Remove curve`, `Add curve`, `Chain` = S94–S96 replayed).
@@ -1660,6 +1661,37 @@ apart from the arc flag bit (0 → 1 on all our curves, as in S92 → S93);
 The owner also turned on `TEST STYLE`'s curve component: the style's
 component flags go `10000…` → `11000…`, so **component 1 is the curve
 line** (component 0, the tangent line, from S21 → S22).
+
+**S99: last tangent after a free curve deleted** (S98, `Remove first`,
+T3). The free curve A5 becomes constraint **13**: radius plus its **end
+point** (two raw doubles after the radius, here its old PT (380, −300)),
+starting tangent to the previous element — the mirror of code 15. Its
+after-link becomes 0; flag and `p1` are kept; count 4 → 3, the
+string stream unchanged in arcs. Speeds (220:60 300:40, both on curves,
+no intervals) unchanged.
+
+**S100: tangent between two free curves deleted** (S98, `Add curve`,
+T2). Both curves become one-sided: A4 → code 13 with its old PT
+(300, −880), after 0; A5 → code 15 with its old PC (300, −1020), before
+0. Nothing joins them: the alignment now has **two pieces with a gap**
+(T1 A4 | A5 T3), two records with no predecessor. The first-element IDs
+in section 2 stay 1, so they name the first piece. The interval and speed
+(0:60 on T1) are unchanged. How Civil 3D stations the second piece is not
+known yet.
+
+**Decoder.** Code 13 is read as `ArcDef::FloatingEnd` and resolved as
+the curve leaving the previous tangent's line and ending at the point.
+`chain_pieces` orders the records into connected pieces, the one starting
+at the first-element ID first; `DecodedElements::gaps` lists where pieces
+start, and stations are counted continuously over the pieces until a
+sample shows Civil 3D's rule.
+
+**`remove_element`** now also removes the last tangent after a free
+curve (S99 form) and an interior tangent between two free curves (S100
+form, leaving a gap; refused if a design speed would lie after the gap).
+Both replays reproduce Civil 3D's element lists **bit for bit** (tests
+`s99_…`, `s100_…`). Editing an alignment that already has gaps is
+refused for now.
 
 ## Open questions
 

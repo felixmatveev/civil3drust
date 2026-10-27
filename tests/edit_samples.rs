@@ -206,10 +206,10 @@ fn add_free_curve_matches_s96_bit_for_bit() {
 #[test]
 fn refuses_edits_without_a_known_form() {
     let s93 = edit_base("samples/S93_S92_civ3d_resaved.dwg");
-    assert!(remove_element(&s93, 2, 7).is_err()); // interior tangent
+    // Interior tangent after a floating curve: no sample of that form.
+    let s95 = edit_base("samples/S95_S94_second_curve_deleted.dwg");
+    assert!(remove_element(&s95, 2, 7).is_err());
     assert!(remove_element(&s93, 9, 7).is_err()); // no such element
-                                                  // Last tangent after a free curve: that curve's end form is unknown.
-    assert!(remove_element(&s93, 3, 7).is_err());
     assert!(add_free_curve(&s93, 4, 50.0, 7).is_err()); // not a tangent
     assert!(add_free_curve(&s93, 1, 500.0, 7).is_err()); // doesn't fit
 }
@@ -265,4 +265,77 @@ fn element_id_list_is_dropped_s51() {
         n += 1;
     }
     assert!(n > 0, "S51 has an element-ID list");
+}
+
+fn record(path: &str, handle: u64) -> raw::RawRecord {
+    let o = raw::open(path).unwrap();
+    raw::records(&o.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == handle)
+        .unwrap()
+}
+
+#[test]
+fn s99_last_tangent_after_free_curve_deleted() {
+    use civil3drust::aecc_elements::ARC_FLOATING_END;
+    let r = record("samples/S99_S98_last_tangent_deleted.dwg", 0xFB3);
+    let d = decode_elements(&r).unwrap();
+    assert!(d.gaps.is_empty());
+    assert_eq!(chain_of(&r), [(4, 0, 2), (2, 4, 5), (5, 2, 0)]);
+    let Element::Arc(a5) = &d.elements[2].record else {
+        panic!()
+    };
+    assert_eq!(a5.params.n2, ARC_FLOATING_END);
+    let ArcDef::FloatingEnd { end, .. } = a5.def else {
+        panic!()
+    };
+    assert!(end.distance_to(Point2::new(380.0, -300.0)) < 1e-9);
+    assert!(
+        d.elements[2]
+            .segment
+            .start()
+            .distance_to(Point2::new(300.0, -220.0))
+            < 1e-9
+    );
+    assert!((d.length() - 391.3274).abs() < 1e-3);
+
+    // civil3drust's own edit gives the same element list.
+    let s98 = record("samples/S98_S97_civ3d_audit_resaved.dwg", 0xFB3);
+    let (b, hb, rep) = remove_element(&s98, 3, 7).unwrap();
+    assert_eq!(rep.floating, [5]);
+    assert_eq!(
+        element_list_bits(&edited(&s98, (b, hb))),
+        element_list_bits(&r)
+    );
+}
+
+#[test]
+fn s100_interior_tangent_deleted_leaves_a_gap() {
+    let r = record("samples/S100_S98_interior_tangent_deleted.dwg", 0xFB9);
+    let d = decode_elements(&r).unwrap();
+    assert_eq!(chain_of(&r), [(1, 0, 4), (4, 1, 0), (5, 0, 3), (3, 5, 0)]);
+    assert_eq!(d.gaps, [2]);
+    assert!(
+        d.elements[1]
+            .segment
+            .end()
+            .distance_to(Point2::new(300.0, -880.0))
+            < 1e-9
+    );
+    assert!(
+        d.elements[2]
+            .segment
+            .start()
+            .distance_to(Point2::new(300.0, -1020.0))
+            < 1e-9
+    );
+    assert!((d.length() - 691.3274).abs() < 1e-3);
+
+    let s98 = record("samples/S98_S97_civ3d_audit_resaved.dwg", 0xFB9);
+    let (b, hb, rep) = remove_element(&s98, 2, 7).unwrap();
+    assert_eq!(rep.floating, [4, 5]);
+    let ours = edited(&s98, (b, hb));
+    assert_eq!(element_list_bits(&ours), element_list_bits(&r));
+    // Editing a gapped alignment is refused for now.
+    assert!(remove_element(&ours, 1, 7).is_err());
 }

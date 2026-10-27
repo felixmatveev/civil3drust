@@ -33,7 +33,7 @@
 //! [`Segment`]s: arcs get centre, radius, direction and length; tangents
 //! next to a free arc are trimmed to its PC or PT.
 
-use crate::aecc_alignment::{self, chain, DecodeError, Linked, TangentRecord, ELEMENT_HEADER};
+use crate::aecc_alignment::{self, DecodeError, Linked, TangentRecord, ELEMENT_HEADER};
 use crate::alignment::Point2;
 use crate::raw::{self, RawRecord};
 
@@ -70,6 +70,15 @@ pub enum ArcDef {
         start_bit: usize,
         start: Point2,
     },
+    /// Constraint code 13 (S99, S100): the radius and the **end** point;
+    /// the curve starts tangent to the previous element. Seen when the
+    /// tangent after a free curve was deleted in Civil 3D.
+    FloatingEnd {
+        radius_bit: usize,
+        radius: f64,
+        end_bit: usize,
+        end: Point2,
+    },
 }
 
 /// Arc constraint codes (the BL `n2` in [`ArcParams`]), from samples.
@@ -78,6 +87,8 @@ pub const ARC_THREE_POINT: i32 = 2;
 pub const ARC_FREE: i32 = 29;
 /// A curve with a fixed start point, tangent to the next element (S94).
 pub const ARC_FLOATING_START: i32 = 15;
+/// A curve with a fixed end point, tangent to the previous element (S99).
+pub const ARC_FLOATING_END: i32 = 13;
 
 /// One arc element record.
 #[derive(Debug, Clone, PartialEq)]
@@ -355,11 +366,35 @@ fn arc_at(data: &[u8], bit: usize) -> Option<ArcRecord> {
             k2 + 128,
         ))
     };
+    let floating_end = || -> Option<(ArcDef, usize)> {
+        let (
+            ArcDef::Floating {
+                radius_bit,
+                radius,
+                start_bit,
+                start,
+            },
+            k2,
+        ) = floating()?
+        else {
+            return None;
+        };
+        Some((
+            ArcDef::FloatingEnd {
+                radius_bit,
+                radius,
+                end_bit: start_bit,
+                end: start,
+            },
+            k2,
+        ))
+    };
     // The layout follows the constraint code n2. p1 is not a layout
     // marker: it is −1 or the design speed at the curve (S89, S94).
     let (def, end_bit) = match n2 {
         ARC_FREE => free()?,
         ARC_FLOATING_START => floating()?,
+        ARC_FLOATING_END => floating_end()?,
         ARC_THREE_POINT => three_point()?,
         _ => free().or_else(three_point)?,
     };
@@ -500,6 +535,33 @@ pub fn resolve(chain: &[Element]) -> Result<Vec<ResolvedElement>, DecodeError> {
             .ok_or_else(|| unsupported(format!("floating arc {id} cannot reach its tangent")))?;
             free[i] = Some(f);
         }
+        if let Element::Arc(ArcRecord {
+            def: ArcDef::FloatingEnd { radius, end, .. },
+            id,
+            ..
+        }) = e
+        {
+            let prev = i.checked_sub(1).and_then(|j| chain.get(j));
+            let Some(Element::Tangent(a)) = prev else {
+                return Err(unsupported(format!(
+                    "floating arc {id} does not follow a tangent"
+                )));
+            };
+            // The same curve travelled backwards: from the end point into
+            // the previous tangent's line, against its direction.
+            let (e_pt, tp, g) = curve_into_line(
+                *end,
+                (a.start.x - a.end.x, a.start.y - a.end.y),
+                a.end,
+                *radius,
+            )
+            .ok_or_else(|| unsupported(format!("floating arc {id} cannot leave its tangent")))?;
+            let g = ArcGeometry {
+                counter_clockwise: !g.counter_clockwise,
+                ..g
+            };
+            free[i] = Some((tp, e_pt, g));
+        }
     }
     let mut out = Vec::with_capacity(chain.len());
     for (i, e) in chain.iter().enumerate() {
@@ -525,7 +587,7 @@ pub fn resolve(chain: &[Element]) -> Result<Vec<ResolvedElement>, DecodeError> {
                     geometry: arc_through(start, mid, end)
                         .ok_or_else(|| unsupported(format!("arc {} is degenerate", a.id)))?,
                 },
-                ArcDef::Free { .. } | ArcDef::Floating { .. } => {
+                ArcDef::Free { .. } | ArcDef::Floating { .. } | ArcDef::FloatingEnd { .. } => {
                     let (pc, pt, g) = free[i].expect("resolved above");
                     Segment::Arc {
                         start: pc,
@@ -549,8 +611,12 @@ pub struct DecodedElements {
     pub handle: u64,
     pub name: Option<String>,
     pub stored_start_station: Option<f64>,
-    /// Elements in chain order.
+    /// Elements in chain order; with gaps, piece after piece.
     pub elements: Vec<ResolvedElement>,
+    /// Indices into `elements` where a new, disconnected piece starts
+    /// (empty for a continuous alignment). Civil 3D leaves a gap when an
+    /// interior tangent between two curves is deleted (S100).
+    pub gaps: Vec<usize>,
 }
 
 impl DecodedElements {
@@ -561,7 +627,40 @@ impl DecodedElements {
 
 /// Decode an alignment of tangents and arcs (read-only).
 pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> {
-    let mut chained = chain(&element_records(&rec.data))?;
+    let records = element_records(&rec.data);
+    // The path's first element ID ends section 2 (BL right before the
+    // element count, S94); it names the first piece when there are gaps.
+    let head = records
+        .iter()
+        .map(Element::header_bit)
+        .min()
+        .and_then(|b| b.checked_sub(31))
+        .filter(|&b| raw::get_bit(&rec.data, b) == 0 && raw::get_bit(&rec.data, b + 1) == 1)
+        .map(|b| raw::get_byte(&rec.data, b + 2) as i32);
+    let pieces = aecc_alignment::chain_pieces(&records, head)?;
+    let mut gaps = Vec::new();
+    let mut elements = Vec::new();
+    for piece in pieces {
+        if !elements.is_empty() {
+            gaps.push(elements.len());
+        }
+        elements.extend(resolve_piece(piece)?);
+    }
+    // The station precedes the first record in storage order, which is
+    // not the first in the chain once element 1 is deleted (S94).
+    let first_stored = records.iter().map(Element::header_bit).min().unwrap_or(0);
+    let stored_start_station = aecc_alignment::start_station(&rec.data, first_stored);
+    Ok(DecodedElements {
+        handle: rec.handle,
+        name: aecc_alignment::record_name(&rec.data),
+        stored_start_station,
+        elements,
+        gaps,
+    })
+}
+
+/// Resolve one connected piece of the element chain.
+fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, DecodeError> {
     // Floating tangents store only their end point; they start where the
     // previous element ends (S89).
     for i in 1..chained.len() {
@@ -569,6 +668,7 @@ pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> 
             Element::Tangent(t) => Some(t.end),
             Element::Arc(a) => match a.def {
                 ArcDef::ThreePoint { end, .. } => Some(end),
+                ArcDef::FloatingEnd { end, .. } => Some(end),
                 ArcDef::Free { .. } | ArcDef::Floating { .. } => None,
             },
         };
@@ -592,16 +692,7 @@ pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> 
             });
         }
     }
-    // The station precedes the first record in storage order, which is
-    // not the first in the chain once element 1 is deleted (S94).
-    let first_stored = chained.iter().map(Element::header_bit).min().unwrap_or(0);
-    let stored_start_station = aecc_alignment::start_station(&rec.data, first_stored);
-    Ok(DecodedElements {
-        handle: rec.handle,
-        name: aecc_alignment::record_name(&rec.data),
-        stored_start_station,
-        elements,
-    })
+    Ok(elements)
 }
 
 #[cfg(test)]

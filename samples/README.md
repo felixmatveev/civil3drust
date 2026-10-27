@@ -110,6 +110,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S96 | `S96_S95_curve_added.dwg` | Civil 3D 2024 | O6: S95 with a free curve R 80 added back at PI (300, −300), saved. | 474761 | `a8a68f797b40be66` |
 | S97 | `S97_S24_element_edits.dwg` | civil3drust | S24 + four alignments created as S92's shape (template S58 1089), then edited with `examples/edit_elements`: `Remove first` (speeds 0:60 300:40, remove 1), `Remove curve` (remove 5), `Add curve` (one curve, `curve 2 80`), `Chain` (remove 1, remove 5, curve 2 80 — S94–S96 replayed). | 454187 | `246f10384695f9a7` |
 | S98 | `S98_S97_civ3d_audit_resaved.dwg` | Civil 3D 2024 | S97 opened, AUDIT, all four edited alignments checked (geometry, start station, design speeds editable); `TEST STYLE` curve component turned on; saved. | 478060 | `2cfa8444aa8b21ee` |
+| S99 | `S99_S98_last_tangent_deleted.dwg` | Civil 3D 2024 | O6: S98 with the last tangent (T3) of `Remove first` (FB3) deleted, saved. | 476172 | `976d44d140afcf9c` |
+| S100 | `S100_S98_interior_tangent_deleted.dwg` | Civil 3D 2024 | O6: S98 with the tangent between the two curves (T2) of `Add curve` (FB9) deleted, saved. | 478157 | `2daf30bca1b9d0fd` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

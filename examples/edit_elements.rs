@@ -41,11 +41,14 @@ fn describe(d: &DecodedElements) {
                 match a.def {
                     ArcDef::Free { .. } => "free",
                     ArcDef::Floating { .. } => "floating",
+                    ArcDef::FloatingEnd { .. } => "floating (end)",
                     ArcDef::ThreePoint { .. } => "3-point",
                 },
                 a.id,
                 match a.def {
-                    ArcDef::Free { radius, .. } | ArcDef::Floating { radius, .. } => radius,
+                    ArcDef::Free { radius, .. }
+                    | ArcDef::Floating { radius, .. }
+                    | ArcDef::FloatingEnd { radius, .. } => radius,
                     ArcDef::ThreePoint { .. } => f64::NAN,
                 }
             ),
