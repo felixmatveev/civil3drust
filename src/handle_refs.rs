@@ -106,6 +106,35 @@ pub fn trim_padding(data: &[u8], handle_bits: usize, own: u64) -> (Vec<u8>, usiz
     (pack(&bits), hb)
 }
 
+/// Keep the first `keep` references of the handle stream and re-pad to a
+/// whole byte with zero bits. Padding carried through several rewrites
+/// (Civil 3D pads with 1-bits) can otherwise parse as an extra
+/// reference, which [`trim_padding`] would keep. Returns the new bytes and
+/// handle-stream size, or `None` if the stream has fewer references.
+pub fn keep_refs(
+    data: &[u8],
+    handle_bits: usize,
+    own: u64,
+    keep: usize,
+) -> Option<(Vec<u8>, usize)> {
+    let total = raw::bit_len(data);
+    let start = total - handle_bits;
+    let refs = parse(data, start, total, own);
+    if refs.len() < keep {
+        return None;
+    }
+    let end = refs
+        .get(keep.checked_sub(1)?)
+        .map(|r| r.bit + r.bits())
+        .unwrap_or(start);
+    let mut bits: Vec<u8> = (0..end).map(|b| raw::get_bit(data, b)).collect();
+    while !bits.len().is_multiple_of(8) {
+        bits.push(0);
+    }
+    let hb = bits.len() - start;
+    Some((pack(&bits), hb))
+}
+
 /// Rewrite the absolute reference `r` in `data` to point at `handle`.
 /// The new handle must fit in the same number of bytes (`r.counter`), so
 /// the record size is unchanged; returns false (and changes nothing)

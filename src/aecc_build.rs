@@ -383,56 +383,7 @@ pub fn set_geometry(
     // --- Write. ---
     let mut w = Bits::default();
     w.copy(data, 0, EED_BIT + 3);
-    // Graphics: leading non-polyline chunks + one polyline per tangent.
-    let poly = g.chunks.iter().find(|c| c.opcode == pg::OP_POLYLINE);
-    let mut gbits = Bits::default();
-    let graphics_rebuilt = poly.is_some() && !g.is_placeholder();
-    if graphics_rebuilt {
-        let lead: Vec<&pg::Chunk> = g
-            .chunks
-            .iter()
-            .take_while(|c| c.opcode != pg::OP_POLYLINE)
-            .collect();
-        // Per element in path order: a polyline chunk for each tangent;
-        // after each arc (not drawn by a lines-only style) the attribute
-        // triple (layer, marker, colour) again — copies of the leading
-        // chunks 4..7, as Civil 3D writes them (S24, S48).
-        let triple: Vec<&pg::Chunk> = if lead.len() >= 7 {
-            lead[4..7].to_vec()
-        } else {
-            Vec::new()
-        };
-        let mut body = Bits::default();
-        let mut nchunks = lead.len();
-        for e in &resolved {
-            match e.segment {
-                Segment::Line { start: a, end: b } => {
-                    body.rl(60);
-                    body.rl(pg::OP_POLYLINE);
-                    body.rl(2);
-                    for v in [a.x, a.y, 0.0, b.x, b.y, 0.0] {
-                        body.rd(v);
-                    }
-                    nchunks += 1;
-                }
-                _ => {
-                    for c in &triple {
-                        body.copy(data, c.bit, c.bit + c.size * 8);
-                        nchunks += 1;
-                    }
-                }
-            }
-        }
-        let lead_bytes: usize = lead.iter().map(|c| c.size).sum();
-        gbits.rl((8 + lead_bytes + body.len() / 8) as i32);
-        gbits.rl(nchunks as i32);
-        for c in &lead {
-            gbits.copy(data, c.bit, c.bit + c.size * 8);
-        }
-        gbits.0.extend(body.0);
-    } else {
-        gbits.copy(data, g.start_bit, g.end_bit());
-    }
+    let (gbits, graphics_rebuilt) = graphics_bits(data, &g, &resolved);
     w.bll((gbits.len() / 8) as u64);
     w.0.extend(gbits.0);
     w.copy(data, g.end_bit(), count_bit);
@@ -505,6 +456,98 @@ pub fn set_geometry(
             graphics_rebuilt,
         },
     ))
+}
+
+/// Proxy graphics for `resolved` in the donor format of `g` (found in
+/// `data`): the donor's leading non-polyline chunks, then per element in
+/// path order a 2-point polyline for each tangent and the attribute triple
+/// after each arc (S24, S48). Placeholder or polyline-less graphics are
+/// copied unchanged (second value `false`). Returns the graphics bytes as
+/// bits (size field not included).
+pub fn graphics_bits(
+    data: &[u8],
+    g: &pg::Graphics,
+    resolved: &[crate::aecc_elements::ResolvedElement],
+) -> (Bits, bool) {
+    let poly = g.chunks.iter().find(|c| c.opcode == pg::OP_POLYLINE);
+    let mut gbits = Bits::default();
+    let graphics_rebuilt = poly.is_some() && !g.is_placeholder();
+    if graphics_rebuilt {
+        let lead: Vec<&pg::Chunk> = g
+            .chunks
+            .iter()
+            .take_while(|c| c.opcode != pg::OP_POLYLINE)
+            .collect();
+        // Per element in path order: a polyline chunk for each tangent;
+        // after each arc (not drawn by a lines-only style) the attribute
+        // triple (layer, marker, colour) again — copies of the leading
+        // chunks 4..7, as Civil 3D writes them (S24, S48).
+        let triple: Vec<&pg::Chunk> = if lead.len() >= 7 {
+            lead[4..7].to_vec()
+        } else {
+            Vec::new()
+        };
+        let mut body = Bits::default();
+        let mut nchunks = lead.len();
+        for e in resolved {
+            match e.segment {
+                Segment::Line { start: a, end: b } => {
+                    body.rl(60);
+                    body.rl(pg::OP_POLYLINE);
+                    body.rl(2);
+                    for v in [a.x, a.y, 0.0, b.x, b.y, 0.0] {
+                        body.rd(v);
+                    }
+                    nchunks += 1;
+                }
+                _ => {
+                    for c in &triple {
+                        body.copy(data, c.bit, c.bit + c.size * 8);
+                        nchunks += 1;
+                    }
+                }
+            }
+        }
+        let lead_bytes: usize = lead.iter().map(|c| c.size).sum();
+        gbits.rl((8 + lead_bytes + body.len() / 8) as i32);
+        gbits.rl(nchunks as i32);
+        for c in &lead {
+            gbits.copy(data, c.bit, c.bit + c.size * 8);
+        }
+        gbits.0.extend(body.0);
+    } else {
+        gbits.copy(data, g.start_bit, g.end_bit());
+    }
+    (gbits, graphics_rebuilt)
+}
+
+/// Rewrite the proxy graphics of `rec` for `resolved` (see
+/// [`graphics_bits`]). Records without graphics are returned unchanged.
+pub fn replace_graphics(
+    rec: &RawRecord,
+    resolved: &[crate::aecc_elements::ResolvedElement],
+) -> Result<(Vec<u8>, usize, bool), BuildError> {
+    let data = &rec.data;
+    if raw::get_bit(data, EED_BIT + 2) == 0 {
+        return Ok((data.clone(), rec.handle_bits, false));
+    }
+    let g = pg::find(data, 4096).ok_or_else(|| layout("no proxy graphics"))?;
+    let (gsize, gstart) = read_bll(data, EED_BIT + 3);
+    if gstart != g.start_bit || gsize as usize != g.size {
+        return Err(layout("graphics size field not where expected"));
+    }
+    let (gbits, rebuilt) = graphics_bits(data, &g, resolved);
+    let total = raw::bit_len(data);
+    let data_end = total - rec.handle_bits;
+    let mut w = Bits::default();
+    w.copy(data, 0, EED_BIT + 3);
+    w.bll((gbits.len() / 8) as u64);
+    w.0.extend(gbits.0);
+    let new_data_end = data_end + w.len() - g.end_bit();
+    w.copy(data, g.end_bit(), total);
+    let bytes = w.into_bytes();
+    let hb = bytes.len() * 8 - new_data_end;
+    Ok((bytes, hb, rebuilt))
 }
 
 /// Remove the proxy graphics: clear has-graphics (bit 44) and drop the
@@ -624,6 +667,38 @@ fn type_bit(rec: &RawRecord, data: &[u8]) -> Result<usize, BuildError> {
         q = raw::read_bd(data, q).ok_or_else(bad)?.1;
     }
     Ok(q)
+}
+
+/// Remove the element-ID list Civil 3D adds after geometry edits (BL n +
+/// n BDs before the alignment type; S12, S48, S51). It is optional (S50)
+/// and would be stale after elements are added or removed. Returns `None`
+/// when the record has no list.
+pub fn clear_element_id_list(rec: &RawRecord) -> Result<Option<(Vec<u8>, usize)>, BuildError> {
+    let data = &rec.data;
+    let (_, end, _) = crate::aecc_design_speed::locate(rec).map_err(|e| layout(e.to_string()))?;
+    let bad = || layout("element-ID list not found");
+    let (_, q) = raw::read_bd(data, end).ok_or_else(bad)?;
+    let (_, list) = raw::read_bl(data, q).ok_or_else(bad)?;
+    let (n, mut q) = raw::read_bl(data, list).ok_or_else(bad)?;
+    if n == 0 {
+        return Ok(None);
+    }
+    if !(0..=10_000).contains(&n) {
+        return Err(bad());
+    }
+    for _ in 0..n {
+        q = raw::read_bd(data, q).ok_or_else(bad)?.1;
+    }
+    let total = raw::bit_len(data);
+    let data_end = total - rec.handle_bits;
+    let mut w = Bits::default();
+    w.copy(data, 0, list);
+    w.bl(0);
+    let new_data_end = data_end - (q - w.len());
+    w.copy(data, q, total);
+    let bytes = w.into_bytes();
+    let hb = bytes.len() * 8 - new_data_end;
+    Ok(Some((bytes, hb)))
 }
 
 /// The alignment type (1 = Centerline, 4 = Miscellaneous; see

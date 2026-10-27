@@ -638,3 +638,31 @@ of the candidate curves the one with the smallest central angle is used.
 design speed. Store or guess the direction from the old geometry: no
 such field was found in S94's record (n1, p2, p3 are unchanged from the
 free form), and the short curve is the one Civil 3D displays.
+
+## D-036: Element edits in place, following Civil 3D's own edits
+
+**Context.** Adding and removing elements on an existing alignment
+(current focus). `set_geometry` (D-024) rebuilds the whole element list
+from PIs, which renumbers everything and loses floating tangents,
+three-point curves and other constraints. S94–S96 show what Civil 3D
+does instead: it keeps every other record and its ID, relinks the
+neighbours, stores new records last with an unused ID, turns an orphaned
+free curve into a floating curve, keeps stationing and updates the
+first-element IDs in section 2.
+
+**Decision.** `aecc_element_edit` edits the element list in place by
+those rules and re-encodes only the links (and a tangent end point or a
+curve's constraint where the rules require it); other records are
+copied bit for bit. New curves get the highest ID + 1 (equal to Civil
+3D's choice in S96 whichever rule it uses). Derived parts are rebuilt
+rather than left as Civil 3D leaves them: the design-speed intervals
+(Civil 3D's stale interval makes its speed editor fail, S94) — speeds
+before the new start move onto it, speeds past the end are dropped — and
+the optional element-ID list is removed (S50: optional). Edits whose
+resulting form has no sample (interior tangents; a curve losing the
+element it is tangent to) are refused.
+
+**Alternatives.** Re-plan from PIs with `set_geometry`: simple but
+destroys element identity and constraints, and its station cache layout
+predates the interval block. Copy Civil 3D's stale speed state exactly:
+reproduces a state that crashes Civil 3D's editor.

@@ -1608,6 +1608,40 @@ start point; deleting the first element keeps stationing (start station
 = old station of the new start). Civil 3D leaves the design-speed
 interval stale; civil3drust should rebuild it.
 
+**First-element ID in section 2.** Comparing the 60 bits around the
+start station in every sample: the ID of the path's first element is
+stored **twice** in section 2 — as a one-byte BL followed by `10` right
+before the start-station BD, and as the BL that **ends** section 2
+(the last 10 bits). Both are 1 in every sample (tangent 1 first) except
+S94–S96, where both are 4 after T1 was deleted. (The "bit 4 after the
+start-station field" of open issue 5 is the low bit of this BL.)
+Test `first_element_fields_name_the_chain_head`.
+
+**civil3drust: `aecc_element_edit` (D-036).** `remove_element` and
+`add_free_curve` edit the element list in place following the rules
+above, keeping the other records bit for bit (only links and, where
+needed, a tangent's start/end point or a curve's constraint change),
+then rebuild the derived parts: graphics, start station and both
+first-element IDs, design-speed intervals (speeds before the new start
+move onto it, speeds past the end are dropped), and they drop the
+optional element-ID list. Replayed on Civil 3D's own files:
+
+- S93 − T1 gives S94's chain, floating curve, start station and
+  first-element IDs (records differ only in `p1`, which Civil 3D sets to
+  60 when it re-solves, and last-digit rounding);
+- S94 − A5 gives **S95's element list bit for bit**;
+- S95 + free curve after T2 gives **S96's element list bit for bit**
+  (ID 5, stored last, flag 0, `p1` −1).
+
+Supported: removing the first element, the last element (when the one
+before is a tangent or a three-point curve), and a free curve between
+two tangents; adding a free curve between two tangents that meet at a
+stored PI. Refused: interior tangents, and removals that leave a curve
+without the element it is tangent to (no sample of the resulting form).
+
+S97 = S24 + four alignments edited this way (`Remove first` with speeds
+0:60 300:40, `Remove curve`, `Add curve`, `Chain` = S94–S96 replayed).
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
@@ -1653,7 +1687,9 @@ from the previous file in Civil 3D 2024, compared with `hexview --diff`:
 | S94 | S93 | first tangent (T1) deleted — done |
 | S95 | S94 | second curve (A5) deleted — done |
 | S96 | S95 | free curve R 80 added back at that PI — done |
-| S97 | S96 | floating curve added at the end, from the last tangent |
+| S97 | S24 | generated: civil3drust's element edits (see below) |
+| S98 | S97 | opened in Civil 3D (AUDIT), saved |
+| later | S96 | floating curve added at the end, from the last tangent |
 
 Questions: new element IDs (reused or max + 1), the element-0 cache when
 element 0 goes, the ID-list block, the three strings per arc, and the

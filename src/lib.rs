@@ -36,6 +36,7 @@ pub mod aecc_build;
 pub mod aecc_create;
 pub mod aecc_criteria;
 pub mod aecc_design_speed;
+pub mod aecc_element_edit;
 pub mod aecc_elements;
 pub mod aecc_registry;
 pub mod aecc_station;

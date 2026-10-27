@@ -61,3 +61,44 @@ pub fn move_start_station(rec: &RawRecord, station: f64) -> Option<(Vec<u8>, usi
     };
     set_start_station(&r, station)
 }
+
+/// The ID of the first element of the path, stored twice in section 2
+/// (S93 → S94, first tangent deleted: both 1 → 4): as a one-byte BL
+/// followed by `10` right before the start-station BD, and as the BL
+/// that ends section 2. Returns the two bit offsets and the stored ID,
+/// if both are one-byte BLs holding the same value.
+pub fn first_element_fields(rec: &RawRecord) -> Option<(usize, usize, i32)> {
+    let data = &rec.data;
+    let e = section2_end(rec).ok()?;
+    let station = start_station(rec)?;
+    let bd_len = if station == 0.0 || station == 1.0 {
+        2
+    } else {
+        66
+    };
+    let bd_start = e - AFTER_STATION - bd_len;
+    let a = bd_start.checked_sub(12)?;
+    let b = e - 10;
+    let one_byte = |bit: usize| raw::get_bit(data, bit) == 0 && raw::get_bit(data, bit + 1) == 1;
+    if !one_byte(a)
+        || !one_byte(b)
+        || raw::get_bit(data, a + 10) != 1
+        || raw::get_bit(data, a + 11) != 0
+    {
+        return None;
+    }
+    let (ia, ib) = (raw::get_byte(data, a + 2), raw::get_byte(data, b + 2));
+    (ia == ib).then_some((a, b, ia as i32))
+}
+
+/// Set both copies of the first element's ID (see
+/// [`first_element_fields`]) in place; IDs 1..=255 keep the field size.
+pub fn set_first_element(rec: &RawRecord, data: &mut [u8], id: i32) -> Option<()> {
+    if !(1..=255).contains(&id) {
+        return None;
+    }
+    let (a, b, _) = first_element_fields(rec)?;
+    raw::set_byte(data, a + 2, id as u8);
+    raw::set_byte(data, b + 2, id as u8);
+    Some(())
+}

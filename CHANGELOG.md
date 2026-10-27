@@ -7,6 +7,16 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Element edits in place (`aecc_element_edit`, D-036): `remove_element`
+  (first, last, or a free curve between tangents) and `add_free_curve`
+  (at a PI between two tangents), keeping the other records; graphics,
+  start station, first-element IDs and design-speed intervals rebuilt.
+  Example `edit_elements`; sample S97. Reproduces S95's and S96's element
+  lists bit for bit.
+- `aecc_station::first_element_fields` / `set_first_element`: the path's
+  first element ID, stored twice in section 2 (S94).
+- `aecc_build::replace_graphics`, `graphics_bits`, `clear_element_id_list`;
+  `handle_refs::keep_refs`.
 - Samples S95 (curve between tangents deleted) and S96 (free curve added
   back) with tests; element-edit rules in `docs/alignment-object.md`.
 - `tools/rebuild_from_report.py`: rebuild drawing B's record from A's

@@ -1,5 +1,6 @@
 //! Element edits made in Civil 3D (O6: S92 → S93 → S94 …).
 
+use civil3drust::aecc_alignment::Linked;
 use civil3drust::aecc_design_speed::design_speeds;
 use civil3drust::aecc_elements::{decode_elements, ArcDef, Element, ARC_FLOATING_START, ARC_FREE};
 use civil3drust::alignment::Point2;
@@ -121,4 +122,147 @@ fn s96_curve_added_back_gets_id_5_and_is_stored_last() {
     assert!(!a5.flag);
     assert_eq!(a5.params.p1, -1.0);
     assert!((d.length() - 611.3274).abs() < 1e-3);
+}
+
+// ---- civil3drust's own element edits, replayed against S94–S96 ----
+
+use civil3drust::aecc_element_edit::{add_free_curve, remove_element};
+use civil3drust::aecc_station::first_element_fields;
+
+fn edited(rec: &raw::RawRecord, out: (Vec<u8>, usize)) -> raw::RawRecord {
+    raw::RawRecord {
+        data: out.0,
+        handle_bits: out.1,
+        ..rec.clone()
+    }
+}
+
+/// The element list as stored: count + prefixed records, as bits.
+fn element_list_bits(r: &raw::RawRecord) -> Vec<u8> {
+    let d = decode_elements(r).unwrap();
+    let first = d
+        .elements
+        .iter()
+        .map(|e| e.record.header_bit())
+        .min()
+        .unwrap();
+    let end = d
+        .elements
+        .iter()
+        .map(|e| match &e.record {
+            Element::Tangent(t) => t.end_bit(),
+            Element::Arc(a) => a.end_bit,
+        })
+        .max()
+        .unwrap();
+    (first - 21..end)
+        .map(|b| raw::get_bit(&r.data, b))
+        .collect()
+}
+
+#[test]
+fn remove_first_tangent_like_s94() {
+    let s93 = edit_base("samples/S93_S92_civ3d_resaved.dwg");
+    let (d, hb, rep) = remove_element(&s93, 1, 7).unwrap();
+    let r = edited(&s93, (d, hb));
+    assert_eq!(rep.floating, [4]);
+    assert_eq!(rep.speeds, [(220.0, 60.0)]); // moved onto the new start
+    assert_eq!(
+        chain_of(&r),
+        chain("samples/S94_S93_first_tangent_deleted.dwg")
+    );
+    let dec = decode_elements(&r).unwrap();
+    assert!((dec.stored_start_station.unwrap() - 220.0).abs() < 1e-9);
+    assert!((dec.length() - 611.3274).abs() < 1e-3);
+    assert_eq!(first_element_fields(&r).unwrap().2, 4);
+    let v: Vec<(f64, f64)> = design_speeds(&r)
+        .unwrap()
+        .iter()
+        .map(|s| (s.station, s.speed))
+        .collect();
+    assert_eq!(v, [(220.0, 60.0)]);
+}
+
+#[test]
+fn remove_curve_between_tangents_matches_s95_bit_for_bit() {
+    let s94 = edit_base("samples/S94_S93_first_tangent_deleted.dwg");
+    let s95 = edit_base("samples/S95_S94_second_curve_deleted.dwg");
+    let (d, hb, _) = remove_element(&s94, 5, 7).unwrap();
+    let r = edited(&s94, (d, hb));
+    assert_eq!(element_list_bits(&r), element_list_bits(&s95));
+}
+
+#[test]
+fn add_free_curve_matches_s96_bit_for_bit() {
+    let s95 = edit_base("samples/S95_S94_second_curve_deleted.dwg");
+    let s96 = edit_base("samples/S96_S95_curve_added.dwg");
+    let (d, hb, rep) = add_free_curve(&s95, 2, 80.0, 7).unwrap();
+    assert_eq!(rep.added_id, Some(5));
+    let r = edited(&s95, (d, hb));
+    assert_eq!(element_list_bits(&r), element_list_bits(&s96));
+    assert!((decode_elements(&r).unwrap().length() - 611.3274).abs() < 1e-3);
+}
+
+#[test]
+fn refuses_edits_without_a_known_form() {
+    let s93 = edit_base("samples/S93_S92_civ3d_resaved.dwg");
+    assert!(remove_element(&s93, 2, 7).is_err()); // interior tangent
+    assert!(remove_element(&s93, 9, 7).is_err()); // no such element
+                                                  // Last tangent after a free curve: that curve's end form is unknown.
+    assert!(remove_element(&s93, 3, 7).is_err());
+    assert!(add_free_curve(&s93, 4, 50.0, 7).is_err()); // not a tangent
+    assert!(add_free_curve(&s93, 1, 500.0, 7).is_err()); // doesn't fit
+}
+
+#[test]
+fn first_element_fields_name_the_chain_head() {
+    for p in [
+        "samples/S24_ZERO_CIVIL.dwg",
+        "samples/S82_O4_start_station.dwg",
+        "samples/S89_O5_layout_tangents_curves.dwg",
+        "samples/S93_S92_civ3d_resaved.dwg",
+        "samples/S94_S93_first_tangent_deleted.dwg",
+        "samples/S96_S95_curve_added.dwg",
+    ] {
+        let o = raw::open(p).unwrap();
+        for r in raw::records(&o.doc, "AECC_ALIGNMENT") {
+            let head = decode_elements(&r).unwrap().elements[0].record.id();
+            assert_eq!(
+                first_element_fields(&r).map(|f| f.2),
+                Some(head),
+                "{p} {:X}",
+                r.handle
+            );
+        }
+    }
+}
+
+fn chain_of(r: &raw::RawRecord) -> Vec<(i32, i32, i32)> {
+    decode_elements(r)
+        .unwrap()
+        .elements
+        .iter()
+        .map(|e| match &e.record {
+            Element::Tangent(t) => (t.id, t.before, t.after),
+            Element::Arc(a) => (a.id, a.before, a.after),
+        })
+        .collect()
+}
+
+#[test]
+fn element_id_list_is_dropped_s51() {
+    use civil3drust::aecc_build::{alignment_type, clear_element_id_list};
+    let o = raw::open("samples/S51_S50_civ3d_resaved.dwg").unwrap();
+    let mut n = 0;
+    for r in raw::records(&o.doc, "AECC_ALIGNMENT") {
+        let Some((d, hb)) = clear_element_id_list(&r).unwrap() else {
+            continue;
+        };
+        let c = edited(&r, (d, hb));
+        assert_eq!(alignment_type(&c).unwrap(), alignment_type(&r).unwrap());
+        assert!(clear_element_id_list(&c).unwrap().is_none());
+        assert_eq!(chain_of(&c), chain_of(&r));
+        n += 1;
+    }
+    assert!(n > 0, "S51 has an element-ID list");
 }
