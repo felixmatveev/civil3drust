@@ -60,11 +60,19 @@ fn main() {
             let len = e.segment.length();
             let (s, t) = (e.segment.start(), e.segment.end());
             let what = match (&e.segment, &e.record) {
+                (Segment::Line { .. }, Element::LineSpiral(_)) => {
+                    "tangent (line-spiral group, line)".to_string()
+                }
                 (Segment::Line { .. }, _) => "tangent".to_string(),
+                (Segment::Spiral { geometry: g, .. }, _) => format!(
+                    "spiral (line-spiral group) into R={:.4} {}",
+                    g.radius,
+                    if g.counter_clockwise { "left" } else { "right" }
+                ),
                 (Segment::Arc { geometry: g, .. }, rec) => {
                     let kind = match rec {
                         Element::Arc(a) => a.def.describe(),
-                        Element::Tangent(_) => "?",
+                        _ => "?",
                     };
                     format!(
                         "arc ({kind}) R={:.4} {} delta={:.4}° center ({:.4}, {:.4})",

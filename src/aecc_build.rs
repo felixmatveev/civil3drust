@@ -288,10 +288,7 @@ pub fn plan(pis: &[Point2], radii: &[Option<f64>]) -> Result<Vec<Element>, Build
             }),
         });
     }
-    els.sort_by_key(|e| match e {
-        Element::Tangent(t) => t.id,
-        Element::Arc(a) => a.id,
-    });
+    els.sort_by_key(crate::aecc_alignment::Linked::id);
     Ok(els)
 }
 
@@ -365,10 +362,7 @@ pub fn set_geometry(
     let bounds: Vec<(usize, usize)> = decoded
         .elements
         .iter()
-        .map(|e| match &e.record {
-            Element::Tangent(t) => (t.header_bit, t.end_bit()),
-            Element::Arc(a) => (a.header_bit, a.end_bit),
-        })
+        .map(|e| (e.record.header_bit(), e.record.end_bit()))
         .collect();
     let first = bounds.iter().map(|b| b.0).min().unwrap();
     let last_end = bounds.iter().map(|b| b.1).max().unwrap();
@@ -384,6 +378,7 @@ pub fn set_geometry(
     let plain_layout = decoded.elements.iter().all(|e| match &e.record {
         Element::Tangent(t) => t.kind == crate::aecc_alignment::KIND_FIXED,
         Element::Arc(a) => matches!(a.def, ArcDef::Free { .. }),
+        Element::LineSpiral(_) => false,
     }) && raw::get_bit(data, end0_bit) == 0
         && raw::get_bit(data, end0_bit + 1) == 0
         && (raw::get_f64(data, end0_bit + 2) - old_end0).abs() <= 1e-9 * old_end0.abs().max(1.0);
@@ -438,6 +433,7 @@ pub fn set_geometry(
                 };
                 encode_free_arc(&mut w, a.flag, &a.params, (a.id, a.before, a.after), radius);
             }
+            Element::LineSpiral(_) => unreachable!("not a plain layout"),
         }
     }
     // Gap, end-of-element-0 station, cache.
@@ -761,10 +757,7 @@ pub fn set_alignment_type(rec: &RawRecord, data: &mut [u8], value: i32) -> Resul
 /// Elements in path order (following `after` from the one with
 /// `before == 0`).
 fn path_order(els: &[Element]) -> Vec<Element> {
-    let id = |e: &Element| match e {
-        Element::Tangent(t) => t.id,
-        Element::Arc(a) => a.id,
-    };
+    let id = |e: &Element| crate::aecc_alignment::Linked::id(e);
     let mut out = Vec::new();
     let mut cur = els.iter().find(|e| e.before() == 0);
     while let Some(e) = cur {
@@ -789,16 +782,10 @@ trait Links {
 
 impl Links for Element {
     fn before(&self) -> i32 {
-        match self {
-            Element::Tangent(t) => t.before,
-            Element::Arc(a) => a.before,
-        }
+        crate::aecc_alignment::Linked::before(self)
     }
     fn after(&self) -> i32 {
-        match self {
-            Element::Tangent(t) => t.after,
-            Element::Arc(a) => a.after,
-        }
+        crate::aecc_alignment::Linked::after(self)
     }
 }
 
@@ -817,9 +804,12 @@ mod tests {
         let els = plan(&pis, &[Some(50.0), None]).unwrap();
         let ids: Vec<(i32, i32, i32)> = els
             .iter()
-            .map(|e| match e {
-                Element::Tangent(t) => (t.id, t.before, t.after),
-                Element::Arc(a) => (a.id, a.before, a.after),
+            .map(|e| {
+                (
+                    crate::aecc_alignment::Linked::id(e),
+                    crate::aecc_alignment::Linked::before(e),
+                    crate::aecc_alignment::Linked::after(e),
+                )
             })
             .collect();
         assert_eq!(ids, [(1, 0, 4), (2, 4, 3), (3, 2, 0), (4, 1, 2)]);

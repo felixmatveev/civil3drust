@@ -59,7 +59,7 @@ the arcs and lines in each record's proxy graphics.
 
 | method | status | samples |
 |---|---|---|
-| Floating Line with Spiral (from curve, through point) | planned | S119 |
+| Floating Line with Spiral (from curve, through point) | probable: code 162 line-spiral group (start point, spiral length) — S119, made before a curve's start; method to be confirmed | S119 |
 | Floating Line with Spiral (from curve end, length) | planned | S119 |
 | Floating Curve with Spiral (from entity end, radius, length) | planned | S119 |
 | Floating Curve with Spiral (from entity, radius, through point) | planned | S119 |

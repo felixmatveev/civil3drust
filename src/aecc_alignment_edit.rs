@@ -231,7 +231,7 @@ fn pi_polyline(decoded: &DecodedElements) -> Result<(Vec<TangentRecord>, Alignme
         .iter()
         .filter_map(|e| match &e.record {
             Element::Tangent(t) => Some(t.clone()),
-            Element::Arc(_) => None,
+            _ => None,
         })
         .collect();
     if tangents.windows(2).any(|w| !same(w[0].end, w[1].start)) {

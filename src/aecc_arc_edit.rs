@@ -75,10 +75,7 @@ pub(crate) fn elements_end_bit(decoded: &DecodedElements) -> usize {
     decoded
         .elements
         .iter()
-        .map(|e| match &e.record {
-            Element::Tangent(t) => t.end_bit(),
-            Element::Arc(a) => a.end_bit,
-        })
+        .map(|e| e.record.end_bit())
         .max()
         .unwrap_or(0)
 }

@@ -2099,6 +2099,26 @@ stored end point. The first curve, with nothing before it, is a half
 circle (180.0000°) ending where the free line leaves it — its start is
 not stored. Civil 3D turns commas in alignment names into `_`.
 
+**Line-spiral group (S119).** The owner edited S118's first circle;
+Civil 3D added element 7 before it: a line from (438, 2124) and a
+clothoid into the circle, drawn as a line to TS (254.4271, 2098.2015) and
+a spiral polyline to SC (233.0160, 2097.0713). It is **one record** with
+a new kind prefix (`…01010`, value 10; tangents 2, arcs 4):
+
+```text
+BL 0x04020008, B flag 0, BD −1, BD −1, BL n1 1, BD −1,
+BL code 162, BL id 7, BL before 0, BL after 2,     (no bit before the IDs)
+BL 256 (meaning unknown), RD start 438, 2124, BD spiral length 21.5058
+```
+
+Geometry: the clothoid (A² = R·L) has length 21.5058 and ends at the
+circle's radius (41.2311); the line from the stored point is tangent to
+the circle shifted out by the spiral's offset `p = y − R(1 − cos θ)`,
+and TS lies `k = x − R sin θ` before the foot of the perpendicular from
+the centre. The centre curve now starts at SC. Computed TS and SC match
+the drawing to 4 decimals. The group's line and spiral are separate parts
+of one element (D-042).
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length

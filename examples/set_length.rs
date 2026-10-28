@@ -40,6 +40,7 @@ fn print(d: &DecodedElements) {
         let kind = match e.segment {
             Segment::Line { .. } => "tangent",
             Segment::Arc { .. } => "arc    ",
+            Segment::Spiral { .. } => "spiral ",
         };
         let len = e.segment.length();
         println!(

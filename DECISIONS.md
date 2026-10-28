@@ -776,3 +776,21 @@ without the element it depends on are refused.
 **Alternatives.** Convert constrained curves to three-point arcs when
 reading: loses the method Civil 3D shows and would change the record on
 save.
+
+## D-042: Spiral groups resolve into one entry per part
+
+**Context.** S119's element 7 is a single record holding a line and a
+spiral (code 162). Stations, lengths, the companion graph and the
+drawing all need the two pieces separately, but edits and speed intervals
+address records by ID.
+
+**Decision.** A group record resolves into several `ResolvedElement`s
+with the same record and `part` 0, 1, … (here the line, then a
+`Segment::Spiral`). Element counts count records (`part == 0`). Element
+edits, `set_geometry` from such a template, and design-speed writing
+refuse alignments with groups until samples show how Civil 3D stores
+them.
+
+**Alternatives.** One segment per record with a compound variant: every
+caller would need to split it. Converting groups to separate records:
+would change what Civil 3D reads back.

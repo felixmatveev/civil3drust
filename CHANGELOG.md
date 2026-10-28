@@ -16,6 +16,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 - Open centre curves (closed bit 0) placed between the free or floating
   lines next to them, a half circle when nothing precedes them; direction
   bit 0 confirmed counter-clockwise. Sample S118.
+- Line-spiral group records (code 162): `Element::LineSpiral`,
+  `Segment::Spiral` (clothoid), resolved before a centre curve; a group
+  resolves into one entry per part (`ResolvedElement::part`). Editing
+  and speeds refuse alignments with groups for now. Sample S119.
 - `create_alignment` with no PIs copies an empty template alignment (S113
   `EMPTY`), giving its speed-table entry a fresh GUID;
   `aecc_design_speed::empty_alignment_table`. Sample S116: 14 empty

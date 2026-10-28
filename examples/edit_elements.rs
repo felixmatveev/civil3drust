@@ -45,6 +45,7 @@ fn describe(d: &DecodedElements) {
                     _ => f64::NAN,
                 }
             ),
+            _ => unreachable!(),
         };
         let (s, t) = (e.segment.start(), e.segment.end());
         println!(

@@ -331,6 +331,8 @@ pub fn curve_into_line(
 pub enum Element {
     Tangent(TangentRecord),
     Arc(ArcRecord),
+    /// A line followed by a spiral, one record (S119).
+    LineSpiral(LineSpiralRecord),
 }
 
 impl Element {
@@ -338,6 +340,15 @@ impl Element {
         match self {
             Self::Tangent(t) => t.header_bit,
             Self::Arc(a) => a.header_bit,
+            Self::LineSpiral(g) => g.header_bit,
+        }
+    }
+    /// Bit offset just after the record.
+    pub fn end_bit(&self) -> usize {
+        match self {
+            Self::Tangent(t) => t.end_bit(),
+            Self::Arc(a) => a.end_bit,
+            Self::LineSpiral(g) => g.end_bit,
         }
     }
 }
@@ -347,20 +358,122 @@ impl Linked for Element {
         match self {
             Self::Tangent(t) => t.id,
             Self::Arc(a) => a.id,
+            Self::LineSpiral(g) => g.id,
         }
     }
     fn before(&self) -> i32 {
         match self {
             Self::Tangent(t) => t.before,
             Self::Arc(a) => a.before,
+            Self::LineSpiral(g) => g.before,
         }
     }
     fn after(&self) -> i32 {
         match self {
             Self::Tangent(t) => t.after,
             Self::Arc(a) => a.after,
+            Self::LineSpiral(g) => g.after,
         }
     }
+}
+
+/// Code of the line-spiral record (S119).
+pub const GROUP_LINE_SPIRAL: i32 = 162;
+
+/// A line from a fixed point followed by a clothoid into the next curve,
+/// stored as one record (S119: Civil 3D's line-with-spiral layout from the
+/// start of a curve). Layout:
+///
+/// ```text
+/// BL 0x04020008, B flag, BD p1, BD p2, BL n1, n1 × BD,
+/// BL code (162), BL id, BL before, BL after,
+/// BL mode (256, meaning unknown), RD start X, Y, BD spiral length
+/// ```
+#[derive(Debug, Clone, PartialEq)]
+pub struct LineSpiralRecord {
+    pub header_bit: usize,
+    pub end_bit: usize,
+    pub id: i32,
+    pub before: i32,
+    pub after: i32,
+    pub flag: bool,
+    pub p1: f64,
+    pub p2: f64,
+    pub extra: Vec<f64>,
+    pub mode: i32,
+    /// The line's start (stored).
+    pub start: Point2,
+    pub spiral_length: f64,
+    /// Where the line meets the spiral (TS) and the spiral meets the curve
+    /// (SC); NaN until resolved.
+    pub ts: Point2,
+    pub sc: Point2,
+}
+
+fn line_spiral_at(data: &[u8], bit: usize) -> Option<LineSpiralRecord> {
+    if raw::get_bit(data, bit) != 0
+        || raw::get_bit(data, bit + 1) != 0
+        || raw::get_byte(data, bit + 2) != 0x08
+    {
+        return None;
+    }
+    let (h, k) = raw::read_bl(data, bit)?;
+    if h != ELEMENT_HEADER {
+        return None;
+    }
+    let flag = raw::get_bit(data, k) == 1;
+    let (p1, k) = raw::read_bd(data, k + 1)?;
+    let (p2, k) = raw::read_bd(data, k)?;
+    let (n1, mut k) = raw::read_bl(data, k)?;
+    if !(1..=2).contains(&n1) {
+        return None;
+    }
+    let mut extra = Vec::new();
+    for _ in 0..n1 {
+        let (v, q) = raw::read_bd(data, k)?;
+        extra.push(v);
+        k = q;
+    }
+    let (code, k) = raw::read_bl(data, k)?;
+    if code != GROUP_LINE_SPIRAL {
+        return None;
+    }
+    let (id, k) = raw::read_bl(data, k)?;
+    let (before, k) = raw::read_bl(data, k)?;
+    let (after, k) = raw::read_bl(data, k)?;
+    let (mode, k) = raw::read_bl(data, k)?;
+    if k + 128 > raw::bit_len(data) {
+        return None;
+    }
+    let start = Point2::new(raw::get_f64(data, k), raw::get_f64(data, k + 64));
+    let (spiral_length, end_bit) = raw::read_bd(data, k + 128)?;
+    let small = |v: i32| (0..100_000).contains(&v);
+    if id < 1
+        || !small(before)
+        || !small(after)
+        || !start.x.is_finite()
+        || !start.y.is_finite()
+        || !(spiral_length.is_finite() && spiral_length > 0.0)
+    {
+        return None;
+    }
+    let nan = Point2::new(f64::NAN, f64::NAN);
+    Some(LineSpiralRecord {
+        header_bit: bit,
+        end_bit,
+        id,
+        before,
+        after,
+        flag,
+        p1,
+        p2,
+        extra,
+        mode,
+        start,
+        spiral_length,
+        ts: nan,
+        sc: nan,
+    })
 }
 
 fn arc_at(data: &[u8], bit: usize) -> Option<ArcRecord> {
@@ -601,6 +714,9 @@ pub fn element_records(data: &[u8]) -> Vec<Element> {
         } else if let Some(a) = arc_at(data, bit) {
             bit = a.end_bit;
             out.push(Element::Arc(a));
+        } else if let Some(g) = line_spiral_at(data, bit) {
+            bit = g.end_bit;
+            out.push(Element::LineSpiral(g));
         } else {
             bit += 1;
         }
@@ -620,32 +736,133 @@ pub enum Segment {
         end: Point2,
         geometry: ArcGeometry,
     },
+    /// A clothoid from a line (infinite radius) into a curve.
+    Spiral {
+        start: Point2,
+        end: Point2,
+        geometry: SpiralGeometry,
+    },
 }
 
 impl Segment {
     pub fn start(&self) -> Point2 {
         match *self {
-            Self::Line { start, .. } | Self::Arc { start, .. } => start,
+            Self::Line { start, .. } | Self::Arc { start, .. } | Self::Spiral { start, .. } => {
+                start
+            }
         }
     }
     pub fn end(&self) -> Point2 {
         match *self {
-            Self::Line { end, .. } | Self::Arc { end, .. } => end,
+            Self::Line { end, .. } | Self::Arc { end, .. } | Self::Spiral { end, .. } => end,
         }
     }
     pub fn length(&self) -> f64 {
         match self {
             Self::Line { start, end } => start.distance_to(*end),
             Self::Arc { geometry, .. } => geometry.length,
+            Self::Spiral { geometry, .. } => geometry.length,
         }
     }
 }
 
-/// An element record together with its resolved geometry.
+/// A clothoid starting tangent to a line: curvature grows linearly from
+/// 0 at `start` to 1/`radius` after `length`.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SpiralGeometry {
+    pub start: Point2,
+    /// Unit direction at the start.
+    pub direction: (f64, f64),
+    pub length: f64,
+    /// Radius at the end (the curve it enters).
+    pub radius: f64,
+    pub counter_clockwise: bool,
+}
+
+impl SpiralGeometry {
+    /// Point and unit direction at distance `s` from the start.
+    pub fn point_at(&self, s: f64) -> (Point2, (f64, f64)) {
+        let a2 = self.radius * self.length;
+        let (x, y) = clothoid(s, a2);
+        let t = s * s / (2.0 * a2);
+        let side = if self.counter_clockwise { 1.0 } else { -1.0 };
+        let (u, n) = (
+            self.direction,
+            (-self.direction.1 * side, self.direction.0 * side),
+        );
+        let p = Point2::new(
+            self.start.x + x * u.0 + y * n.0,
+            self.start.y + x * u.1 + y * n.1,
+        );
+        let (c, sn) = (t.cos(), t.sin());
+        (p, (c * u.0 + sn * n.0, c * u.1 + sn * n.1))
+    }
+}
+
+/// Local coordinates of the clothoid point at arc length `s` (A² = `a2`),
+/// turning left: x = ∫cos(t²/2A²), y = ∫sin(t²/2A²) (Simpson's rule).
+fn clothoid(s: f64, a2: f64) -> (f64, f64) {
+    let n = 256;
+    let h = s / n as f64;
+    let (mut x, mut y) = (0.0, 0.0);
+    for i in 0..=n {
+        let t = i as f64 * h;
+        let w = if i == 0 || i == n {
+            1.0
+        } else if i % 2 == 1 {
+            4.0
+        } else {
+            2.0
+        };
+        let a = t * t / (2.0 * a2);
+        x += w * a.cos();
+        y += w * a.sin();
+    }
+    (x * h / 3.0, y * h / 3.0)
+}
+
+/// Place a line from `p` plus a clothoid of length `l` entering the
+/// circle `c` (in its sense): returns (TS, SC, spiral).
+pub fn line_spiral_into(
+    p: Point2,
+    l: f64,
+    c: &ArcGeometry,
+) -> Option<(Point2, Point2, SpiralGeometry)> {
+    let r = c.radius;
+    let (xs, ys) = clothoid(l, r * l);
+    let theta = l / (2.0 * r);
+    let shift = ys - r * (1.0 - theta.cos());
+    let k = xs - r * theta.sin();
+    let offset = ArcGeometry {
+        radius: r + shift,
+        ..*c
+    };
+    let point = ArcGeometry {
+        center: p,
+        radius: 0.0,
+        ..*c
+    };
+    let (_, foot) = tangent_between(&point, &offset)?;
+    let u = unit((foot.x - p.x, foot.y - p.y))?;
+    let ts = Point2::new(foot.x - k * u.0, foot.y - k * u.1);
+    let g = SpiralGeometry {
+        start: ts,
+        direction: u,
+        length: l,
+        radius: r,
+        counter_clockwise: c.counter_clockwise,
+    };
+    let (sc, _) = g.point_at(l);
+    Some((ts, sc, g))
+}
+
+/// An element record together with its resolved geometry. A group record
+/// (line and spiral) resolves into one entry per part, `part` 0, 1, ….
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResolvedElement {
     pub record: Element,
     pub segment: Segment,
+    pub part: usize,
 }
 
 impl Linked for ResolvedElement {
@@ -707,6 +924,7 @@ fn resolve_with(chain: &[Element], pre: &[Placed]) -> Result<Vec<ResolvedElement
                     let g = circle(center, radius, !clockwise);
                     let touch = |e: Option<&Element>, end: bool| match e {
                         Some(Element::Tangent(t)) => Some(if end { t.end } else { t.start }),
+                        Some(Element::LineSpiral(g)) if end => Some(g.sc),
                         _ => None,
                     };
                     let prev = i.checked_sub(1).and_then(|j| chain.get(j));
@@ -839,6 +1057,10 @@ fn resolve_with(chain: &[Element], pre: &[Placed]) -> Result<Vec<ResolvedElement
     let mut out = Vec::with_capacity(chain.len());
     for (i, e) in chain.iter().enumerate() {
         let segment = match e {
+            Element::LineSpiral(g) => Segment::Line {
+                start: g.start,
+                end: g.ts,
+            },
             Element::Tangent(t) => {
                 let start = i
                     .checked_sub(1)
@@ -902,7 +1124,26 @@ fn resolve_with(chain: &[Element], pre: &[Placed]) -> Result<Vec<ResolvedElement
         out.push(ResolvedElement {
             record: e.clone(),
             segment,
+            part: 0,
         });
+        if let Element::LineSpiral(g) = e {
+            let c = match chain.get(i + 1) {
+                Some(Element::Arc(_)) => open_centre_circle(chain.get(i + 1)),
+                _ => None,
+            }
+            .ok_or_else(|| unsupported(format!("line-spiral {}: no curve after it", g.id)))?;
+            let (_, _, sp) = line_spiral_into(g.start, g.spiral_length, &c)
+                .ok_or_else(|| unsupported(format!("line-spiral {} doesn't fit", g.id)))?;
+            out.push(ResolvedElement {
+                record: e.clone(),
+                segment: Segment::Spiral {
+                    start: g.ts,
+                    end: g.sc,
+                    geometry: sp,
+                },
+                part: 1,
+            });
+        }
     }
     Ok(out)
 }
@@ -933,7 +1174,12 @@ impl DecodedElements {
     }
     /// Number of element records stored (the element count).
     pub fn record_count(&self) -> usize {
-        self.elements.len() + self.detached.iter().map(Vec::len).sum::<usize>()
+        self.all().filter(|e| e.part == 0).count()
+    }
+    /// True if a record holds several parts (spiral groups), which the
+    /// editing functions don't handle yet.
+    pub fn has_groups(&self) -> bool {
+        self.all().any(|e| e.part > 0)
     }
     /// Bit offset of the first record's header in storage order.
     pub fn first_record_bit(&self) -> Option<usize> {
@@ -941,12 +1187,7 @@ impl DecodedElements {
     }
     /// Bit offset just after the last record in storage order.
     pub fn records_end_bit(&self) -> Option<usize> {
-        self.all()
-            .map(|e| match &e.record {
-                Element::Tangent(t) => t.end_bit(),
-                Element::Arc(a) => a.end_bit,
-            })
-            .max()
+        self.all().map(|e| e.record.end_bit()).max()
     }
 }
 
@@ -1000,6 +1241,9 @@ fn end_state(seg: &Segment) -> (Point2, (f64, f64)) {
             };
             (end, d)
         }
+        Segment::Spiral {
+            end, geometry: g, ..
+        } => (end, g.point_at(g.length).1),
     }
 }
 
@@ -1224,6 +1468,23 @@ fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, Deco
     // continue from the resolved end of the elements before them; free
     // lines (kind 9, S113) touch the circles of the curves on both sides.
     let mut pre: Vec<Placed> = vec![None; chained.len()];
+    // Line-spiral groups into an open centre curve (S119).
+    for i in 0..chained.len() {
+        let Element::LineSpiral(g) = &chained[i] else {
+            continue;
+        };
+        let id = g.id;
+        let unsupported = |why: &str| DecodeError::BrokenChain(format!("line-spiral {id}: {why}"));
+        let c = open_centre_circle(chained.get(i + 1))
+            .ok_or_else(|| unsupported("not before a curve by its centre (no sample yet)"))?;
+        let (ts, sc, _) = line_spiral_into(g.start, g.spiral_length, &c)
+            .ok_or_else(|| unsupported("start point inside the curve"))?;
+        let Element::LineSpiral(g) = &mut chained[i] else {
+            unreachable!()
+        };
+        g.ts = ts;
+        g.sc = sc;
+    }
     for i in 1..chained.len() {
         if let Element::Arc(a) = &chained[i] {
             let (id, def) = (a.id, a.def);
@@ -1452,6 +1713,7 @@ mod tests {
             .map(|e| match e.segment {
                 Segment::Line { .. } => "T",
                 Segment::Arc { .. } => "A",
+                Segment::Spiral { .. } => "S",
             })
             .collect()
     }

@@ -186,6 +186,9 @@ fn encode_kept(
         (Element::Tangent(t), Rewrite::FloatingFrom(_) | Rewrite::FloatingTo(_)) => {
             return Err(err(format!("tangent {} cannot become a curve", t.id)));
         }
+        (Element::LineSpiral(g), _) => {
+            return Err(err(format!("spiral group {}: not editable yet", g.id)));
+        }
     }
     Ok(())
 }
@@ -441,6 +444,9 @@ pub fn remove_element(
     seed: u64,
 ) -> Result<(Vec<u8>, usize, ElementEditReport), ElementEditError> {
     let d = decode_elements(rec).map_err(|e| err(e.to_string()))?;
+    if d.has_groups() {
+        return Err(err("alignments with spiral groups are not editable yet"));
+    }
     let n = d.elements.len();
     let idx = d
         .elements
@@ -497,6 +503,9 @@ pub fn remove_element(
                 Rewrite::FixedTangent(t.start, prev.segment.end())
             }
             Element::Tangent(_) => Rewrite::Links,
+            Element::LineSpiral(g) => {
+                return Err(err(format!("spiral group {}: not editable yet", g.id)))
+            }
             Element::Arc(a) => match a.def {
                 ArcDef::ThreePoint { .. }
                 | ArcDef::FloatingEnd { .. }
@@ -613,6 +622,9 @@ pub fn add_free_curve(
         return Err(err(format!("bad radius {radius}")));
     }
     let d = decode_elements(rec).map_err(|e| err(e.to_string()))?;
+    if d.has_groups() {
+        return Err(err("alignments with spiral groups are not editable yet"));
+    }
 
     let idx = d
         .elements
@@ -714,6 +726,9 @@ pub fn replace_elements(
                     "tangent {}: only fixed tangents can be written",
                     t.id
                 )))
+            }
+            Element::LineSpiral(g) => {
+                return Err(err(format!("spiral group {}: not editable yet", g.id)))
             }
         });
     }

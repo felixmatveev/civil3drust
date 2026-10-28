@@ -50,6 +50,7 @@ fn marks(rec: &raw::RawRecord) -> (usize, usize) {
         .map(|e| match &e.record {
             Element::Tangent(t) => t.end_bit(),
             Element::Arc(a) => a.end_bit,
+            _ => unreachable!(),
         })
         .max()
         .unwrap();

@@ -98,6 +98,7 @@ fn main() {
         let (s, t, len) = (e.segment.start(), e.segment.end(), e.segment.length());
         let what = match e.segment {
             Segment::Line { .. } => "tangent".to_string(),
+            Segment::Spiral { geometry: g, .. } => format!("spiral into R={:.4}", g.radius),
             Segment::Arc { geometry: g, .. } => format!(
                 "arc R={:.4} {} delta={:.4}° center ({:.4}, {:.4})",
                 g.radius,

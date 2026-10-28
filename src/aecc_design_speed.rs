@@ -287,14 +287,21 @@ fn write_intervals(
                 );
                 (a, b, p)
             }
+            Segment::Spiral { .. } => {
+                return Err(err("a speed on a spiral group (no sample yet)"));
+            }
         };
+        if matches!(e.record, Element::LineSpiral(_)) {
+            return Err(err("a speed on a spiral group (no sample yet)"));
+        }
         // The element's own ID and links (S115: Civil 3D rewrote our
         // (1, 0, next) to (4, 1, 3) for a speed on element 4; S113's
         // "2, 1, 3" on a curve is element 2, before 1, after 3).
-        let (eid, before, after) = match &e.record {
-            Element::Tangent(t) => (t.id, t.before, t.after),
-            Element::Arc(x) => (x.id, x.before, x.after),
-        };
+        let (eid, before, after) = (
+            crate::aecc_alignment::Linked::id(&e.record),
+            crate::aecc_alignment::Linked::before(&e.record),
+            crate::aecc_alignment::Linked::after(&e.record),
+        );
         for byte in id {
             intervals.byte(*byte);
         }

@@ -25,6 +25,7 @@ fn s94_first_tangent_deleted() {
         .map(|e| match &e.record {
             Element::Tangent(t) => t.id,
             Element::Arc(a) => a.id,
+            _ => unreachable!(),
         })
         .collect();
     assert_eq!(ids, [4, 2, 5, 3]);
@@ -86,6 +87,7 @@ fn chain(path: &str) -> Vec<(i32, i32, i32)> {
         .map(|e| match &e.record {
             Element::Tangent(t) => (t.id, t.before, t.after),
             Element::Arc(a) => (a.id, a.before, a.after),
+            _ => unreachable!(),
         })
         .collect()
 }
@@ -112,6 +114,7 @@ fn s96_curve_added_back_gets_id_5_and_is_stored_last() {
         .map(|e| match e {
             Element::Tangent(t) => t.id,
             Element::Arc(a) => a.id,
+            _ => unreachable!(),
         })
         .collect();
     assert_eq!(stored, [2, 3, 4, 5]);
@@ -152,6 +155,7 @@ fn element_list_bits(r: &raw::RawRecord) -> Vec<u8> {
         .map(|e| match &e.record {
             Element::Tangent(t) => t.end_bit(),
             Element::Arc(a) => a.end_bit,
+            _ => unreachable!(),
         })
         .max()
         .unwrap();
@@ -245,6 +249,7 @@ fn chain_of(r: &raw::RawRecord) -> Vec<(i32, i32, i32)> {
         .map(|e| match &e.record {
             Element::Tangent(t) => (t.id, t.before, t.after),
             Element::Arc(a) => (a.id, a.before, a.after),
+            _ => unreachable!(),
         })
         .collect()
 }

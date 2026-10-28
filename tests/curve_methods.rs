@@ -144,3 +144,30 @@ fn s118_open_centre_curves_between_lines() {
     assert!((r - 112.7841).abs() < 1e-3 && !ccw);
     assert!(near(segs[3].end(), 549.5, 2061.0));
 }
+
+#[test]
+fn s119_line_spiral_group_before_centre_curve() {
+    let o = raw::open("samples/S119_S118_first_circle_edited.dwg").unwrap();
+    let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0x1061)
+        .unwrap();
+    let d = decode_elements(&r).unwrap();
+    assert_eq!(d.record_count(), 5);
+    assert!(d.has_groups());
+    let Element::LineSpiral(g) = &d.elements[0].record else {
+        panic!("element 7 is not a line-spiral group")
+    };
+    assert_eq!((g.id, g.before, g.after, g.mode), (7, 0, 2, 256));
+    assert!(near(g.start, 438.0, 2124.0) && (g.spiral_length - 21.5058).abs() < 1e-4);
+    // As drawn: line to TS, clothoid to SC on the first circle.
+    let line = d.elements[0].segment;
+    assert!(matches!(line, Segment::Line { .. }) && near(line.end(), 254.4271, 2098.2015));
+    let Segment::Spiral { end, geometry, .. } = d.elements[1].segment else {
+        panic!("no spiral part")
+    };
+    assert!(near(end, 233.016, 2097.0713) && !geometry.counter_clockwise);
+    let (s, e, ..) = geom(d.elements[2].segment);
+    assert!(near(s, 233.016, 2097.0713) && near(e, 204.1145, 2161.4898));
+    assert!((d.length() - 1019.3793).abs() < 1e-3);
+}
