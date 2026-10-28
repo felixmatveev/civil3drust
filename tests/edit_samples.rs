@@ -343,3 +343,114 @@ fn s100_interior_tangent_deleted_leaves_a_detached_piece() {
     let ids: Vec<i32> = after.detached[0].iter().map(|e| e.record.id()).collect();
     assert_eq!(ids, [5, 3]);
 }
+
+/// The interval blocks after the element records: (station, distance from
+/// element start, length to element end, kind, sub, next ID, 6 points) per
+/// interval, without the GUIDs.
+fn intervals(r: &raw::RawRecord) -> Vec<(Vec<f64>, [i32; 3], Vec<u8>)> {
+    let d = decode_elements(r).unwrap();
+    let mut p = d.records_end_bit().unwrap();
+    let mut out = Vec::new();
+    for _ in 0..3 {
+        p = raw::read_bl(&r.data, p).unwrap().1;
+    }
+    let (n, mut p2) = raw::read_bl(&r.data, p).unwrap();
+    for _ in 0..n {
+        let body_start = p2 + 128;
+        let mut q = body_start + 13;
+        let mut v = Vec::new();
+        for _ in 0..3 {
+            let (x, r2) = raw::read_bd(&r.data, q).unwrap();
+            v.push(x);
+            q = r2;
+        }
+        let mut k = [0; 3];
+        for x in &mut k {
+            let (y, r2) = raw::read_bl(&r.data, q).unwrap();
+            *x = y;
+            q = r2;
+        }
+        for i in 0..6 {
+            v.push(raw::get_f64(&r.data, q + 64 * i));
+        }
+        q += 384;
+        let bits = (body_start..q).map(|b| raw::get_bit(&r.data, b)).collect();
+        out.push((v, k, bits));
+        p2 = q;
+    }
+    out
+}
+
+/// S113: a design speed starting on a curve (1+18 on the curve 1+03.90 to
+/// 1+33.55). The curve interval is `BL 2, BL 1` with the tangent's distance
+/// rule; civil3drust writes the same interval bit for bit.
+#[test]
+fn speed_interval_on_a_curve_s113() {
+    use civil3drust::aecc_design_speed::set_design_speeds;
+    let r = record("samples/S113_line_methods.dwg", 0x10E4);
+    let theirs = intervals(&r);
+    let curve = theirs.iter().find(|i| i.1[0] == 2).unwrap();
+    assert_eq!(curve.1, [2, 1, 3]);
+    let v = &curve.0;
+    assert_eq!(v[0], 118.0);
+    assert!((v[1] - 14.102228).abs() < 1e-6);
+    assert!(
+        (v[1] + v[2] - 29.650071).abs() < 1e-6,
+        "third = length to the end"
+    );
+    let (b, hb) = set_design_speeds(&r, &[(0.0, 60.0), (118.0, 30.0)], 5).unwrap();
+    let ours = intervals(&edited(&r, (b, hb)));
+    // Same fields; values equal up to Civil 3D's last-digit rounding.
+    for kind in [1, 2] {
+        let o = ours.iter().find(|i| i.1[0] == kind).unwrap();
+        let t = theirs.iter().find(|i| i.1[0] == kind).unwrap();
+        assert_eq!(o.1, t.1);
+        for (a, b) in o.0.iter().zip(&t.0) {
+            assert!(
+                (a - b).abs() < 1e-9 * (1.0 + b.abs()),
+                "kind {kind}: {a} vs {b}"
+            );
+        }
+    }
+}
+
+/// S113: Civil 3D's line methods. `fixed line by length` is stored as a
+/// plain two-point line; `floating line by length` is kind 5 (length);
+/// `free line` is kind 9, tangent to the three-point curves on both sides,
+/// which it trims (labels: PT 0+22.18, PC 3+10.06, EP 3+89.12).
+#[test]
+fn line_methods_s113() {
+    use civil3drust::aecc_alignment::{KIND_FIXED, KIND_FLOATING_LENGTH, KIND_FREE};
+    let kind_of = |h: u64, id: i32| {
+        let d = decode_elements(&record("samples/S113_line_methods.dwg", h)).unwrap();
+        let t = d
+            .elements
+            .iter()
+            .find_map(|e| match &e.record {
+                Element::Tangent(t) if t.id == id => Some(t.clone()),
+                _ => None,
+            })
+            .unwrap();
+        (t.kind, t.length, d)
+    };
+    let (k, _, d) = kind_of(0x10E4, 3);
+    assert_eq!(k, KIND_FIXED);
+    assert!((d.length() - 233.5478).abs() < 1e-4);
+    let (k, l, d) = kind_of(0x10EA, 4);
+    assert_eq!((k, l), (KIND_FLOATING_LENGTH, Some(100.0)));
+    assert!((d.length() - 233.5478).abs() < 1e-4);
+    let (k, _, d) = kind_of(0x10F4, 4);
+    assert_eq!(k, KIND_FREE);
+    let mut sta = 0.0;
+    let stations: Vec<f64> = d
+        .elements
+        .iter()
+        .map(|e| {
+            sta += e.segment.length();
+            sta
+        })
+        .collect();
+    for (got, want) in stations.iter().zip([22.18, 310.06, 389.12]) {
+        assert!((got - want).abs() < 0.005, "{got} vs {want}");
+    }
+}

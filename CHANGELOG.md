@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Line kinds 5 (floating line by length) and 9 (free line between two
+  curves) decoded and resolved; free lines trim the three-point curves
+  next to them (S113).
+- `set_design_speeds` writes speed intervals on curves (`BL 2, BL 1`,
+  point on the arc), matching Civil 3D's S113 interval. Samples S113,
+  S114.
 - `docs/element-methods.md`: Civil 3D's layout methods mapped to element
   constraints, with the sample plan for lines, curves and spirals (S113–S117).
 - `aecc_entity::entity_common`: the ODA common entity data at the start

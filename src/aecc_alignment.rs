@@ -78,11 +78,18 @@ pub struct TangentRecord {
     pub after: i32,
     pub start: Point2,
     pub end: Point2,
+    /// Kind 5: the stored length (S113).
+    pub length: Option<f64>,
+    /// Bit offset just after the record (0 for records not read from data).
+    pub record_end: usize,
 }
 
 impl TangentRecord {
     /// Bit offset just after the record.
     pub fn end_bit(&self) -> usize {
+        if self.record_end > 0 {
+            return self.record_end;
+        }
         self.coords_bit + if self.kind == KIND_FLOATING { 128 } else { 256 }
     }
 }
@@ -91,6 +98,12 @@ impl TangentRecord {
 pub const KIND_FIXED: i32 = 0;
 /// Element kind of a floating tangent: end point only (S89 element 3).
 pub const KIND_FLOATING: i32 = 4;
+/// Floating line from the previous curve's end with a length: `BD
+/// length` (S113 `floating line by length`).
+pub const KIND_FLOATING_LENGTH: i32 = 5;
+/// Free line between two curves, tangent to both: no data after the links
+/// (S113 `free line`).
+pub const KIND_FREE: i32 = 9;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DecodeError {
@@ -167,7 +180,7 @@ pub(crate) fn record_at(data: &[u8], bit: usize) -> Option<TangentRecord> {
     let (before, k) = raw::read_bl(data, k)?;
     let (after, k) = raw::read_bl(data, k)?;
     let small = |v: i32| (0..100_000).contains(&v);
-    if !(kind == KIND_FIXED || kind == KIND_FLOATING)
+    if ![KIND_FIXED, KIND_FLOATING, KIND_FLOATING_LENGTH, KIND_FREE].contains(&kind)
         || id < 1
         || !small(id)
         || !small(before)
@@ -193,6 +206,45 @@ pub(crate) fn record_at(data: &[u8], bit: usize) -> Option<TangentRecord> {
             after,
             start: Point2::new(f64::NAN, f64::NAN),
             end,
+            length: None,
+            record_end: k + 128,
+        });
+    }
+    let nan = Point2::new(f64::NAN, f64::NAN);
+    if kind == KIND_FLOATING_LENGTH {
+        let (length, q) = raw::read_bd(data, k)?;
+        if before == 0 || !(length.is_finite() && length > 0.0) {
+            return None;
+        }
+        return Some(TangentRecord {
+            header_bit: bit,
+            coords_bit: k,
+            kind,
+            id,
+            before,
+            after,
+            start: nan,
+            end: nan,
+            length: Some(length),
+            record_end: q,
+        });
+    }
+    if kind == KIND_FREE {
+        let q = k;
+        if before == 0 || after == 0 {
+            return None;
+        }
+        return Some(TangentRecord {
+            header_bit: bit,
+            coords_bit: k,
+            kind,
+            id,
+            before,
+            after,
+            start: nan,
+            end: nan,
+            length: None,
+            record_end: q,
         });
     }
     if k + 256 > raw::bit_len(data) {
@@ -216,6 +268,8 @@ pub(crate) fn record_at(data: &[u8], bit: usize) -> Option<TangentRecord> {
         after,
         start,
         end,
+        length: None,
+        record_end: k + 256,
     })
 }
 

@@ -581,12 +581,36 @@ pub fn resolve(chain: &[Element]) -> Result<Vec<ResolvedElement>, DecodeError> {
             Element::Arc(a) => match a.def {
                 ArcDef::ThreePoint {
                     start, mid, end, ..
-                } => Segment::Arc {
-                    start,
-                    end,
-                    geometry: arc_through(start, mid, end)
-                        .ok_or_else(|| unsupported(format!("arc {} is degenerate", a.id)))?,
-                },
+                } => {
+                    let g = arc_through(start, mid, end)
+                        .ok_or_else(|| unsupported(format!("arc {} is degenerate", a.id)))?;
+                    // A free line (kind 9) next to it trims it to the
+                    // tangent point (S113).
+                    let free = |e: Option<&Element>| match e {
+                        Some(Element::Tangent(t)) if t.kind == crate::aecc_alignment::KIND_FREE => {
+                            Some(t.clone())
+                        }
+                        _ => None,
+                    };
+                    let s = i
+                        .checked_sub(1)
+                        .and_then(|j| free(chain.get(j)))
+                        .map_or(start, |t| t.end);
+                    let e = free(chain.get(i + 1)).map_or(end, |t| t.start);
+                    if s == start && e == end {
+                        Segment::Arc {
+                            start,
+                            end,
+                            geometry: g,
+                        }
+                    } else {
+                        Segment::Arc {
+                            start: s,
+                            end: e,
+                            geometry: arc_on(&g, s, e),
+                        }
+                    }
+                }
                 ArcDef::Free { .. } | ArcDef::Floating { .. } | ArcDef::FloatingEnd { .. } => {
                     let (pc, pt, g) = free[i].expect("resolved above");
                     Segment::Arc {
@@ -677,29 +701,139 @@ pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> 
     })
 }
 
+/// End point and unit travel direction at the end of a segment.
+fn end_state(seg: &Segment) -> (Point2, (f64, f64)) {
+    match *seg {
+        Segment::Line { start, end } => {
+            let l = start.distance_to(end).max(f64::MIN_POSITIVE);
+            (end, ((end.x - start.x) / l, (end.y - start.y) / l))
+        }
+        Segment::Arc {
+            end, geometry: g, ..
+        } => {
+            let (rx, ry) = (
+                (end.x - g.center.x) / g.radius,
+                (end.y - g.center.y) / g.radius,
+            );
+            let d = if g.counter_clockwise {
+                (-ry, rx)
+            } else {
+                (ry, -rx)
+            };
+            (end, d)
+        }
+    }
+}
+
+/// The line tangent to circle `c1` (travelled in its sense) leaving it
+/// and to circle `c3` entering it in its sense: (point on c1, point on
+/// c3). With the left normal n of the line, a counter-clockwise circle
+/// has its centre at p + r·n, a clockwise one at p − r·n.
+fn tangent_between(c1: &ArcGeometry, c3: &ArcGeometry) -> Option<(Point2, Point2)> {
+    let s1 = if c1.counter_clockwise { 1.0 } else { -1.0 };
+    let s3 = if c3.counter_clockwise { 1.0 } else { -1.0 };
+    let (dx, dy) = (c3.center.x - c1.center.x, c3.center.y - c1.center.y);
+    let dist = dx.hypot(dy);
+    if dist <= 0.0 {
+        return None;
+    }
+    let k = (s3 * c3.radius - s1 * c1.radius) / dist;
+    if k.abs() > 1.0 {
+        return None;
+    }
+    let theta = dy.atan2(dx);
+    let mut best: Option<(Point2, Point2, f64)> = None;
+    for sgn in [1.0, -1.0] {
+        let a = theta + sgn * k.acos();
+        let n = (a.cos(), a.sin());
+        let p1 = Point2::new(
+            c1.center.x - s1 * c1.radius * n.0,
+            c1.center.y - s1 * c1.radius * n.1,
+        );
+        let p3 = Point2::new(
+            c3.center.x - s3 * c3.radius * n.0,
+            c3.center.y - s3 * c3.radius * n.1,
+        );
+        let d = (n.1, -n.0); // n is the left normal of d
+        let along = (p3.x - p1.x) * d.0 + (p3.y - p1.y) * d.1;
+        if along > 0.0 && best.is_none_or(|b| along < b.2) {
+            best = Some((p1, p3, along));
+        }
+    }
+    best.map(|(a, b, _)| (a, b))
+}
+
+/// An arc on the circle of `g` from `start` to `end` in `g`'s sense.
+fn arc_on(g: &ArcGeometry, start: Point2, end: Point2) -> ArcGeometry {
+    let tau = std::f64::consts::TAU;
+    let ang = |p: Point2| (p.y - g.center.y).atan2(p.x - g.center.x);
+    let sweep = if g.counter_clockwise {
+        (ang(end) - ang(start)).rem_euclid(tau)
+    } else {
+        (ang(start) - ang(end)).rem_euclid(tau)
+    };
+    ArcGeometry {
+        sweep,
+        length: g.radius * sweep,
+        ..*g
+    }
+}
+
 /// Resolve one connected piece of the element chain.
 fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, DecodeError> {
-    // Floating tangents store only their end point; they start where the
-    // previous element ends (S89).
+    // Lines that depend on their neighbours are placed first, left to
+    // right: floating lines (kind 4: end point, S89; kind 5: length, S113)
+    // continue from the resolved end of the elements before them; free
+    // lines (kind 9, S113) touch the circles of the curves on both sides.
     for i in 1..chained.len() {
-        let prev_end = match &chained[i - 1] {
-            Element::Tangent(t) => Some(t.end),
-            Element::Arc(a) => match a.def {
-                ArcDef::ThreePoint { end, .. } => Some(end),
-                ArcDef::FloatingEnd { end, .. } => Some(end),
-                ArcDef::Free { .. } | ArcDef::Floating { .. } => None,
-            },
+        let Element::Tangent(t) = &chained[i] else {
+            continue;
         };
-        if let Element::Tangent(t) = &mut chained[i] {
-            if t.kind == aecc_alignment::KIND_FLOATING {
-                t.start = prev_end.ok_or_else(|| {
-                    DecodeError::BrokenChain(format!(
-                        "floating tangent {} follows a free arc (not supported)",
-                        t.id
-                    ))
-                })?;
-            }
+        let (kind, id) = (t.kind, t.id);
+        let float =
+            kind == aecc_alignment::KIND_FLOATING || kind == aecc_alignment::KIND_FLOATING_LENGTH;
+        if !float && kind != aecc_alignment::KIND_FREE {
+            continue;
         }
+        let unsupported =
+            |why: &str| DecodeError::BrokenChain(format!("tangent {id} (kind {kind}): {why}"));
+        let prefix =
+            resolve(&chained[..i]).map_err(|_| unsupported("elements before it don't resolve"))?;
+        let last = prefix.last().expect("i >= 1");
+        let (p0, dir) = end_state(&last.segment);
+        if float {
+            let Element::Tangent(t) = &mut chained[i] else {
+                unreachable!()
+            };
+            t.start = p0;
+            if kind == aecc_alignment::KIND_FLOATING_LENGTH {
+                let l = t.length.unwrap_or(0.0);
+                t.end = Point2::new(p0.x + dir.0 * l, p0.y + dir.1 * l);
+            }
+            continue;
+        }
+        // Free line: both neighbours must be arcs with known circles.
+        let c1 = match last.segment {
+            Segment::Arc { geometry, .. } => geometry,
+            _ => return Err(unsupported("not after an arc")),
+        };
+        let c3 = match chained.get(i + 1) {
+            Some(Element::Arc(ArcRecord {
+                def: ArcDef::ThreePoint {
+                    start, mid, end, ..
+                },
+                ..
+            })) => {
+                arc_through(*start, *mid, *end).ok_or_else(|| unsupported("next arc degenerate"))?
+            }
+            _ => return Err(unsupported("not before a three-point arc")),
+        };
+        let (a, b) = tangent_between(&c1, &c3).ok_or_else(|| unsupported("no common tangent"))?;
+        let Element::Tangent(t) = &mut chained[i] else {
+            unreachable!()
+        };
+        t.start = a;
+        t.end = b;
     }
     let elements = resolve(&chained)?;
     for w in elements.windows(2) {

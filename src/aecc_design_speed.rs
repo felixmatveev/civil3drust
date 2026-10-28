@@ -129,8 +129,7 @@ pub fn design_speeds(rec: &RawRecord) -> Result<Vec<DesignSpeed>, SpeedError> {
 /// geometry) and the table. The entries keep the old GUIDs in order (the
 /// first old interval's GUID first) and get random version-4 GUIDs from
 /// `seed` after that. Works on alignments without design speeds too.
-/// Speeds starting on curves get a table entry but no interval (the curve
-/// form is not decoded, S89). Speeds must lie within the alignment. Returns the new bytes and
+/// Speeds starting on curves get the curve form of the interval (S113). Speeds must lie within the alignment. Returns the new bytes and
 /// handle-stream size.
 pub fn set_design_speeds(
     rec: &RawRecord,
@@ -242,15 +241,39 @@ fn write_intervals(
             acc += len;
         }
         let (e, t, len) = found.ok_or_else(|| err("no elements"))?;
-        // Speeds starting on a curve get no interval: the curve form (S89:
-        // BL 2, BL 1 and a third distance whose rule is not known) is not
-        // written; Civil 3D accepts table entries without intervals (S77)
-        // and rebuilds the block when the alignment is edited (S79).
-        let Segment::Line { start: a, end: b } = e.segment else {
-            continue;
+        // The interval stores the element's start and end and the point at
+        // the station; on a curve (S113: BL 2, BL 1) the point lies on the
+        // arc. The third distance is the length to the element's end, as
+        // on tangents (S113: 15.548 = 29.650 − 14.102); S89's curve
+        // interval stores 84.63 there instead of 35.72 (not explained).
+        let (a, b, p, kind_bls) = match e.segment {
+            Segment::Line { start: a, end: b } => {
+                let f = if len > 0.0 { t / len } else { 0.0 };
+                (
+                    a,
+                    b,
+                    Point2::new(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f),
+                    (1, 0),
+                )
+            }
+            Segment::Arc {
+                start: a,
+                end: b,
+                geometry: g,
+            } => {
+                let a0 = (a.y - g.center.y).atan2(a.x - g.center.x);
+                let th = if g.counter_clockwise {
+                    a0 + t / g.radius
+                } else {
+                    a0 - t / g.radius
+                };
+                let p = Point2::new(
+                    g.center.x + g.radius * th.cos(),
+                    g.center.y + g.radius * th.sin(),
+                );
+                (a, b, p, (2, 1))
+            }
         };
-        let f = if len > 0.0 { t / len } else { 0.0 };
-        let p = Point2::new(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f);
         let after = match &e.record {
             Element::Tangent(t) => t.after,
             Element::Arc(x) => x.after,
@@ -264,8 +287,8 @@ fn write_intervals(
         // element), then the length to the element's end.
         intervals.bd(t);
         intervals.bd(len - t);
-        intervals.bl(1);
-        intervals.bl(0);
+        intervals.bl(kind_bls.0);
+        intervals.bl(kind_bls.1);
         intervals.bl(after);
         for v in [a.x, a.y, b.x, b.y, p.x, p.y] {
             intervals.rd(v);

@@ -1996,6 +1996,48 @@ post-type value could be tied to a property with the existing samples;
 they stay as copied constants until new sample types (curves, spirals,
 other alignment types) show them changing.
 
+## Line methods and speeds on curves (S113)
+
+S113 (owner): three alignments whose last line was made with a specific
+layout method, plus an alignment with no elements.
+
+- **Fixed Line (from curve end, length)** is stored as a plain fixed line
+  (kind 0, start and end point); the length isn't kept.
+- **Floating Line (from curve end, length)** is **kind 5**: after the
+  links only `BD length` (100). It starts at the previous element's end
+  in that element's end direction.
+- **Free Line (between two curves)** is **kind 9**: no data after the
+  links. It is tangent to both neighbouring curves (here three-point
+  curves, which keep their stored points) and trims them: the first curve
+  ends and the last starts at the tangent points. The owner drew the two
+  curves as separate pieces; the free line joined them into one chain.
+  Decoded stations match Civil 3D's labels (PT 0+22.18, PC 3+10.06, EP
+  3+89.12; test `line_methods_s113`).
+- The curves before the length lines are n2 = 13 (radius + end point,
+  tangent to the line before), the code S99 showed after a deletion —
+  probably Floating Curve (from entity, radius, through point).
+- `EMPTY`: element count 0, no records, both first-element IDs 0, no
+  speed intervals, one table entry (60 at 0+00). civil3drust reports it
+  as "no element records".
+
+**Speed interval on a curve (open question 1).** `fixed line by length`
+has 60 at 0+00 and 30 at 1+18, inside the curve (1+03.90 – 1+33.55). The
+curve's interval is the tangent form with `BL 2, BL 1` instead of
+`BL 1, BL 0`: station 118, distance from the element start 14.102, then
+**the length to the element end 15.548** (= 29.650 − 14.102, the same
+rule as on tangents), the next element's ID, and the curve's start, end
+and the point at the station on the arc. S89's curve interval stores
+84.63 instead of the 35.72 this rule gives; that one stays unexplained.
+`set_design_speeds` now writes curve intervals; for S113 its intervals
+equal Civil 3D's to the last digit (test
+`speed_interval_on_a_curve_s113`). Civil 3D itself wrote **no** intervals
+for the other two alignments (one speed at 0+00), so the block is
+optional, as S90/S91 showed.
+
+S114 = S113 + speeds starting on curves, written by civil3drust
+(`free line` 0:60 10:50 200:40 350:30; `floating line by length` 0:60
+120:35).
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length

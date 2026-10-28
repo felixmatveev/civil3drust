@@ -265,6 +265,8 @@ pub fn plan(pis: &[Point2], radii: &[Option<f64>]) -> Result<Vec<Element>, Build
                 after,
                 start: pis[k],
                 end: pis[k + 1],
+                length: None,
+                record_end: 0,
             }),
             _ => Element::Arc(ArcRecord {
                 header_bit: 0,
