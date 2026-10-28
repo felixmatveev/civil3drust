@@ -4,7 +4,7 @@
 //! Usage: cargo run --release --example alignments -- file.dwg
 
 use civil3drust::aecc_alignment::{record_name, Linked};
-use civil3drust::aecc_elements::{decode_elements, ArcDef, Element, Segment};
+use civil3drust::aecc_elements::{decode_elements, Element, Segment};
 use civil3drust::raw;
 
 fn main() {
@@ -63,12 +63,7 @@ fn main() {
                 (Segment::Line { .. }, _) => "tangent".to_string(),
                 (Segment::Arc { geometry: g, .. }, rec) => {
                     let kind = match rec {
-                        Element::Arc(a) => match a.def {
-                            ArcDef::ThreePoint { .. } => "by 3 points",
-                            ArcDef::Free { .. } => "free, by radius",
-                            ArcDef::Floating { .. } => "floating, start point and radius",
-                            ArcDef::FloatingEnd { .. } => "floating, end point and radius",
-                        },
+                        Element::Arc(a) => a.def.describe(),
                         Element::Tangent(_) => "?",
                     };
                     format!(

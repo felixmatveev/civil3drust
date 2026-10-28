@@ -114,8 +114,10 @@ fn arc_id_bits(data: &[u8], header_bit: usize) -> Option<(usize, usize)> {
     let k = k + 1; // flag
     let (_, k) = raw::read_bd(data, k)?;
     let (_, k) = raw::read_bd(data, k)?;
-    let (_, k) = raw::read_bl(data, k)?;
-    let (_, k) = raw::read_bd(data, k)?;
+    let (n1, mut k) = raw::read_bl(data, k)?;
+    for _ in 0..n1 {
+        k = raw::read_bd(data, k)?.1;
+    }
     let (_, k) = raw::read_bl(data, k)?;
     let ids = k + 1;
     let (_, k) = raw::read_bl(data, ids)?;
@@ -461,7 +463,13 @@ pub fn remove_element(
     if idx == 0 {
         let next = &d.elements[1];
         if let Element::Arc(a) = &next.record {
-            if matches!(a.def, ArcDef::FloatingEnd { .. }) {
+            if matches!(
+                a.def,
+                ArcDef::FloatingEnd { .. }
+                    | ArcDef::FloatingThrough { .. }
+                    | ArcDef::FloatingLength { .. }
+                    | ArcDef::FloatingDirection { .. }
+            ) {
                 return Err(err(format!(
                     "curve {} would lose the element it is tangent to \
                      (no sample of that form yet)",
@@ -490,13 +498,20 @@ pub fn remove_element(
             }
             Element::Tangent(_) => Rewrite::Links,
             Element::Arc(a) => match a.def {
-                ArcDef::ThreePoint { .. } | ArcDef::FloatingEnd { .. } => Rewrite::Links,
+                ArcDef::ThreePoint { .. }
+                | ArcDef::FloatingEnd { .. }
+                | ArcDef::FloatingThrough { .. }
+                | ArcDef::FloatingLength { .. }
+                | ArcDef::FloatingDirection { .. } => Rewrite::Links,
                 // S99: the free curve keeps its end point (its old PT).
                 ArcDef::Free { .. } => {
                     floating.push(a.id);
                     Rewrite::FloatingTo(prev.segment.end())
                 }
-                ArcDef::Floating { .. } => {
+                ArcDef::Floating { .. }
+                | ArcDef::FreeThrough { .. }
+                | ArcDef::CenterRadius { .. }
+                | ArcDef::CenterThrough { .. } => {
                     return Err(err(format!(
                         "curve {} would lose the element it is tangent to \
                          (no sample of that form yet)",

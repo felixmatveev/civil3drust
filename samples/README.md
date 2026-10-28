@@ -128,6 +128,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S114 | `S114_S113_curve_speeds.dwg` | civil3drust | S113 + speeds `free line` 0:60 10:50 200:40 350:30 (10 on the first curve, 350 on the last) and `floating line by length` 0:60 120:35 (on the curve), written by `set_speeds` with curve intervals. | 461924 | `f3b3f36e2eafe7cd` |
 | S115 | `S115_S114_civ3d_resaved.dwg` | Civil 3D 2024 | S114 opened (no errors; speeds shown and editable, owner), saved. | 484550 | `311468ad8480ab27` |
 | S116 | `S116_S24_curve_method_alignments.dwg` | civil3drust | S24 + 14 empty alignments (FB3 … FDA, every third handle), each named after one curve method: Fixed Curve (Three point), the seven More Fixed Curves, Floating Curve (From entity, radius, through point), the three More Floating Curves, Free Curve Fillet (radius) and (through point). Copied from S113's `EMPTY` (`create_alignment … "" --template 10D0`). For the owner to lay out one curve per alignment. | 457673 | `6fcf4b6a7ecd5e55` |
+| S117 | `S117_S116_curve_methods.dwg` | Civil 3D 2024 | S116 with one curve laid out per method by the owner (inputs in each alignment's description); saved. FC5's description says through point 0,0 but Civil 3D stored and drew (200, 0). | 481739 | `ca7c82dfb85ce123` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

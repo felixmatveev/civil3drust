@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Curve constraint codes 0 (centre + radius), 1 (centre + through point),
+  8 (from entity end through point), 11 (through point with direction),
+  21 (from entity end by radius and length) and 28 (fillet through a
+  point) decoded and resolved; whole circles; the curve parameter block
+  reads `n1` BDs and the closed bit. `ArcDef::describe`. Sample S117 (one
+  curve per Civil 3D curve method) and `tests/curve_methods.rs`.
 - `create_alignment` with no PIs copies an empty template alignment (S113
   `EMPTY`), giving its speed-table entry a fresh GUID;
   `aecc_design_speed::empty_alignment_table`. Sample S116: 14 empty

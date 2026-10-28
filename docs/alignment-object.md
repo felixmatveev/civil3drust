@@ -2052,6 +2052,47 @@ writes them this way and matches S115's intervals (test
 intervals (0, 200, 350, then 10); the order follows neither station nor
 table order and doesn't matter for reading.
 
+## Curve methods (S117)
+
+S116's 14 empty alignments, each given one curve by the owner with one
+Civil 3D curve method (inputs in the descriptions), saved as S117. Every
+geometry below was checked against the lines and arcs Civil 3D wrote into
+the record's proxy graphics. Full method → code table:
+`docs/element-methods.md`.
+
+**Parameter block.** `B flag, BD p1, BD p2, BL n1, n1 × BD, BL n2,
+B closed, BL id, before, after`. `n1` counts the BDs that follow (1
+everywhere except FC2, where it is 2 with values −1, −1). The bit before
+the IDs, always 0 before, is 1 on the three whole circles.
+
+**Fixed curves are normalised.** Two points and direction (first or
+second point), two points and radius, from entity end through point:
+all stored as three-point arcs (code 2) — the method is not kept.
+Through point + direction + radius is stored as centre and radius.
+
+**Whole circles (codes 0, 1).** A fixed curve by its centre with nothing
+attached becomes a whole circle: length 2πR, drawn as a circle, start
+marker at centre + (R, 0). Code 0: `RD centre, BD radius, B clockwise`;
+code 1: `RD centre, RD through point, B clockwise`. FC5's description
+says "through point at 0,0" but the record and the drawn marker have
+(200, 0) (radius 100).
+
+**Floating curves.** Code 8 (from entity end, through point): `RD end`;
+code 21 (from entity end, radius, length): `BD radius, BD length,
+B clockwise` (1 for FD1, drawn clockwise); code 11 (from entity, through
+point, direction at point): `RD end, RD unit direction` — the curve is
+tangent to the previous line, and that line's stored end (100, 1100)
+is drawn extended to the tangent point (139.50, 1100); code 13 (from
+entity, radius, through point) confirmed: `BD radius, RD end`, the line
+trimmed.
+
+**Free curve through a point (code 28).** `RD point`; the fillet between
+the two tangents whose circle passes through it.
+
+**Not yet seen.** A counter-clockwise direction bit; a centre-defined
+curve attached to other elements (`closed` 0). Civil 3D turns commas in
+alignment names into `_`.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length

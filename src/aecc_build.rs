@@ -46,7 +46,9 @@ pub const FREE_ARC_PARAMS: ArcParams = ArcParams {
     p2: -1.0,
     n1: 1,
     p3: -1.0,
+    p4: None,
     n2: 29,
+    closed: false,
 };
 /// Bit of the EED-size field (`10`, no EED); has-graphics follows, then
 /// the graphics size (BLL) at +3.
@@ -214,8 +216,11 @@ pub fn encode_free_arc(
     w.bd(params.p2);
     w.bl(params.n1);
     w.bd(params.p3);
+    if let Some(p4) = params.p4 {
+        w.bd(p4);
+    }
     w.bl(params.n2);
-    w.bit(0);
+    w.bit(params.closed as u8);
     w.bl(ids.0);
     w.bl(ids.1);
     w.bl(ids.2);

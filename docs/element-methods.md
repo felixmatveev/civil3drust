@@ -25,27 +25,34 @@ Status: **known** = decoded from a sample; **probable** = fits a sample but the 
 | method | constraint | status | samples |
 |---|---|---|---|
 | Fixed Curve (three point) | n2 = 2: start, mid, end points | known | S10, S89 |
-| Fixed Curve (two points and direction at first point) | | planned | S117 |
-| Fixed Curve (two points and direction at second point) | | planned | S117 |
-| Fixed Curve (two points and radius) | | planned | S117 |
-| Fixed Curve (from entity end, through point) | | planned | S117 |
-| Fixed Curve (center point and radius) | | planned | S117 |
-| Fixed Curve (center point, through point) | | planned | S117 |
-| Fixed Curve (through point, direction at point and radius) | | planned | S117 |
+| Fixed Curve (two points and direction at first point) | n2 = 2: stored as three points | known | S117 |
+| Fixed Curve (two points and direction at second point) | n2 = 2: stored as three points | known | S117 |
+| Fixed Curve (two points and radius) | n2 = 2: stored as three points | known | S117 |
+| Fixed Curve (from entity end, through point) | n2 = 2: stored as three points | known | S117 |
+| Fixed Curve (center point and radius) | n2 = 0: `RD centre X, Y, BD radius, B clockwise`; a whole circle (closed bit set) | known | S117 |
+| Fixed Curve (center point, through point) | n2 = 1: `RD centre X, Y, RD point X, Y, B clockwise`; a whole circle | known | S117 |
+| Fixed Curve (through point, direction at point and radius) | n2 = 0: stored by its centre, as centre and radius; a whole circle | known | S117 |
 | Fixed Curve – Best Fit | | later | |
-| Floating Curve (from entity, radius, through point) | probably n2 = 13 (radius + end point; S113's curves, method to be confirmed) | probable | S113 |
-| Floating Curve (from entity end, through point) | | planned | S117 |
-| Floating Curve (from entity end, radius, length) | | planned | S117 |
-| Floating Curve (from entity, through point, direction at point) | | planned | S117 |
+| Floating Curve (from entity, radius, through point) | n2 = 13: `BD radius, RD end X, Y`; the line before is trimmed to the tangent point | known | S113, S117 |
+| Floating Curve (from entity end, through point) | n2 = 8: `RD end X, Y`; starts tangent at the previous element's end | known | S117 |
+| Floating Curve (from entity end, radius, length) | n2 = 21: `BD radius, BD length, B clockwise` | known | S117 |
+| Floating Curve (from entity, through point, direction at point) | n2 = 11: `RD end X, Y, RD unit direction`; tangent to the previous line, whose end moves (extends) to the tangent point | known | S117 |
 | Floating Curve – Best Fit | | later | |
 | Free Curve Fillet (between two entities, radius) | n2 = 29: radius | known | S11, S89 |
-| Free Curve Fillet (between two entities, through point) | | planned | S117 |
+| Free Curve Fillet (between two entities, through point) | n2 = 28: `RD point X, Y` on the fillet | known | S117 |
 | Free Curve – Best Fit | | later | |
 | (made by Civil 3D when the tangent before a free curve is deleted) | n2 = 15: radius + start point | known | S94 |
 | (made by Civil 3D when the tangent after a free curve is deleted) | n2 = 13: radius + end point | known | S99, S100 |
 
 `p1` in the curve parameter block is the design speed at the curve (−1
-until Civil 3D solves it, S94).
+until Civil 3D solves it, S94). The parameter block is
+`B flag, BD p1, BD p2, BL n1, n1 × BD, BL n2, B closed` (S117: `n1` is 2,
+with two −1 values, only on the centre-and-radius circle; `closed` is 1
+on the three whole circles). Codes 0, 1 and 21 end with a direction bit,
+1 = clockwise (FD1 drawn clockwise; the owner chose clockwise for the
+circles). A whole circle starts and ends at centre + (R, 0), its start
+marker in the proxy graphics. In S117 every geometry was checked against
+the arcs and lines in each record's proxy graphics.
 
 ## Lines and curves with spirals
 
@@ -83,9 +90,9 @@ until Civil 3D solves it, S94).
 S116 is prepared by civil3drust: S24 plus 14 empty alignments named after
 the 14 curve methods (owner's highlighted list, which adds Fixed Curve
 (Three point) and Free Curve Fillet (radius) as controls). The owner lays
-out one curve with its method in each and saves the result as S117.
-
-
+out one curve with its method in each and saves the result as S117 (decoded: see the tables above and
+`docs/alignment-object.md`, "Curve methods (S117)"). The spiral samples
+S118–S120 are planned the same way.
 
 Each drawing is a copy of S24 with one alignment per method, named after
 the method (e.g. `FL length`, `FC 2pt dir1`, `SCS free`). Where a method

@@ -756,3 +756,23 @@ it is left as it is.
 Civil 3D (S107, S28) but wrong data. Copy the template's vertex flags
 per position: they depend on history we can't reproduce. Verified: S110
 → S111, accepted and kept (renumbered only).
+
+## D-041: Curves keep their constraint; whole circles are single elements
+
+**Context.** S117 shows each curve method stores its own constraint
+(codes 0, 1, 8, 11, 13, 21, 28) except the fixed ones, which Civil 3D
+normalises to three points. Several constrained curves move their
+neighbours (code 11 extends the previous line, code 13 trims it).
+
+**Decision.** Read every code into its own `ArcDef` variant and resolve
+the geometry the way Civil 3D draws it, without rewriting the record:
+the computed placement lives only in the resolved segments. Curves that
+continue from the previous element are placed left to right after the
+elements before them. A centre-defined curve is resolved only as a whole
+circle alone in its alignment (the only form sampled); other cases are
+reported as unsupported. Edits that would leave a constrained curve
+without the element it depends on are refused.
+
+**Alternatives.** Convert constrained curves to three-point arcs when
+reading: loses the method Civil 3D shows and would change the record on
+save.

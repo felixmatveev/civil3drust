@@ -10,7 +10,7 @@
 //! given tangent. The output is read back and decoded.
 
 use civil3drust::aecc_element_edit::{add_free_curve, remove_element};
-use civil3drust::aecc_elements::{decode_elements, ArcDef, DecodedElements, Element};
+use civil3drust::aecc_elements::{decode_elements, DecodedElements, Element, Segment};
 use civil3drust::raw;
 
 fn fail(msg: impl std::fmt::Display) -> ! {
@@ -38,18 +38,11 @@ fn describe(d: &DecodedElements) {
             Element::Tangent(t) => format!("tangent {}", t.id),
             Element::Arc(a) => format!(
                 "{} curve {} R={}",
-                match a.def {
-                    ArcDef::Free { .. } => "free",
-                    ArcDef::Floating { .. } => "floating",
-                    ArcDef::FloatingEnd { .. } => "floating (end)",
-                    ArcDef::ThreePoint { .. } => "3-point",
-                },
+                a.def.describe(),
                 a.id,
-                match a.def {
-                    ArcDef::Free { radius, .. }
-                    | ArcDef::Floating { radius, .. }
-                    | ArcDef::FloatingEnd { radius, .. } => radius,
-                    ArcDef::ThreePoint { .. } => f64::NAN,
+                match e.segment {
+                    Segment::Arc { geometry, .. } => geometry.radius,
+                    _ => f64::NAN,
                 }
             ),
         };

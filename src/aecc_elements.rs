@@ -42,9 +42,17 @@ use crate::raw::{self, RawRecord};
 pub struct ArcParams {
     pub p1: f64,
     pub p2: f64,
+    /// Count of the BDs that follow (1 in most samples, 2 in S117's
+    /// centre-and-radius circle).
     pub n1: i32,
+    /// The first of the `n1` BDs.
     pub p3: f64,
+    /// The second of the `n1` BDs when `n1` is 2.
+    pub p4: Option<f64>,
     pub n2: i32,
+    /// The bit before the IDs: 1 for the full circles of S117 (fixed curves
+    /// by centre; the alignment is the whole circle).
+    pub closed: bool,
 }
 
 /// How an arc record defines its geometry.
@@ -79,6 +87,66 @@ pub enum ArcDef {
         end_bit: usize,
         end: Point2,
     },
+    /// Code 0 (S117): centre and radius, and the turn direction (a bit
+    /// after the data, 1 = clockwise). Fixed Curve (center point and
+    /// radius), and Fixed Curve (through point, direction at point and
+    /// radius), which Civil 3D stores by its centre.
+    CenterRadius {
+        center_bit: usize,
+        center: Point2,
+        radius: f64,
+        clockwise: bool,
+    },
+    /// Code 1 (S117): centre and a point on the circle, and the turn
+    /// direction. Fixed Curve (center point, through point).
+    CenterThrough {
+        center_bit: usize,
+        center: Point2,
+        through: Point2,
+        clockwise: bool,
+    },
+    /// Code 8 (S117): starts at the previous element's end, tangent to it,
+    /// and ends at `end`. Floating Curve (from entity end, through point).
+    FloatingThrough { end_bit: usize, end: Point2 },
+    /// Code 21 (S117): starts at the previous element's end, tangent to
+    /// it, with this radius, length and turn direction. Floating Curve
+    /// (from entity end, radius, length).
+    FloatingLength {
+        radius_bit: usize,
+        radius: f64,
+        length: f64,
+        clockwise: bool,
+    },
+    /// Code 11 (S117): tangent to the previous line (whose end moves to
+    /// the tangent point, extending or trimming it), ending at `end` with
+    /// the unit direction `direction`. Floating Curve (from entity, through
+    /// point, direction at point).
+    FloatingDirection {
+        end_bit: usize,
+        end: Point2,
+        direction: (f64, f64),
+    },
+    /// Code 28 (S117): a fillet between two tangents passing through
+    /// `through`. Free Curve Fillet (between two entities, through point).
+    FreeThrough { through_bit: usize, through: Point2 },
+}
+
+impl ArcDef {
+    /// A short description of how the curve is constrained.
+    pub fn describe(&self) -> &'static str {
+        match self {
+            Self::ThreePoint { .. } => "fixed, by 3 points",
+            Self::Free { .. } => "free, by radius",
+            Self::Floating { .. } => "floating, start point and radius",
+            Self::FloatingEnd { .. } => "floating, radius and end point",
+            Self::CenterRadius { .. } => "fixed, centre and radius",
+            Self::CenterThrough { .. } => "fixed, centre and through point",
+            Self::FloatingThrough { .. } => "floating, from end through point",
+            Self::FloatingLength { .. } => "floating, from end by radius and length",
+            Self::FloatingDirection { .. } => "floating, through point with direction",
+            Self::FreeThrough { .. } => "free, through point",
+        }
+    }
 }
 
 /// Arc constraint codes (the BL `n2` in [`ArcParams`]), from samples.
@@ -89,6 +157,18 @@ pub const ARC_FREE: i32 = 29;
 pub const ARC_FLOATING_START: i32 = 15;
 /// A curve with a fixed end point, tangent to the previous element (S99).
 pub const ARC_FLOATING_END: i32 = 13;
+/// Centre and radius (S117).
+pub const ARC_CENTER_RADIUS: i32 = 0;
+/// Centre and a point on the circle (S117).
+pub const ARC_CENTER_THROUGH: i32 = 1;
+/// From the previous element's end through a point (S117).
+pub const ARC_FLOATING_THROUGH: i32 = 8;
+/// Tangent to the previous line, ending at a point with a direction (S117).
+pub const ARC_FLOATING_DIRECTION: i32 = 11;
+/// From the previous element's end by radius and length (S117).
+pub const ARC_FLOATING_LENGTH: i32 = 21;
+/// Fillet through a point (S117).
+pub const ARC_FREE_THROUGH: i32 = 28;
 
 /// One arc element record.
 #[derive(Debug, Clone, PartialEq)]
@@ -298,11 +378,18 @@ fn arc_at(data: &[u8], bit: usize) -> Option<ArcRecord> {
     let (p1, k) = raw::read_bd(data, k + 1)?;
     let (p2, k) = raw::read_bd(data, k)?;
     let (n1, k) = raw::read_bl(data, k)?;
-    let (p3, k) = raw::read_bd(data, k)?;
-    let (n2, k) = raw::read_bl(data, k)?;
-    if raw::get_bit(data, k) != 0 {
+    if !(1..=2).contains(&n1) {
         return None;
     }
+    let (p3, k) = raw::read_bd(data, k)?;
+    let (p4, k) = if n1 == 2 {
+        let (v, k) = raw::read_bd(data, k)?;
+        (Some(v), k)
+    } else {
+        (None, k)
+    };
+    let (n2, k) = raw::read_bl(data, k)?;
+    let closed = raw::get_bit(data, k) == 1;
     let (id, k) = raw::read_bl(data, k + 1)?;
     let (before, k) = raw::read_bl(data, k)?;
     let (after, k) = raw::read_bl(data, k)?;
@@ -310,10 +397,30 @@ fn arc_at(data: &[u8], bit: usize) -> Option<ArcRecord> {
     if id < 1 || !small(id) || !small(before) || !small(after) || !small(n1) || !small(n2) {
         return None;
     }
-    if ![p1, p2, p3].iter().all(|v| v.is_finite()) {
+    if ![p1, p2, p3, p4.unwrap_or(0.0)]
+        .iter()
+        .all(|v| v.is_finite())
+    {
         return None;
     }
-    let params = ArcParams { p1, p2, n1, p3, n2 };
+    let params = ArcParams {
+        p1,
+        p2,
+        n1,
+        p3,
+        p4,
+        n2,
+        closed,
+    };
+    let point = |b: usize| -> Option<Point2> {
+        if b + 128 > raw::bit_len(data) {
+            return None;
+        }
+        let p = Point2::new(raw::get_f64(data, b), raw::get_f64(data, b + 64));
+        (p.x.is_finite() && p.y.is_finite()).then_some(p)
+    };
+    let radius_ok = |r: f64| r.is_finite() && r > 1e-9 && r < 1e9;
+    let bit_at = |b: usize| (b < raw::bit_len(data)).then(|| raw::get_bit(data, b) == 1);
     let three_point = || -> Option<(ArcDef, usize)> {
         if k + 384 > raw::bit_len(data) {
             return None;
@@ -396,6 +503,78 @@ fn arc_at(data: &[u8], bit: usize) -> Option<ArcRecord> {
         ARC_FLOATING_START => floating()?,
         ARC_FLOATING_END => floating_end()?,
         ARC_THREE_POINT => three_point()?,
+        ARC_CENTER_RADIUS => {
+            let center = point(k)?;
+            let (radius, k2) = raw::read_bd(data, k + 128)?;
+            if !radius_ok(radius) {
+                return None;
+            }
+            let clockwise = bit_at(k2)?;
+            (
+                ArcDef::CenterRadius {
+                    center_bit: k,
+                    center,
+                    radius,
+                    clockwise,
+                },
+                k2 + 1,
+            )
+        }
+        ARC_CENTER_THROUGH => {
+            let (center, through) = (point(k)?, point(k + 128)?);
+            let clockwise = bit_at(k + 256)?;
+            (
+                ArcDef::CenterThrough {
+                    center_bit: k,
+                    center,
+                    through,
+                    clockwise,
+                },
+                k + 257,
+            )
+        }
+        ARC_FLOATING_THROUGH => (
+            ArcDef::FloatingThrough {
+                end_bit: k,
+                end: point(k)?,
+            },
+            k + 128,
+        ),
+        ARC_FLOATING_LENGTH => {
+            let (radius, k2) = raw::read_bd(data, k)?;
+            let (length, k3) = raw::read_bd(data, k2)?;
+            if !radius_ok(radius) || !radius_ok(length) {
+                return None;
+            }
+            let clockwise = bit_at(k3)?;
+            (
+                ArcDef::FloatingLength {
+                    radius_bit: k,
+                    radius,
+                    length,
+                    clockwise,
+                },
+                k3 + 1,
+            )
+        }
+        ARC_FLOATING_DIRECTION => {
+            let (end, d) = (point(k)?, point(k + 128)?);
+            (
+                ArcDef::FloatingDirection {
+                    end_bit: k,
+                    end,
+                    direction: (d.x, d.y),
+                },
+                k + 256,
+            )
+        }
+        ARC_FREE_THROUGH => (
+            ArcDef::FreeThrough {
+                through_bit: k,
+                through: point(k)?,
+            },
+            k + 128,
+        ),
         _ => free().or_else(three_point)?,
     };
     Some(ArcRecord {
@@ -484,10 +663,65 @@ impl Linked for ResolvedElement {
 /// Resolve chained records into segments. Free arcs need tangents on both
 /// sides that meet at a PI; those tangents are trimmed to the PC / PT.
 pub fn resolve(chain: &[Element]) -> Result<Vec<ResolvedElement>, DecodeError> {
+    resolve_with(chain, &vec![None; chain.len()])
+}
+
+/// (start, end, geometry) of an arc placed before [`resolve_with`].
+type Placed = Option<(Point2, Point2, ArcGeometry)>;
+
+/// [`resolve`] with some arcs already placed (`pre`, by chain index): the
+/// arcs that continue from the element before them (S117).
+fn resolve_with(chain: &[Element], pre: &[Placed]) -> Result<Vec<ResolvedElement>, DecodeError> {
     let unsupported = |m: String| DecodeError::BrokenChain(m);
     // Free arcs first: (PC, PT, geometry) by chain index.
-    let mut free: Vec<Option<(Point2, Point2, ArcGeometry)>> = vec![None; chain.len()];
+    let mut free: Vec<Placed> = pre.to_vec();
     for (i, e) in chain.iter().enumerate() {
+        if let Element::Arc(a) = e {
+            let circle = match a.def {
+                ArcDef::CenterRadius {
+                    center,
+                    radius,
+                    clockwise,
+                    ..
+                } => Some((center, radius, clockwise)),
+                ArcDef::CenterThrough {
+                    center,
+                    through,
+                    clockwise,
+                    ..
+                } => Some((center, center.distance_to(through), clockwise)),
+                _ => None,
+            };
+            if let Some((center, radius, clockwise)) = circle {
+                if !a.params.closed || chain.len() != 1 {
+                    return Err(unsupported(format!(
+                        "arc {}: a curve by its centre that is not a whole circle \
+                         (no sample yet)",
+                        a.id
+                    )));
+                }
+                free[i] = Some(full_circle(center, radius, !clockwise));
+            }
+            if let ArcDef::FreeThrough { through, .. } = a.def {
+                let prev = i.checked_sub(1).and_then(|j| chain.get(j));
+                let (Some(Element::Tangent(ta)), Some(Element::Tangent(tb))) =
+                    (prev, chain.get(i + 1))
+                else {
+                    return Err(unsupported(format!(
+                        "free arc {} is not between two tangents",
+                        a.id
+                    )));
+                };
+                let f = fillet_through(
+                    ta.end,
+                    (ta.end.x - ta.start.x, ta.end.y - ta.start.y),
+                    (tb.end.x - tb.start.x, tb.end.y - tb.start.y),
+                    through,
+                )
+                .ok_or_else(|| unsupported(format!("free arc {} has no valid fillet", a.id)))?;
+                free[i] = Some(f);
+            }
+        }
         if let Element::Arc(ArcRecord {
             def: ArcDef::Free { radius, .. },
             id,
@@ -611,8 +845,13 @@ pub fn resolve(chain: &[Element]) -> Result<Vec<ResolvedElement>, DecodeError> {
                         }
                     }
                 }
-                ArcDef::Free { .. } | ArcDef::Floating { .. } | ArcDef::FloatingEnd { .. } => {
-                    let (pc, pt, g) = free[i].expect("resolved above");
+                _ => {
+                    let (pc, pt, g) = free[i].ok_or_else(|| {
+                        unsupported(format!(
+                            "arc {} continues from an element that doesn't resolve",
+                            a.id
+                        ))
+                    })?;
                     Segment::Arc {
                         start: pc,
                         end: pt,
@@ -725,6 +964,140 @@ fn end_state(seg: &Segment) -> (Point2, (f64, f64)) {
     }
 }
 
+/// A whole circle travelled from its east point (S117: the start marker
+/// of a circle alignment is at centre + (R, 0)).
+fn full_circle(center: Point2, radius: f64, ccw: bool) -> (Point2, Point2, ArcGeometry) {
+    let s = Point2::new(center.x + radius, center.y);
+    let tau = std::f64::consts::TAU;
+    (
+        s,
+        s,
+        ArcGeometry {
+            center,
+            radius,
+            counter_clockwise: ccw,
+            sweep: tau,
+            length: radius * tau,
+        },
+    )
+}
+
+fn unit(v: (f64, f64)) -> Option<(f64, f64)> {
+    let l = v.0.hypot(v.1);
+    (l.is_finite() && l > 0.0).then(|| (v.0 / l, v.1 / l))
+}
+
+fn cross(a: (f64, f64), b: (f64, f64)) -> f64 {
+    a.0 * b.1 - a.1 * b.0
+}
+
+fn circle(center: Point2, radius: f64, ccw: bool) -> ArcGeometry {
+    ArcGeometry {
+        center,
+        radius,
+        counter_clockwise: ccw,
+        sweep: 0.0,
+        length: 0.0,
+    }
+}
+
+/// Code 8: the curve leaving `p` in direction `dir`, tangent there, that
+/// passes through `end`.
+pub fn curve_through(p: Point2, dir: (f64, f64), end: Point2) -> Placed {
+    let u = unit(dir)?;
+    let n = (-u.1, u.0);
+    let d = (end.x - p.x, end.y - p.y);
+    let denom = 2.0 * (d.0 * n.0 + d.1 * n.1);
+    if denom.abs() <= 1e-12 * (1.0 + d.0.hypot(d.1)) {
+        return None;
+    }
+    let s = (d.0 * d.0 + d.1 * d.1) / denom;
+    let c = Point2::new(p.x + s * n.0, p.y + s * n.1);
+    Some((p, end, arc_on(&circle(c, s.abs(), s > 0.0), p, end)))
+}
+
+/// Code 21: the curve leaving `p` in direction `dir` with this radius,
+/// length and sense.
+pub fn curve_by_length(
+    p: Point2,
+    dir: (f64, f64),
+    radius: f64,
+    length: f64,
+    clockwise: bool,
+) -> Placed {
+    let u = unit(dir)?;
+    let s = if clockwise { -radius } else { radius };
+    let c = Point2::new(p.x - s * u.1, p.y + s * u.0);
+    let sweep = length / radius;
+    let a = (p.y - c.y).atan2(p.x - c.x) + if clockwise { -sweep } else { sweep };
+    let end = Point2::new(c.x + radius * a.cos(), c.y + radius * a.sin());
+    let g = ArcGeometry {
+        sweep,
+        length,
+        ..circle(c, radius, !clockwise)
+    };
+    Some((p, end, g))
+}
+
+/// Code 11: the curve tangent to the line through `p0` with direction
+/// `line_dir` that reaches `end` travelling in `dir`. Returns (tangent
+/// point on the line, end, geometry).
+pub fn curve_from_line_to(
+    p0: Point2,
+    line_dir: (f64, f64),
+    end: Point2,
+    dir: (f64, f64),
+) -> Placed {
+    let (u, v) = (unit(line_dir)?, unit(dir)?);
+    let m = (-v.1, v.0);
+    let k = 1.0 - cross(u, m);
+    if k.abs() <= 1e-12 {
+        return None;
+    }
+    // Signed radius s (> 0: centre left of travel) with the centre at
+    // end + s·m and at signed distance s from the line.
+    let s = cross(u, (end.x - p0.x, end.y - p0.y)) / k;
+    let c = Point2::new(end.x + s * m.0, end.y + s * m.1);
+    let tp = Point2::new(c.x + s * u.1, c.y - s * u.0);
+    Some((tp, end, arc_on(&circle(c, s.abs(), s > 0.0), tp, end)))
+}
+
+/// Code 28: the fillet between the line arriving at `pi` along `in_dir`
+/// and the line leaving along `out_dir` that passes through `x`.
+pub fn fillet_through(pi: Point2, in_dir: (f64, f64), out_dir: (f64, f64), x: Point2) -> Placed {
+    let (u1, u2) = (unit(in_dir)?, unit(out_dir)?);
+    let b = unit((u2.0 - u1.0, u2.1 - u1.1))?;
+    let delta = cross(u1, u2).atan2(u1.0 * u2.0 + u1.1 * u2.1).abs();
+    let (sh, ch) = ((delta / 2.0).sin(), (delta / 2.0).cos());
+    let v = (x.x - pi.x, x.y - pi.y);
+    // Centre at pi + k·b, radius k·cos(δ/2), |centre − x| = radius.
+    let (qa, qb, qc) = (
+        sh * sh,
+        -2.0 * (b.0 * v.0 + b.1 * v.1),
+        v.0 * v.0 + v.1 * v.1,
+    );
+    let disc = qb * qb - 4.0 * qa * qc;
+    if qa <= 1e-15 || disc < 0.0 {
+        return None;
+    }
+    let mut best: Placed = None;
+    for k in [
+        (-qb - disc.sqrt()) / (2.0 * qa),
+        (-qb + disc.sqrt()) / (2.0 * qa),
+    ] {
+        if k <= 0.0 {
+            continue;
+        }
+        let Some((pc, pt, g)) = fillet(pi, u1, u2, k * ch) else {
+            continue;
+        };
+        if arc_on(&g, pc, x).sweep <= g.sweep + 1e-9 && best.is_none() {
+            best = Some((pc, pt, g));
+        }
+    }
+    best
+}
+
 /// The line tangent to circle `c1` (travelled in its sense) leaving it
 /// and to circle `c3` entering it in its sense: (point on c1, point on
 /// c3). With the left normal n of the line, a counter-clockwise circle
@@ -785,7 +1158,42 @@ fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, Deco
     // right: floating lines (kind 4: end point, S89; kind 5: length, S113)
     // continue from the resolved end of the elements before them; free
     // lines (kind 9, S113) touch the circles of the curves on both sides.
+    let mut pre: Vec<Placed> = vec![None; chained.len()];
     for i in 1..chained.len() {
+        if let Element::Arc(a) = &chained[i] {
+            let (id, def) = (a.id, a.def);
+            if !matches!(
+                def,
+                ArcDef::FloatingThrough { .. }
+                    | ArcDef::FloatingLength { .. }
+                    | ArcDef::FloatingDirection { .. }
+            ) {
+                continue;
+            }
+            let unsupported = |why: &str| DecodeError::BrokenChain(format!("arc {id}: {why}"));
+            let prefix = resolve_with(&chained[..i], &pre[..i])
+                .map_err(|_| unsupported("elements before it don't resolve"))?;
+            let last = prefix.last().expect("i >= 1");
+            let (p, dir) = end_state(&last.segment);
+            pre[i] = match def {
+                ArcDef::FloatingThrough { end, .. } => curve_through(p, dir, end),
+                ArcDef::FloatingLength {
+                    radius,
+                    length,
+                    clockwise,
+                    ..
+                } => curve_by_length(p, dir, radius, length, clockwise),
+                ArcDef::FloatingDirection { end, direction, .. } => match last.segment {
+                    Segment::Line { start, .. } => curve_from_line_to(start, dir, end, direction),
+                    _ => return Err(unsupported("not after a line (no sample yet)")),
+                },
+                _ => unreachable!(),
+            };
+            if pre[i].is_none() {
+                return Err(unsupported("no curve fits"));
+            }
+            continue;
+        }
         let Element::Tangent(t) = &chained[i] else {
             continue;
         };
@@ -797,8 +1205,8 @@ fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, Deco
         }
         let unsupported =
             |why: &str| DecodeError::BrokenChain(format!("tangent {id} (kind {kind}): {why}"));
-        let prefix =
-            resolve(&chained[..i]).map_err(|_| unsupported("elements before it don't resolve"))?;
+        let prefix = resolve_with(&chained[..i], &pre[..i])
+            .map_err(|_| unsupported("elements before it don't resolve"))?;
         let last = prefix.last().expect("i >= 1");
         let (p0, dir) = end_state(&last.segment);
         if float {
@@ -835,7 +1243,7 @@ fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, Deco
         t.start = a;
         t.end = b;
     }
-    let elements = resolve(&chained)?;
+    let elements = resolve_with(&chained, &pre)?;
     for w in elements.windows(2) {
         let (e, s) = (w[0].segment.end(), w[1].segment.start());
         if e.distance_to(s) > 1e-6 * (1.0 + e.x.abs().max(e.y.abs())) {
@@ -968,7 +1376,9 @@ mod tests {
                 p2: -1.0,
                 n1: 1,
                 p3: -1.0,
-                n2: 2
+                p4: None,
+                n2: 2,
+                closed: false
             }
         );
         let Segment::Arc { geometry: g, .. } = d.elements[0].segment else {
