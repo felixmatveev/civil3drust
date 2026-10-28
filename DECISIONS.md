@@ -689,3 +689,22 @@ replaced the same day after the owner's check.
 **Alternatives.** Station across the gap: not what Civil 3D does.
 Refusing to decode such alignments: hides geometry Civil 3D shows and
 blocks edits of the alignment proper.
+
+## D-038: New alignments are siteless; site membership is read-only
+
+**Context.** O7 (S101–S106): an alignment in a site is part of the site's
+container, one record per site holding every alignment in it as a
+topology graph (nodes, edges, faces — the alignments split the site into
+parcels). Only the geometry points in it are decoded. Moving an alignment
+out of a site makes Civil 3D create a new siteless companion.
+
+**Decision.** civil3drust reads sites and each alignment's site
+(`aecc_site`), creates alignments siteless only (also in drawings with
+sites, S107), and refuses donor alignments that are in a site. Writing
+site membership waits until the container is decoded.
+
+**Alternatives.** Transplant a container from a Civil 3D donor: the graph
+depends on the geometry of every alignment in the site, so a copied
+container would describe the wrong topology. Write the container by
+patching the geometry points only: same problem as soon as the site has
+more than one alignment.

@@ -115,6 +115,10 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S101 | `S101_empty_site.dwg` | Civil 3D 2024 | O7: from S98 (owner): the four generated alignments deleted, `Alignment - (1)` renamed `TEST`, empty site `TEST SITE` (description on two lines) created; saved. | 474722 | `dd4c528e9193aebc` |
 | S102 | `S102_alignment_in_site.dwg` | Civil 3D 2024 | O7: S101 with `TEST` moved into `TEST SITE`; saved. | 475518 | `e00a28cf4c09148b` |
 | S103 | `S103_second_site.dwg` | Civil 3D 2024 | O7: S102 plus a second, empty site `TEST2`; saved. | 477606 | `2484cef91befbb46` |
+| S104 | `S104_second_alignment_in_site.dwg` | Civil 3D 2024 | O7: `TEST` in `TEST SITE` plus a second alignment `CREATED to TEST SITE` (103A, two tangents) created in that site; a second empty site `TEST 2` (1068). (Not from S103: its `TEST2` is gone.) | 477225 | `21d62455410912f3` |
+| S105 | `S105_test_moved_to_test2.dwg` | Civil 3D 2024 | O7: S104 with `TEST` moved to `TEST 2`; saved. | 476841 | `1c7cbf8adf1c026c` |
+| S106 | `S106_test_back_to_siteless.dwg` | Civil 3D 2024 | O7: S105 with `TEST` moved back to `<None>` (siteless); saved. | 477354 | `d84d2593dcdbcc41` |
+| S107 | `S107_S104_created_siteless.dwg` | civil3drust | S104 + siteless `SITELESS NEW` (107D), 0,−400 → 300,−400 (R 80) → 300,−700 → 600,−700, template S98 F9E (`create_alignment`): a new alignment in a drawing with sites. | 460235 | `50296fb51c87a7eb` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

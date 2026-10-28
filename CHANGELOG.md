@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Samples S104–S106 (two alignments in a site, moved between sites and
+  back to siteless) and S107 (siteless alignment created next to sites);
+  site membership tests.
 - Sites (O7, S101–S103): `aecc_site::sites` and `membership` read the
   drawing's sites and which site an alignment belongs to; example `sites`.
   `create_alignment` skips donor alignments that are in a site.

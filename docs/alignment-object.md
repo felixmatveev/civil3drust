@@ -1754,11 +1754,38 @@ references; `examples/sites` prints both. `create_alignment` no longer
 takes a donor alignment that is in a site (its references lead to a
 container, not a companion of its own).
 
-**Open for writing:** how a container holds **two or more** alignments,
-and whether moving an alignment back out reuses its emptied companion.
-Next samples: S104 = S102 + a second alignment created directly in
-`TEST SITE`; S105 = S104 with `TEST` moved to `TEST2`; S106 = S105 with
-`TEST` moved back to `<None>` (siteless).
+**Several alignments, moving between sites (S104–S106).**
+
+- **One container per site holds all its alignments** (S104: TEST and
+  `CREATED to TEST SITE` both point at 100E). Its handle stream is
+  `own−1` site, then per alignment `soft → alignment, null`, then
+  `soft → site, null`, then the hard pointer 851. Its data grows in three
+  places per alignment (+637 bits for the two-tangent alignment): after
+  the header (+147 bits), a body with the geometry (+294) and a tail
+  section (+196), so it is a list-of-lists structure — consistent with a
+  topology graph (nodes, edges, faces), which is what a site is: the
+  alignments in it split it into parcels.
+- **Moving `TEST` to `TEST 2` (S105):** its data leaves 100E (back to the
+  145-byte one-alignment form, now for `CREATED`) and appears in 1069
+  (48 → 176 bytes, the same form as 100E in S102).
+- **Moving it back to `<None>` (S106):** Civil 3D creates a **new
+  companion** (108E, new key `…BDD`, new ID string, a new registry entry
+  in BC0) and does not reuse the emptied F9D, which stays as it is. The
+  `TEST 2` container does not return to its empty 48-byte form: it keeps
+  `soft → site, null` and 11 more bytes (59 bytes).
+- The emptied companions shrank again 117 → 115 bytes between S103 and
+  S104 (a re-save; not decoded).
+
+**Conclusion for writing.** Putting an alignment into a site means
+writing the site's topology graph, which is not decoded (only the
+geometry points in it are). civil3drust therefore creates **siteless**
+alignments only, also in drawings that have sites (S107, D-038); moving
+an alignment into a site stays a Civil 3D operation for now. Reading
+sites and membership works for every sample (tests `site_samples`).
+
+S107 = S104 + a siteless alignment `SITELESS NEW` made by
+`create_alignment`, to confirm that sites in the target don't disturb
+alignment creation.
 
 ## Open questions
 
