@@ -687,3 +687,22 @@ fn create_in_drawing_without_alignments() {
     assert_eq!(reg.entries.len(), 1);
     assert_eq!(reg.entries[0].companion, c.companion);
 }
+
+#[test]
+fn donor_alignment_in_a_site_is_not_used_s102() {
+    use civil3drust::aecc_create::{create_alignment, CreateOptions};
+    use civil3drust::alignment::Point2;
+    let donor = raw::open("samples/S102_alignment_in_site.dwg").unwrap();
+    let mut target = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+    let pis = [Point2::new(0.0, 0.0), Point2::new(100.0, 0.0)];
+    let r = create_alignment(
+        &mut target.doc,
+        &donor.doc,
+        "X",
+        &pis,
+        &[],
+        1,
+        CreateOptions::default(),
+    );
+    assert!(r.is_err(), "S102's only alignment is in a site");
+}

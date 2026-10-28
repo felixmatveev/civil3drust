@@ -112,6 +112,9 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S98 | `S98_S97_civ3d_audit_resaved.dwg` | Civil 3D 2024 | S97 opened, AUDIT, all four edited alignments checked (geometry, start station, design speeds editable); `TEST STYLE` curve component turned on; saved. | 478060 | `2cfa8444aa8b21ee` |
 | S99 | `S99_S98_last_tangent_deleted.dwg` | Civil 3D 2024 | O6: S98 with the last tangent (T3) of `Remove first` (FB3) deleted, saved. | 476172 | `976d44d140afcf9c` |
 | S100 | `S100_S98_interior_tangent_deleted.dwg` | Civil 3D 2024 | O6: S98 with the tangent between the two curves (T2) of `Add curve` (FB9) deleted, saved. | 478157 | `2daf30bca1b9d0fd` |
+| S101 | `S101_empty_site.dwg` | Civil 3D 2024 | O7: from S98 (owner): the four generated alignments deleted, `Alignment - (1)` renamed `TEST`, empty site `TEST SITE` (description on two lines) created; saved. | 474722 | `dd4c528e9193aebc` |
+| S102 | `S102_alignment_in_site.dwg` | Civil 3D 2024 | O7: S101 with `TEST` moved into `TEST SITE`; saved. | 475518 | `e00a28cf4c09148b` |
+| S103 | `S103_second_site.dwg` | Civil 3D 2024 | O7: S102 plus a second, empty site `TEST2`; saved. | 477606 | `2484cef91befbb46` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

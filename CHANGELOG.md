@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Sites (O7, S101–S103): `aecc_site::sites` and `membership` read the
+  drawing's sites and which site an alignment belongs to; example `sites`.
+  `create_alignment` skips donor alignments that are in a site.
 - Arc constraint 13 (`ArcDef::FloatingEnd`, S99): radius and end point,
   starting tangent to the previous element.
 - Alignments with detached pieces decode (S100): only the chain from the

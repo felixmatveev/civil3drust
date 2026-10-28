@@ -1697,6 +1697,69 @@ dropped). Both replays reproduce Civil 3D's element lists **bit for bit**
 alignment itself can still be edited and the detached records are kept
 as stored; elements of a detached piece can't be edited.
 
+## Sites (O7: S101–S103)
+
+**Samples** (owner): S101 = S98 with the four generated alignments
+deleted, `Alignment - (1)` renamed `TEST`, and an empty site `TEST SITE`
+(description on two lines); S102 = `TEST` moved into the site; S103 = a
+second, empty site `TEST2` added. Compared with `hexview --diff`.
+
+**Creating a site (S98 → S101)** adds two records (plus bookkeeping
+xrecords and class/attribute nodes):
+
+- the **site**, class `AECC_PARCEL` (C++ `AeccDbFace`; first string
+  `AeccImpFace`): strings `AeccImpFace`, `""`, name, description,
+  created-by; handle stream: four hard pointers to layer 0 (10), a null,
+  the parcel node BBC, a **hard owner → its container**, then the parcel
+  style 8DD ×3 with a null. So a site is a *face* of Civil 3D's topology
+  model, the same class as parcels.
+- the site's **container**, class `AECC_FEATURE_STYLE` like the alignment
+  companions (48 bytes empty): `own−1` → the site, hard pointer → 851.
+
+The **sites collection** is `AECC_PARCEL_NODE` (BBC): data `BL 0, BL n,
+n × RL key` (high bit set, as in the alignment registry; S103 keys
+`…BDA` for TEST2, `…BD7` for TEST SITE), strings `""` + the names, handle
+stream: tree node 252, the `n` sites in the order of the names, one more
+site pointer (the most recently created site in both samples), then the
+three label-collector styles. Names are ordered `TEST2`, `TEST SITE`
+(S103): either by name ignoring spaces or by key, descending; not decided.
+
+**Deleting alignments (S98 → S101)** keeps their companions in the
+alignment registry BC0, emptied to 117 bytes: the object header, a short
+body, the ID string and only the `own−off` reference to the registry.
+
+**Moving an alignment into a site (S101 → S102):**
+
+- the alignment record's data is unchanged; only its two companion
+  references (handle stream 2 and 3) change from the companion F9D to the
+  site's container 100E;
+- the old companion F9D is **emptied** (224 → 117 bytes, the form of a
+  deleted alignment's companion) but stays in the registry with its ID
+  string and key;
+- the container 100E grows 48 → 176 bytes: the companion's body (the
+  geometry points, matched run for run against F9D's old data) is
+  inserted, and its handle stream gains soft pointers to the alignment,
+  a null, the site, a null (before the 851 pointer).
+- the site record gains 180 bits after its graphics (not decoded).
+
+S103's new site changes nothing in the existing ones except the
+collection (BBC: new key, name, pointer; the "most recent" pointer
+moves to TEST2).
+
+**civil3drust (read-only).** `aecc_site::sites` lists the sites (handle,
+name, description, container) from the collection;
+`aecc_site::membership` tells whether an alignment is siteless (its
+companion) or in a site (site and container) by following its companion
+references; `examples/sites` prints both. `create_alignment` no longer
+takes a donor alignment that is in a site (its references lead to a
+container, not a companion of its own).
+
+**Open for writing:** how a container holds **two or more** alignments,
+and whether moving an alignment back out reuses its emptied companion.
+Next samples: S104 = S102 + a second alignment created directly in
+`TEST SITE`; S105 = S104 with `TEST` moved to `TEST2`; S106 = S105 with
+`TEST` moved back to `<None>` (siteless).
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length

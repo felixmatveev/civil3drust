@@ -267,15 +267,23 @@ pub fn create_alignment(
         return Err(CreateError::NameLength { want: 1, got: 0 });
     }
     // --- Template records in the donor. ---
+    // Only siteless alignments: an alignment in a site points at the
+    // site's container, not at a companion of its own (S102).
     let candidates: Vec<RawRecord> = raw::records(donor, ALIGNMENT)
         .into_iter()
         .filter(|r| alignment_refs(r).is_some_and(|x| x.companion.handle != 0))
+        .filter(|r| {
+            matches!(
+                crate::aecc_site::membership(donor, r),
+                crate::aecc_site::Membership::Siteless { .. }
+            )
+        })
         .collect();
     let d_align = match opts.template {
         Some(h) => candidates.into_iter().find(|r| r.handle == h),
         None => candidates.into_iter().max_by_key(|r| r.handle),
     }
-    .ok_or_else(|| donor_err("no alignment with a companion"))?;
+    .ok_or_else(|| donor_err("no siteless alignment with a companion"))?;
     let refs = alignment_refs(&d_align).unwrap();
     let d_comp_h = refs.companion.handle;
     let d_comp = record(donor, COMPANION, d_comp_h)
