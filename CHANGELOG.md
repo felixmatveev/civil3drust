@@ -7,6 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `aecc_topology::node_list`: the topology node list of companions and
+  site containers (one node per element end point); test against S25–S106.
 - S107's LandXML export; topology findings: one node per element end
   point in companions and site containers (docs, "Sites").
 - Samples S104–S106 (two alignments in a site, moved between sites and

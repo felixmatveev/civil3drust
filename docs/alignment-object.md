@@ -1810,6 +1810,38 @@ parcels**. Searching the containers for the exported coordinates:
   itself is right. Writing the companion's nodes from the geometry is the
   first step toward writing site graphs.
 
+## Topology nodes (S25–S49, S102–S106)
+
+Companions and site containers start the same way after the object
+header and the key: a constant run, then the **node list**:
+
+```text
+BL next free node ID, BL node count n, BL ID of the first node,
+n × { BD x, BD y, BD z, 3 bits 010, BL ID of the next node (0 = last) }
+```
+
+| record | nodes | IDs (list order) | next free |
+|---|---|---|---|
+| S25 FB7 (1 tangent) | 2 | 1, 2 | 3 |
+| S44 FF2 (2 tangents) | 3 | 1, 2, 3 | 4 |
+| S106 108E (`TEST`, 4 elements) | 5 | 1–5 | 6 |
+| S48 102A (`C`, 4 tangents) | 5 | 40, 41, 42, 43, 39 | 44 |
+| S49 102A (`C` + 2 curves) | 7 | 16, 17, 18, 12–15 | 19 |
+
+- The nodes are exactly the element end points (start, PC/PT, end), one
+  per point, z = 0; a site container holds the nodes of all its
+  alignments (S104: 8). Test `nodes_are_the_element_end_points` checks
+  this for every alignment of S25, S44, S49, S102, S104, S106.
+- IDs come from a counter that keeps growing within the record (S48's
+  39–43 after earlier edits); after Civil 3D rebuilt C's graph for the two
+  curves (S49) they restart lower. The list follows the next-IDs, not the
+  path order.
+- After the node list: `BL 2, BL 1, BL 0, BL 1` in every sample, then the
+  edges (not decoded yet; they must carry the curve data — S49 grows by
+  much more than its two new nodes).
+
+`aecc_topology::node_list` reads the list.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
