@@ -385,8 +385,29 @@ pub fn create_alignment(
         data: align,
         handle_bits: ahb,
     };
-    let (bytes, hb, _) = aecc_build::set_geometry(&rec, pis, radii)
-        .map_err(|e| CreateError::Geometry(e.to_string()))?;
+    // No PIs: an empty alignment, copied from an empty template (S113
+    // `EMPTY`); its speed-table entry gets a fresh GUID.
+    let (bytes, hb) = if pis.is_empty() {
+        if !crate::aecc_elements::element_records(&rec.data).is_empty() {
+            return Err(CreateError::Geometry(
+                "no PIs given, but the template has elements".into(),
+            ));
+        }
+        let mut d = rec.data.clone();
+        let (entries, end) = crate::aecc_design_speed::empty_alignment_table(&rec)
+            .ok_or_else(|| lay("empty template: design-speed table not found"))?;
+        if entries.len() == 1 {
+            let g = aecc_build::guid_v4(seed.rotate_left(23));
+            for (i, v) in g.iter().enumerate() {
+                raw::set_byte(&mut d, end - 128 + 8 * i, *v);
+            }
+        }
+        (d, rec.handle_bits)
+    } else {
+        let (bytes, hb, _) = aecc_build::set_geometry(&rec, pis, radii)
+            .map_err(|e| CreateError::Geometry(e.to_string()))?;
+        (bytes, hb)
+    };
     let mut align = bytes;
     let mut rec = RawRecord {
         data: align.clone(),

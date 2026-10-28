@@ -104,6 +104,22 @@ pub fn locate(rec: &RawRecord) -> Result<(usize, usize, Vec<DesignSpeed>), Speed
         .ok_or_else(|| err("design-speed table not found"))
 }
 
+/// The design-speed table of an alignment with **no elements** (S113
+/// `EMPTY`): found by scanning for the empty interval block (BL 0 ×4)
+/// followed by a table. Returns the table's entries and the bit offset
+/// after it.
+pub fn empty_alignment_table(rec: &RawRecord) -> Option<(Vec<DesignSpeed>, usize)> {
+    let data = &rec.data;
+    let end = raw::bit_len(data).saturating_sub(rec.handle_bits);
+    (0..end.saturating_sub(64)).find_map(|b| {
+        if (0..EMPTY_INTERVALS.len()).all(|i| raw::get_bit(data, b + i) == EMPTY_INTERVALS[i]) {
+            parse_at(data, b + EMPTY_INTERVALS.len()).filter(|(v, _)| !v.is_empty())
+        } else {
+            None
+        }
+    })
+}
+
 /// The interval block of an alignment without design speeds: BL 0 ×4.
 const EMPTY_INTERVALS: [u8; 8] = [1, 0, 1, 0, 1, 0, 1, 0];
 

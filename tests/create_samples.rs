@@ -760,3 +760,41 @@ fn any_s98_alignment_works_as_template() {
         assert!(pts[4].distance_to(Point2::new(600.0, -700.0)) < 1e-9);
     }
 }
+
+/// An empty alignment (no elements) copied from S113's `EMPTY`: no PIs,
+/// the name set, a fresh GUID in its one speed-table entry.
+#[test]
+fn create_empty_alignment_from_s113() {
+    use civil3drust::aecc_create::{create_alignment, CreateOptions};
+    use civil3drust::aecc_design_speed::empty_alignment_table;
+    let donor = raw::open("samples/S113_line_methods.dwg").unwrap();
+    let mut target = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+    let opts = CreateOptions {
+        template: Some(0x10D0),
+        ..CreateOptions::default()
+    };
+    let c = create_alignment(&mut target.doc, &donor.doc, "Empty one", &[], &[], 9, opts).unwrap();
+    let rec = raw::records(&target.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == c.alignment)
+        .unwrap();
+    assert_eq!(raw::object_name(&rec.data).as_deref(), Some("Empty one"));
+    let tmpl = raw::records(&donor.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0x10D0)
+        .unwrap();
+    let (new, _) = empty_alignment_table(&rec).unwrap();
+    let (old, _) = empty_alignment_table(&tmpl).unwrap();
+    assert_eq!(new.len(), 1);
+    assert_eq!(
+        (new[0].station, new[0].speed),
+        (old[0].station, old[0].speed)
+    );
+    assert_ne!(new[0].id, old[0].id);
+    // A template with elements still needs PIs.
+    let opts = CreateOptions {
+        template: Some(0x10E4),
+        ..CreateOptions::default()
+    };
+    assert!(create_alignment(&mut target.doc, &donor.doc, "X", &[], &[], 9, opts).is_err());
+}

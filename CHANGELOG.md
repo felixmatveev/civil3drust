@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `create_alignment` with no PIs copies an empty template alignment (S113
+  `EMPTY`), giving its speed-table entry a fresh GUID;
+  `aecc_design_speed::empty_alignment_table`. Sample S116: 14 empty
+  alignments named after the curve methods.
 - Line kinds 5 (floating line by length) and 9 (free line between two
   curves) decoded and resolved; free lines trim the three-point curves
   next to them (S113).

@@ -410,7 +410,11 @@ pub fn refresh_companion(
     let Membership::Siteless { companion } = membership(doc, &rec) else {
         return Ok(false);
     };
-    let d = crate::aecc_elements::decode_elements(&rec).map_err(|e| e.to_string())?;
+    let Ok(d) = crate::aecc_elements::decode_elements(&rec) else {
+        // No elements (an empty alignment, S113) or not decodable: leave
+        // the companion as it is.
+        return Ok(false);
+    };
     let comp = raw::records(doc, "AECC_FEATURE_STYLE")
         .into_iter()
         .find(|r| r.handle == companion)
