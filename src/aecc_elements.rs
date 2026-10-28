@@ -677,7 +677,7 @@ fn resolve_with(chain: &[Element], pre: &[Placed]) -> Result<Vec<ResolvedElement
     let mut free: Vec<Placed> = pre.to_vec();
     for (i, e) in chain.iter().enumerate() {
         if let Element::Arc(a) = e {
-            let circle = match a.def {
+            let by_centre = match a.def {
                 ArcDef::CenterRadius {
                     center,
                     radius,
@@ -692,15 +692,54 @@ fn resolve_with(chain: &[Element], pre: &[Placed]) -> Result<Vec<ResolvedElement
                 } => Some((center, center.distance_to(through), clockwise)),
                 _ => None,
             };
-            if let Some((center, radius, clockwise)) = circle {
-                if !a.params.closed || chain.len() != 1 {
-                    return Err(unsupported(format!(
-                        "arc {}: a curve by its centre that is not a whole circle \
-                         (no sample yet)",
-                        a.id
-                    )));
+            if let Some((center, radius, clockwise)) = by_centre {
+                if a.params.closed {
+                    if chain.len() != 1 {
+                        return Err(unsupported(format!(
+                            "arc {}: a whole circle with other elements (no sample yet)",
+                            a.id
+                        )));
+                    }
+                    free[i] = Some(full_circle(center, radius, !clockwise));
+                } else {
+                    // An open curve by its centre runs between the points
+                    // where the lines next to it touch its circle (S118).
+                    let g = circle(center, radius, !clockwise);
+                    let touch = |e: Option<&Element>, end: bool| match e {
+                        Some(Element::Tangent(t)) => Some(if end { t.end } else { t.start }),
+                        _ => None,
+                    };
+                    let prev = i.checked_sub(1).and_then(|j| chain.get(j));
+                    let Some(end) = touch(chain.get(i + 1), false) else {
+                        return Err(unsupported(format!(
+                            "arc {}: a curve by its centre not followed by a line \
+                             (no sample yet)",
+                            a.id
+                        )));
+                    };
+                    // With nothing before it, the curve is a half circle
+                    // ending there (S118).
+                    let start = match prev {
+                        None => Point2::new(2.0 * center.x - end.x, 2.0 * center.y - end.y),
+                        _ => touch(prev, true).ok_or_else(|| {
+                            unsupported(format!(
+                                "arc {}: a curve by its centre after a curve (no sample yet)",
+                                a.id
+                            ))
+                        })?,
+                    };
+                    let g = arc_on(&g, start, end);
+                    let g = if g.sweep <= 1e-12 {
+                        ArcGeometry {
+                            sweep: std::f64::consts::TAU,
+                            length: radius * std::f64::consts::TAU,
+                            ..g
+                        }
+                    } else {
+                        g
+                    };
+                    free[i] = Some((start, end, g));
                 }
-                free[i] = Some(full_circle(center, radius, !clockwise));
             }
             if let ArcDef::FreeThrough { through, .. } = a.def {
                 let prev = i.checked_sub(1).and_then(|j| chain.get(j));
@@ -964,6 +1003,32 @@ fn end_state(seg: &Segment) -> (Point2, (f64, f64)) {
     }
 }
 
+/// The circle of an open curve defined by its centre (codes 0 and 1 with
+/// the closed bit clear, S118), in its sense.
+fn open_centre_circle(e: Option<&Element>) -> Option<ArcGeometry> {
+    let Some(Element::Arc(a)) = e else {
+        return None;
+    };
+    if a.params.closed {
+        return None;
+    }
+    match a.def {
+        ArcDef::CenterRadius {
+            center,
+            radius,
+            clockwise,
+            ..
+        } => Some(circle(center, radius, !clockwise)),
+        ArcDef::CenterThrough {
+            center,
+            through,
+            clockwise,
+            ..
+        } => Some(circle(center, center.distance_to(through), !clockwise)),
+        _ => None,
+    }
+}
+
 /// A whole circle travelled from its east point (S117: the start marker
 /// of a circle alignment is at centre + (R, 0)).
 fn full_circle(center: Point2, radius: f64, ccw: bool) -> (Point2, Point2, ArcGeometry) {
@@ -1205,6 +1270,47 @@ fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, Deco
         }
         let unsupported =
             |why: &str| DecodeError::BrokenChain(format!("tangent {id} (kind {kind}): {why}"));
+        let next_circle = |chained: &[Element]| -> Result<ArcGeometry, DecodeError> {
+            match chained.get(i + 1) {
+                Some(Element::Arc(ArcRecord {
+                    def:
+                        ArcDef::ThreePoint {
+                            start, mid, end, ..
+                        },
+                    ..
+                })) => arc_through(*start, *mid, *end)
+                    .ok_or_else(|| unsupported("next arc degenerate")),
+                e => open_centre_circle(e)
+                    .ok_or_else(|| unsupported("not before a three-point or centre curve")),
+            }
+        };
+        // After an open curve by its centre, whose end is not known yet,
+        // the line is placed from the circle alone (S118).
+        if let Some(c1) = open_centre_circle(chained.get(i - 1)) {
+            let point = |p: Point2| ArcGeometry {
+                radius: 0.0,
+                ..circle(p, 0.0, true)
+            };
+            let (a, b) = match kind {
+                aecc_alignment::KIND_FREE => {
+                    let c3 = next_circle(&chained)?;
+                    tangent_between(&c1, &c3).ok_or_else(|| unsupported("no common tangent"))?
+                }
+                aecc_alignment::KIND_FLOATING => {
+                    let end = t.end;
+                    let (a, _) = tangent_between(&c1, &point(end))
+                        .ok_or_else(|| unsupported("end point inside the circle"))?;
+                    (a, end)
+                }
+                _ => return Err(unsupported("after a centre curve (no sample yet)")),
+            };
+            let Element::Tangent(t) = &mut chained[i] else {
+                unreachable!()
+            };
+            t.start = a;
+            t.end = b;
+            continue;
+        }
         let prefix = resolve_with(&chained[..i], &pre[..i])
             .map_err(|_| unsupported("elements before it don't resolve"))?;
         let last = prefix.last().expect("i >= 1");
@@ -1225,17 +1331,7 @@ fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, Deco
             Segment::Arc { geometry, .. } => geometry,
             _ => return Err(unsupported("not after an arc")),
         };
-        let c3 = match chained.get(i + 1) {
-            Some(Element::Arc(ArcRecord {
-                def: ArcDef::ThreePoint {
-                    start, mid, end, ..
-                },
-                ..
-            })) => {
-                arc_through(*start, *mid, *end).ok_or_else(|| unsupported("next arc degenerate"))?
-            }
-            _ => return Err(unsupported("not before a three-point arc")),
-        };
+        let c3 = next_circle(&chained)?;
         let (a, b) = tangent_between(&c1, &c3).ok_or_else(|| unsupported("no common tangent"))?;
         let Element::Tangent(t) = &mut chained[i] else {
             unreachable!()

@@ -2089,9 +2089,15 @@ trimmed.
 **Free curve through a point (code 28).** `RD point`; the fillet between
 the two tangents whose circle passes through it.
 
-**Not yet seen.** A counter-clockwise direction bit; a centre-defined
-curve attached to other elements (`closed` 0). Civil 3D turns commas in
-alignment names into `_`.
+**Direction bit and open centre curves (S118).** `CCW` (code 21 with
+the bit 0) is drawn counter-clockwise: the bit is 1 = clockwise. In
+`Center and Radius` the two centre curves have the closed bit 0 and store
+nothing but centre, radius and direction; their ends come from the lines
+next to them. The free line between them touches both circles; the
+floating line after the second leaves its circle tangentially toward its
+stored end point. The first curve, with nothing before it, is a half
+circle (180.0000°) ending where the free line leaves it — its start is
+not stored. Civil 3D turns commas in alignment names into `_`.
 
 ## Open questions
 

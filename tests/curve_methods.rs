@@ -110,3 +110,37 @@ fn free_fillet_through_point() {
     assert!((r - 206.7669).abs() < 1e-3 && !ccw);
     assert!(near(segs[0].end(), 21.4274, 1492.3328) && near(segs[2].start(), 174.6492, 1587.4208));
 }
+
+fn decoded_s118(handle: u64) -> Vec<Segment> {
+    let o = raw::open("samples/S118_S116_ccw_curves.dwg").unwrap();
+    let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == handle)
+        .unwrap();
+    let d = decode_elements(&r).unwrap();
+    d.elements.iter().map(|e| e.segment).collect()
+}
+
+#[test]
+fn s118_direction_bit_zero_is_counter_clockwise() {
+    let segs = decoded_s118(0x1057);
+    let (s, e, r, ccw, l) = geom(segs[1]);
+    assert!(ccw && (r - 100.0).abs() < 1e-9 && (l - 100.0).abs() < 1e-9);
+    assert!(near(s, 227.5, 1890.0) && near(e, 311.6471, 1935.9698));
+}
+
+#[test]
+fn s118_open_centre_curves_between_lines() {
+    // Centre curve, free line, centre curve, floating line to (549.5, 2061),
+    // as drawn by Civil 3D.
+    let segs = decoded_s118(0x1061);
+    assert_eq!(segs.len(), 4);
+    let (s, e, r, ccw, _) = geom(segs[0]);
+    // Nothing before it: a half circle ending where the free line leaves.
+    assert!(near(s, 271.8855, 2114.5102) && near(e, 204.1145, 2161.4898));
+    assert!((r - 41.2311).abs() < 1e-3 && !ccw);
+    let (s, e, r, ccw, _) = geom(segs[2]);
+    assert!(near(s, 330.809, 2344.2544) && near(e, 536.0854, 2286.6918));
+    assert!((r - 112.7841).abs() < 1e-3 && !ccw);
+    assert!(near(segs[3].end(), 549.5, 2061.0));
+}

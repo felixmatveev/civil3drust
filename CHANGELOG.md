@@ -13,6 +13,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   point) decoded and resolved; whole circles; the curve parameter block
   reads `n1` BDs and the closed bit. `ArcDef::describe`. Sample S117 (one
   curve per Civil 3D curve method) and `tests/curve_methods.rs`.
+- Open centre curves (closed bit 0) placed between the free or floating
+  lines next to them, a half circle when nothing precedes them; direction
+  bit 0 confirmed counter-clockwise. Sample S118.
 - `create_alignment` with no PIs copies an empty template alignment (S113
   `EMPTY`), giving its speed-table entry a fresh GUID;
   `aecc_design_speed::empty_alignment_table`. Sample S116: 14 empty

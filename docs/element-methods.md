@@ -49,8 +49,9 @@ until Civil 3D solves it, S94). The parameter block is
 `B flag, BD p1, BD p2, BL n1, n1 × BD, BL n2, B closed` (S117: `n1` is 2,
 with two −1 values, only on the centre-and-radius circle; `closed` is 1
 on the three whole circles). Codes 0, 1 and 21 end with a direction bit,
-1 = clockwise (FD1 drawn clockwise; the owner chose clockwise for the
-circles). A whole circle starts and ends at centre + (R, 0), its start
+1 = clockwise, 0 = counter-clockwise (S117 FD1, S118 `CCW`). With the
+closed bit 0, a centre curve runs between the lines next to it; with
+nothing before it, it is a half circle (S118). A whole circle starts and ends at centre + (R, 0), its start
 marker in the proxy graphics. In S117 every geometry was checked against
 the arcs and lines in each record's proxy graphics.
 
@@ -58,32 +59,32 @@ the arcs and lines in each record's proxy graphics.
 
 | method | status | samples |
 |---|---|---|
-| Floating Line with Spiral (from curve, through point) | planned | S118 |
-| Floating Line with Spiral (from curve end, length) | planned | S118 |
-| Floating Curve with Spiral (from entity end, radius, length) | planned | S118 |
-| Floating Curve with Spiral (from entity, radius, through point) | planned | S118 |
-| Floating Reverse Curve with Spirals (from curve, radius, through point) | planned | S118 |
-| Floating Reverse Curve with Spirals (from curve, two points) | planned | S118 |
-| Free Spiral-Curve-Spiral (between two entities) | planned, first | S118 |
-| Free Compound Spiral-Curve-Spiral-Curve-Spiral (between two tangents) | planned | S119 |
-| Free Reverse Spiral-Curve-Spiral-Spiral-Curve-Spiral (between two tangents) | planned | S119 |
-| Free Reverse Spiral-Curve-Spiral-Curve (from entity, end curve) | planned | S119 |
-| Free Reverse Spiral-Spiral-Curve (from curve, end entity) | planned | S119 |
-| Free Reverse Spiral-Spiral-Curve-Spiral-Spiral (between two curves) | planned | S119 |
+| Floating Line with Spiral (from curve, through point) | planned | S119 |
+| Floating Line with Spiral (from curve end, length) | planned | S119 |
+| Floating Curve with Spiral (from entity end, radius, length) | planned | S119 |
+| Floating Curve with Spiral (from entity, radius, through point) | planned | S119 |
+| Floating Reverse Curve with Spirals (from curve, radius, through point) | planned | S119 |
+| Floating Reverse Curve with Spirals (from curve, two points) | planned | S119 |
+| Free Spiral-Curve-Spiral (between two entities) | planned, first | S119 |
+| Free Compound Spiral-Curve-Spiral-Curve-Spiral (between two tangents) | planned | S120 |
+| Free Reverse Spiral-Curve-Spiral-Spiral-Curve-Spiral (between two tangents) | planned | S120 |
+| Free Reverse Spiral-Curve-Spiral-Curve (from entity, end curve) | planned | S120 |
+| Free Reverse Spiral-Spiral-Curve (from curve, end entity) | planned | S120 |
+| Free Reverse Spiral-Spiral-Curve-Spiral-Spiral (between two curves) | planned | S120 |
 
 ## Spirals
 
 | method | status | samples |
 |---|---|---|
-| Fixed Spiral | planned | S120 |
-| Free Spiral (between two entities) | planned | S120 |
-| Free Compound Spiral-Spiral (between two curves) | planned | S120 |
-| Free Reverse Spiral-Spiral (between two curves) | planned | S120 |
-| Free Compound Spiral-Spiral (between two tangents) | planned | S120 |
-| Free Compound Spiral-Line-Spiral (between two curves, spiral lengths) | planned | S120 |
-| Free Reverse Spiral-Line-Spiral (between two curves, spiral lengths) | planned | S120 |
-| Free Compound Spiral-Line-Spiral (between two curves, line length) | planned | S120 |
-| Free Reverse Spiral-Line-Spiral (between two curves, line length) | planned | S120 |
+| Fixed Spiral | planned | S121 |
+| Free Spiral (between two entities) | planned | S121 |
+| Free Compound Spiral-Spiral (between two curves) | planned | S121 |
+| Free Reverse Spiral-Spiral (between two curves) | planned | S121 |
+| Free Compound Spiral-Spiral (between two tangents) | planned | S121 |
+| Free Compound Spiral-Line-Spiral (between two curves, spiral lengths) | planned | S121 |
+| Free Reverse Spiral-Line-Spiral (between two curves, spiral lengths) | planned | S121 |
+| Free Compound Spiral-Line-Spiral (between two curves, line length) | planned | S121 |
+| Free Reverse Spiral-Line-Spiral (between two curves, line length) | planned | S121 |
 
 ## How the samples are made
 
@@ -92,7 +93,7 @@ the 14 curve methods (owner's highlighted list, which adds Fixed Curve
 (Three point) and Free Curve Fillet (radius) as controls). The owner lays
 out one curve with its method in each and saves the result as S117 (decoded: see the tables above and
 `docs/alignment-object.md`, "Curve methods (S117)"). The spiral samples
-S118–S120 are planned the same way.
+S119–S121 are planned the same way.
 
 Each drawing is a copy of S24 with one alignment per method, named after
 the method (e.g. `FL length`, `FC 2pt dir1`, `SCS free`). Where a method
