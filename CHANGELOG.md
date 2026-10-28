@@ -7,6 +7,7 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Sample S111: Civil 3D accepts and keeps the rebuilt companions (S110).
 - Topology edges (`aecc_topology::companion_graph`): one edge per
   alignment, vertices in path order with bulges for arcs.
 - `aecc_topology::rebuild_companion` / `refresh_companion` (D-040):

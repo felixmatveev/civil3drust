@@ -754,5 +754,5 @@ it is left as it is.
 
 **Alternatives.** Keep copying the template's companion: accepted by
 Civil 3D (S107, S28) but wrong data. Copy the template's vertex flags
-per position: they depend on history we can't reproduce. Pending: Civil
-3D's verdict on S108.
+per position: they depend on history we can't reproduce. Verified: S110
+→ S111, accepted and kept (renumbered only).

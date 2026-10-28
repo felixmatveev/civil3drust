@@ -122,6 +122,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S108 | `S108_S24_rebuilt_companions.dwg` | civil3drust | S24 + `Graph two curves` (FB3: 0,−400 → 300,−400 R80 → 300,−700 R80 → 600,−700), `Graph tangents` (FB6: 0,−900 → 200,−900 → 300,−1000 → 500,−1000), `Graph edited` (FB9: as FB3 at y −1200, then `edit_elements remove 1`); template S98 F9E; companions' graphs rebuilt from the geometry (`aecc_topology::rebuild_companion`, first version). **Rejected**: Civil 3D discarded the three companions (eWrongObjectType), see S109. | 452872 | `f853f001bcf53655` |
 | S109 | `S109_S108_civ3d_recovered.dwg` | Civil 3D 2024 | S108 opened: RECOVER discarded companions FB2, FB5, FB8 ("Error 34 (eWrongObjectType)"), 6 errors fixed; saved. The alignments keep dangling companion references. | 474348 | `e102e17a489b0960` |
 | S110 | `S110_S24_rebuilt_companions_v2.dwg` | civil3drust | As S108 with the fixed rebuild: edge flags and tail kept from the template companion (S98 F9D: no face-like entry, three references), handle stream trimmed. | 452875 | `497bc4625ad336f7` |
+| S111 | `S111_S110_civ3d_audit_resaved.dwg` | Civil 3D 2024 | S110 opened (no RECOVER prompt), AUDIT 0 errors, saved. | 474663 | `ad5fbc40bc51c95b` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

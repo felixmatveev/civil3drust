@@ -222,3 +222,43 @@ fn rebuilt_companion_keeps_the_template_tail() {
     };
     assert_eq!(refs(&bytes, hb), refs(&c.data, c.handle_bits));
 }
+
+/// S110 (companions rebuilt by civil3drust) re-saved by Civil 3D: no
+/// RECOVER, AUDIT clean; Civil 3D renumbered the nodes from our next free
+/// ID but kept the same graph, flags and tail.
+#[test]
+fn civil3d_keeps_rebuilt_companions_s111() {
+    for (c, a) in [(0xFB2, 0xFB3), (0xFB5, 0xFB6), (0xFB8, 0xFB9)] {
+        let (ours, _) = companion_and_alignment("samples/S110_S24_rebuilt_companions_v2.dwg", c, a);
+        let (theirs, _) =
+            companion_and_alignment("samples/S111_S110_civ3d_audit_resaved.dwg", c, a);
+        let (go, gt) = (
+            companion_graph(&ours.data).unwrap(),
+            companion_graph(&theirs.data).unwrap(),
+        );
+        let (po, pt) = (
+            edge_points(&go, &go.edges[0]),
+            edge_points(&gt, &gt.edges[0]),
+        );
+        assert_eq!(po.len(), pt.len());
+        assert!(
+            po.iter().zip(&pt).all(|(x, y)| x.distance_to(*y) < 1e-9),
+            "{c:X}"
+        );
+        assert_eq!(go.edges[0].flags, gt.edges[0].flags);
+        // Civil 3D's new IDs continue from our next free ID.
+        assert!(
+            gt.nodes.nodes.iter().all(|n| n.id >= go.nodes.next_free_id),
+            "{c:X}"
+        );
+        for (vo, vt) in go.edges[0].vertices.iter().zip(&gt.edges[0].vertices) {
+            assert_eq!(
+                (vo.kind, vo.flags, vo.a, vo.b),
+                (vt.kind, vt.flags, vt.a, vt.b)
+            );
+            if let (Some(x), Some(y)) = (vo.bulge, vt.bulge) {
+                assert!((x - y).abs() < 1e-12);
+            }
+        }
+    }
+}

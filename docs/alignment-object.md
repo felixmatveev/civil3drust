@@ -1890,6 +1890,14 @@ vertices are not in the uniform form (flags 10, a = b = 0) are left
 unchanged. The handle stream is trimmed to its references. S110 = S108
 regenerated this way (test `rebuilt_companion_keeps_the_template_tail`).
 
+**Result (S111).** S110 opens without RECOVER, AUDIT 0 errors. On save
+Civil 3D rewrote all three companions with **the same graph**: same
+points, vertex kinds and flags, edge flags, tail and bulges (to the last
+digit); only the node IDs are new, allocated from our next free ID (FB2:
+7–12, next free 13) and listed in its own order. So the rebuilt
+companions are accepted as they are (test
+`civil3d_keeps_rebuilt_companions_s111`).
+
 A misaligned start (a 4-byte BL read from the constant run) passed the
 first node-list check in S49; the reader now bounds the IDs.
 
