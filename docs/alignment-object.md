@@ -1787,6 +1787,29 @@ S107 = S104 + a siteless alignment `SITELESS NEW` made by
 `create_alignment`, to confirm that sites in the target don't disturb
 alignment creation.
 
+**Result (S107) and the graph check.** AUDIT 0 errors. The owner's
+LandXML export lists the site's two alignments under `<Alignments
+name="TEST SITE">`, `SITELESS NEW` under the unnamed group, and **no
+parcels**. Searching the containers for the exported coordinates:
+
+- the topology stores one **node per element end point** (start, PC/PT,
+  end): `TEST` 5 nodes for 4 elements, `CREATED to TEST SITE` 3 nodes for
+  2 elements; S104's container holds all **8** (the two alignments don't
+  touch, so no node is shared), and the export has no parcels because no
+  closed loop exists — consistent with nodes + edges (elements) + faces.
+- each node is `BD x, BD y, BD z (0)` followed by 13 bits (`01 00100000`
+  + 3 bits counting 2, 3, 4, 5 along `TEST`; the last node differs);
+  node coordinates carry their own rounding (88.19660112494603 vs the
+  alignment's 88.196601125011).
+- the siteless companion has the same body (S106's new companion 108E
+  equals S102's container body, 32 bits later), so a companion is the
+  one-alignment version of the same graph.
+- **S107's companion is stale:** `create_alignment` copied the donor's
+  (TEST's) nodes, so 107C holds TEST's five points instead of `SITELESS
+  NEW`'s. Civil 3D accepts it (AUDIT clean, as S28) and the alignment
+  itself is right. Writing the companion's nodes from the geometry is the
+  first step toward writing site graphs.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length

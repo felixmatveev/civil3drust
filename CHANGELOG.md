@@ -7,6 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- S107's LandXML export; topology findings: one node per element end
+  point in companions and site containers (docs, "Sites").
 - Samples S104–S106 (two alignments in a site, moved between sites and
   back to siteless) and S107 (siteless alignment created next to sites);
   site membership tests.
