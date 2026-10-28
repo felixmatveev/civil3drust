@@ -706,3 +706,46 @@ fn donor_alignment_in_a_site_is_not_used_s102() {
     );
     assert!(r.is_err(), "S102's only alignment is in a site");
 }
+
+#[test]
+fn any_s98_alignment_works_as_template() {
+    use civil3drust::aecc_create::{create_alignment, CreateOptions};
+    use civil3drust::aecc_design_speed::design_speeds;
+    use civil3drust::aecc_elements::decode_elements;
+    use civil3drust::alignment::Point2;
+    let donor = raw::open("samples/S98_S97_civ3d_audit_resaved.dwg").unwrap();
+    let pis = [
+        Point2::new(0.0, -400.0),
+        Point2::new(300.0, -400.0),
+        Point2::new(300.0, -700.0),
+        Point2::new(600.0, -700.0),
+    ];
+    // F9E plain; FB3 floating curve + start 2+20 + check set; FB6, FB9 edited
+    // lists; FBC floating curve + start 2+20.
+    for t in [0xF9E, 0xFB3, 0xFB6, 0xFB9, 0xFBC] {
+        let mut target = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+        let opts = CreateOptions {
+            template: Some(t),
+            ..CreateOptions::default()
+        };
+        let c = create_alignment(
+            &mut target.doc,
+            &donor.doc,
+            "N",
+            &pis,
+            &[Some(80.0), None],
+            3,
+            opts,
+        )
+        .unwrap_or_else(|e| panic!("template {t:X}: {e}"));
+        let rec = raw::records(&target.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == c.alignment)
+            .unwrap();
+        let d = decode_elements(&rec).unwrap();
+        assert!((d.length() - 865.6637).abs() < 1e-3, "{t:X}");
+        assert_eq!(d.stored_start_station, Some(0.0), "{t:X}");
+        let sp = design_speeds(&rec).unwrap();
+        assert!(sp.iter().all(|s| s.station >= 0.0), "{t:X}");
+    }
+}

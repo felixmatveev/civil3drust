@@ -708,3 +708,25 @@ depends on the geometry of every alignment in the site, so a copied
 container would describe the wrong topology. Write the container by
 patching the geometry points only: same problem as soon as the site has
 more than one alignment.
+
+## D-039: Any alignment can be a template
+
+**Context.** `create_alignment` refused S98's `Remove first` (its last
+handle reference is a design check set, which `alignment_refs` required
+to be null) and failed on `Chain` (`set_geometry` expects the plain
+layout: fixed tangents, free arcs and a speed interval right after the
+records).
+
+**Decision.** `alignment_refs` exposes the last reference as `check_set`
+(null or a check set). A template's check set is kept when the target
+has that object, otherwise nulled with the "use design check set" box
+cleared. `set_geometry` keeps its exact plain-layout path (tests against
+S44/S49) and otherwise replaces the element list in place with
+`aecc_element_edit::replace_elements`, rebuilding graphics,
+first-element IDs and speed intervals. New alignments start at 0+00:
+a template's start station is moved to 0 with its speeds (D-031); the
+identity GUID is renewed only when the template has a speed interval.
+
+**Alternatives.** Refuse such templates: forces the user to keep a plain
+alignment around. Map check sets across drawings by name: no sample of
+two drawings with different check sets yet.

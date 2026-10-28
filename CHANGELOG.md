@@ -73,6 +73,12 @@ versions follow [Semantic Versioning](https://semver.org/).
   results (docs/acadrust-0.6.7.md).
 
 ### Fixed
+- `create_alignment` accepts any Civil 3D alignment as template: the
+  last handle reference may be a design check set (kept if the target has
+  it, else nulled and the criteria box cleared); templates with floating
+  elements, edited element lists or a nonzero start station get their
+  element list replaced in place (`aecc_element_edit::replace_elements`)
+  and start at 0+00, speeds moved with the start.
 - Arc records are read by their constraint code instead of `p1`, which is
   the design speed at the curve (a free arc with a speed was misread).
 - The start station is read before the first record in storage order

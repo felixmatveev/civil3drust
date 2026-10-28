@@ -351,6 +351,14 @@ pub fn create_alignment(
         return Err(donor_err("companion ID string not found once"));
     }
 
+    // A template's design check set is kept only if the target has the
+    // same check set; otherwise the reference is nulled and the "use
+    // design check set" box cleared (S80/S81: a set box without the
+    // reference is cleared by Civil 3D anyway).
+    let check_set_kept = refs.check_set.handle == 0
+        || raw::class_of(target, refs.check_set.handle).as_deref()
+            == Some("AECC_ALIGNMENT_DESIGN_CHECK_SET");
+
     // Alignment: own handle, refs (companion, style), geometry, identity,
     // name.
     let (align, ahb) = rehandle(&d_align, align_h, |r| {
@@ -362,6 +370,8 @@ pub fn create_alignment(
             }
         } else if r.bit == refs.style.bit {
             style
+        } else if r.bit == refs.check_set.bit && !check_set_kept {
+            0
         } else {
             r.handle
         }
@@ -376,18 +386,40 @@ pub fn create_alignment(
     let (bytes, hb, _) = aecc_build::set_geometry(&rec, pis, radii)
         .map_err(|e| CreateError::Geometry(e.to_string()))?;
     let mut align = bytes;
-    let rec = RawRecord {
+    let mut rec = RawRecord {
         data: align.clone(),
         handle_bits: hb,
         ..rec
     };
-    aecc_build::set_identity(&rec, &mut align, seed.rotate_left(17))
-        .map_err(|e| lay(e.to_string()))?;
+    // A new alignment starts at station 0 (templates may start elsewhere,
+    // S98 `Chain` at 2+20); speeds move with the start (D-031).
+    if crate::aecc_station::start_station(&rec).is_some_and(|s| s != 0.0) {
+        let (b, h) = crate::aecc_station::move_start_station(&rec, 0.0)
+            .ok_or_else(|| lay("start station not found"))?;
+        align = b.clone();
+        rec = RawRecord {
+            data: b,
+            handle_bits: h,
+            ..rec
+        };
+    }
+    if !check_set_kept {
+        let mut c = crate::aecc_criteria::criteria(&rec).map_err(|e| lay(e.to_string()))?;
+        c.check_set = false;
+        crate::aecc_criteria::set_criteria(&rec, &mut align, c).map_err(|e| lay(e.to_string()))?;
+        rec.data = align.clone();
+    }
+    // The "identity" is the first speed interval's GUID (O4); an
+    // alignment without intervals has none to renew.
+    if crate::aecc_design_speed::first_interval_station(&rec).is_some() {
+        aecc_build::set_identity(&rec, &mut align, seed.rotate_left(17))
+            .map_err(|e| lay(e.to_string()))?;
+    }
     if let Some(t) = opts.alignment_type {
         aecc_build::set_alignment_type(&rec, &mut align, t).map_err(|e| lay(e.to_string()))?;
     }
-    let (align, align_hb) =
-        string_stream::set_name(&align, hb, &old_name, name).map_err(|e| lay(e.to_string()))?;
+    let (align, align_hb) = string_stream::set_name(&align, rec.handle_bits, &old_name, name)
+        .map_err(|e| lay(e.to_string()))?;
     // Each rewrite step keeps the previous padding; trim it so no stray
     // zero byte follows the last reference (S56).
     let (mut align, mut align_hb) = handle_refs::trim_padding(&align, align_hb, align_h);

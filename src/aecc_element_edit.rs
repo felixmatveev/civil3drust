@@ -98,6 +98,13 @@ enum Planned<'a> {
         after: i32,
         radius: f64,
     },
+    NewTangent {
+        id: i32,
+        before: i32,
+        after: i32,
+        start: Point2,
+        end: Point2,
+    },
 }
 
 /// Bit offset of the ID field of an arc record and the bit after its
@@ -210,6 +217,16 @@ fn write_elements(
                 w.copy(data, h - 11, h); // the record's own kind prefix
                 encode_kept(data, &mut w, el, *before, *after, *rewrite)?;
             }
+            Planned::NewTangent {
+                id,
+                before,
+                after,
+                start,
+                end,
+            } => {
+                w.bits(crate::aecc_build::PREFIX_TANGENT as u64, 11);
+                encode_tangent(&mut w, *id, *before, *after, *start, *end);
+            }
             Planned::NewFreeArc {
                 id,
                 before,
@@ -245,6 +262,7 @@ fn write_elements(
         .filter(|p| match p {
             Planned::Kept { el, .. } => matches!(el, Element::Arc(_)),
             Planned::NewFreeArc { .. } => true,
+            Planned::NewTangent { .. } => false,
         })
         .count();
     let strings = string_stream::parse(&bytes, hb)
@@ -638,6 +656,59 @@ pub fn add_free_curve(
     let (bytes, hb, mut report) = finish(rec, new, None, None, seed)?;
     report.added_id = Some(new_id);
     Ok((bytes, hb, report))
+}
+
+/// Replace every element of `rec` with `els` (fixed tangents and free
+/// arcs, as [`crate::aecc_build::plan`] makes them, stored in the given
+/// order), keeping the rest of the record: used by `set_geometry` for
+/// templates whose element list or stationing doesn't have the plain
+/// layout (floating curves, a nonzero start station, S98 `Chain`). The
+/// derived parts are rebuilt as for the other edits: graphics,
+/// first-element IDs, element-ID list, design speeds (clamped to the new
+/// length). Detached pieces are refused.
+pub fn replace_elements(
+    rec: &RawRecord,
+    els: &[Element],
+    seed: u64,
+) -> Result<(Vec<u8>, usize, ElementEditReport), ElementEditError> {
+    let d = decode_elements(rec).map_err(|e| err(e.to_string()))?;
+    if !d.detached.is_empty() {
+        return Err(err("the alignment has detached pieces"));
+    }
+    let mut plan = Vec::with_capacity(els.len());
+    for e in els {
+        plan.push(match e {
+            Element::Tangent(t) if t.kind == KIND_FIXED => Planned::NewTangent {
+                id: t.id,
+                before: t.before,
+                after: t.after,
+                start: t.start,
+                end: t.end,
+            },
+            Element::Arc(a) => match a.def {
+                ArcDef::Free { radius, .. } => Planned::NewFreeArc {
+                    id: a.id,
+                    before: a.before,
+                    after: a.after,
+                    radius,
+                },
+                _ => return Err(err(format!("arc {}: only free arcs can be written", a.id))),
+            },
+            Element::Tangent(t) => {
+                return Err(err(format!(
+                    "tangent {}: only fixed tangents can be written",
+                    t.id
+                )))
+            }
+        });
+    }
+    let head = els
+        .iter()
+        .find(|e| e.before() == 0)
+        .map(|e| e.id())
+        .ok_or_else(|| err("no first element"))?;
+    let new = write_elements(rec, &d, &plan)?;
+    finish(rec, new, None, Some(head), seed)
 }
 
 /// Constraint code of a curve (for reports): 29 free, 15 floating, 2

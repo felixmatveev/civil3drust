@@ -14,7 +14,8 @@
 //! | 4 | 5 | the same companion object again |
 //! | 3 | 4 | null |
 //! | 2 | 5 | `AECC_ALIGNMENT_STYLE` — the alignment style (S18 vs S19) |
-//! | 1 | 5 | null |
+//! | 1 | 5 | the design check set (`AECC_ALIGNMENT_DESIGN_CHECK_SET`) when the
+//! |   |   | alignment uses one (S79–S81), otherwise null |
 
 use crate::handle_refs::{self, HandleRef};
 use crate::raw::{self, RawRecord};
@@ -27,6 +28,8 @@ pub struct AlignmentRefs {
     pub layer: HandleRef,
     pub companion: HandleRef,
     pub style: HandleRef,
+    /// Design check set, or a null reference.
+    pub check_set: HandleRef,
 }
 
 /// Pick the named references out of `rec`'s handle stream, or `None` if it
@@ -42,7 +45,6 @@ pub fn alignment_refs(rec: &RawRecord) -> Option<AlignmentRefs> {
     if t.iter().zip(shape).any(|(r, c)| r.code != c)
         || t[1].handle != 0
         || t[4].handle != 0
-        || t[6].handle != 0
         || t[2].handle != t[3].handle
     {
         return None;
@@ -51,6 +53,7 @@ pub fn alignment_refs(rec: &RawRecord) -> Option<AlignmentRefs> {
         layer: t[0],
         companion: t[2],
         style: t[5],
+        check_set: t[6],
     })
 }
 

@@ -367,11 +367,28 @@ pub fn set_geometry(
     }
     let end0_bit = last_end + GAP_AFTER_ELEMENTS;
     let old_end0 = station_of(&decoded.elements, 1, start_station);
-    if raw::get_bit(data, end0_bit) != 0
-        || raw::get_bit(data, end0_bit + 1) != 0
-        || (raw::get_f64(data, end0_bit + 2) - old_end0).abs() > 1e-9 * old_end0.abs().max(1.0)
-    {
-        return Err(layout("element-0 end station not where expected"));
+    let plain_layout = decoded.elements.iter().all(|e| match &e.record {
+        Element::Tangent(t) => t.kind == crate::aecc_alignment::KIND_FIXED,
+        Element::Arc(a) => matches!(a.def, ArcDef::Free { .. }),
+    }) && raw::get_bit(data, end0_bit) == 0
+        && raw::get_bit(data, end0_bit + 1) == 0
+        && (raw::get_f64(data, end0_bit + 2) - old_end0).abs() <= 1e-9 * old_end0.abs().max(1.0);
+    if !plain_layout {
+        // Other templates (floating elements, no speed interval, edited
+        // element lists): replace the element list in place and rebuild
+        // the derived parts from the geometry.
+        let (bytes, hb, rep) =
+            crate::aecc_element_edit::replace_elements(rec, &els, length.to_bits())
+                .map_err(|e| layout(e.to_string()))?;
+        return Ok((
+            bytes,
+            hb,
+            GeometryReport {
+                elements: rep.elements,
+                length: rep.length,
+                graphics_rebuilt: rep.graphics_rebuilt,
+            },
+        ));
     }
     // Cache: BL 1, BL 0, BL after [, 00], 6 RD.
     let mut cb = end0_bit + 66;
