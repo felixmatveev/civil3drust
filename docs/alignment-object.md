@@ -1903,6 +1903,53 @@ first node-list check in S49; the reader now bounds the IDs.
 
 `aecc_topology::node_list` reads the list.
 
+## Site containers with crossings (S112)
+
+S112 = S104 + `test 3`, a U-shaped alignment created in `TEST SITE` that
+crosses `TEST` (at (43.23, 0) and (131.11, 15.56)) and `CREATED to TEST
+SITE` (at (43.23, −56.52) and (131.11, −47.74)). Civil 3D created two
+parcel records (10AF, 10B0, class `AECC_PARCEL`, 660 bytes each). The
+container 100E (523 bytes) references the site's three alignments (soft
+pointer + null each), then the site and the two parcels (soft pointer +
+null each), then 851.
+
+- **Nodes:** 16 = the 12 element end points + the **4 crossings**.
+- **Edges:** 3, one per alignment, in the order of the container's
+  alignment references; header `4, 3, 0, 1`. Each edge ends with
+  `BL 0 ×4`; between edges come `BL 0` and the next edge's ID (also in
+  S104). Edge flags 2192 or 2224.
+- **Crossings are vertices of every edge through them**, with vertex
+  flags **1072**; `TEST` runs 1 → 13 → 2 → 3 → 15 → 4 → 5 (13 and 15 its
+  crossings).
+- **Vertex fields a, b are face IDs** on the two sides of the segment
+  that starts at the vertex: 1 = the site's outer face, 2 and 3 the two
+  parcels, 0 at the last vertex. `TEST` has (1, 3) from 13 to 15 — the
+  stretch that bounds parcel 3 — and (1, 1) elsewhere; `test 3` has
+  (3, 1), (2, 1), (2, 1), (2, 1), (3, 1) along its U. So a siteless
+  companion's a = b = 1 (S25, S44, S106) is its single outer face, and
+  a = b = 0 (S48, S49, S98) means no face information.
+- **Faces** follow the edges: `BL next free face ID, BL count, BL 1, BL
+  first face ID` (S112: `4, 3, 1, 1`; S102/S104 and the companions:
+  `2, 1, 1, 1`), then per face flags and boundary references: S102
+  `14, 1, (1, 0)`; S104 `14, 2, (1, 0), (6, 0)` — the outer face lists one
+  start node per separate alignment (1 for `TEST`, 6 for `CREATED`);
+  S112 `6, 1, 16, 1, 2`, `2?, 14, 1, 16, 3, 3`, `3, 14, 1, 15, 3, 1`, …
+  The exact face record and what follows (S112: `1 3 1 1 …`, S102:
+  six `1`) are not decoded.
+
+`aecc_topology::graph` reads nodes and edges of companions and site
+containers (tests `site_container_with_crossings_s112`,
+`site_containers_parse_s102_s104`).
+
+**Consequence for writing.** Putting an alignment into a site means
+computing the planar arrangement of all its alignments: crossing nodes,
+split segments with face IDs, faces with their boundaries, and a parcel
+record per closed region. D-038 stands: civil3drust creates siteless
+alignments; site membership is read-only. A narrower case — an
+alignment that crosses nothing in the site (S104's form: one more edge,
+one more start node in the outer face) — could be written once the face
+record is decoded, if it becomes worth it.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length

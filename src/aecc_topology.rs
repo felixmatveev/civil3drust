@@ -34,8 +34,18 @@
 //! meanings unknown. A companion then ends with a constant-looking tail
 //! (`BL 0 ×4, BL 2`, one face-like entry `BL 1, 1, 1, 7` + two BLs, `BL 0`
 //! ×2, six `BL 1, BL 100` pairs, six `BL 0`) and its strings. Site
-//! containers hold one edge per alignment (S104); what separates them and
-//! the tail of a container are not decoded.
+//! containers hold one edge per alignment, in the order of the
+//! container's alignment references (S104, S112; [`graph`]).
+//!
+//! **Faces (S112).** Where alignments in a site cross, the crossing points
+//! become nodes too (vertex flags 1072) and are vertices of both edges;
+//! the vertex fields a and b are the IDs of the faces on the two sides of
+//! the segment starting there (1 = the site's outer face; 0 at the last
+//! vertex), and each closed region becomes a face and a parcel record
+//! (`AECC_PARCEL`, referenced by the container after the site). The face
+//! list after the edges (`BL next free face ID, BL count, BL 1, BL first
+//! face ID`, then per face flags and boundary references) is only partly
+//! read.
 //!
 //! [`rebuild_companion`] rewrites a siteless companion's nodes and edge
 //! from an alignment's geometry, for companions in the uniform form of
@@ -198,7 +208,60 @@ fn edge_at(data: &[u8], bit: usize) -> Option<(Edge, usize)> {
     Some((Edge { flags, vertices }, p))
 }
 
+/// Decode the graph of a companion or site container: node list, then
+/// the edge list (`BL next free edge ID, BL count, BL 0, BL first edge
+/// ID`), edges one after another. Each edge ends with `BL 0 ×4`; between
+/// edges come `BL 0` and the next edge's ID (S104, S112).
+pub fn graph(data: &[u8]) -> Option<Graph> {
+    let nodes = node_list(data)?;
+    let p = nodes.end_bit;
+    let (next_free, p) = raw::read_bl(data, p)?;
+    let (count, p) = raw::read_bl(data, p)?;
+    let (zero, p) = raw::read_bl(data, p)?;
+    let (head, mut p) = raw::read_bl(data, p)?;
+    if !(1..=10_000).contains(&count) || count >= next_free || zero != 0 || head != 1 {
+        return None;
+    }
+    let mut edges = Vec::new();
+    let mut end = p;
+    for k in 0..count {
+        let (edge, q) = edge_at(data, p)?;
+        if edge
+            .vertices
+            .iter()
+            .any(|v| !nodes.nodes.iter().any(|n| n.id == v.node))
+        {
+            return None;
+        }
+        edges.push(edge);
+        let mut q = q;
+        for _ in 0..4 {
+            let (z, r) = raw::read_bl(data, q)?;
+            if z != 0 {
+                return None;
+            }
+            q = r;
+        }
+        end = q;
+        if k + 1 < count {
+            let (z, r) = raw::read_bl(data, q)?;
+            let (next, r) = raw::read_bl(data, r)?;
+            if z != 0 || next < 1 || next >= next_free {
+                return None;
+            }
+            q = r;
+        }
+        p = q;
+    }
+    Some(Graph {
+        nodes,
+        edges,
+        edges_end: end,
+    })
+}
+
 /// Decode a companion's graph: node list, then a one-edge edge list.
+/// `edges_end` is the bit after the edge's vertices (before `BL 0 ×4`).
 pub fn companion_graph(data: &[u8]) -> Option<Graph> {
     let nodes = node_list(data)?;
     let p = nodes.end_bit;

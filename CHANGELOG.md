@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `aecc_topology::graph`: nodes and edges of site containers (several
+  alignments, crossings as shared vertices, face IDs per segment). Sample
+  S112 (alignment crossing two others in a site, two parcels).
 - Sample S111: Civil 3D accepts and keeps the rebuilt companions (S110).
 - Topology edges (`aecc_topology::companion_graph`): one edge per
   alignment, vertices in path order with bulges for arcs.

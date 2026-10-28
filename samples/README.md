@@ -123,6 +123,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S109 | `S109_S108_civ3d_recovered.dwg` | Civil 3D 2024 | S108 opened: RECOVER discarded companions FB2, FB5, FB8 ("Error 34 (eWrongObjectType)"), 6 errors fixed; saved. The alignments keep dangling companion references. | 474348 | `e102e17a489b0960` |
 | S110 | `S110_S24_rebuilt_companions_v2.dwg` | civil3drust | As S108 with the fixed rebuild: edge flags and tail kept from the template companion (S98 F9D: no face-like entry, three references), handle stream trimmed. | 452875 | `497bc4625ad336f7` |
 | S111 | `S111_S110_civ3d_audit_resaved.dwg` | Civil 3D 2024 | S110 opened (no RECOVER prompt), AUDIT 0 errors, saved. | 474663 | `ad5fbc40bc51c95b` |
+| S112 | `S112_S104_third_alignment_in_site.dwg` | Civil 3D 2024 | O7: S104 + `test 3` (10A3, U shape (43.2,62.6) → (43.2,−86.5) → (131.1,−86.5) → (131.1,75.5)) created in `TEST SITE`, crossing `TEST` and `CREATED to TEST SITE`; Civil 3D made two parcels (10AF, 10B0). | 480845 | `cd4acf872889eeb9` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

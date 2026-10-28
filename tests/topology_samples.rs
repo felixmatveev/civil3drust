@@ -262,3 +262,86 @@ fn civil3d_keeps_rebuilt_companions_s111() {
         }
     }
 }
+
+/// S112: a third alignment crossing two others in TEST SITE. The site
+/// container holds 16 nodes (12 element end points + 4 crossings) and one
+/// edge per alignment; crossings are vertices of both edges; segment face
+/// IDs show the two parcels.
+#[test]
+fn site_container_with_crossings_s112() {
+    use civil3drust::aecc_topology::graph;
+    let o = raw::open("samples/S112_S104_third_alignment_in_site.dwg").unwrap();
+    let c = raw::records(&o.doc, "AECC_FEATURE_STYLE")
+        .into_iter()
+        .find(|r| r.handle == 0x100E)
+        .unwrap();
+    let g = graph(&c.data).unwrap();
+    assert_eq!(g.nodes.nodes.len(), 16);
+    assert_eq!(g.edges.len(), 3);
+    let crossings: Vec<i32> = g
+        .nodes
+        .nodes
+        .iter()
+        .filter(|n| {
+            [
+                (43.2271, 0.0),
+                (43.2271, -56.5215),
+                (131.1145, 15.5573),
+                (131.1145, -47.7409),
+            ]
+            .iter()
+            .any(|(x, y)| (n.x - x).abs() < 1e-3 && (n.y - y).abs() < 1e-3)
+        })
+        .map(|n| n.id)
+        .collect();
+    assert_eq!(crossings.len(), 4);
+    for e in &g.edges {
+        for v in &e.vertices {
+            assert_eq!(
+                crossings.contains(&v.node),
+                v.flags == 1072,
+                "node {}",
+                v.node
+            );
+        }
+    }
+    // Edges in alignment order; each passes through its alignment's end
+    // points (plus crossings).
+    for (e, h) in g.edges.iter().zip([0xF9E, 0x103A, 0x10A3]) {
+        let a = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap();
+        let pts: Vec<Point2> = edge_points(&g, e)
+            .into_iter()
+            .enumerate()
+            .filter(|(i, _)| !crossings.contains(&e.vertices[*i].node))
+            .map(|(_, p)| p)
+            .collect();
+        let want = end_points(&a);
+        assert!(same_set(&pts, &want), "{h:X}");
+    }
+    // Faces: 1 outside, 2 and 3 the parcels.
+    let faces: std::collections::BTreeSet<i32> = g
+        .edges
+        .iter()
+        .flat_map(|e| e.vertices.iter().flat_map(|v| [v.a, v.b]))
+        .collect();
+    assert_eq!(faces.into_iter().collect::<Vec<_>>(), [0, 1, 2, 3]);
+}
+
+#[test]
+fn site_containers_parse_s102_s104() {
+    use civil3drust::aecc_topology::graph;
+    for (p, n) in [
+        ("samples/S102_alignment_in_site.dwg", 1),
+        ("samples/S104_second_alignment_in_site.dwg", 2),
+    ] {
+        let o = raw::open(p).unwrap();
+        let c = raw::records(&o.doc, "AECC_FEATURE_STYLE")
+            .into_iter()
+            .find(|r| r.handle == 0x100E)
+            .unwrap();
+        assert_eq!(graph(&c.data).unwrap().edges.len(), n, "{p}");
+    }
+}
