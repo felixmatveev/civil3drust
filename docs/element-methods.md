@@ -59,32 +59,32 @@ the arcs and lines in each record's proxy graphics.
 
 | method | status | samples |
 |---|---|---|
-| Floating Line with Spiral (from curve, through point) | probable: code 162 line-spiral group (start point, spiral length) — S119, made before a curve's start; method to be confirmed | S119 |
-| Floating Line with Spiral (from curve end, length) | planned | S120 |
-| Floating Curve with Spiral (from entity end, radius, length) | planned | S120 |
-| Floating Curve with Spiral (from entity, radius, through point) | planned | S120 |
-| Floating Reverse Curve with Spirals (from curve, radius, through point) | planned | S120 |
-| Floating Reverse Curve with Spirals (from curve, two points) | planned | S120 |
-| Free Spiral-Curve-Spiral (between two entities) | planned, first | S120 |
-| Free Compound Spiral-Curve-Spiral-Curve-Spiral (between two tangents) | planned | S121 |
-| Free Reverse Spiral-Curve-Spiral-Spiral-Curve-Spiral (between two tangents) | planned | S121 |
-| Free Reverse Spiral-Curve-Spiral-Curve (from entity, end curve) | planned | S121 |
-| Free Reverse Spiral-Spiral-Curve (from curve, end entity) | planned | S121 |
-| Free Reverse Spiral-Spiral-Curve-Spiral-Spiral (between two curves) | planned | S121 |
+| Floating Line with Spiral (from curve, through point) | probable: code 162 line-spiral group (start point, spiral length) — S119, made before a curve's start; method to be confirmed | S119; S120 → S121 |
+| Floating Line with Spiral (from curve end, length) | planned | S120 → S121 |
+| Floating Curve with Spiral (from entity end, radius, length) | planned | S120 → S121 |
+| Floating Curve with Spiral (from entity, radius, through point) | planned | S120 → S121 |
+| Floating Reverse Curve with Spirals (from curve, radius, through point) | planned | S120 → S121 |
+| Floating Reverse Curve with Spirals (from curve, two points) | planned | S120 → S121 |
+| Free Spiral-Curve-Spiral (between two entities) | planned | S120 → S121 |
+| Free Compound Spiral-Curve-Spiral-Curve-Spiral (between two tangents) | planned | S120 → S121 |
+| Free Reverse Spiral-Curve-Spiral-Spiral-Curve-Spiral (between two tangents) | planned | S120 → S121 |
+| Free Reverse Spiral-Curve-Spiral-Spiral (from entity, end curve) | planned | S120 → S121 |
+| Free Reverse Spiral-Curve-Spiral-Curve (from curve, end entity) | planned | S120 → S121 |
+| Free Reverse Spiral-Spiral-Curve-Spiral-Spiral (between two curves) | planned | S120 → S121 |
 
 ## Spirals
 
 | method | status | samples |
 |---|---|---|
-| Fixed Spiral | planned | S122 |
-| Free Spiral (between two entities) | planned | S122 |
-| Free Compound Spiral-Spiral (between two curves) | planned | S122 |
-| Free Reverse Spiral-Spiral (between two curves) | planned | S122 |
-| Free Compound Spiral-Spiral (between two tangents) | planned | S122 |
-| Free Compound Spiral-Line-Spiral (between two curves, spiral lengths) | planned | S122 |
-| Free Reverse Spiral-Line-Spiral (between two curves, spiral lengths) | planned | S122 |
-| Free Compound Spiral-Line-Spiral (between two curves, line length) | planned | S122 |
-| Free Reverse Spiral-Line-Spiral (between two curves, line length) | planned | S122 |
+| Fixed Spiral | planned | S120 → S121 |
+| Free Spiral (between two entities) | planned | S120 → S121 |
+| Free Compound Spiral-Spiral (between two curves) | planned | S120 → S121 |
+| Free Reverse Spiral-Spiral (between two curves) | planned | S120 → S121 |
+| Free Compound Spiral-Spiral (between two tangents) | planned | S120 → S121 |
+| Free Compound Spiral-Line-Spiral (between two curves, spiral lengths) | planned | S120 → S121 |
+| Free Reverse Spiral-Line-Spiral (between two curves, spiral lengths) | planned | S120 → S121 |
+| Free Compound Spiral-Line-Spiral (between two curves, line length) | planned | S120 → S121 |
+| Free Reverse Spiral-Line-Spiral (between two curves, line length) | planned | S120 → S121 |
 
 ## How the samples are made
 
@@ -92,8 +92,8 @@ S116 is prepared by civil3drust: S24 plus 14 empty alignments named after
 the 14 curve methods (owner's highlighted list, which adds Fixed Curve
 (Three point) and Free Curve Fillet (radius) as controls). The owner lays
 out one curve with its method in each and saves the result as S117 (decoded: see the tables above and
-`docs/alignment-object.md`, "Curve methods (S117)"). The spiral samples
-S120–S122 are planned the same way.
+`docs/alignment-object.md`, "Curve methods (S117)"). S120 is prepared the same way for the 21 spiral methods (owner's three
+menus); the owner's filled copy will be S121.
 
 Each drawing is a copy of S24 with one alignment per method, named after
 the method (e.g. `FL length`, `FC 2pt dir1`, `SCS free`). Where a method

@@ -20,6 +20,7 @@ versions follow [Semantic Versioning](https://semver.org/).
   `Segment::Spiral` (clothoid), resolved before a centre curve; a group
   resolves into one entry per part (`ResolvedElement::part`). Editing
   and speeds refuse alignments with groups for now. Sample S119.
+- Sample S120: 21 empty alignments named after the spiral layout methods.
 - `create_alignment` with no PIs copies an empty template alignment (S113
   `EMPTY`), giving its speed-table entry a fresh GUID;
   `aecc_design_speed::empty_alignment_table`. Sample S116: 14 empty
