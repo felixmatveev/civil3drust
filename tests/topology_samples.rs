@@ -62,3 +62,98 @@ fn nodes_are_the_element_end_points() {
         }
     }
 }
+
+use civil3drust::aecc_topology::{companion_graph, edge_points, rebuild_companion};
+
+fn companion_and_alignment(p: &str, comp: u64, align: u64) -> (raw::RawRecord, raw::RawRecord) {
+    let o = raw::open(p).unwrap();
+    let c = raw::records(&o.doc, "AECC_FEATURE_STYLE")
+        .into_iter()
+        .find(|r| r.handle == comp)
+        .unwrap();
+    let a = raw::records(&o.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == align)
+        .unwrap();
+    (c, a)
+}
+
+/// Every Civil 3D companion's single edge runs through the alignment's
+/// element end points in path order, with one arc vertex per curve.
+#[test]
+fn companion_edges_follow_the_path() {
+    for (p, c, a) in [
+        ("samples/S25_ZERO_CIVIL_second_alignment.dwg", 0xFB7, 0xFB8),
+        (
+            "samples/S44_S25_plus_two_tangent_alignment.dwg",
+            0xFF2,
+            0xFF3,
+        ),
+        ("samples/S48_S25_plus_C_no_curves.dwg", 0x102A, 0x102B),
+        ("samples/S49_S48_C_with_curves.dwg", 0x102A, 0x102B),
+        ("samples/S106_test_back_to_siteless.dwg", 0x108E, 0xF9E),
+    ] {
+        let (c, a) = companion_and_alignment(p, c, a);
+        let g = companion_graph(&c.data).unwrap_or_else(|| panic!("{p}: no graph"));
+        let d = decode_elements(&a).unwrap();
+        let mut want: Vec<Point2> = d.elements.iter().map(|e| e.segment.start()).collect();
+        want.push(d.elements.last().unwrap().segment.end());
+        let got = edge_points(&g, &g.edges[0]);
+        assert_eq!(got.len(), want.len(), "{p}");
+        for (x, y) in got.iter().zip(&want) {
+            assert!(x.distance_to(*y) < 1e-6, "{p}: {x:?} vs {y:?}");
+        }
+        let arcs = d
+            .elements
+            .iter()
+            .filter(|e| matches!(e.record, civil3drust::aecc_elements::Element::Arc(_)))
+            .count();
+        let bulges = g.edges[0]
+            .vertices
+            .iter()
+            .filter(|v| v.bulge.is_some())
+            .count();
+        assert_eq!(arcs, bulges, "{p}");
+        assert_eq!(g.edges[0].flags & 0x800 != 0, arcs > 0, "{p}");
+    }
+}
+
+/// Rebuilding S49's companion from C's geometry gives Civil 3D's graph
+/// (other node IDs) and the same record size and tail.
+#[test]
+fn rebuilt_companion_matches_civil3d_s49() {
+    let (c, a) = companion_and_alignment("samples/S49_S48_C_with_curves.dwg", 0x102A, 0x102B);
+    let d = decode_elements(&a).unwrap();
+    let (bytes, hb) = rebuild_companion(&c.data, c.handle_bits, &d.elements).unwrap();
+    assert_eq!(bytes.len(), c.data.len());
+    assert_eq!(hb, c.handle_bits);
+    let ours = companion_graph(&bytes).unwrap();
+    let theirs = companion_graph(&c.data).unwrap();
+    assert_eq!(ours.edges[0].flags, theirs.edges[0].flags);
+    let (po, pt) = (
+        edge_points(&ours, &ours.edges[0]),
+        edge_points(&theirs, &theirs.edges[0]),
+    );
+    assert!(po.iter().zip(&pt).all(|(x, y)| x.distance_to(*y) < 1e-6));
+    for (vo, vt) in ours.edges[0].vertices.iter().zip(&theirs.edges[0].vertices) {
+        assert_eq!(
+            (vo.kind, vo.flags, vo.a, vo.b),
+            (vt.kind, vt.flags, vt.a, vt.b)
+        );
+        match (vo.bulge, vt.bulge) {
+            (Some(x), Some(y)) => assert!((x - y).abs() < 1e-9, "bulge {x} vs {y}"),
+            (None, None) => {}
+            other => panic!("{other:?}"),
+        }
+    }
+    // Everything after the edge (tail, strings, handles) is identical.
+    let tail = |d: &[u8], from: usize| -> Vec<u8> {
+        (from..raw::bit_len(d))
+            .map(|b| raw::get_bit(d, b))
+            .collect()
+    };
+    assert_eq!(
+        tail(&bytes, ours.edges_end),
+        tail(&c.data, theirs.edges_end)
+    );
+}

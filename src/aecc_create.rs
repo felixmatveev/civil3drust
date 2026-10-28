@@ -114,6 +114,8 @@ impl Default for CreateOptions {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Created {
     pub alignment: u64,
+    /// The companion's topology graph was rewritten for the new geometry.
+    pub companion_rebuilt: bool,
     /// 0 when created without the parcel entry.
     pub companion: u64,
     /// 0 when no label group was written.
@@ -521,7 +523,13 @@ pub fn create_alignment(
         target.add_entity(e).map_err(|e| lay(e.to_string()))?;
     }
 
+    // The companion still holds the template's graph (S107); rebuild it
+    // from the new geometry.
+    let companion_rebuilt = opts.parcel_entry
+        && crate::aecc_topology::refresh_companion(target, align_h).map_err(lay)?;
+
     Ok(Created {
+        companion_rebuilt,
         alignment: align_h,
         companion: if opts.parcel_entry { comp_h } else { 0 },
         label_group: if wrote_label { label_h } else { 0 },

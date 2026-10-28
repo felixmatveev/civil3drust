@@ -747,5 +747,16 @@ fn any_s98_alignment_works_as_template() {
         assert_eq!(d.stored_start_station, Some(0.0), "{t:X}");
         let sp = design_speeds(&rec).unwrap();
         assert!(sp.iter().all(|s| s.station >= 0.0), "{t:X}");
+        // The companion now describes the new alignment (S107 was stale).
+        assert!(c.companion_rebuilt, "{t:X}");
+        let comp = raw::records(&target.doc, "AECC_FEATURE_STYLE")
+            .into_iter()
+            .find(|r| r.handle == c.companion)
+            .unwrap();
+        let g = civil3drust::aecc_topology::companion_graph(&comp.data).unwrap();
+        let pts = civil3drust::aecc_topology::edge_points(&g, &g.edges[0]);
+        assert_eq!(pts.len(), 5, "{t:X}");
+        assert!(pts[0].distance_to(Point2::new(0.0, -400.0)) < 1e-9);
+        assert!(pts[4].distance_to(Point2::new(600.0, -700.0)) < 1e-9);
     }
 }

@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Topology edges (`aecc_topology::companion_graph`): one edge per
+  alignment, vertices in path order with bulges for arcs.
+- `aecc_topology::rebuild_companion` / `refresh_companion` (D-040):
+  companions are rewritten from the geometry; `create_alignment` and the
+  geometry-editing examples use it (S107's companion was stale). Sample
+  S108.
 - `aecc_topology::node_list`: the topology node list of companions and
   site containers (one node per element end point); test against S25–S106.
 - S107's LandXML export; topology findings: one node per element end
@@ -75,6 +81,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   results (docs/acadrust-0.6.7.md).
 
 ### Fixed
+- The node-list reader accepted a misaligned start in S49 (IDs now
+  bounded).
 - `create_alignment` accepts any Civil 3D alignment as template: the
   last handle reference may be a design check set (kept if the target has
   it, else nulled and the criteria box cleared); templates with floating

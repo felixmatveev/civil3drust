@@ -1836,9 +1836,45 @@ n × { BD x, BD y, BD z, 3 bits 010, BL ID of the next node (0 = last) }
   39–43 after earlier edits); after Civil 3D rebuilt C's graph for the two
   curves (S49) they restart lower. The list follows the next-IDs, not the
   path order.
-- After the node list: `BL 2, BL 1, BL 0, BL 1` in every sample, then the
-  edges (not decoded yet; they must carry the curve data — S49 grows by
-  much more than its two new nodes).
+- After the node list comes the **edge list**: `BL 2, BL 1, BL 0, BL 1`
+  (next free edge ID, edge count, 0, first edge ID — a siteless alignment
+  is **one edge**), then the edge: `BL flags, BL vertex count n, BL 0`
+  and n vertices `BL kind, BL vertex flags, BL node ID, BL a, BL b`, an
+  arc vertex followed by `BD bulge, BL 0`. The edge is a polyline through
+  the nodes in **path order** (S48: 39, 41, 42, 43, 40 = (0,−200) …
+  (400,−250)):
+
+  | kind | meaning |
+  |---|---|
+  | 0 | a tangent starts at this vertex |
+  | 1 | an arc starts here; bulge = tan(Δ/4), + left (S49: +0.11643 for the 26.57° left curve, −0.19891 for the 45° right one) |
+  | 2 | last vertex |
+
+  Edge flags: 0x10, + 0x800 when the edge has arcs (S49, S106), + 0x20 in
+  S25/S44. Vertex flags 10 with a = b = 0 in S48/S49; 2, 50 or 178 with
+  a = b = 1 in S25, S44, S106 and S104 (meaning unknown).
+- The companion ends with `BL 0 ×4, BL 2`, a face-like entry count
+  (1 with `BL 1, 1, 7` + two BLs that follow the vertex a/b; 0 in S48,
+  whose handle stream then lacks two null references), `BL 0 ×2`, six
+  `BL 1, BL 100` pairs and six `BL 0`, then the ID string.
+- A site container holds one edge per alignment (S104: header `3, 2, 0,
+  1`; the second edge, `CREATED`, runs 6 → 8 → 7). The separator between
+  edges and the container's tail are not decoded.
+
+**Writing (D-040).** `aecc_topology::rebuild_companion` rewrites a
+siteless companion's nodes and edge from the alignment's elements in the
+uniform form of S49 (node IDs 1… in path order, vertex flags 10,
+a = b = 0, S49's tail); the object header, key, strings and handle stream
+are kept. Rebuilding S49's companion from `C` reproduces Civil 3D's record
+size, flags, vertex kinds, bulges (to 1e−9) and everything after the edge
+bit for bit (test `rebuilt_companion_matches_civil3d_s49`; only node IDs
+and order differ). `create_alignment` now rebuilds the companion (S107's
+was stale), and the geometry-editing examples (`edit_elements`,
+`set_radius`, `set_length`, `set_pis`) refresh it
+(`refresh_companion`). S108 has three alignments made this way.
+
+A misaligned start (a 4-byte BL read from the constant run) passed the
+first node-list check in S49; the reader now bounds the IDs.
 
 `aecc_topology::node_list` reads the list.
 

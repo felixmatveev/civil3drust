@@ -119,6 +119,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S105 | `S105_test_moved_to_test2.dwg` | Civil 3D 2024 | O7: S104 with `TEST` moved to `TEST 2`; saved. | 476841 | `1c7cbf8adf1c026c` |
 | S106 | `S106_test_back_to_siteless.dwg` | Civil 3D 2024 | O7: S105 with `TEST` moved back to `<None>` (siteless); saved. | 477354 | `d84d2593dcdbcc41` |
 | S107 | `S107_S104_created_siteless.dwg` | civil3drust | S104 + siteless `SITELESS NEW` (107D), 0,−400 → 300,−400 (R 80) → 300,−700 → 600,−700, template S98 F9E (`create_alignment`): a new alignment in a drawing with sites. Owner: AUDIT 0 errors; `S107_S104_created_siteless.xml` is Civil 3D's LandXML export of it. | 460235 | `50296fb51c87a7eb` |
+| S108 | `S108_S24_rebuilt_companions.dwg` | civil3drust | S24 + `Graph two curves` (FB3: 0,−400 → 300,−400 R80 → 300,−700 R80 → 600,−700), `Graph tangents` (FB6: 0,−900 → 200,−900 → 300,−1000 → 500,−1000), `Graph edited` (FB9: as FB3 at y −1200, then `edit_elements remove 1`); template S98 F9E; companions' graphs rebuilt from the geometry (`aecc_topology::rebuild_companion`). | 452872 | `f853f001bcf53655` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

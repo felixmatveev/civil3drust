@@ -142,6 +142,16 @@ fn main() {
             String::new()
         }
     );
+    if c.companion != 0 {
+        println!(
+            "companion graph {}",
+            if c.companion_rebuilt {
+                "rebuilt"
+            } else {
+                "kept from the template (unknown form)"
+            }
+        );
+    }
     acadrust::DwgWriter::write_to_file(&a[3], &target.doc).unwrap_or_else(|e| fail(e));
 
     let re =

@@ -730,3 +730,26 @@ identity GUID is renewed only when the template has a speed interval.
 **Alternatives.** Refuse such templates: forces the user to keep a plain
 alignment around. Map check sets across drawings by name: no sample of
 two drawings with different check sets yet.
+
+## D-040: Companions are rewritten in the uniform form of S49
+
+**Context.** A siteless alignment's companion holds its topology: nodes
+at the element end points and one edge through them (polyline with
+bulges). `create_alignment` copied the template's companion, so S107's
+described the template's geometry. Civil 3D writes several variants
+(vertex flags 2/10/50/178, a/b 0 or 1, edge flag 0x20, a face-like entry
+present or not) whose meanings are unknown.
+
+**Decision.** Rebuild the companion's nodes, edge and tail from the
+geometry in the form Civil 3D wrote for S49 after a curve edit: node IDs
+1… in path order, vertex flags 10, a = b = 0, edge flags 0x10 (+0x800
+with arcs), S49's tail with one face-like entry (matching the five-
+reference handle stream every generated companion has). Keep the object
+header, key, strings and handle stream. Alignments in a site are not
+touched (their graph is the site's). If a companion's graph doesn't parse,
+it is left as it is.
+
+**Alternatives.** Keep copying the template's companion: accepted by
+Civil 3D (S107, S28) but wrong data. Copy the template's vertex flags
+per position: they depend on history we can't reproduce. Pending: Civil
+3D's verdict on S108.
