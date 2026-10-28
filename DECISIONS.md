@@ -740,12 +740,15 @@ described the template's geometry. Civil 3D writes several variants
 (vertex flags 2/10/50/178, a/b 0 or 1, edge flag 0x20, a face-like entry
 present or not) whose meanings are unknown.
 
-**Decision.** Rebuild the companion's nodes, edge and tail from the
-geometry in the form Civil 3D wrote for S49 after a curve edit: node IDs
-1… in path order, vertex flags 10, a = b = 0, edge flags 0x10 (+0x800
-with arcs), S49's tail with one face-like entry (matching the five-
-reference handle stream every generated companion has). Keep the object
-header, key, strings and handle stream. Alignments in a site are not
+**Decision.** Rebuild the companion's nodes and the edge's vertices from
+the geometry: node IDs 1… in path order, vertex flags 10, a = b = 0, a
+bulge per arc. Keep everything else from the existing companion: object
+header, key, **edge flags and the tail after the edge** (its face-like
+entry must match the number of handle references), strings and handle
+stream. Only companions already in that vertex form are rewritten.
+(Revised after S109: the first version wrote S49's edge flags and tail,
+and Civil 3D discarded the companions whose template had no face-like
+entry.) Alignments in a site are not
 touched (their graph is the site's). If a companion's graph doesn't parse,
 it is left as it is.
 

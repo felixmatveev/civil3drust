@@ -157,3 +157,68 @@ fn rebuilt_companion_matches_civil3d_s49() {
         tail(&c.data, theirs.edges_end)
     );
 }
+
+/// The face-like entry count after the edge goes with the handle stream:
+/// 3 references without it, 5 with one (S48 vs S49, S98's F9D). Writing an
+/// entry into a three-reference companion made Civil 3D discard it (S109).
+#[test]
+fn tail_entry_matches_reference_count() {
+    for (p, c) in [
+        ("samples/S25_ZERO_CIVIL_second_alignment.dwg", 0xFB7),
+        ("samples/S48_S25_plus_C_no_curves.dwg", 0x102A),
+        ("samples/S49_S48_C_with_curves.dwg", 0x102A),
+        ("samples/S98_S97_civ3d_audit_resaved.dwg", 0xF9D),
+        ("samples/S106_test_back_to_siteless.dwg", 0x108E),
+    ] {
+        let o = raw::open(p).unwrap();
+        let rec = raw::records(&o.doc, "AECC_FEATURE_STYLE")
+            .into_iter()
+            .find(|r| r.handle == c)
+            .unwrap();
+        let g = companion_graph(&rec.data).unwrap();
+        // Tail: BL 0 ×4, BL 2, then the entry count.
+        let mut q = g.edges_end;
+        for _ in 0..5 {
+            q = raw::read_bl(&rec.data, q).unwrap().1;
+        }
+        let entries = raw::read_bl(&rec.data, q).unwrap().0 as usize;
+        let refs = civil3drust::handle_refs::of_record(&rec).len();
+        assert_eq!(refs, 3 + 2 * entries, "{p} {c:X}");
+    }
+}
+
+/// A companion rebuilt from a template keeps the template's tail (S108's
+/// failure: S49's tail written into S98's three-reference companion).
+#[test]
+fn rebuilt_companion_keeps_the_template_tail() {
+    let (c, _) = companion_and_alignment("samples/S98_S97_civ3d_audit_resaved.dwg", 0xF9D, 0xF9E);
+    let (_, a) = companion_and_alignment("samples/S49_S48_C_with_curves.dwg", 0x102A, 0x102B);
+    let d = decode_elements(&a).unwrap();
+    let (bytes, hb) = rebuild_companion(&c.data, c.handle_bits, &d.elements).unwrap();
+    let (old, new) = (
+        companion_graph(&c.data).unwrap(),
+        companion_graph(&bytes).unwrap(),
+    );
+    let bits =
+        |d: &[u8], a: usize, b: usize| -> Vec<u8> { (a..b).map(|i| raw::get_bit(d, i)).collect() };
+    let old_ss = civil3drust::string_stream::parse(&c.data, c.handle_bits)
+        .unwrap()
+        .start;
+    let new_ss = civil3drust::string_stream::parse(&bytes, hb).unwrap().start;
+    assert_eq!(
+        bits(&bytes, new.edges_end, new_ss),
+        bits(&c.data, old.edges_end, old_ss)
+    );
+    assert_eq!(new.edges[0].flags, old.edges[0].flags);
+    let refs = |d: &[u8], hb: usize| {
+        civil3drust::handle_refs::of_record(&raw::RawRecord {
+            data: d.to_vec(),
+            handle_bits: hb,
+            ..c.clone()
+        })
+        .iter()
+        .map(|r| (r.code, r.handle))
+        .collect::<Vec<_>>()
+    };
+    assert_eq!(refs(&bytes, hb), refs(&c.data, c.handle_bits));
+}

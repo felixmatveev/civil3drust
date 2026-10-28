@@ -28,8 +28,8 @@
 //!
 //! kind 0 = a tangent starts here, 1 = an arc starts here (bulge
 //! tan(Δ/4), positive turning left), 2 = the last vertex. Edge flags:
-//! 0x10, + 0x800 when the edge has arcs, + 0x20 in some records (S25,
-//! S44). Vertex flags 10 with a = b = 0 in S48/S49; 2, 50 or 178 with
+//! 0x10, + 0x800 in S49/S106 (both with arcs, but S98's F9D has an arc
+//! with 0x10 alone), + 0x20 in S25/S44. Vertex flags 10 with a = b = 0 in S48/S49; 2, 50 or 178 with
 //! a = b = 1 in records Civil 3D made by other routes (S25, S44, S106) —
 //! meanings unknown. A companion then ends with a constant-looking tail
 //! (`BL 0 ×4, BL 2`, one face-like entry `BL 1, 1, 1, 7` + two BLs, `BL 0`
@@ -38,8 +38,9 @@
 //! the tail of a container are not decoded.
 //!
 //! [`rebuild_companion`] rewrites a siteless companion's nodes and edge
-//! from an alignment's geometry in the uniform form of S49 (vertex flags
-//! 10, a = b = 0).
+//! from an alignment's geometry, for companions in the uniform form of
+//! S48/S49/S98 (vertex flags 10, a = b = 0), keeping their edge flags and
+//! tail (D-040).
 
 use crate::alignment::Point2;
 use crate::raw;
@@ -232,19 +233,17 @@ pub fn edge_points(g: &Graph, e: &Edge) -> Vec<Point2> {
         .collect()
 }
 
-/// Edge flag: the edge has arcs.
-pub const EDGE_HAS_ARCS: i32 = 0x800;
-/// Edge flags of a plain edge (S48).
-pub const EDGE_PLAIN: i32 = 0x10;
 /// Vertex flags of the uniform form (S48, S49).
 pub const VERTEX_PLAIN: i32 = 10;
 
 /// Rewrite the graph of a siteless companion record (data + handle-stream
 /// size) for an alignment made of `elements` (in path order): nodes at
 /// the element end points (IDs 1… in path order), one edge through them
-/// with a bulge per arc, and the tail of S49's companion. The object
-/// header, key and constant run before the nodes, the strings and the
-/// handle stream are kept. Returns the new bytes and handle-stream size.
+/// with a bulge per arc. The object header, key and constant run before
+/// the nodes, the edge flags, the tail after the edge, the strings and
+/// the handle stream are kept. Only companions in the uniform form
+/// (vertex flags 10, a = b = 0) are rewritten; `None` otherwise. Returns
+/// the new bytes and handle-stream size.
 pub fn rebuild_companion(
     data: &[u8],
     handle_bits: usize,
@@ -255,7 +254,20 @@ pub fn rebuild_companion(
     if elements.is_empty() {
         return None;
     }
-    let nodes = node_list(data)?;
+    // The old graph decides the parts we keep: edge flags and the tail
+    // after the edge (its face-like entry goes with the number of handle
+    // references; writing S49's tail into a three-reference companion made
+    // Civil 3D discard it, S108 → S109).
+    let old = companion_graph(data)?;
+    let old_edge = old.edges.first()?;
+    if old_edge
+        .vertices
+        .iter()
+        .any(|v| (v.flags, v.a, v.b) != (VERTEX_PLAIN, 0, 0))
+    {
+        return None; // other vertex forms: meaning unknown
+    }
+    let nodes = old.nodes.clone();
     let ss = crate::string_stream::parse(data, handle_bits).ok()?;
     if ss.start <= nodes.start_bit {
         return None;
@@ -276,13 +288,12 @@ pub fn rebuild_companion(
         w.bits(0b010, 3);
         w.bl(if i as i32 + 1 == n { 0 } else { i as i32 + 2 });
     }
-    let has_arcs = elements
-        .iter()
-        .any(|e| matches!(e.segment, Segment::Arc { .. }));
     for v in [2, 1, 0, 1] {
         w.bl(v);
     }
-    w.bl(EDGE_PLAIN | if has_arcs { EDGE_HAS_ARCS } else { 0 });
+    // Edge flags as before: S98's companion has an arc with flags 0x10, so
+    // 0x800 is not simply "has arcs".
+    w.bl(old_edge.flags);
     w.bl(n);
     w.bl(0);
     for i in 0..n as usize {
@@ -308,17 +319,8 @@ pub fn rebuild_companion(
             w.bl(0);
         }
     }
-    // Tail, as in S49's companion.
-    for v in [0, 0, 0, 0, 2, 1, 1, 1, 7, 0, 0] {
-        w.bl(v);
-    }
-    for _ in 0..6 {
-        w.bl(1);
-        w.bl(100);
-    }
-    for _ in 0..6 {
-        w.bl(0);
-    }
+    // Tail as it was.
+    w.copy(data, old.edges_end, ss.start);
     let total = raw::bit_len(data);
     let data_end = total - handle_bits;
     let new_data_end = data_end + w.len() - ss.start;
@@ -356,6 +358,7 @@ pub fn refresh_companion(
     let Some((bytes, hb)) = rebuild_companion(&comp.data, comp.handle_bits, &d.elements) else {
         return Ok(false);
     };
+    let (bytes, hb) = crate::handle_refs::trim_padding(&bytes, hb, companion);
     if !raw::set_record(doc, companion, bytes, hb) {
         return Err(format!("could not write companion {companion:X}"));
     }

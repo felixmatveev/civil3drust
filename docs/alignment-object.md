@@ -1862,16 +1862,33 @@ n × { BD x, BD y, BD z, 3 bits 010, BL ID of the next node (0 = last) }
   edges and the container's tail are not decoded.
 
 **Writing (D-040).** `aecc_topology::rebuild_companion` rewrites a
-siteless companion's nodes and edge from the alignment's elements in the
-uniform form of S49 (node IDs 1… in path order, vertex flags 10,
-a = b = 0, S49's tail); the object header, key, strings and handle stream
-are kept. Rebuilding S49's companion from `C` reproduces Civil 3D's record
+siteless companion's nodes and edge from the alignment's elements
+(node IDs 1… in path order, vertex flags 10, a = b = 0); the object
+header, key, edge flags, tail, strings and handle stream are kept (see
+S109 below). Rebuilding S49's companion from `C` reproduces Civil 3D's record
 size, flags, vertex kinds, bulges (to 1e−9) and everything after the edge
 bit for bit (test `rebuilt_companion_matches_civil3d_s49`; only node IDs
 and order differ). `create_alignment` now rebuilds the companion (S107's
 was stale), and the geometry-editing examples (`edit_elements`,
 `set_radius`, `set_length`, `set_pis`) refresh it
 (`refresh_companion`). S108 has three alignments made this way.
+
+**S108 → S109: rejected, and why.** Civil 3D's RECOVER discarded all
+three rebuilt companions with `Error 34 (eWrongObjectType)` (6 errors
+fixed, 3 objects erased; the alignments were kept with dangling
+references). The template companion S98 F9D has **no face-like entry**
+in its tail and a **three-reference** handle stream, but the first
+rebuild wrote S49's tail with one entry. Across the samples the entry
+count goes with the handle stream: 3 references without it, 5 with one
+(test `tail_entry_matches_reference_count`), so Civil 3D read two
+references past the end. F9D also shows that edge flag 0x800 is not
+"has arcs": it has an arc with flags 0x10.
+
+Fix: the rebuild keeps the template's **edge flags and tail** verbatim
+and rewrites only nodes and the edge's vertices; companions whose
+vertices are not in the uniform form (flags 10, a = b = 0) are left
+unchanged. The handle stream is trimmed to its references. S110 = S108
+regenerated this way (test `rebuilt_companion_keeps_the_template_tail`).
 
 A misaligned start (a 4-byte BL read from the constant run) passed the
 first node-list check in S49; the reader now bounds the IDs.

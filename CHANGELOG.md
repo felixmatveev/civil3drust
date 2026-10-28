@@ -81,6 +81,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   results (docs/acadrust-0.6.7.md).
 
 ### Fixed
+- `rebuild_companion` keeps the template's edge flags and tail: writing
+  S49's tail into a three-reference companion made Civil 3D discard it
+  (S108 → S109). Handle stream trimmed. Sample S110.
 - The node-list reader accepted a misaligned start in S49 (IDs now
   bounded).
 - `create_alignment` accepts any Civil 3D alignment as template: the
