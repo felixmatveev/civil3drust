@@ -126,6 +126,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S112 | `S112_S104_third_alignment_in_site.dwg` | Civil 3D 2024 | O7: S104 + `test 3` (10A3, U shape (43.2,62.6) → (43.2,−86.5) → (131.1,−86.5) → (131.1,75.5)) created in `TEST SITE`, crossing `TEST` and `CREATED to TEST SITE`; Civil 3D made two parcels (10AF, 10B0). | 480845 | `cd4acf872889eeb9` |
 | S113 | `S113_line_methods.dwg` | Civil 3D 2024 | Line methods (owner): `fixed line by length` (10E4: fixed line, curve, Fixed Line from curve end + length 100; speeds 0:60, 1+18:30 on the curve), `floating line by length` (10EA: same, last line Floating Line from curve end + length 100), `free line` (10F4: two fixed curves made as separate pieces, then Free Line between them, which joined them), and an alignment `EMPTY` with no elements (10D0). | 483659 | `c08df3e4efbf07f7` |
 | S114 | `S114_S113_curve_speeds.dwg` | civil3drust | S113 + speeds `free line` 0:60 10:50 200:40 350:30 (10 on the first curve, 350 on the last) and `floating line by length` 0:60 120:35 (on the curve), written by `set_speeds` with curve intervals. | 461924 | `f3b3f36e2eafe7cd` |
+| S115 | `S115_S114_civ3d_resaved.dwg` | Civil 3D 2024 | S114 opened (no errors; speeds shown and editable, owner), saved. | 484550 | `311468ad8480ab27` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

@@ -97,6 +97,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   results (docs/acadrust-0.6.7.md).
 
 ### Fixed
+- Speed intervals store the containing element's ID, before-ID and
+  after-ID (S115); civil3drust wrote `1, 0, next` for every tangent, which
+  Civil 3D corrected on save. Sample S115.
 - The EED/graphics fields are located from the object header
   (`aecc_entity::eed_bit`) instead of a fixed bit 42, which is wrong for
   short class numbers (S68).

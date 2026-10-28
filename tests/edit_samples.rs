@@ -389,6 +389,8 @@ fn speed_interval_on_a_curve_s113() {
     use civil3drust::aecc_design_speed::set_design_speeds;
     let r = record("samples/S113_line_methods.dwg", 0x10E4);
     let theirs = intervals(&r);
+    // The three BLs are the element's ID and links: curve 2 (before 1,
+    // after 3).
     let curve = theirs.iter().find(|i| i.1[0] == 2).unwrap();
     assert_eq!(curve.1, [2, 1, 3]);
     let v = &curve.0;
@@ -452,5 +454,35 @@ fn line_methods_s113() {
         .collect();
     for (got, want) in stations.iter().zip([22.18, 310.06, 389.12]) {
         assert!((got - want).abs() < 0.005, "{got} vs {want}");
+    }
+}
+
+/// S114 → S115: Civil 3D kept civil3drust's curve intervals but rewrote
+/// the three link BLs to the containing element's ID, before and after.
+/// civil3drust now writes them that way: same IDs and values as Civil 3D.
+#[test]
+fn interval_links_match_civil3d_s115() {
+    use civil3drust::aecc_design_speed::set_design_speeds;
+    for (h, speeds) in [
+        (
+            0x10F4,
+            vec![(0.0, 60.0), (10.0, 50.0), (200.0, 40.0), (350.0, 30.0)],
+        ),
+        (0x10EA, vec![(0.0, 60.0), (120.0, 35.0)]),
+    ] {
+        let r = record("samples/S113_line_methods.dwg", h);
+        let (b, hb) = set_design_speeds(&r, &speeds, 5).unwrap();
+        let mut ours = intervals(&edited(&r, (b, hb)));
+        let mut theirs = intervals(&record("samples/S115_S114_civ3d_resaved.dwg", h));
+        let key = |x: &(Vec<f64>, [i32; 3], Vec<u8>)| (x.0[0] * 1000.0).round() as i64;
+        ours.sort_by_key(key);
+        theirs.sort_by_key(key);
+        assert_eq!(ours.len(), theirs.len());
+        for (o, t) in ours.iter().zip(&theirs) {
+            assert_eq!(o.1, t.1, "{h:X} station {}", t.0[0]);
+            for (a, b) in o.0.iter().zip(&t.0) {
+                assert!((a - b).abs() < 1e-9 * (1.0 + b.abs()), "{h:X}: {a} vs {b}");
+            }
+        }
     }
 }

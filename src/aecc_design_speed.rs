@@ -129,7 +129,7 @@ pub fn design_speeds(rec: &RawRecord) -> Result<Vec<DesignSpeed>, SpeedError> {
 /// geometry) and the table. The entries keep the old GUIDs in order (the
 /// first old interval's GUID first) and get random version-4 GUIDs from
 /// `seed` after that. Works on alignments without design speeds too.
-/// Speeds starting on curves get the curve form of the interval (S113). Speeds must lie within the alignment. Returns the new bytes and
+/// Speeds on curves get an interval too, with the point on the arc (S113). Speeds must lie within the alignment. Returns the new bytes and
 /// handle-stream size.
 pub fn set_design_speeds(
     rec: &RawRecord,
@@ -204,7 +204,7 @@ fn old_interval_count(data: &[u8], end: usize) -> Result<usize, SpeedError> {
 
 /// Write the interval block: BL 0 ×3, BL n, then per speed its GUID, 13
 /// constant bits, BD station, BD distance from the element start, BD length to the
-/// end of the element, BL 1, BL 0, BL the next element's ID, and RD
+/// end of the element, BL element ID, BL its before-ID, BL its after-ID (S115), and RD
 /// element start x, y, element end x, y, point x, y (S24, S74, S79, S84);
 /// the distance is measured from the element's start (S89). Returns the
 /// number of intervals written (speeds on tangents).
@@ -242,18 +242,16 @@ fn write_intervals(
         }
         let (e, t, len) = found.ok_or_else(|| err("no elements"))?;
         // The interval stores the element's start and end and the point at
-        // the station; on a curve (S113: BL 2, BL 1) the point lies on the
-        // arc. The third distance is the length to the element's end, as
+        // the station; on a curve the point lies on the arc. The third distance is the length to the element's end, as
         // on tangents (S113: 15.548 = 29.650 − 14.102); S89's curve
         // interval stores 84.63 there instead of 35.72 (not explained).
-        let (a, b, p, kind_bls) = match e.segment {
+        let (a, b, p) = match e.segment {
             Segment::Line { start: a, end: b } => {
                 let f = if len > 0.0 { t / len } else { 0.0 };
                 (
                     a,
                     b,
                     Point2::new(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f),
-                    (1, 0),
                 )
             }
             Segment::Arc {
@@ -271,12 +269,15 @@ fn write_intervals(
                     g.center.x + g.radius * th.cos(),
                     g.center.y + g.radius * th.sin(),
                 );
-                (a, b, p, (2, 1))
+                (a, b, p)
             }
         };
-        let after = match &e.record {
-            Element::Tangent(t) => t.after,
-            Element::Arc(x) => x.after,
+        // The element's own ID and links (S115: Civil 3D rewrote our
+        // (1, 0, next) to (4, 1, 3) for a speed on element 4; S113's
+        // "2, 1, 3" on a curve is element 2, before 1, after 3).
+        let (eid, before, after) = match &e.record {
+            Element::Tangent(t) => (t.id, t.before, t.after),
+            Element::Arc(x) => (x.id, x.before, x.after),
         };
         for byte in id {
             intervals.byte(*byte);
@@ -287,8 +288,8 @@ fn write_intervals(
         // element), then the length to the element's end.
         intervals.bd(t);
         intervals.bd(len - t);
-        intervals.bl(kind_bls.0);
-        intervals.bl(kind_bls.1);
+        intervals.bl(eid);
+        intervals.bl(before);
         intervals.bl(after);
         for v in [a.x, a.y, b.x, b.y, p.x, p.y] {
             intervals.rd(v);

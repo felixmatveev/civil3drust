@@ -2022,8 +2022,8 @@ layout method, plus an alignment with no elements.
 
 **Speed interval on a curve (open question 1).** `fixed line by length`
 has 60 at 0+00 and 30 at 1+18, inside the curve (1+03.90 – 1+33.55). The
-curve's interval is the tangent form with `BL 2, BL 1` instead of
-`BL 1, BL 0`: station 118, distance from the element start 14.102, then
+curve's interval has the same form as a tangent's (the `2, 1` where
+tangent intervals had `1, 0` turned out to be element IDs, see S115): station 118, distance from the element start 14.102, then
 **the length to the element end 15.548** (= 29.650 − 14.102, the same
 rule as on tangents), the next element's ID, and the curve's start, end
 and the point at the station on the arc. S89's curve interval stores
@@ -2037,6 +2037,20 @@ optional, as S90/S91 showed.
 S114 = S113 + speeds starting on curves, written by civil3drust
 (`free line` 0:60 10:50 200:40 350:30; `floating line by length` 0:60
 120:35).
+
+**Result (S115).** S114 opened without errors; the speeds show and can
+be edited (owner). On save Civil 3D kept every interval's station,
+distances and points (last-digit rounding) but **rewrote the three BLs
+after the distances**: our `1, 0, next` and `2, 1, next` became the
+**containing element's ID, its before-ID and its after-ID** — e.g.
+`4, 1, 3` for the speed at 2+00 on the free line (element 4 between 1 and
+3), `3, 4, 0` on the last curve, `1, 0, 4` on the first curve. Every
+earlier sample fits: their tangent speeds were on element 1 (`1, 0,
+next`) and S113's curve speed on element 2 (`2, 1, 3`). civil3drust now
+writes them this way and matches S115's intervals (test
+`interval_links_match_civil3d_s115`). Civil 3D also reordered the
+intervals (0, 200, 350, then 10); the order follows neither station nor
+table order and doesn't matter for reading.
 
 ## Open questions
 
