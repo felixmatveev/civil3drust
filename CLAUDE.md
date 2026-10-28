@@ -61,4 +61,4 @@ samples and steps that produced it.
 - `cargo run --release --example sites -- file.dwg` (sites and each alignment's site)
 - `cargo run --release --example scan_elements -- record.bin [handle bits]` (decode a raw `AECC_ALIGNMENT` record dump)
 - `python3 tools/rebuild_from_report.py report.txt a_record.bin out.bin` (rebuild B's record from A's dump and a `--diff --filter <handle>` report)
-- Record map: `docs/alignment-map.md`
+- Record map: `docs/alignment-map.md`; layout methods → constraints: `docs/element-methods.md`

@@ -7,6 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `docs/element-methods.md`: Civil 3D's layout methods mapped to element
+  constraints, with the sample plan for lines, curves and spirals (S113–S117).
 - `aecc_entity::entity_common`: the ODA common entity data at the start
   of section 2 (colour, linetype scale and flags, lineweight,
   invisibility, extension dictionary flag); checked on all 249 alignment
