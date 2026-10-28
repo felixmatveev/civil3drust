@@ -50,7 +50,13 @@ pub const FREE_ARC_PARAMS: ArcParams = ArcParams {
 };
 /// Bit of the EED-size field (`10`, no EED); has-graphics follows, then
 /// the graphics size (BLL) at +3.
-const EED_BIT: usize = 42;
+const EED_BIT_USUAL: usize = 42;
+
+/// The EED bit of `data` ([`crate::aecc_entity::eed_bit`]; 42 for the
+/// usual class numbers and handles).
+fn eed(data: &[u8]) -> usize {
+    crate::aecc_entity::eed_bit(data).unwrap_or(EED_BIT_USUAL)
+}
 const GAP_AFTER_ELEMENTS: usize = 161;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -299,6 +305,7 @@ pub fn set_geometry(
     radii: &[Option<f64>],
 ) -> Result<(Vec<u8>, usize, GeometryReport), BuildError> {
     let data = &rec.data;
+    let eed_bit = eed(data);
     let decoded = decode_elements(rec).map_err(|e| layout(e.to_string()))?;
     if !decoded.detached.is_empty() {
         return Err(layout(
@@ -339,10 +346,10 @@ pub fn set_geometry(
 
     // --- Old layout. ---
     let g = pg::find(data, 4096).ok_or_else(|| layout("no proxy graphics"))?;
-    let (gsize, gstart) = read_bll(data, EED_BIT + 3);
-    if raw::get_bit(data, EED_BIT) != 1
-        || raw::get_bit(data, EED_BIT + 1) != 0
-        || raw::get_bit(data, EED_BIT + 2) != 1
+    let (gsize, gstart) = read_bll(data, eed_bit + 3);
+    if raw::get_bit(data, eed_bit) != 1
+        || raw::get_bit(data, eed_bit + 1) != 0
+        || raw::get_bit(data, eed_bit + 2) != 1
         || gstart != g.start_bit
         || gsize as usize != g.size
     {
@@ -404,7 +411,7 @@ pub fn set_geometry(
 
     // --- Write. ---
     let mut w = Bits::default();
-    w.copy(data, 0, EED_BIT + 3);
+    w.copy(data, 0, eed_bit + 3);
     let (gbits, graphics_rebuilt) = graphics_bits(data, &g, &resolved);
     w.bll((gbits.len() / 8) as u64);
     w.0.extend(gbits.0);
@@ -550,11 +557,12 @@ pub fn replace_graphics(
     resolved: &[crate::aecc_elements::ResolvedElement],
 ) -> Result<(Vec<u8>, usize, bool), BuildError> {
     let data = &rec.data;
-    if raw::get_bit(data, EED_BIT + 2) == 0 {
+    let eed_bit = eed(data);
+    if raw::get_bit(data, eed_bit + 2) == 0 {
         return Ok((data.clone(), rec.handle_bits, false));
     }
     let g = pg::find(data, 4096).ok_or_else(|| layout("no proxy graphics"))?;
-    let (gsize, gstart) = read_bll(data, EED_BIT + 3);
+    let (gsize, gstart) = read_bll(data, eed_bit + 3);
     if gstart != g.start_bit || gsize as usize != g.size {
         return Err(layout("graphics size field not where expected"));
     }
@@ -562,7 +570,7 @@ pub fn replace_graphics(
     let total = raw::bit_len(data);
     let data_end = total - rec.handle_bits;
     let mut w = Bits::default();
-    w.copy(data, 0, EED_BIT + 3);
+    w.copy(data, 0, eed_bit + 3);
     w.bll((gbits.len() / 8) as u64);
     w.0.extend(gbits.0);
     let new_data_end = data_end + w.len() - g.end_bit();
@@ -577,17 +585,18 @@ pub fn replace_graphics(
 /// (S56 X2 → S57); other programs show nothing until then. Returns the new
 /// bytes and handle-stream size.
 pub fn strip_graphics(data: &[u8], handle_bits: usize) -> Result<(Vec<u8>, usize), BuildError> {
+    let eed_bit = eed(data);
     let g = pg::find(data, 4096).ok_or_else(|| layout("no proxy graphics"))?;
-    if raw::get_bit(data, EED_BIT) != 1
-        || raw::get_bit(data, EED_BIT + 1) != 0
-        || raw::get_bit(data, EED_BIT + 2) != 1
+    if raw::get_bit(data, eed_bit) != 1
+        || raw::get_bit(data, eed_bit + 1) != 0
+        || raw::get_bit(data, eed_bit + 2) != 1
     {
         return Err(layout("graphics flag not where expected"));
     }
     let total = raw::bit_len(data);
     let data_end = total - handle_bits;
     let mut w = Bits::default();
-    w.copy(data, 0, EED_BIT + 2);
+    w.copy(data, 0, eed_bit + 2);
     w.bit(0);
     let shift = g.end_bit() - w.len();
     w.copy(data, g.end_bit(), total);

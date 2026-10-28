@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `aecc_entity::entity_common`: the ODA common entity data at the start
+  of section 2 (colour, linetype scale and flags, lineweight,
+  invisibility, extension dictionary flag); checked on all 249 alignment
+  records.
 - `aecc_topology::graph`: nodes and edges of site containers (several
   alignments, crossings as shared vertices, face IDs per segment). Sample
   S112 (alignment crossing two others in a site, two parcels).
@@ -85,6 +89,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   results (docs/acadrust-0.6.7.md).
 
 ### Fixed
+- The EED/graphics fields are located from the object header
+  (`aecc_entity::eed_bit`) instead of a fixed bit 42, which is wrong for
+  short class numbers (S68).
 - `rebuild_companion` keeps the template's edge flags and tail: writing
   S49's tail into a three-reference companion made Civil 3D discard it
   (S108 → S109). Handle stream trimmed. Sample S110.

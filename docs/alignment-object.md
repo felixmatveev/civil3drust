@@ -1950,6 +1950,52 @@ alignment that crosses nothing in the site (S104's form: one more edge,
 one more start node in the outer face) — could be written once the face
 record is decoded, if it becomes worth it.
 
+## Section 2 revisited: common entity data and variants (S1–S112)
+
+Dumping section 2 of all 249 alignment records in the samples and
+diffing each against S24's (413 bits):
+
+- **The first 37 bits are the common entity data** of the ODA DWG
+  specification (R2010+): BB mode, BL reactor count, B no-xdictionary,
+  B has-DS-data, BS colour, BD linetype scale, BB linetype flags, BB
+  plot-style flags, BB material flags, RC shadow flags, 3 × B visual
+  style, BS invisibility, RC lineweight. 242 records have colour 256 and
+  lineweight 29 (BYLAYER), linetype BYLAYER, scale 1; S18–S23's alignment
+  has colour 0, linetype flags 1 and lineweight 30 (BYBLOCK); S1's has an
+  extension dictionary (the no-xdictionary bit is 0, matching the extra
+  hard-owner reference at the front of its handle stream). The class's
+  own data then starts with `BL 80, BL 0, BL 80, BL 80, BL 0` in every
+  record. `aecc_entity::entity_common` reads it (test
+  `every_alignment_starts_section_2_with_common_entity_data`).
+- **The object header is not fixed-length.** S68's alignment (class
+  number 522, from the class table AutoCAD made in S64) has a 10-bit
+  object type instead of 18, so its EED field is at bit 34, not 42.
+  `aecc_entity::eed_bit` computes it from the object type and handle
+  length, and `aecc_build` now uses it.
+- **Lengths seen:** 413 (plain), 457 (+44: the extra field after the
+  66-bit cache, written by Civil 3D re-saves), 477/521 (+64: a nonzero
+  start station), 465, 545, 589, 631, 653.
+- **A +28-bit field after the class header** (section-2 bit 119, after
+  `BL 1` instead of the plain form's 32-bit value) appears in exactly the
+  alignments whose properties were changed in Civil 3D's Alignment
+  Properties dialog or made with the layout tools: S9 (start station),
+  S22's alignment (style), S59 (type), S74/S78 (design speeds), S79–S88
+  (criteria, start station), S89 (layout tools), S98–S100 `Remove first`
+  (its S80 check set). Plain re-saves, polyline-created and generated
+  alignments don't have it. Its content (`0000000100000000000000000100`
+  in all of them) is not decoded; records without it are accepted (all
+  generated samples).
+- The 66-bit cache field varies per record and is computed from the
+  geometry (S94 = S96); the algorithm was not found.
+- **Post-type block** `BL 2, 2, 2, 0, x`: x = 1 in the S5–S23 drawings,
+  S10 and S89; x = 3 in every S24-based drawing and in S1. It follows the
+  drawing, not the alignment; meaning unknown.
+
+No further structure of the 31-bit field, the +44 field or the
+post-type value could be tied to a property with the existing samples;
+they stay as copied constants until new sample types (curves, spirals,
+other alignment types) show them changing.
+
 ## Open questions
 
 1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
