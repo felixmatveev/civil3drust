@@ -754,6 +754,55 @@ pub fn set_alignment_type(rec: &RawRecord, data: &mut [u8], value: i32) -> Resul
     Ok(())
 }
 
+/// Implied PI display "By change in alignment direction" (MIST6, S122).
+pub const PI_DISPLAY_BY_DIRECTION: i32 = 1;
+/// Implied PI display "By individual curves and curve group".
+pub const PI_DISPLAY_BY_CURVES: i32 = 2;
+/// Implied PI display "Do not display implied points of intersection".
+pub const PI_DISPLAY_NONE: i32 = 3;
+
+/// Bit of the implied-PI display BL: the alignment type, then `BL 2, 2,
+/// 2, 0`, then the display option (S122).
+fn pi_display_bit(rec: &RawRecord, data: &[u8]) -> Result<usize, BuildError> {
+    let mut q = type_bit(rec, data)?;
+    let bad = || layout("implied-PI display field not found");
+    for want in [None, Some(2), Some(2), Some(2), Some(0)] {
+        let (v, nq) = raw::read_bl(data, q).ok_or_else(bad)?;
+        if want.is_some_and(|w| w != v) {
+            return Err(bad());
+        }
+        q = nq;
+    }
+    Ok(q)
+}
+
+/// The implied point-of-intersection display option of the Alignment
+/// Properties "Point of Intersection" tab: [`PI_DISPLAY_BY_DIRECTION`],
+/// [`PI_DISPLAY_BY_CURVES`] or [`PI_DISPLAY_NONE`]. Set per alignment; new
+/// alignments take the drawing's default (MIST6, S122).
+pub fn pi_display(rec: &RawRecord) -> Result<i32, BuildError> {
+    let q = pi_display_bit(rec, &rec.data)?;
+    raw::read_bl(&rec.data, q)
+        .map(|x| x.0)
+        .ok_or_else(|| layout("implied-PI display field not found"))
+}
+
+/// Set the implied-PI display option in place (1..=3; all share the
+/// one-byte BL size, so the record keeps its length).
+pub fn set_pi_display(rec: &RawRecord, data: &mut [u8], value: i32) -> Result<(), BuildError> {
+    if !(PI_DISPLAY_BY_DIRECTION..=PI_DISPLAY_NONE).contains(&value) {
+        return Err(layout(format!(
+            "implied-PI display {value} out of range 1..=3"
+        )));
+    }
+    let q = pi_display_bit(rec, data)?;
+    if (raw::get_bit(data, q), raw::get_bit(data, q + 1)) != (0, 1) {
+        return Err(layout("implied-PI display field is not a one-byte BL"));
+    }
+    raw::set_byte(data, q + 2, value as u8);
+    Ok(())
+}
+
 /// Elements in path order (following `after` from the one with
 /// `before == 0`).
 fn path_order(els: &[Element]) -> Vec<Element> {

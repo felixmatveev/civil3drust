@@ -794,3 +794,16 @@ them.
 **Alternatives.** One segment per record with a compound variant: every
 caller would need to split it. Converting groups to separate records:
 would change what Civil 3D reads back.
+
+## D-043: The implied PI display is a model field, not a copied constant
+
+**Context.** The post-type value (MIST6) was copied from the template
+record. S122 shows it is the per-alignment implied PI display option.
+
+**Decision.** civil3drust reads and sets it (`pi_display`,
+`set_pi_display`, values 1–3) as part of the alignment model. Created
+alignments still inherit the template record's value until a create
+option is added.
+
+**Alternatives.** Keep copying it: the option would silently follow
+whatever template record was used.

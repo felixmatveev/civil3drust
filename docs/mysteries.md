@@ -57,15 +57,20 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Seen:** Civil 3D changed it when re-saving the generated S7 as S8.
 - **Hypothesis:** part of MIST2's appearance (re-save marker).
 
-## MIST6 — the post-type value `BL 2, 2, 2, 0, x`
+## MIST6 — the post-type value `BL 2, 2, 2, 0, x` — **SOLVED (S122)**
 
 - **Where:** post-cache block, right after the alignment type BL.
-- **Seen:** x = 1 in the S5–S23 drawings, S10 and S89; x = 3 in every
-  S24-based drawing and in S1. Follows the drawing, not the alignment.
-- **Hypothesis (owner):** the drawing template — the company's old
-  template versus the Civil 3D 2023 default template. Test: the same
-  alignment created in a drawing from each template.
-- **civil3drust today:** copies the template record's value.
+- **Answer:** x is the implied point-of-intersection display option on
+  the Alignment Properties "Point of Intersection" tab: 1 = by change in
+  alignment direction, 2 = by individual curves and curve group, 3 = do
+  not display. It is stored per alignment; a new alignment takes the
+  drawing's default, which is why it looked per-drawing (S5–S23 default
+  1, S24 default 3).
+- **Settled by:** S122, three identical alignments in S24 set to 1, 2
+  and 3 by the owner. The drawing scale was ruled out first (S24 with
+  1" = 40' still has 3).
+- **civil3drust:** `aecc_build::pi_display` / `set_pi_display`; finding
+  moved to `alignment-object.md`.
 
 ## MIST7 — the element header `0x04020008`
 

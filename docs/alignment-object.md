@@ -1987,9 +1987,12 @@ diffing each against S24's (413 bits):
   generated samples).
 - The 66-bit cache field varies per record and is computed from the
   geometry (S94 = S96); the algorithm was not found.
-- **Post-type block** `BL 2, 2, 2, 0, x`: x = 1 in the S5–S23 drawings,
-  S10 and S89; x = 3 in every S24-based drawing and in S1. It follows the
-  drawing, not the alignment; meaning unknown.
+- **Post-type block** `BL 2, 2, 2, 0, x`: x is the implied PI display
+  option (Alignment Properties → Point of Intersection): 1 by change in
+  alignment direction, 2 by individual curves and curve group, 3 do not
+  display. Per alignment, defaulted from the drawing (S5–S23: 1, S24: 3).
+  Settled by S122 (three copies set to 1, 2, 3); the drawing scale does
+  not affect it. Read/set with `aecc_build::pi_display` (MIST6).
 
 No further structure of the 31-bit field, the +44 field or the
 post-type value could be tied to a property with the existing samples;

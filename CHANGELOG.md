@@ -10,8 +10,13 @@ versions follow [Semantic Versioning](https://semver.org/).
 - README rewritten around the current alignment status (read/write
   table, unexplained fields, milestones); open questions refreshed.
 - Open questions moved to `docs/mysteries.md` as MIST1–MIST14.
+- MIST6 solved: the post-type value is the implied PI display option.
 
 ### Added
+- `aecc_build::pi_display` / `set_pi_display` and `PI_DISPLAY_*`: the
+  implied point-of-intersection display option (MIST6). Sample S122
+  (three alignments set to 1, 2, 3) and `tests/create_samples.rs`
+  `pi_display_field`.
 - Curve constraint codes 0 (centre + radius), 1 (centre + through point),
   8 (from entity end through point), 11 (through point with direction),
   21 (from entity end by radius and length) and 28 (fillet through a

@@ -38,6 +38,7 @@ sample drawings (S1–S120) and the evidence for each finding are in
 | Name, description, style, display components | ✓ | ✓ |
 | Start station, design speeds (incl. on curves), design criteria flags | ✓ | ✓ |
 | Alignment type (centerline, miscellaneous) | ✓ | ✓ |
+| Implied PI display option | ✓ | ✓ (`set_pi_display`) |
 | Sites and parcels | ✓ membership | read-only for now (D-038) |
 | Detached pieces after deleting an interior element | ✓ | kept as placeholders (D-037) |
 
@@ -45,10 +46,10 @@ sample drawings (S1–S120) and the evidence for each finding are in
 
 The open fields and behaviours are tracked as **MIST1 … MIST14** in
 [`docs/mysteries.md`](docs/mysteries.md): section-2 caches (MIST1–MIST5),
-the per-drawing post-type value (MIST6), element header, flag and
+element header, flag and
 parameter fields (MIST7–MIST10), one speed-interval distance (MIST11),
 topology flags (MIST12), a zero-GUID block (MIST13) and the half-circle
-rule (MIST14). None of them stops Civil 3D from opening our files.
+rule (MIST14). MIST6 (implied PI display) is solved. None of them stops Civil 3D from opening our files.
 
 ### Milestones reached
 

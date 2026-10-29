@@ -634,6 +634,50 @@ fn alignment_type_field() {
     }
 }
 
+/// MIST6: S122 holds three identical alignments differing only in the
+/// implied-PI display option; S24 uses "do not display", S11 "by change in
+/// alignment direction".
+#[test]
+fn pi_display_field() {
+    use civil3drust::aecc_build::{
+        pi_display, set_pi_display, PI_DISPLAY_BY_CURVES, PI_DISPLAY_BY_DIRECTION, PI_DISPLAY_NONE,
+    };
+    let get = |f: &str| {
+        let o = raw::open(f).unwrap();
+        let mut v: Vec<(u64, i32)> = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .iter()
+            .map(|r| (r.handle, pi_display(r).unwrap()))
+            .collect();
+        v.sort();
+        v
+    };
+    assert_eq!(
+        get("samples/S122_S24_pi_display_1_2_3.dwg"),
+        vec![
+            (0xF9E, PI_DISPLAY_BY_DIRECTION),
+            (0x1008, PI_DISPLAY_BY_CURVES),
+            (0x100A, PI_DISPLAY_NONE)
+        ]
+    );
+    assert_eq!(
+        get("samples/S24_ZERO_CIVIL.dwg"),
+        vec![(0xF9E, PI_DISPLAY_NONE)]
+    );
+    assert_eq!(
+        get("samples/S11_100-200-300_r50.dwg"),
+        vec![(0x8C5C, PI_DISPLAY_BY_DIRECTION)]
+    );
+    // Setting keeps the length and reads back.
+    let o = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+    let r = raw::records(&o.doc, "AECC_ALIGNMENT").remove(0);
+    let mut data = r.data.clone();
+    set_pi_display(&r, &mut data, PI_DISPLAY_BY_CURVES).unwrap();
+    assert_eq!(data.len(), r.data.len());
+    let r2 = civil3drust::raw::RawRecord { data, ..r.clone() };
+    assert_eq!(pi_display(&r2).unwrap(), PI_DISPLAY_BY_CURVES);
+    assert!(set_pi_display(&r, &mut r.data.clone(), 4).is_err());
+}
+
 #[test]
 fn create_with_alignment_type() {
     use civil3drust::aecc_build::{alignment_type, TYPE_MISCELLANEOUS};

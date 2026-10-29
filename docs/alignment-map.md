@@ -67,7 +67,7 @@ section in records that carry the extra field.
 |---|---|
 | design-speed table: BL 0, BL 1, BL n, n × {BL 1, BD station, BD speed, GUID} (one entry, 60 at 0, is the template default) | decoded (O2, S74) |
 | 369 bits, including a BD 60 and other fixed fields | constant (9 records) — the default design-speed entry |
-| after GUID copy 2: BD 100, BL 0, BL n, n BDs, **BL alignment type** (1 Centerline, 4 Miscellaneous), BL 2, 2, 2, 0, 1\|3 | decoded (O1, S58/S59) |
+| after GUID copy 2: BD 100, BL 0, BL n, n BDs, **BL alignment type** (1 Centerline, 4 Miscellaneous), BL 2, 2, 2, 0, **BL implied-PI display** (1 by direction, 2 by curves, 3 none) | decoded (O1, S58/S59; S122) |
 | GUID copy 2 at ~bit 100 of the block | decoded (same value as copy 1) |
 | 1 bit (block bit 340) | 0 in all samples (in S59 the block differs only in the type BL) |
 | +208 bits with +8 empty strings (S12, S48) | **optional** — absent in S45/S50 |
