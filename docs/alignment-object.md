@@ -2197,3 +2197,13 @@ attribute chunks for an empty alignment, 2688 bytes for the spiral one).
 Everything after the graphics and the handle stream are bit-identical, so
 no field of the record depends on the setting (MIST1, MIST2). S123/S124
 (Civil 3D 2027) also have PROXYGRAPHICS 0, hence their placeholders.
+
+## Derived values not stored (S24, owner's Civil 3D listing)
+
+Civil 3D's Entities and PIs listing of S24's alignment was searched for in
+the record (64- and 32-bit floats at every bit offset). Stored: tangent
+end points, PI coordinates, radius, the station after element 0, the
+speed-interval point and the design speed. Not stored anywhere: chord
+length, delta, start/end directions, external tangent and secant,
+mid-ordinate, mid and radial points, the arc's end coordinates, the total
+length and the degree of curvature — Civil 3D derives them (D-026).

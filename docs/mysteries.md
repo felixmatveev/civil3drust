@@ -27,6 +27,16 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   alignments everything after the graphics, MIST1 included, is
   bit-identical, and so are the handle streams. The field is not derived
   from, or stored because of, the proxy graphics.
+- **Not a reported quantity:** none of the values in Civil 3D's Entities
+  and PIs listing of S24 F9E (lengths, stations, coordinates, radius,
+  directions and delta in degrees or radians, chord, tangent, external,
+  mid-ordinate, mid/centre points, degree of curvature) occurs in
+  section 2 as a 64-bit or 32-bit float at any bit offset. They occur
+  only later (element records, station cache, speed table). Two 100-ft
+  single tangents in different drawings (S44 FB8, S123 8F01) share most
+  of the field's bytes, so a hash or checksum of the geometry is likely.
+- **Next test:** save one drawing twice with no change — same value
+  (content-derived) or a new one (time or ID)?
 - **civil3drust today:** copies the template's value.
 
 ## MIST2 — the optional +44-bit field after MIST1
