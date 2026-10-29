@@ -90,6 +90,16 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Where:** right after MIST1 when present (section 2 grows 413 → 457).
 - **Seen:** added by Civil 3D re-saves (S4, S8, S11, S12, S48, S51) and to
   every alignment of S57; absent in generated records (S45, S50 — accepted).
+- **Content:** two BLs, `BL 0x0D00D773` (34 bits, full form) and
+  `BL 2` (10 bits) — `00 11100111 11010111 00000000 00001101` +
+  `01 00000010`. The first is the same in all 251 sample records that
+  have the field; the second is 2 in every centerline and 1 in the two
+  Miscellaneous alignments (S59 1089, S62 FB6), so it follows the
+  alignment type (1 → 2, 4 → 1).
+- **Position:** directly after MIST1 in the 457/465/521/529-bit forms;
+  98 bits after MIST1 in the Alignment Properties forms (589/653 bits),
+  behind a block that starts with `BL 0x1600101F`. Not found at either
+  place in a 2020 drawing (`AeccLand110` classes, checked locally).
 - **Hypothesis:** a cache tied to MIST1. Not tied to proxy graphics
   (S140 = S141 after the graphics).
 
