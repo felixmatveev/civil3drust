@@ -6,6 +6,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- README rewritten around the current alignment status (read/write
+  table, unexplained fields, milestones); open questions refreshed.
+
 ### Added
 - Curve constraint codes 0 (centre + radius), 1 (centre + through point),
   8 (from entity end through point), 11 (through point with direction),
