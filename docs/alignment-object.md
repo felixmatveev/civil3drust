@@ -2207,3 +2207,15 @@ speed-interval point and the design speed. Not stored anywhere: chord
 length, delta, start/end directions, external tangent and secant,
 mid-ordinate, mid and radial points, the arc's end coordinates, the total
 length and the degree of curvature — Civil 3D derives them (D-026).
+
+## MIST1: geometry cache (partially solved, S142–S150)
+
+The 66-bit value in section 2 (bit 165 in the plain form, 199 in the
+Alignment Properties form, 241 in S59) is computed by Civil 3D from the
+alignment's geometry: unchanged by saves, renaming and the proxy-graphics
+setting; a length or radius change rewrites most of it, a move or rotation
+changes 28 of its bits and keeps 38 (bytes 1–4 and the low 6 bits of byte
+5). Civil 3D accepts zero bits and recomputes it on save. civil3drust
+treats it as a cache: it is not decoded, and every created or edited
+alignment gets zeros (D-046, `aecc_build::geometry_key_bit`). Details and
+the full table: `mysteries.md`, MIST1.

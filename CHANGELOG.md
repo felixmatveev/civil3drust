@@ -46,6 +46,7 @@ versions follow [Semantic Versioning](https://semver.org/).
   meters, both Civil 3D 2027: same element header).
 
 ### Changed
+- MIST1 marked partially solved: a geometry cache, ignored and zeroed.
 - MIST1 (the 66-bit geometry key) is zeroed instead of copied when
   civil3drust creates an alignment or writes its geometry (D-046);
   `aecc_build::geometry_key_bit`, `clear_geometry_key`.

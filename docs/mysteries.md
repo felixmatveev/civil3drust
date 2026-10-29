@@ -6,7 +6,8 @@ today they are copied from a template record, left out, or recomputed by
 Civil 3D on save. Each entry is self-contained so it can be worked on
 separately. When one is solved, mark it **SOLVED** with the sample that
 settled it, move the finding into `alignment-object.md`, and keep the
-number (numbers are never reused).
+number (numbers are never reused). **PARTIALLY SOLVED** means the field's
+role and handling are settled but its content is not decoded.
 
 Bit positions are given for S24-based records unless stated. Sections:
 1 = object header + proxy graphics, 2 = from the end of the graphics to
@@ -15,7 +16,12 @@ records, the speed-interval block and the post-cache block (§1.2).
 Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 `scan_elements`.
 
-## MIST1 — the 66-bit section-2 field
+## MIST1 — the 66-bit section-2 field — **PARTIALLY SOLVED (S142–S150)**
+
+- **Status:** a geometry cache. Civil 3D computes it from the alignment's
+  shape and placement and recomputes it on save; zeros are accepted.
+  civil3drust ignores its content and writes zeros (D-046). The encoding
+  is not decoded; reopen only if a reason appears to keep or compute it.
 
 - **Where:** section 2, bits 165–230 of the plain 413-bit form (after the
   `BL 80, 0, 80, 80, 0` class header and the 37-bit common entity data).
