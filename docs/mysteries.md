@@ -153,6 +153,9 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   off, e.g. `0x02010004` and `0x08040010` around `0x04020008`; those are
   artifacts and were removed. Values seen in a single class, mostly in
   surface records full of binary data, may be chance matches.)
+- **Unchanged in a 2020 drawing** (AC1027, `AeccLand110` classes; a
+  production drawing checked locally, not committed): every element
+  record of its 10 alignments starts with `0x04020008`, one per element.
 - **Status:** behaviour mapped (S125–S139); no setting found that
   changes it. civil3drust writes `0x04020008`, the only value seen in
   Civil 3D's own drawings. Still open in case another element type or DWG format
@@ -229,6 +232,12 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **civil3drust today:** copies the template's value.
 
 ## Not sampled yet (not mysteries, just gaps)
+
+- Real-world alignments (a 2020 production drawing, checked locally): 2
+  of 10 alignments do not decode (one "tangents around free arc don't
+  meet at a PI"), and the alignment type / implied PI display are found
+  in only 1 of 10 — the block after the design-speed table has another
+  layout there. Needs purpose-made samples to reproduce.
 
 - Offset and other alignment types (S1-style imports have no element
   records and a 22-bit gap after the elements instead of 161 bits).

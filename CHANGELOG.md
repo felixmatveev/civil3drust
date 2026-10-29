@@ -18,7 +18,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   (S133–S138, re-save S139): the low word must be exactly 8, the top byte
   exactly 4, and the third byte needs bit 0x02; bit 0x01 is kept on save
   and bit 0x04 dropped. A family of `0xTT0M0008` headers found in many
-  classes, unchanged between the 11.0 and 13.0 class schemas.
+  classes, unchanged between the 11.0 and 13.0 class schemas; the element
+  header is also unchanged in a 2020 drawing. Gaps noted from that drawing
+  (alignments that do not decode, type field not found).
 - First acadrust 0.6.7-written drawing confirmed in Civil 3D (S125 → S131).
 - MIST7: the header value also occurs in other Civil 3D classes (S119);
   likely a generic sub-object tag, not text.
