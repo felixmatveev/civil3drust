@@ -52,7 +52,7 @@ other records shift by the sizes of the variable parts.
 | bits (relative) | content | status |
 |---|---|---|
 | 0–164 | | constant (all 13 records compared) |
-| 165–230 | 66-bit field | **cache / don't care**: zeros accepted (S56 X1) and Civil 3D writes a new value on every save (S57) |
+| 165–230 | 66-bit field (MIST1; at 199 in the Properties-edited form, 241 in S59) | **geometry key**: computed by Civil 3D from shape and placement (S142–S150); zeros accepted (S56 X1); civil3drust writes zeros (D-046) |
 | 231–396 | almost all zero bits | constant |
 | 397 | flag | 1 in S5–S12, 0 in S2 and S24–S55 (per template / session); untested |
 | 398–412 | (includes the start station BD at −22 from the end) | constant at start station 0 |

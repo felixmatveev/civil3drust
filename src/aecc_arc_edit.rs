@@ -179,6 +179,7 @@ pub fn set_free_arc_radius(
     }
     let copies = hits.len();
 
+    crate::aecc_build::clear_geometry_key(data);
     let graphics_stale = pg::find(data, 4096).is_some_and(|g| !g.is_placeholder());
     Ok(RadiusReport {
         old_radius,

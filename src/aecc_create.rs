@@ -438,6 +438,8 @@ pub fn create_alignment(
         (bytes, hb)
     };
     let mut align = bytes;
+    // Never carry the template's MIST1 over to a new alignment (D-046).
+    aecc_build::clear_geometry_key(&mut align);
     let mut rec = RawRecord {
         data: align.clone(),
         handle_bits: hb,

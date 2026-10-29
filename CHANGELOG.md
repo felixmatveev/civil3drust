@@ -45,6 +45,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 - MIST7: drawing units and Civil 3D release ruled out (S123 feet, S124
   meters, both Civil 3D 2027: same element header).
 
+### Changed
+- MIST1 (the 66-bit geometry key) is zeroed instead of copied when
+  civil3drust creates an alignment or writes its geometry (D-046);
+  `aecc_build::geometry_key_bit`, `clear_geometry_key`.
+
 ### Fixed
 - Records whose class number is 500–751 store the object type in one byte
   (`01` + byte): own handles are now read and written after either form,

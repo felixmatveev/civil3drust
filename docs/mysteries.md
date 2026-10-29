@@ -22,6 +22,10 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Seen:** differs per alignment; Civil 3D writes a new value on every
   save (S57), the same value for the same geometry (S94 = S96 after an
   element was deleted and re-added). All zeros is accepted (S56 X1).
+- **civil3drust:** zeroes it (D-046) whenever it creates an alignment or
+  writes its geometry; `aecc_build::geometry_key_bit` finds it by the
+  14 bits that always precede it (section-2 bit 165, 199 or 241 in all
+  407 sample records).
 - **Ruled out: proxy graphics.** S140 (PROXYGRAPHICS 1) and S141
   (PROXYGRAPHICS 0) are the same drawing saved both ways: in all 21
   alignments everything after the graphics, MIST1 included, is
@@ -74,7 +78,6 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   position and direction are mixed in the placement bits (perhaps a
   value from the extents or the end points). The formula is still
   unknown.
-- **civil3drust today:** copies the template's value.
 
 ## MIST2 — the optional +44-bit field after MIST1
 

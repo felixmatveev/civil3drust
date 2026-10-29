@@ -845,3 +845,60 @@ fn create_empty_alignment_from_s113() {
     };
     assert!(create_alignment(&mut target.doc, &donor.doc, "X", &[], &[], 9, opts).is_err());
 }
+
+/// MIST1 (the 66-bit geometry key) is found in every sample alignment at
+/// section-2 bit 165, 199 or 241, and civil3drust zeroes it instead of
+/// copying the template's value (D-046).
+#[test]
+fn geometry_key_located_and_zeroed() {
+    use civil3drust::aecc_build::{geometry_key_bit, GEOMETRY_KEY_BITS};
+    let rel = |r: &raw::RawRecord| {
+        let s2 = civil3drust::aecc_entity::entity_common(&r.data)
+            .unwrap()
+            .start_bit;
+        geometry_key_bit(&r.data).unwrap() - s2
+    };
+    let first = |f: &str, h: u64| {
+        let o = raw::open(f).unwrap();
+        raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap()
+    };
+    let s24 = first("samples/S24_ZERO_CIVIL.dwg", 0xF9E);
+    assert_eq!(rel(&s24), 165);
+    let s144 = first("samples/S144_S143_renamed.dwg", 0xF9E);
+    assert_eq!(rel(&s144), 199);
+    // Same key bytes in both (the rename does not change it).
+    let bytes = |r: &raw::RawRecord| -> Vec<u8> {
+        let at = geometry_key_bit(&r.data).unwrap() + 2;
+        (0..8).map(|i| raw::get_byte(&r.data, at + 8 * i)).collect()
+    };
+    assert_eq!(
+        bytes(&s24),
+        [0xEE, 0x1E, 0x81, 0x38, 0xE6, 0x21, 0xCE, 0x8B]
+    );
+    assert_eq!(bytes(&s144), bytes(&s24));
+    assert_eq!(rel(&first("samples/S59_O1_miscellaneous.dwg", 0x1089)), 241);
+
+    // A created alignment carries zeros, not the template's value.
+    let donor = raw::open("samples/S25_ZERO_CIVIL_second_alignment.dwg").unwrap();
+    let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+    let pis = [Point2::new(0.0, -100.0), Point2::new(200.0, -100.0)];
+    let c = create_alignment(
+        &mut t.doc,
+        &donor.doc,
+        "K",
+        &pis,
+        &[],
+        7,
+        CreateOptions::default(),
+    )
+    .unwrap();
+    let a = raw::records(&t.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == c.alignment)
+        .unwrap();
+    let at = geometry_key_bit(&a.data).unwrap();
+    assert!((at..at + GEOMETRY_KEY_BITS).all(|b| raw::get_bit(&a.data, b) == 0));
+}

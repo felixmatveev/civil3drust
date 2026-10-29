@@ -345,6 +345,7 @@ pub fn set_pis(
     for &(b, v) in &station_patches {
         raw::set_f64(data, b, v);
     }
+    crate::aecc_build::clear_geometry_key(data);
     Ok(ElementsEditReport {
         patches,
         arcs_restationed,

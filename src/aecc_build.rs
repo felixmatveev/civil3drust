@@ -477,8 +477,9 @@ pub fn set_geometry(
             ),
         )
         .ok_or_else(|| layout("string count"))?;
-    let (bytes, hb) =
+    let (mut bytes, hb) =
         string_stream::set_string_count(&bytes, hb, want).map_err(|e| layout(e.to_string()))?;
+    clear_geometry_key(&mut bytes);
     Ok((
         bytes,
         hb,
@@ -760,6 +761,41 @@ pub fn set_alignment_type(rec: &RawRecord, data: &mut [u8], value: i32) -> Resul
     }
     raw::set_byte(data, q + 2, value as u8);
     Ok(())
+}
+
+/// The 14 bits that end right before MIST1, the 66-bit geometry key in
+/// section 2. The fields before it vary in length (the Alignment
+/// Properties form, an empty alignment, the Miscellaneous type), so it is
+/// found by this anchor, which occurs exactly once in the window in all
+/// 407 sample alignment records (MIST1 at section-2 bit 165, 199 or 241).
+const GEOMETRY_KEY_ANCHOR: [u8; 14] = [1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0];
+/// Length of MIST1 in bits.
+pub const GEOMETRY_KEY_BITS: usize = 66;
+
+/// Bit offset of MIST1, the 66-bit value Civil 3D computes from the
+/// alignment's geometry (its shape and its placement; S142–S150). `None`
+/// if the record has no common entity data or the anchor is missing.
+pub fn geometry_key_bit(data: &[u8]) -> Option<usize> {
+    let s2 = crate::aecc_entity::entity_common(data)?.start_bit;
+    let n = GEOMETRY_KEY_ANCHOR.len();
+    let last = raw::bit_len(data).saturating_sub(n + GEOMETRY_KEY_BITS);
+    (s2 + 140..(s2 + 330).min(last))
+        .find(|&b| (0..n).all(|i| raw::get_bit(data, b + i) == GEOMETRY_KEY_ANCHOR[i]))
+        .map(|b| b + n)
+}
+
+/// Zero MIST1 in place (D-046). Civil 3D accepts zero bits (S56 X1) and
+/// recomputes the value when it saves; a copied value would describe
+/// another alignment's geometry. Returns false if MIST1 was not found.
+pub fn clear_geometry_key(data: &mut [u8]) -> bool {
+    let Some(at) = geometry_key_bit(data) else {
+        return false;
+    };
+    for b in at..at + GEOMETRY_KEY_BITS {
+        let (i, m) = (b / 8, 1u8 << (7 - b % 8));
+        data[i] &= !m;
+    }
+    true
 }
 
 /// Implied PI display "By change in alignment direction" (MIST6, S122).

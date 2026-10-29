@@ -837,3 +837,21 @@ second copy is found through the table structure.
 **Alternatives.** Keep the zero GUID and skip the identity update:
 matches the source file, but leaves the interval and table without a
 usable identity.
+
+## D-046: MIST1 is zeroed, never copied
+
+**Context.** MIST1, the 66-bit section-2 value, is computed by Civil 3D
+from the alignment's geometry (shape and placement, S142–S150). Civil 3D
+accepts zero bits (S56 X1) and recomputes the value on save; nothing else
+is known to read it. civil3drust used to copy the template's value into
+new alignments and leave it unchanged after geometry edits, so it
+described another or an older geometry.
+
+**Decision.** `create_alignment` and every geometry write (`set_geometry`,
+element edits, `set_pis`/`set_tangent_length`, `set_free_arc_radius`)
+zero it. It is located by the 14 bits that always precede it
+(`aecc_build::geometry_key_bit`), because the fields before it vary in
+length.
+
+**Alternatives.** Keep copying: a wrong value with no known effect, but
+misleading. Compute it: the formula is unknown.
