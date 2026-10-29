@@ -2121,86 +2121,36 @@ of one element (D-042).
 
 ## Open questions
 
-1. The volatile field in section 2 (S5/S6 bits 2730–2789): variable length
-   (62 bits in S5–S7, 106 after a Civil 3D re-save in S8; +44 bits also in
-   S3→S4); what it holds.
-9. The 2-bit flag at bit 2677 that Civil 3D changed when re-saving S7.
-10. ~~The block of BDs (2.0, 3.0, 4.0) in S12~~ — answered by S51: the
-    element IDs after the first, added by Civil 3D on save; optional.
-11. The flag bit after the arc header (1 in S10, S14, S15; 0 in S11–S13).
-    Civil 3D set it after geometry edits it saved (S14, S15) but not after
-    its own radius edit (S12); it also sets it when re-saving our
-    generated free arcs unchanged (S92 → S93).
-12. The volatile header field: identical in S12 and S14 (same content,
-    different save sessions), so probably computed from the content.
-2. ~~Where the start station is stored~~ — answered by S9: a BD ending 41
-   bits before the first tangent header. Editing it in place is only
-   possible when the encoding length doesn't change (both values not 0 or
-   1); otherwise the record must grow or shrink.
-3. Whether lengths, end station, or extents are cached anywhere else (none
-   found for single tangents: the only coordinate copies are sections 1, 3
-   and 4).
-4. ~~Multi-tangent layout~~ — answered by S5: one element record per
-   tangent, linked by before/after IDs.
-5. Meaning of the header value `0x04020008` and of the BL 0 after it
-   (candidates: element type, constraint type, version).
-6. The 11 bits between consecutive element records, and the data after the
-   last one.
-7. ~~Arc element records~~ — answered by S10 (arc by three points) and S11
-   (free arc by radius between tangents). Still open: the meaning of the
-   parameter block (p1 60 vs −1, n2 2 vs 29), other free/floating variants
-   (by length, through a point), and spirals.
-8. How offset alignments store their geometry (no tangent records).
+Updated after S119. Answered questions are recorded in their sections.
+
+1. **Section 2 fields:** the 66-bit cache (rewritten on every save,
+   computed from the geometry: S94 = S96; algorithm unknown), the
+   optional +44-bit field after it, the 31-bit field, the +28-bit field
+   (Alignment Properties dialog / layout tools), and the 2-bit flag Civil
+   3D changed when re-saving S7.
+2. **Post-type value** `BL 2, 2, 2, 0, x`: x = 1 or 3, per drawing.
+3. **Element header** `0x04020008` (same in every record), the arc flag
+   bit after it (set by some Civil 3D saves), the `−1` values in the
+   curve parameter block (p2, the n1 BDs), and the line-spiral group's
+   `BL 256`.
+4. **S89's curve speed interval**: third distance 84.63 instead of 35.72.
+5. **Topology**: vertex flags 2/10/50/178 and the a/b face IDs on
+   companion edges; site containers are not written (read-only, D-038).
+6. **Not sampled yet**: offset alignments (no element records, S1-style
+   imports), station equations (data seen in S9, not decoded), spiral
+   groups other than line-spiral (S120 → S121), a counter-example to the
+   half-circle rule for a centre curve with nothing before it (S118).
+
+Answered since the first list: the start station (S9), multi-element
+layout (S5), the element kind prefixes (tangent 2, arc 4, group 10),
+the element kinds and curve constraint codes (S89, S113, S117–S119), the
+element-ID list block (S51) and the BD block in S12.
 
 ## Next samples
 
-**O6: adding and removing elements (current).** Each step is a Save As
-from the previous file in Civil 3D 2024, compared with `hexview --diff`:
-
-| Sample | From | Change in Civil 3D |
-|---|---|---|
-| S92 | S24 | generated: `Edit base` (FB3), 0,0 → 300,0 (R 80) → 300,−300 (R 80) → 600,−300; T1 A4 T2 A5 T3 |
-| S93 | S92 | opened (AUDIT), saved unchanged — the baseline |
-| S94 | S93 | first tangent (T1) deleted — done |
-| S95 | S94 | second curve (A5) deleted — done |
-| S96 | S95 | free curve R 80 added back at that PI — done |
-| S97 | S24 | generated: civil3drust's element edits (see below) |
-| S98 | S97 | opened in Civil 3D (AUDIT), saved — done, all accepted |
-| later | S96 | floating curve added at the end, from the last tangent |
-
-Questions: new element IDs (reused or max + 1), the element-0 cache when
-element 0 goes, the ID-list block, the three strings per arc, and the
-floating-curve kind and parameters (open issue 2).
-
-For alignment creation (each a copy of S24 with one change, saved the
-same way):
-
-- **A**: ~~S24 plus a second alignment from a polyline~~ — done, S25.
-- **B**: ~~as A, but with a different alignment style~~ — the style
-  reference is answered by S18/S19.
-- **C**: as A, but with the "No Labels" label set — whether label-group
-  objects are required.
-
-For style records: pairs saved from the **same** style edited in place
-(one property changed, Save As in between), so a bit diff isolates the
-property. Done: line visible (S21 → S22). Next: line colour, line layer,
-line linetype, then the spiral component visible (to confirm component 2;
-1 is confirmed by S98), each from the previous file.
-
-For styles (D-015): the owner creates **own** minimal styles in Civil 3D with
-*New* (not *Copy*), own names, generic values — e.g. alignment style
-`CR-Empty` with every component off, label set `CR-NoLabels` with no
-labels. These are the owner's output and the baseline for decoding style
-records. Then one change per sample (line component on, its colour, its
-layer, arc component on, …), each compared with the previous. Sample B can
-use `CR-Empty` as its "different style", which also locates the style
-handle in the alignment record.
-
-- A template with two tangents and one free curve (e.g. 0,0 → 100,0 →
-  100,100, R = 50), for exact generation of that shape.
-
-- S10 with the radius changed (e.g. 100 → 150) in Civil 3D, to see which
-  fields an arc edit touches.
+**S121** — the owner's filled copy of S120: one element per spiral layout
+method, inputs in each alignment's description. Plan and progress per
+method: [`element-methods.md`](element-methods.md).
 
 ## Template note
 

@@ -3,9 +3,10 @@
 Cleanroom implementation of Civil 3D (AECC) DWG objects in Rust, built on
 [acadrust](https://github.com/hakanaktt/acadrust).
 
-> **Status:** first milestone reached (tangent-only alignments). Not affiliated with or endorsed by Autodesk.
-> "Civil 3D" and "AutoCAD" are trademarks of Autodesk, Inc., used here only
-> to describe file compatibility.
+> **Status:** horizontal alignments — read, edit and create in existing
+> Civil 3D drawings; spirals being decoded. Not affiliated with or endorsed
+> by Autodesk. "Civil 3D" and "AutoCAD" are trademarks of Autodesk, Inc.,
+> used here only to describe file compatibility.
 
 ## Goal
 
@@ -13,73 +14,99 @@ Read and write Civil 3D objects (alignments, profiles, surfaces, pipe
 networks, …) in DWG files from Rust, and exchange them with LandXML, without
 needing Civil 3D installed.
 
-### First milestone
+**Current focus: creating and editing alignments in existing Civil 3D
+drawings.** LandXML export is low priority for now.
 
-Tangent-only horizontal alignments (no curves, no spirals):
+## Where things stand
 
-1. Read a Civil 3D DWG.
-2. Change the length of one alignment segment.
-3. Save it back.
-4. Open the result in Civil 3D with no errors and the change visible.
+Every result below was checked by opening civil3drust's output in Civil
+3D 2024 (AUDIT, re-save, comparison with Civil 3D's own records). The
+sample drawings (S1–S120) and the evidence for each finding are in
+[`docs/alignment-object.md`](docs/alignment-object.md); the record map is
+[`docs/alignment-map.md`](docs/alignment-map.md).
 
-**Reached 2026-10-20** on a three-tangent sample: `examples/set_length`
-lengthened segment 2 by 10 ft, Civil 3D 2024 opened the file with zero
-AUDIT errors and the change visible, and re-saved it with the geometry
-unchanged. civil3drust's edited record matched Civil 3D's own version of the
-same edit bit for bit, apart from one unidentified volatile field. Details:
-[`docs/alignment-object.md`](docs/alignment-object.md).
+### Alignments: what civil3drust can do
 
-Also confirmed in Civil 3D since: changing a free curve's radius
-(`examples/set_radius`, S13) opened with zero AUDIT errors, and Civil 3D's
-re-save (S14) differs from Civil 3D's own version of the same edit by a
-single flag bit. A tangent-length edit past a fillet (S16) and an alignment
-generated from a template (S17, 0,0 → 100,0 → 100,100 with an R = 50
-fillet) have also been produced; S17 opened with zero AUDIT errors and
-Civil 3D's LandXML export of it matches the intended geometry.
+| | read | write |
+|---|---|---|
+| Lines: fixed, floating (end point, length), free (between curves) | ✓ | fixed lines |
+| Curves: every Civil 3D curve method (three point, centre, floating, free fillet by radius or through point), whole circles | ✓ | free curves (fillets) |
+| Spirals: line-with-spiral group | ✓ (first sample) | — |
+| Other spiral groups (SCS, compound, reverse …) | decoding (S120 → S121) | — |
+| Create an alignment (PIs + fillet radii, or empty) | | ✓ — style, label set, site-less, type, registry and companion |
+| Remove elements, add a free curve, change a length / radius / PIs | | ✓ |
+| Name, description, style, display components | ✓ | ✓ |
+| Start station, design speeds (incl. on curves), design criteria flags | ✓ | ✓ |
+| Alignment type (centerline, miscellaneous) | ✓ | ✓ |
+| Sites and parcels | ✓ membership | read-only for now (D-038) |
+| Detached pieces after deleting an interior element | ✓ | kept as placeholders (D-037) |
 
-civil3drust uses acadrust 0.6.7. That version reads the `3DSOLID` in Civil
-3D's internal `PRESSUREPARTERRORBLOCK` that 0.6.5 dropped, so drawings from
-this template now round-trip without failsafe mode. It also reads every
-`AEC*` class, Civil 3D's included, into its Architecture types;
-`raw::open` turns those back into raw records so they are saved byte for
-byte (D-033, `docs/acadrust-0.6.7.md`).
+### Still unexplained
 
-## What's here now
+None of these stop Civil 3D from opening our files; they are copied or
+recomputed.
+
+- **Section 2 caches:** the 66-bit field (rewritten by Civil 3D on every
+  save, so a cache of the geometry), the optional +44-bit field, a 31-bit
+  field, and the +28-bit field added by the Alignment Properties dialog.
+- **Post-type value** `BL 2, 2, 2, 0, 1|3`: follows the drawing, meaning
+  unknown.
+- **Element header** `0x04020008` and the arc flag bit after it; the
+  `−1` parameters in curve records; the line-spiral group's `256` field.
+- **One speed-interval distance** on a curve in S89 (84.63 where 35.72 is
+  expected).
+- **Topology:** companion vertex flags (2/10/50/178) and the face IDs on
+  edges; writing site containers (needs a planar arrangement).
+- **Not sampled yet:** offset and other alignment types, station
+  equations (seen, not decoded), most spiral groups, counter-examples for
+  a few curve rules (a centre curve with nothing before it is drawn as a
+  half circle).
+
+### Milestones reached
+
+- 2026-10-20 — tangent-only alignment edited (segment length) and
+  accepted by Civil 3D with zero AUDIT errors.
+- Free-curve radius edits, alignments generated from PIs and fillets,
+  new alignments in existing drawings, design speeds, start stations,
+  criteria flags, styles and types — each accepted by Civil 3D.
+- Element add/remove matching Civil 3D's own edits (S94–S100), companion
+  topology rebuilt and accepted (S111).
+- All 14 curve layout methods decoded (S117, S118); first spiral group
+  (S119).
+
+civil3drust uses acadrust 0.6.7, which reads every `AEC*` class (Civil 3D's
+included) into its Architecture types; `raw::open` turns those back into
+raw records so they are saved byte for byte (D-033,
+[`docs/acadrust-0.6.7.md`](docs/acadrust-0.6.7.md)).
+
+## Modules
 
 | Module | Purpose |
 |---|---|
-| `alignment` | Format-independent tangent-alignment geometry: stationing, point at station, editing a segment length. Fully unit-tested. |
-| `inventory` | Lists the AECC classes in a DWG's class table via acadrust. Starting point for studying object layouts. |
-| `aecc_alignment` | Decodes tangent-only `AECC_ALIGNMENT` records into `alignment` geometry from their tangent element records. |
-| `aecc_alignment_edit` | Writes a changed tangent alignment back into its record (same-size patches). |
+| `raw`, `handle_refs`, `string_stream` | Raw AECC records (opened with `raw::open`), bit helpers, handle and string streams. |
+| `aecc_entity` | Common entity data (layer colour, linetype, …) at the start of the record. |
+| `aecc_alignment`, `aecc_elements` | Element records (lines, curves, spiral groups) decoded and resolved into geometry with stationing. |
+| `aecc_build`, `aecc_create` | Writing element lists and graphics; creating alignments from a template alignment. |
+| `aecc_element_edit`, `aecc_arc_edit`, `aecc_alignment_edit` | Adding and removing elements, radius and length edits. |
+| `aecc_station`, `aecc_design_speed`, `aecc_criteria` | Start station, design speeds, design criteria. |
+| `aecc_style`, `aecc_alignment_refs` | Style references and display components; name, description, layer. |
+| `aecc_registry`, `aecc_topology`, `aecc_site` | Companion registry, topology graph, sites (read-only). |
 | `proxy_graphics` | The display cache embedded in AECC entity records. |
-| `aecc_elements` | Tangent and arc element records, read-only: arcs by three points and free arcs (fillets) by radius, resolved to segments with stationing. |
-| `aecc_arc_edit` | Changes the radius of a free arc (fillet), with the cached PC station. |
-| `raw` | The stored bytes of AECC records (acadrust keeps them opaque) and bit-level helpers for studying them. |
+| `alignment`, `inventory` | Format-independent alignment geometry; AECC class inventory. |
 
-Try the inventory on a drawing:
-
-```
-cargo run --example inventory -- path/to/drawing.dwg
-```
-
-Compare two sample drawings (all AECC classes, then one class in detail),
-and dump one class's record bytes:
+The command-line examples (`alignments`, `create_alignment`,
+`edit_elements`, `set_pis`, `set_speeds`, `set_style`, …) are listed with
+their arguments in [`CLAUDE.md`](CLAUDE.md). For example:
 
 ```
-cargo run --release --example rawdiff -- a.dwg b.dwg
-cargo run --release --example rawdiff -- a.dwg b.dwg AECC_ALIGNMENT
-cargo run --release --example dumprec -- a.dwg AECC_ALIGNMENT out/a
-cargo run --release --example alignments -- a.dwg
-cargo run --release --example set_length -- in.dwg out.dwg "Alignment - (2)" 2 121.8
-cargo run --release --example set_radius -- in.dwg out.dwg "Alignment - (2)" 4 75
-cargo run --release --example set_pis -- template.dwg out.dwg "Alignment - (2)" "0,0 100,0 100,75 100,100"
+cargo run --release --example alignments -- drawing.dwg
+cargo run --release --example create_alignment -- donor.dwg target.dwg out.dwg "New" "0,0 100,0,50 100,100"
+cargo run --release --example edit_elements -- in.dwg out.dwg "New" remove 1
 ```
 
-A 2D/3D viewer for checking decoded objects against Civil 3D's proxy
-graphics lives in [`viewer/`](viewer/README.md).
-
-Findings so far: [`docs/alignment-object.md`](docs/alignment-object.md).
+Tools: [`hexview/`](hexview/README.md) (hex view and record-by-record bit
+diff of two drawings) and [`viewer/`](viewer/README.md) (2D/3D viewer for
+checking decoded objects against Civil 3D's graphics).
 
 ## Cleanroom rules
 
