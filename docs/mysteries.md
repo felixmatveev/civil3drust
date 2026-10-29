@@ -118,8 +118,14 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   112 records without MIST2 and `0x1188` in all 143 plain-form records
   with it (Properties-form records have `BL 1` there instead). It is what
   MIST5 saw change on the first re-save. S154 failed because it kept
-  `0x1188` without the field. S155 (pending): MIST2 removed and the
-  marker set back to `0x1148`.
+  `0x1188` without the field. S155 (MIST2 removed, marker back to
+  `0x1148`) opens with a clean AUDIT, and Civil 3D's re-save (S157)
+  restores `0x1188` and `0x0D00D773, 2` — identical to S131.
+- **Summary:** MIST2 is optional and must match the marker (`0x1148`
+  none, `0x1188` present). When it is missing Civil 3D adds it on save
+  with the type-based value; when present it keeps the stored value
+  (S156). The meaning of `0x0D00D773` and of the second value is still
+  unknown.
 
 ## MIST3 — the 31-bit section-2 field
 
@@ -148,7 +154,9 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   MIST2 in the same save; later re-saves keep both (S139, S142, S143).
 - **Found:** these bits belong to the full BL at section-2 bit 115,
   `0x1148` without MIST2 and `0x1188` with it, in every sample (see
-  MIST2). Removing MIST2 but keeping `0x1188` is rejected (S154).
+  MIST2). Removing MIST2 but keeping `0x1188` is rejected (S154);
+  removing both is accepted (S155) and Civil 3D restores them on save
+  (S157).
 
 ## MIST6 — the post-type value `BL 2, 2, 2, 0, x` — **SOLVED (S122)**
 
