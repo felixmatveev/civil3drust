@@ -156,6 +156,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S142 | `S142_S137_civ3d_save_a.dwg` | Civil 3D 2024 | S137 saved by the owner (MIST1 save-twice test, first save). F9E differs from S139 by an element-ID list (2, 3, 4) and a few bits near the end; MIST1 unchanged. | 476357 | `a52d8b3d147b7e8e` |
 | S143 | `S143_S137_civ3d_save_b.dwg` | Civil 3D 2024 | The same drawing saved again a few minutes later (owner). F9E is byte-identical to S142. | 474277 | `07e09051d6d941d3` |
 | S144 | `S144_S143_renamed.dwg` | Civil 3D 2024 | S143 with F9E renamed to `Alignment - (RENAMED)` (owner), saved. MIST1 unchanged; MIST4 added and section 2 grows 457 → 589 bits. | 473892 | `db18047adc9b5795` |
+| S145 | `S145_S144_last_tangent_longer.dwg` | Civil 3D 2024 | S144 with the last tangent lengthened 200 → 284.6951 (owner), saved. MIST1 entirely different. | 473446 | `dcd456102a5ec8e8` |
+| S146 | `S146_S144_moved_north_100.dwg` | Civil 3D 2024 | S144 moved 100 north, shape unchanged (owner), saved. MIST1 bytes 1–4 kept, bytes 0 and 5–7 changed. | 473857 | `109ab017562ad6ac` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

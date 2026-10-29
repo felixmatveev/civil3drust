@@ -44,8 +44,21 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   and not a timestamp or random ID.
 - **Not the name:** S144 (S143 renamed) keeps the same value, moved 34
   bits later by the fields the rename added in front of it.
-- **Next tests:** move the alignment without changing its shape; change
-  one length.
+- **Shape and position** (bytes of the 64-bit part, in file order):
+
+  | sample | change | MIST1 |
+  |---|---|---|
+  | S24, S143, S144 | — (S144 renamed) | `EE 1E 81 38 E6 21 CE 8B` |
+  | S145 | last tangent 200 → 284.6951 | `A4 DD 51 64 A5 60 D7 B1` |
+  | S146 | moved 100 north | `0A 1E 81 38 E6 A1 1E 06` |
+
+  A length change rewrites every byte; a pure move keeps bytes 1–4 and
+  changes 0 and 5–7. The two 100-ft single tangents in different
+  drawings and directions (S44 FB8, S123 8F01) also share exactly bytes
+  1–4 (`5C BE 8C E9`). So bytes 1–4 follow the shape and the outer bytes
+  the location — a packed or mixed value rather than a plain hash.
+- **Next tests:** move only east, then only north (do X and Y affect
+  different bytes?); rotate without moving.
 - **civil3drust today:** copies the template's value.
 
 ## MIST2 — the optional +44-bit field after MIST1

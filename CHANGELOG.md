@@ -22,6 +22,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   header is also unchanged in a 2020 drawing. Gaps noted from that drawing
   (alignments that do not decode, type field not found).
 - First acadrust 0.6.7-written drawing confirmed in Civil 3D (S125 → S131).
+- S145/S146: MIST1 depends on shape (a length change rewrites it) and on
+  position (a move changes bytes 0 and 5–7, keeps 1–4).
 - S144 (rename): MIST1 does not depend on the name; the rename adds
   MIST4 and the 589-bit section 2 form.
 - MIST1 is content-derived (S142/S143: same drawing saved minutes apart,
