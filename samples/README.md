@@ -149,6 +149,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S136 | `S136_S24_header_04000008.dwg` | civil3drust | MIST7 round 2: as S133 with `0x04000008` (third byte 0: is bit 0x02 required?). | 448774 | `6175bc117d687158` |
 | S137 | `S137_S24_header_04060008.dwg` | civil3drust | MIST7 round 2: as S133 with `0x04060008` (third byte 6: 0x02 plus 0x04). | 448774 | `c2b8d90283d841f3` |
 | S138 | `S138_S24_header_03020008.dwg` | civil3drust | MIST7 round 2: as S133 with `0x03020008` (top byte 4 → 3). | 448774 | `19d03442bda156f8` |
+| S139 | `S139_S137_civ3d_resaved.dwg` | Civil 3D 2024 | S137 (`0x04060008`) opened without errors, AUDIT clean, saved (owner). Civil 3D wrote `0x04020008` back: F9E is identical to S131. | 476514 | `d5220bbdec203f8a` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

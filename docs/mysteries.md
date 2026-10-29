@@ -113,12 +113,32 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   four header bits), so this is stored data, not a version it stamps.
   A likely reading: the high word identifies the sub-object type and the
   low word is its schema version, 8 being the newest Civil 3D knows.
-- **Experiment, round 2** (pending): S133 `0x04020007`, S134
-  `0x04020000` (older versions accepted?), S135 `0x04020108` (one 16-bit
-  field or two bytes?), S136 `0x04000008` and S137 `0x04060008` (which
-  bits of the third byte matter?), S138 `0x03020008` (top byte lower).
-- **Status:** no setting found that changes it; civil3drust writes it as
-  a constant. Still open in case another element type or DWG format
+- **Experiment, round 2** (owner, Civil 3D 2024):
+
+  | sample | header | result |
+  |---|---|---|
+  | S133 | `0x04020007` | RECOVER: eOutOfRange, discarded |
+  | S134 | `0x04020000` | RECOVER: eOutOfRange, discarded |
+  | S135 | `0x04020108` | RECOVER: eOutOfRange, discarded |
+  | S136 | `0x04000008` | RECOVER: eWrongObjectType, discarded |
+  | S137 | `0x04060008` | opens, AUDIT clean; re-saved as S139 with `0x04020008` |
+  | S138 | `0x03020008` | RECOVER: eWrongObjectType, discarded |
+
+- **What Civil 3D 2024 accepts** (rounds 1 and 2):
+  - **Low word** (bytes 0–1): exactly 8. 0, 7, 9 and `0x0108` are
+    "out of range", so it is not a maximum version but a fixed value of
+    the whole 16-bit field.
+  - **Top byte:** exactly 4; 3 and 5 are "wrong object type".
+  - **Third byte:** bit 0x02 must be set (0 and 1 are "wrong object
+    type"; 2, 3 and 6 are accepted). Bit 0x01 is stored and written back
+    (S127 → S132); bit 0x04 is accepted but dropped on save (S137 →
+    S139).
+  - So the high word works as a type tag with flag bits, and the low word
+    as a fixed size or version that must match. The meaning of the flag
+    bits is unknown.
+- **Status:** behaviour mapped (S125–S139); no setting found that
+  changes it. civil3drust writes `0x04020008`, the only value seen in
+  Civil 3D's own drawings. Still open in case another element type or DWG format
   version shows a different value.
 
 ## MIST8 — the curve flag bit
