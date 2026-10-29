@@ -136,6 +136,23 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   - So the high word works as a type tag with flag bits, and the low word
     as a fixed size or version that must match. The meaning of the flag
     bits is unknown.
+- **A family of such headers** (S119 against an older Civil 3D drawing,
+  AC1027 with `AeccLand110` classes, checked locally and not committed):
+  values `0xTT0M0008` occur as full BLs in many classes in both files.
+  The low word is always `0x0008`, the third byte mostly 2 or 3, the top
+  byte depends on the class: `0x0C030008` in about 25 style classes
+  (label, band and view styles), `0x04020008` in alignment elements,
+  profile and survey-figure styles, `0x05020008` in surface and table
+  styles, `0x06020008` in label-collector styles, `0x0A020008` in
+  section-view band and profile/section entity styles. Classes present in
+  both files carry the same value in both, so the values did not change
+  between the 11.0 and 13.0 class schemas. Reading: the top byte names
+  the kind of sub-object (Civil 3D answers "wrong object type" when it
+  changes) and `0x0008` is a fixed field that must match; neither is a
+  release version. (Scanning bit by bit also finds the same bytes one bit
+  off, e.g. `0x02010004` and `0x08040010` around `0x04020008`; those are
+  artifacts and were removed. Values seen in a single class, mostly in
+  surface records full of binary data, may be chance matches.)
 - **Status:** behaviour mapped (S125–S139); no setting found that
   changes it. civil3drust writes `0x04020008`, the only value seen in
   Civil 3D's own drawings. Still open in case another element type or DWG format
