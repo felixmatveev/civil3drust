@@ -141,6 +141,14 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S128 | `S128_S24_header_05020008.dwg` | civil3drust | MIST7: as S126 with `0x05020008` (top byte 4 → 5; the value seen in surface and table styles). | 448774 | `aa1234cdd97f7bfa` |
 | S129 | `S129_S24_header_04020009.dwg` | civil3drust | MIST7: as S126 with `0x04020009` (low byte 8 → 9). | 448774 | `80bac881a1a75dfd` |
 | S130 | `S130_S24_header_08000204.dwg` | civil3drust | MIST7: as S126 with `0x08000204` (bytes reversed: the EOT STX NUL BS reading). | 448774 | `00d54e1ad2442be2` |
+| S131 | `S131_S125_civ3d_resaved.dwg` | Civil 3D 2024 | S125 (control) opened without RECOVER and saved (owner). First drawing written with acadrust 0.6.7 to be opened in Civil 3D. Header kept `0x04020008`. | 474663 | `0707d6a9c29e2560` |
+| S132 | `S132_S127_civ3d_resaved.dwg` | Civil 3D 2024 | S127 (`0x04030008`) opened without RECOVER and saved (owner). Civil 3D wrote `0x04030008` back; F9E differs from S131 only in those four header bits. | 477063 | `3272d36a844d93de` |
+| S133 | `S133_S24_header_04020007.dwg` | civil3drust | MIST7 round 2: S24 with the header of all four elements of F9E set to `0x04020007` (low word 8 → 7). | 448774 | `fd4bbcdcffc6ae1a` |
+| S134 | `S134_S24_header_04020000.dwg` | civil3drust | MIST7 round 2: as S133 with `0x04020000` (low word 0). | 448774 | `b6fcf04ea594b858` |
+| S135 | `S135_S24_header_04020108.dwg` | civil3drust | MIST7 round 2: as S133 with `0x04020108` (second byte 0 → 1: one 16-bit field or two bytes?). | 448806 | `9eaec589a9750cdb` |
+| S136 | `S136_S24_header_04000008.dwg` | civil3drust | MIST7 round 2: as S133 with `0x04000008` (third byte 0: is bit 0x02 required?). | 448774 | `6175bc117d687158` |
+| S137 | `S137_S24_header_04060008.dwg` | civil3drust | MIST7 round 2: as S133 with `0x04060008` (third byte 6: 0x02 plus 0x04). | 448774 | `c2b8d90283d841f3` |
+| S138 | `S138_S24_header_03020008.dwg` | civil3drust | MIST7 round 2: as S133 with `0x03020008` (top byte 4 → 3). | 448774 | `19d03442bda156f8` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

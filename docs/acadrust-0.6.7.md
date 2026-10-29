@@ -65,3 +65,9 @@ Confidence: the AECC bytes are shown to be unchanged by the tools above. No
 0.6.7-written drawing has been opened in Civil 3D yet; the non-AECC parts of
 a saved drawing come from acadrust's 0.6.7 writer, and a drawing that keeps
 the solid is new territory (not yet checked in Civil 3D).
+
+## Opened in Civil 3D
+
+S125 (S24 read and written by civil3drust on 0.6.7 with no change) opened
+in Civil 3D 2024 without RECOVER, and its re-save is S131 (owner,
+MIST7 control).

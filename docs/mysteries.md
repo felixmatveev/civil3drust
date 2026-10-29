@@ -93,13 +93,30 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   occur too. A chance match of 34 bits is very unlikely at these counts,
   so it looks like a generic Civil 3D sub-object tag, possibly a version
   pair (4.2, 4.1, 5.2) with a type code 8.
-- **Experiment (pending, owner):** S125–S130, made with
-  `exp_header` from S24 (alignment F9E, three tangents and a free curve):
-  S125 is an unchanged control written by civil3drust; S126–S130 set the
-  header of all four elements to `0x04010008`, `0x04030008`,
-  `0x05020008`, `0x04020009` and `0x08000204`. For each: does Civil 3D
-  open it, what does AUDIT say, is the alignment drawn and editable, and
-  what does a re-save write back?
+- **Experiment, round 1** (owner, Civil 3D 2024): S125–S130 made with
+  `exp_header` from S24 (F9E: three tangents and a free curve), the
+  header of all four elements changed:
+
+  | sample | header | result |
+  |---|---|---|
+  | S125 | `0x04020008` (control) | opens; re-saved as S131 |
+  | S126 | `0x04010008` | RECOVER: F9E "Error 34 (eWrongObjectType)", discarded |
+  | S127 | `0x04030008` | opens; re-saved as S132 with `0x04030008` kept |
+  | S128 | `0x05020008` | RECOVER: eWrongObjectType, discarded |
+  | S129 | `0x04020009` | RECOVER: "Error 151 (eOutOfRange)", discarded |
+  | S130 | `0x08000204` | RECOVER: eOutOfRange, discarded; very slow, display glitches |
+
+  So the value is read and checked, not ignored: the top byte must be 4,
+  the third byte 2 or 3 (1 is a wrong type; perhaps bit 0x02 must be set
+  and bit 0x01 is free), and the low word 8 is accepted while 9 is out of
+  range. Civil 3D writes back what it read (S132 = S131 apart from the
+  four header bits), so this is stored data, not a version it stamps.
+  A likely reading: the high word identifies the sub-object type and the
+  low word is its schema version, 8 being the newest Civil 3D knows.
+- **Experiment, round 2** (pending): S133 `0x04020007`, S134
+  `0x04020000` (older versions accepted?), S135 `0x04020108` (one 16-bit
+  field or two bytes?), S136 `0x04000008` and S137 `0x04060008` (which
+  bits of the third byte matter?), S138 `0x03020008` (top byte lower).
 - **Status:** no setting found that changes it; civil3drust writes it as
   a constant. Still open in case another element type or DWG format
   version shows a different value.

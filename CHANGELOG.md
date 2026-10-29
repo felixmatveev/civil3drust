@@ -12,7 +12,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 - Open questions moved to `docs/mysteries.md` as MIST1–MIST14.
 - MIST6 solved: the post-type value is the implied PI display option.
 - MIST7 experiment: `examples/exp_header.rs` and samples S125–S130
-  (S24 with the element header changed, plus a control).
+  (S24 with the element header changed, plus a control). Round 1
+  results: top byte must be 4, third byte 2 or 3, low word 8 accepted and
+  9 out of range; Civil 3D writes back what it read (S131, S132). Round 2
+  samples S133–S138.
+- First acadrust 0.6.7-written drawing confirmed in Civil 3D (S125 → S131).
 - MIST7: the header value also occurs in other Civil 3D classes (S119);
   likely a generic sub-object tag, not text.
 - Priorities: Civil 3D 2027 support is low priority; `hexview` and

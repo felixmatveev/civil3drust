@@ -29,8 +29,9 @@ samples and steps that produced it.
   `raw::open` (it restores raw records, D-033) and keep
   `tests/acadrust_compat.rs` passing. Before bumping acadrust again, rerun
   the `fingerprint` comparison in `docs/acadrust-0.6.7.md`.
-- 0.6.7 reads the `PRESSUREPARTERRORBLOCK` `3DSOLID` that 0.6.5 dropped;
-  no 0.6.7-written drawing has been opened in Civil 3D yet.
+- 0.6.7 reads the `PRESSUREPARTERRORBLOCK` `3DSOLID` that 0.6.5 dropped.
+  The first 0.6.7-written drawing (S125, S24 rewritten unchanged) opened
+  in Civil 3D 2024 without errors (S131).
 - Civil 3D 2027 support is **low priority**. S123/S124 are 2027 drawings;
   use 2027 samples for information only, and keep `tests/civil3d_2027.rs`
   passing (`docs/civil3d-2027.md`).
