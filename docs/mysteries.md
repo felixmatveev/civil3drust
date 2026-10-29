@@ -22,9 +22,11 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Seen:** differs per alignment; Civil 3D writes a new value on every
   save (S57), the same value for the same geometry (S94 = S96 after an
   element was deleted and re-added). All zeros is accepted (S56 X1).
-- **Hypothesis (owner):** derived from the proxy graphics rather than the
-  element geometry. Test: the same drawing saved with proxy graphics on
-  and off (PROXYGRAPHICS 1/0) — does the field change or disappear?
+- **Ruled out: proxy graphics.** S140 (PROXYGRAPHICS 1) and S141
+  (PROXYGRAPHICS 0) are the same drawing saved both ways: in all 21
+  alignments everything after the graphics, MIST1 included, is
+  bit-identical, and so are the handle streams. The field is not derived
+  from, or stored because of, the proxy graphics.
 - **civil3drust today:** copies the template's value.
 
 ## MIST2 — the optional +44-bit field after MIST1
@@ -32,7 +34,8 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Where:** right after MIST1 when present (section 2 grows 413 → 457).
 - **Seen:** added by Civil 3D re-saves (S4, S8, S11, S12, S48, S51) and to
   every alignment of S57; absent in generated records (S45, S50 — accepted).
-- **Hypothesis:** a cache tied to MIST1 (same proxy-graphics test).
+- **Hypothesis:** a cache tied to MIST1. Not tied to proxy graphics
+  (S140 = S141 after the graphics).
 
 ## MIST3 — the 31-bit section-2 field
 

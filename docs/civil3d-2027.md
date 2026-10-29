@@ -40,7 +40,8 @@ Compared with the Civil 3D 2024 samples (S5–S122).
 ## Other differences (no action)
 
 - The alignments sit on a named layer, not layer 0 (template).
-- S123's proxy graphics are Civil 3D's placeholder (text + extents).
+- S123's proxy graphics are Civil 3D's placeholder (text + extents)
+  because the drawing has PROXYGRAPHICS 0 (S124 too); see S141.
 - Section-2 flag MIST15 is 1, as in the S5–S23 drawings.
 
 Tests: `tests/civil3d_2027.rs`.

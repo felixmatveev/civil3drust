@@ -2186,3 +2186,14 @@ acadrust's record bytes. An earlier exploratory pass (before this repository
 existed) used LibreDWG's `dwgread` purely as a byte dumper; LibreDWG has no
 knowledge of AECC classes, no LibreDWG code or documentation was used, and
 all findings here were re-derived with acadrust-based tools.
+
+## Proxy graphics setting (S140, S141)
+
+The same drawing saved by Civil 3D 2024 with PROXYGRAPHICS 1 (S140) and 0
+(S141). With 0 Civil 3D still writes a graphics stream, but its
+placeholder: a text chunk and polylines (684 bytes for an empty alignment,
+312 bytes for one with a spiral), instead of the real display (60 bytes of
+attribute chunks for an empty alignment, 2688 bytes for the spiral one).
+Everything after the graphics and the handle stream are bit-identical, so
+no field of the record depends on the setting (MIST1, MIST2). S123/S124
+(Civil 3D 2027) also have PROXYGRAPHICS 0, hence their placeholders.

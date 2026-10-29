@@ -151,6 +151,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S137 | `S137_S24_header_04060008.dwg` | civil3drust | MIST7 round 2: as S133 with `0x04060008` (third byte 6: 0x02 plus 0x04). | 448774 | `c2b8d90283d841f3` |
 | S138 | `S138_S24_header_03020008.dwg` | civil3drust | MIST7 round 2: as S133 with `0x03020008` (top byte 4 → 3). | 448774 | `19d03442bda156f8` |
 | S139 | `S139_S137_civ3d_resaved.dwg` | Civil 3D 2024 | S137 (`0x04060008`) opened without errors, AUDIT clean, saved (owner). Civil 3D wrote `0x04020008` back: F9E is identical to S131. | 476514 | `d5220bbdec203f8a` |
+| S140 | `S140_S120_civ3d_proxy_on.dwg` | Civil 3D 2024 | S120 opened and saved with PROXYGRAPHICS 1 (owner, MIST1 test); one alignment (FD7) laid out with a spiral, the others still empty. | 477804 | `066d2fb4927d0a98` |
+| S141 | `S141_S120_civ3d_proxy_off.dwg` | Civil 3D 2024 | The same drawing saved with PROXYGRAPHICS 0 (owner). Every record differs from S140 only in its graphics (placeholders); everything after them is identical. | 478159 | `4ef161902cc900fa` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

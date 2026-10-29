@@ -22,6 +22,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   header is also unchanged in a 2020 drawing. Gaps noted from that drawing
   (alignments that do not decode, type field not found).
 - First acadrust 0.6.7-written drawing confirmed in Civil 3D (S125 → S131).
+- Samples S140/S141 (S120 saved with PROXYGRAPHICS 1 and 0): MIST1/MIST2
+  are not tied to proxy graphics; with PROXYGRAPHICS 0 Civil 3D writes
+  placeholder graphics and nothing else in the record changes.
 - MIST7: the header value also occurs in other Civil 3D classes (S119);
   likely a generic sub-object tag, not text.
 - Priorities: Civil 3D 2027 support is low priority; `hexview` and

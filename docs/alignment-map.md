@@ -33,7 +33,7 @@ other records shift by the sizes of the variable parts.
 | 42–43 | EED size `10` (no extended data) | constant | yes |
 | 44 | has-graphics flag | decoded | yes (0 = no graphics, accepted: S57) |
 | 45–55 | graphics size (BLL, bytes) | decoded | only with graphics |
-| 56–1783 | **proxy graphics** (display cache): 7 attribute chunks, one polyline per tangent, an attribute triple after each arc | decoded; derived from geometry | **no** — Civil 3D regenerates it (S57); kept by default for programs without Civil 3D |
+| 56–1783 | **proxy graphics** (display cache): 7 attribute chunks, one polyline per tangent, an attribute triple after each arc; with PROXYGRAPHICS 0 Civil 3D writes its placeholder instead (S141) | decoded; derived from geometry | **no** — Civil 3D regenerates it (S57); kept by default for programs without Civil 3D |
 | 1784–2196 | **section 2** (413 bits), see 1.1 | mostly constant | yes |
 | 2197–2206 | element count (BL) | decoded | yes |
 | 2207–2856 | **element records**, each with an 11-bit kind prefix (tangent `…010`, arc `…100`) | decoded | yes — the geometry |
