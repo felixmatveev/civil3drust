@@ -22,6 +22,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   header is also unchanged in a 2020 drawing. Gaps noted from that drawing
   (alignments that do not decode, type field not found).
 - First acadrust 0.6.7-written drawing confirmed in Civil 3D (S125 → S131).
+- S149/S150 (radius change, rotation in place): the radius feeds the
+  MIST1 shape bits; position and direction mix in the placement bits.
 - S147/S148 (move west, rotate): MIST1 splits into 38 bits that follow
   the shape only and 28 bits that follow the placement.
 - S145/S146: MIST1 depends on shape (a length change rewrites it) and on
