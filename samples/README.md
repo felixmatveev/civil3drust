@@ -166,6 +166,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S152 | `S152_S131_mist2_zero_second.dwg` | civil3drust | MIST2 test: S131 with the second MIST2 value 2 set to 0 (`zero-second`). | 450310 | `69df71a38cf77d53` |
 | S153 | `S153_S131_mist2_zero_both.dwg` | civil3drust | MIST2 test: S131 with both MIST2 values set to 0 (`zero-both`). | 450310 | `eb4ccc8eaceba9e1` |
 | S154 | `S154_S131_mist2_removed.dwg` | civil3drust | MIST2 test: S131 with the 44-bit MIST2 field removed; section 2 back to 413 bits (`remove`). | 450179 | `9f5fe313736329c2` |
+| S155 | `S155_S131_mist2_removed_marker_1148.dwg` | civil3drust | MIST2 test: S131 with MIST2 removed and the format marker at section-2 bit 115 set back 0x1188 → 0x1148 (`exp_mist2 … remove-marker`). | 450179 | `9e50379cdc1cf95e` |
+| S156 | `S156_S152_civ3d_resaved.dwg` | Civil 3D 2024 | S152 (second MIST2 value 0) opened without errors and saved (owner). The 0 is kept, re-encoded as a 2-bit BL (section 2 457 → 449 bits). | 473377 | `58a30adbfaeec27e` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

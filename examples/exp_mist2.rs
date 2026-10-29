@@ -2,7 +2,9 @@
 //! BL n` of one alignment, for the owner to open in Civil 3D.
 //!
 //! Modes: `zero-first` (first BL → 0), `zero-second` (second BL → 0),
-//! `zero-both`, `remove` (drop the 44 bits; section 2 back to 413 bits).
+//! `zero-both`, `remove` (drop the 44 bits; section 2 back to 413 bits),
+//! `remove-marker` (drop them and set the format marker at section-2 bit
+//! 115 back from `0x1188` to `0x1148`, as in never-resaved records).
 //! Zeroed values keep their encoding so the rest of the record stays in
 //! place.
 //!
@@ -21,7 +23,7 @@ fn fail(m: impl std::fmt::Display) -> ! {
 fn main() {
     let a: Vec<String> = std::env::args().collect();
     if a.len() != 5 {
-        fail("usage: exp_mist2 in.dwg out.dwg <alignment handle> zero-first|zero-second|zero-both|remove");
+        fail("usage: exp_mist2 in.dwg out.dwg <alignment handle> zero-first|zero-second|zero-both|remove|remove-marker");
     }
     let handle = u64::from_str_radix(&a[3], 16).unwrap_or_else(|_| fail("bad handle"));
     let mut opened = raw::open(&a[1]).unwrap_or_else(|e| fail(e));
@@ -61,9 +63,27 @@ fn main() {
             }
             (data, rec.handle_bits)
         }
-        "remove" => {
+        "remove" | "remove-marker" => {
             let total = raw::bit_len(d);
             let data_end = total - rec.handle_bits;
+            let mut src = d.clone();
+            if a[4] == "remove-marker" {
+                let s2 = civil3drust::aecc_entity::entity_common(d)
+                    .unwrap_or_else(|| fail("no common entity data"))
+                    .start_bit;
+                let m = s2 + 115;
+                if raw::get_bit(d, m) != 0
+                    || raw::get_bit(d, m + 1) != 0
+                    || raw::read_bl(d, m).map(|x| x.0) != Some(0x1188)
+                {
+                    fail("format marker 0x1188 not found at section-2 bit 115");
+                }
+                for (i, b) in 0x1148u32.to_le_bytes().iter().enumerate() {
+                    raw::set_byte(&mut src, m + 2 + 8 * i, *b);
+                }
+                println!("format marker 0x1188 -> 0x1148");
+            }
+            let d = &src;
             let mut w = Bits::default();
             w.copy(d, 0, at);
             w.copy(d, end, data_end);

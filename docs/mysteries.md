@@ -102,10 +102,24 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   place in a 2020 drawing (`AeccLand110` classes, checked locally).
 - **Hypothesis:** a cache tied to MIST1. Not tied to proxy graphics
   (S140 = S141 after the graphics).
-- **Experiment (pending, owner):** S151–S154 from S131 with
-  `exp_mist2`: first value 0, second value 0, both 0, field removed. For
-  each: does Civil 3D open it, what does AUDIT say, and what does a
-  re-save write back?
+- **Experiment** (owner, Civil 3D 2024), S151–S154 from S131 with
+  `exp_mist2`:
+
+  | sample | change | result |
+  |---|---|---|
+  | S151 | first value `0x0D00D773` → 0 | RECOVER: F9E eWrongObjectType, discarded |
+  | S152 | second value 2 → 0 | opens; re-saved as S156 with 0 kept (as a 2-bit BL) |
+  | S153 | both 0 | RECOVER: eWrongObjectType, discarded |
+  | S154 | field removed | RECOVER: eWrongObjectType, discarded |
+
+  The first value is a checked tag (like MIST7); the second is stored
+  data that Civil 3D keeps, not recomputed from the type.
+- **Format marker:** the full BL at section-2 bit 115 is `0x1148` in all
+  112 records without MIST2 and `0x1188` in all 143 plain-form records
+  with it (Properties-form records have `BL 1` there instead). It is what
+  MIST5 saw change on the first re-save. S154 failed because it kept
+  `0x1188` without the field. S155 (pending): MIST2 removed and the
+  marker set back to `0x1148`.
 
 ## MIST3 — the 31-bit section-2 field
 
@@ -132,6 +146,9 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Hypothesis:** part of MIST2's appearance (re-save marker). Seen again
   in S24 → S131: the first Civil 3D re-save changes this flag and adds
   MIST2 in the same save; later re-saves keep both (S139, S142, S143).
+- **Found:** these bits belong to the full BL at section-2 bit 115,
+  `0x1148` without MIST2 and `0x1188` with it, in every sample (see
+  MIST2). Removing MIST2 but keeping `0x1188` is rejected (S154).
 
 ## MIST6 — the post-type value `BL 2, 2, 2, 0, x` — **SOLVED (S122)**
 
