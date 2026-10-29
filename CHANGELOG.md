@@ -11,7 +11,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   table, unexplained fields, milestones); open questions refreshed.
 - Open questions moved to `docs/mysteries.md` as MIST1–MIST14.
 - MIST6 solved: the post-type value is the implied PI display option.
-- MIST7: owner hypothesis (imperial vs metric) and its test recorded.
+- MIST7: drawing units and Civil 3D release ruled out (S123 feet, S124
+  meters, both Civil 3D 2027: same element header).
 
 ### Added
 - `aecc_build::pi_display` / `set_pi_display` and `PI_DISPLAY_*`: the

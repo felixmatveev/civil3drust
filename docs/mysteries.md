@@ -78,12 +78,13 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Seen:** identical in every record of every sample. The BL after it is
   the line kind (0, 4, 5, 9) in line records.
 - **Question:** version / class tag of the element sub-object?
-- **Hypothesis (owner):** tied to the imperial (US customary) versus metric
-  setup; every sample so far is in feet. The byte `0x02` would match
-  AutoCAD's unit code for feet (meters is 6), but that is only a guess.
-  Test: the same alignment in a drawing from the Civil 3D metric template,
-  and one in S24 after switching Drawing Settings → Drawing units to
-  Meters.
+- **Ruled out:** drawing units and Civil 3D release. S123 (feet) and
+  S124 (meters), both new drawings from Civil 3D 2027, have the same
+  header as every Civil 3D 2024 sample. The owner's imperial-vs-metric
+  hypothesis (with `0x02` as the feet unit code) does not hold.
+- **Status:** no setting found that changes it; civil3drust writes it as
+  a constant. Still open in case another element type or DWG format
+  version shows a different value.
 
 ## MIST8 — the curve flag bit
 
