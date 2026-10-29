@@ -477,9 +477,9 @@ pub fn set_geometry(
             ),
         )
         .ok_or_else(|| layout("string count"))?;
-    let (mut bytes, hb) =
+    let (bytes, hb) =
         string_stream::set_string_count(&bytes, hb, want).map_err(|e| layout(e.to_string()))?;
-    clear_geometry_key(&mut bytes);
+    let (bytes, hb) = drop_caches(bytes, hb);
     Ok((
         bytes,
         hb,
@@ -796,6 +796,87 @@ pub fn clear_geometry_key(data: &mut [u8]) -> bool {
         data[i] &= !m;
     }
     true
+}
+
+/// MIST2's first value, a tag Civil 3D checks (S151: changing it is
+/// "eWrongObjectType").
+pub const RESAVE_FIELD_TAG: u32 = 0x0D00_D773;
+/// Format marker at section-2 bit 115 (plain form) without MIST2.
+pub const MARKER_WITHOUT_RESAVE_FIELD: u32 = 0x1148;
+/// The same marker with MIST2 present.
+pub const MARKER_WITH_RESAVE_FIELD: u32 = 0x1188;
+
+/// Where MIST2 (`BL 0x0D00D773, BL n`, 44 bits) starts, if present:
+/// right after MIST1, or 98 bits later in the Alignment Properties form.
+pub fn resave_field_bit(data: &[u8]) -> Option<usize> {
+    let key = geometry_key_bit(data)?;
+    [0usize, 98]
+        .iter()
+        .map(|o| key + GEOMETRY_KEY_BITS + o)
+        .find(|&q| {
+            raw::get_bit(data, q) == 0
+                && raw::get_bit(data, q + 1) == 0
+                && raw::read_bl(data, q).map(|x| x.0 as u32) == Some(RESAVE_FIELD_TAG)
+        })
+}
+
+/// Remove MIST2, the field Civil 3D adds when it re-saves an alignment,
+/// and set the format marker back to `0x1148` (D-047). Civil 3D accepts
+/// the result and adds the field again on its next save (S155 → S157).
+///
+/// Only the plain form is handled, where the marker is the full BL at
+/// section-2 bit 115 and reads `0x1188`; a mismatched marker is rejected
+/// by Civil 3D (S154). The Alignment Properties form has no known marker,
+/// so its MIST2 is left in place (`None`). `None` also when there is no
+/// MIST2. Returns the new bytes and handle-stream size.
+pub fn remove_resave_field(data: &[u8], handle_bits: usize) -> Option<(Vec<u8>, usize)> {
+    let at = resave_field_bit(data)?;
+    let s2 = crate::aecc_entity::entity_common(data)?.start_bit;
+    let m = s2 + 115;
+    if raw::get_bit(data, m) != 0
+        || raw::get_bit(data, m + 1) != 0
+        || raw::read_bl(data, m).map(|x| x.0 as u32) != Some(MARKER_WITH_RESAVE_FIELD)
+    {
+        return None;
+    }
+    let (_, second) = raw::read_bl(data, at)?;
+    let (_, end) = raw::read_bl(data, second)?;
+    let mut src = data.to_vec();
+    for (i, b) in MARKER_WITHOUT_RESAVE_FIELD.to_le_bytes().iter().enumerate() {
+        raw::set_byte(&mut src, m + 2 + 8 * i, *b);
+    }
+    let total = raw::bit_len(data);
+    let data_end = total - handle_bits;
+    let mut w = Bits::default();
+    w.copy(&src, 0, at);
+    w.copy(&src, end, data_end);
+    let new_data_end = w.len();
+    w.copy(&src, data_end, total);
+    let bytes = w.into_bytes();
+    let hb = bytes.len() * 8 - new_data_end;
+    Some((bytes, hb))
+}
+
+/// Drop both re-save caches from a record civil3drust writes: zero MIST1
+/// (D-046) and remove MIST2 where that is known to be safe (D-047).
+pub fn drop_caches(data: Vec<u8>, handle_bits: usize) -> (Vec<u8>, usize) {
+    let (mut data, hb) = remove_resave_field(&data, handle_bits).unwrap_or((data, handle_bits));
+    clear_geometry_key(&mut data);
+    (data, hb)
+}
+
+/// [`drop_caches`] for the alignment `handle` in `doc`, for callers that
+/// edited the record in place (in-place edits cannot shorten it). Returns
+/// false if the record is not there.
+pub fn drop_record_caches(doc: &mut acadrust::CadDocument, handle: u64) -> bool {
+    let Some(rec) = raw::records(doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == handle)
+    else {
+        return false;
+    };
+    let (data, hb) = drop_caches(rec.data, rec.handle_bits);
+    raw::set_record(doc, handle, data, hb)
 }
 
 /// Implied PI display "By change in alignment direction" (MIST6, S122).

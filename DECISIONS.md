@@ -855,3 +855,24 @@ length.
 
 **Alternatives.** Keep copying: a wrong value with no known effect, but
 misleading. Compute it: the formula is unknown.
+
+## D-047: MIST2 is removed, never copied or added
+
+**Context.** MIST2 (`BL 0x0D00D773, BL n`) is added by Civil 3D when it
+re-saves an alignment, announced by the format marker at section-2 bit
+115 (`0x1148` without, `0x1188` with). A mismatch is rejected (S154); a
+record without both is accepted and Civil 3D restores them on save (S155,
+S157). civil3drust copied the field from template records.
+
+**Decision.** Like MIST1 (D-046), it is treated as a cache: never copied
+into a new alignment, never added, and removed — with the marker set back
+to `0x1148` — whenever civil3drust creates an alignment or writes its
+geometry (`create_alignment`, `set_geometry`, element edits; the
+`set_length`, `set_radius` and `set_pis` tools through
+`drop_record_caches`, since in-place edits cannot shorten a record). The
+Alignment Properties form has no known marker, so its MIST2 is left in
+place until S158 shows whether plain removal is accepted.
+
+**Alternatives.** Keep copying it: a value from another alignment, with a
+marker that must stay consistent. Add it ourselves: Civil 3D does that on
+save.

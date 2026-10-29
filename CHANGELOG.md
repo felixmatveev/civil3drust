@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- MIST2 (the re-save field) is removed with its format marker set back
+  to `0x1148` instead of being copied, when civil3drust creates an
+  alignment or writes its geometry (D-047): `aecc_build::
+  remove_resave_field`, `drop_caches`, `drop_record_caches`; the
+  `set_length`, `set_radius` and `set_pis` tools apply it. Not yet for the
+  Alignment Properties form (test S158). MIST2 marked partially solved.
 - README rewritten around the current alignment status (read/write
   table, unexplained fields, milestones); open questions refreshed.
 - Open questions moved to `docs/mysteries.md` as MIST1–MIST14.

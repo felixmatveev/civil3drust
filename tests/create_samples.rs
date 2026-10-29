@@ -902,3 +902,60 @@ fn geometry_key_located_and_zeroed() {
     let at = geometry_key_bit(&a.data).unwrap();
     assert!((at..at + GEOMETRY_KEY_BITS).all(|b| raw::get_bit(&a.data, b) == 0));
 }
+
+/// MIST2 (the re-save field) is removed with its format marker set back,
+/// giving exactly the record Civil 3D accepted in S155; the Alignment
+/// Properties form is left alone; created alignments never carry a
+/// template's MIST2 (D-047).
+#[test]
+fn resave_field_removed_not_copied() {
+    use civil3drust::aecc_build::{
+        remove_resave_field, resave_field_bit, MARKER_WITHOUT_RESAVE_FIELD,
+    };
+    let rec = |f: &str, h: u64| {
+        let o = raw::open(f).unwrap();
+        raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap()
+    };
+    let marker = |d: &[u8]| {
+        let s2 = civil3drust::aecc_entity::entity_common(d)
+            .unwrap()
+            .start_bit;
+        raw::read_bl(d, s2 + 115).unwrap().0 as u32
+    };
+    let s131 = rec("samples/S131_S125_civ3d_resaved.dwg", 0xF9E);
+    assert!(resave_field_bit(&s131.data).is_some());
+    let (d, hb) = remove_resave_field(&s131.data, s131.handle_bits).unwrap();
+    let s155 = rec("samples/S155_S131_mist2_removed_marker_1148.dwg", 0xF9E);
+    assert_eq!((d.clone(), hb), (s155.data.clone(), s155.handle_bits));
+    assert_eq!(marker(&d), MARKER_WITHOUT_RESAVE_FIELD);
+    assert!(resave_field_bit(&d).is_none());
+    // Properties form: no known marker, left in place.
+    let s144 = rec("samples/S144_S143_renamed.dwg", 0xF9E);
+    assert!(resave_field_bit(&s144.data).is_some());
+    assert!(remove_resave_field(&s144.data, s144.handle_bits).is_none());
+
+    // Created from a re-saved template (S131's F9E): no MIST2, marker 0x1148.
+    let donor = raw::open("samples/S131_S125_civ3d_resaved.dwg").unwrap();
+    let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+    let pis = [Point2::new(0.0, -100.0), Point2::new(200.0, -100.0)];
+    let c = create_alignment(
+        &mut t.doc,
+        &donor.doc,
+        "R",
+        &pis,
+        &[],
+        7,
+        CreateOptions::default(),
+    )
+    .unwrap();
+    let a = raw::records(&t.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == c.alignment)
+        .unwrap();
+    assert!(resave_field_bit(&a.data).is_none());
+    assert_eq!(marker(&a.data), MARKER_WITHOUT_RESAVE_FIELD);
+    assert_eq!(decode_elements(&a).unwrap().elements.len(), 1);
+}

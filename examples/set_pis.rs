@@ -88,6 +88,8 @@ fn main() {
         Ok(false) => println!("companion graph left as it was (site member or unknown form)"),
         Err(e) => fail(e),
     }
+    // Re-save caches are dropped, never carried over (D-046, D-047).
+    civil3drust::aecc_build::drop_record_caches(&mut opened.doc, before.handle);
     acadrust::DwgWriter::write_to_file(&a[2], &opened.doc).unwrap_or_else(|e| fail(e));
     let reread =
         raw::open(&a[2]).unwrap_or_else(|e| fail(format!("written file does not read back: {e}")));

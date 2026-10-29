@@ -56,7 +56,7 @@ other records shift by the sizes of the variable parts.
 | 231–396 | almost all zero bits | constant |
 | 397 | flag | 1 in S5–S12, 0 in S2 and S24–S55 (per template / session); untested |
 | 398–412 | (includes the start station BD at −22 from the end) | constant at start station 0 |
-| +44 bits | an extra field after the varying one (S4, S8, S11, S12, S48, S51) | **optional** — absent in S45/S50 (accepted) |
+| +44 bits | MIST2 `BL 0x0D00D773, BL n` after MIST1 (98 bits later in the Properties form) | **optional**, added by Civil 3D re-saves; must match the format marker at bit 115 (`0x1148` none, `0x1188` present); civil3drust removes it (D-047) |
 
 The 2-bit flag Civil 3D changes on re-save (open question 9) lies in this
 section in records that carry the extra field.

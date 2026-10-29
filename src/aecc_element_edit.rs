@@ -397,10 +397,9 @@ fn finish(
         let total = raw::bit_len(&d);
         crate::handle_refs::parse(&d, total - hb, total, old.handle).len()
     };
-    let (mut data, handle_bits) =
-        crate::handle_refs::keep_refs(&r.data, r.handle_bits, r.handle, keep)
-            .ok_or_else(|| err("handle stream lost references"))?;
-    crate::aecc_build::clear_geometry_key(&mut data);
+    let (data, handle_bits) = crate::handle_refs::keep_refs(&r.data, r.handle_bits, r.handle, keep)
+        .ok_or_else(|| err("handle stream lost references"))?;
+    let (data, handle_bits) = crate::aecc_build::drop_caches(data, handle_bits);
     Ok((
         data,
         handle_bits,

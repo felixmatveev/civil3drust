@@ -2219,3 +2219,17 @@ changes 28 of its bits and keeps 38 (bytes 1–4 and the low 6 bits of byte
 treats it as a cache: it is not decoded, and every created or edited
 alignment gets zeros (D-046, `aecc_build::geometry_key_bit`). Details and
 the full table: `mysteries.md`, MIST1.
+
+
+## MIST2: re-save field (partially solved, S151–S157)
+
+`BL 0x0D00D773, BL n` (44 bits) right after MIST1, or 98 bits after it in
+the Alignment Properties form. Civil 3D adds it on the first re-save and
+switches the full BL at section-2 bit 115 from `0x1148` to `0x1188` in the
+same save. The tag is checked (zeroing it is "eWrongObjectType", S151);
+n is 2 for centerlines and 1 for Miscellaneous alignments and is kept as
+stored (S156). Removing the field while the marker says `0x1188` is
+rejected (S154); removing both is accepted (S155), and Civil 3D restores
+them on its next save (S157). civil3drust removes the field and sets the
+marker back when it creates an alignment or writes geometry (D-047,
+`aecc_build::remove_resave_field`, `drop_caches`).

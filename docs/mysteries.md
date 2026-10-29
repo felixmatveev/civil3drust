@@ -85,7 +85,15 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   value from the extents or the end points). The formula is still
   unknown.
 
-## MIST2 — the optional +44-bit field after MIST1
+## MIST2 — the optional +44-bit field after MIST1 — **PARTIALLY SOLVED (S151–S157)**
+
+- **Status:** a field Civil 3D adds when it re-saves an alignment and
+  restores on save when missing. civil3drust never copies or adds it: it
+  removes it together with the format marker (`0x1188` → `0x1148`) when
+  creating an alignment or writing its geometry (D-047). Not done yet for
+  the Alignment Properties form, whose marker is unknown — S158 tests
+  plain removal there. The meaning of `0x0D00D773` and of the second
+  value is not decoded.
 
 - **Where:** right after MIST1 when present (section 2 grows 413 → 457).
 - **Seen:** added by Civil 3D re-saves (S4, S8, S11, S12, S48, S51) and to
