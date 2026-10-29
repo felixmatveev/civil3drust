@@ -102,6 +102,10 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   place in a 2020 drawing (`AeccLand110` classes, checked locally).
 - **Hypothesis:** a cache tied to MIST1. Not tied to proxy graphics
   (S140 = S141 after the graphics).
+- **Experiment (pending, owner):** S151–S154 from S131 with
+  `exp_mist2`: first value 0, second value 0, both 0, field removed. For
+  each: does Civil 3D open it, what does AUDIT say, and what does a
+  re-save write back?
 
 ## MIST3 — the 31-bit section-2 field
 

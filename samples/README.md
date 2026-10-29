@@ -162,6 +162,10 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S148 | `S148_S146_rotated_90.dwg` | Civil 3D 2024 | S146 rotated 90° counter-clockwise about its start point (0, 100) (owner), saved. | 473853 | `06c287cbff3806a5` |
 | S149 | `S149_S148_radius_218.dwg` | Civil 3D 2024 | S148 with the curve radius changed 50 → 218.0166 (PIs kept) (owner), saved. | 472900 | `3da259c202813b59` |
 | S150 | `S150_S144_rotated_90_in_place.dwg` | Civil 3D 2024 | S144 rotated 90° counter-clockwise about its start point (0, 0) (owner), saved. | 472805 | `a7fab8c8a33d09b7` |
+| S151 | `S151_S131_mist2_zero_first.dwg` | civil3drust | MIST2 test: S131 with F9E's first MIST2 value `0x0D00D773` set to 0 (`exp_mist2 … zero-first`). | 450310 | `f992f27bc021a29a` |
+| S152 | `S152_S131_mist2_zero_second.dwg` | civil3drust | MIST2 test: S131 with the second MIST2 value 2 set to 0 (`zero-second`). | 450310 | `69df71a38cf77d53` |
+| S153 | `S153_S131_mist2_zero_both.dwg` | civil3drust | MIST2 test: S131 with both MIST2 values set to 0 (`zero-both`). | 450310 | `eb4ccc8eaceba9e1` |
+| S154 | `S154_S131_mist2_removed.dwg` | civil3drust | MIST2 test: S131 with the 44-bit MIST2 field removed; section 2 back to 413 bits (`remove`). | 450179 | `9f5fe313736329c2` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

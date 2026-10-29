@@ -48,7 +48,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ### Changed
 - MIST1 marked partially solved: a geometry cache, ignored and zeroed.
 - MIST2 read as `BL 0x0D00D773, BL n`: constant first value; n is 2 for
-  centerlines and 1 for Miscellaneous alignments.
+  centerlines and 1 for Miscellaneous alignments. Experiment
+  `examples/exp_mist2.rs`, samples S151–S154 (zeroed and removed).
 - MIST1 (the 66-bit geometry key) is zeroed instead of copied when
   civil3drust creates an alignment or writes its geometry (D-046);
   `aecc_build::geometry_key_bit`, `clear_geometry_key`.
