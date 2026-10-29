@@ -22,6 +22,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   header is also unchanged in a 2020 drawing. Gaps noted from that drawing
   (alignments that do not decode, type field not found).
 - First acadrust 0.6.7-written drawing confirmed in Civil 3D (S125 → S131).
+- MIST1 is content-derived (S142/S143: same drawing saved minutes apart,
+  identical records; unchanged since S24). MIST5 changes with MIST2's
+  appearance on the first re-save (S24 → S131).
 - MIST1 holds none of the values Civil 3D lists for S24's alignment;
   derived values that are never stored are recorded.
 - Samples S140/S141 (S120 saved with PROXYGRAPHICS 1 and 0): MIST1/MIST2

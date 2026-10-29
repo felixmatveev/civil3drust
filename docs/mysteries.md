@@ -35,8 +35,13 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   only later (element records, station cache, speed table). Two 100-ft
   single tangents in different drawings (S44 FB8, S123 8F01) share most
   of the field's bytes, so a hash or checksum of the geometry is likely.
-- **Next test:** save one drawing twice with no change — same value
-  (content-derived) or a new one (time or ID)?
+- **Content-derived, not time:** S142 and S143, the same drawing saved
+  minutes apart, have byte-identical F9E records, and MIST1 is the same
+  as in S24, S131 and S139: Civil 3D keeps it across re-saves while the
+  geometry is unchanged. S57's "new value on every save" was Civil 3D
+  recomputing records civil3drust had generated. So it is a deterministic
+  value computed from the alignment — most likely a hash or checksum —
+  and not a timestamp or random ID.
 - **civil3drust today:** copies the template's value.
 
 ## MIST2 — the optional +44-bit field after MIST1
@@ -68,7 +73,9 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 
 - **Where:** section 2 (S5–S8 numbering: bit 2677).
 - **Seen:** Civil 3D changed it when re-saving the generated S7 as S8.
-- **Hypothesis:** part of MIST2's appearance (re-save marker).
+- **Hypothesis:** part of MIST2's appearance (re-save marker). Seen again
+  in S24 → S131: the first Civil 3D re-save changes this flag and adds
+  MIST2 in the same save; later re-saves keep both (S139, S142, S143).
 
 ## MIST6 — the post-type value `BL 2, 2, 2, 0, x` — **SOLVED (S122)**
 
