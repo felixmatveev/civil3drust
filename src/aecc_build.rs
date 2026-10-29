@@ -652,18 +652,26 @@ pub fn set_identity(
 }
 
 /// Bit offsets of the two copies of the identity GUID in `data` (laid out
-/// like `rec`): copy 1 right after the element records, copy 2 found by
-/// value in the post-cache block.
+/// like `rec`): copy 1 right after the element records, copy 2 the
+/// design-speed table entry holding the same value. The entry is found
+/// through the table, not by searching for the bytes: a zero GUID (S123)
+/// matches any run of zero bits.
 fn identity_copies(rec: &RawRecord, data: &[u8]) -> Result<(usize, usize), BuildError> {
-    let decoded = decode_elements(rec).map_err(|e| layout(e.to_string()))?;
+    let r = RawRecord {
+        data: data.to_vec(),
+        ..rec.clone()
+    };
+    let decoded = decode_elements(&r).map_err(|e| layout(e.to_string()))?;
     let end = decoded
         .records_end_bit()
         .ok_or_else(|| layout("no elements"))?;
     let a = end + IDENTITY_AFTER_ELEMENTS;
-    let old: Vec<u8> = (0..16).map(|i| raw::get_byte(data, a + 8 * i)).collect();
-    let n = raw::bit_len(data);
-    let b = (a + 128..n.saturating_sub(128))
-        .find(|&b| (0..16).all(|i| raw::get_byte(data, b + 8 * i) == old[i]))
+    let read = |b: usize| -> Vec<u8> { (0..16).map(|i| raw::get_byte(data, b + 8 * i)).collect() };
+    let old = read(a);
+    let b = crate::aecc_design_speed::entry_guid_bits(&r)
+        .map_err(|e| layout(e.to_string()))?
+        .into_iter()
+        .find(|&b| read(b) == old)
         .ok_or_else(|| layout("second copy of the identity value not found"))?;
     Ok((a, b))
 }

@@ -28,7 +28,7 @@ other records shift by the sizes of the variable parts.
 
 | bits (FF3) | region | status | needed for a new alignment |
 |---|---|---|---|
-| 0–17 | object type (class number, `10` + RS) | per drawing (positional class table) | yes — the target's class number; the class entry is added when missing (S65/S66) |
+| 0–17 | object type (class number, `10` + RS; `01` + byte, 10 bits, for classes 500–751, e.g. the companion in S123/S124) | per drawing (positional class table) | yes — the target's class number; the class entry is added when missing (S65/S66) |
 | 18–41 | own handle (`0x0n` + n bytes) | decoded | yes — `handle_refs::set_own_handle` |
 | 42–43 | EED size `10` (no extended data) | constant | yes |
 | 44 | has-graphics flag | decoded | yes (0 = no graphics, accepted: S57) |

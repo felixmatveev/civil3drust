@@ -2124,7 +2124,7 @@ of one element (D-042).
 
 ## Open questions
 
-Tracked as MIST1 … MIST14 in [`mysteries.md`](mysteries.md), each with
+Tracked as MIST1 … MIST15 in [`mysteries.md`](mysteries.md), each with
 its location, the samples that show it and a test to settle it.
 
 Answered since the first list: the start station (S9), multi-element

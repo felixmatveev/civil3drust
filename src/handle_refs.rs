@@ -212,19 +212,38 @@ pub fn null_refs(data: &[u8], handle_bits: usize, own: u64, null_at: &[usize]) -
     (out, hb)
 }
 
-/// Bit offset of the object's own handle (`CODE 0 | COUNTER` byte + bytes)
-/// in every AECC record studied (after the 2-byte object type).
+/// Bit offset of the own handle when the object type is in the two-byte
+/// form (`10` + RS, class numbers ≥ 752). Use [`own_handle_bit`]: class
+/// numbers 500–751 use the one-byte form and put the handle at bit 10
+/// (`AECC_FEATURE_STYLE` in S123/S124).
 pub const OWN_HANDLE_BIT: usize = 18;
 
-/// The object's own handle stored at [`OWN_HANDLE_BIT`].
+/// Bits taken by the object type (BOT) at the start of `data`: `00`/`01`
+/// + one byte, or `10` + RS.
+pub fn object_type_bits(data: &[u8]) -> Option<usize> {
+    match (raw::get_bit(data, 0), raw::get_bit(data, 1)) {
+        (0, _) => Some(10),
+        (1, 0) => Some(18),
+        _ => None,
+    }
+}
+
+/// Bit offset of the object's own handle (`CODE 0 | COUNTER` byte +
+/// bytes), right after the object type.
+pub fn own_handle_bit(data: &[u8]) -> Option<usize> {
+    object_type_bits(data)
+}
+
+/// The object's own handle.
 pub fn own_handle(data: &[u8]) -> Option<u64> {
-    let form = raw::get_byte(data, OWN_HANDLE_BIT);
+    let at = own_handle_bit(data)?;
+    let form = raw::get_byte(data, at);
     if form >> 4 != 0 || form & 0x0F > 8 {
         return None;
     }
     let n = (form & 0x0F) as usize;
     Some((0..n).fold(0u64, |v, i| {
-        v << 8 | raw::get_byte(data, OWN_HANDLE_BIT + 8 + 8 * i) as u64
+        v << 8 | raw::get_byte(data, at + 8 + 8 * i) as u64
     }))
 }
 
@@ -243,14 +262,15 @@ fn push_byte(out: &mut Vec<u8>, v: u8) {
 /// Rewrite the object's own handle (minimal byte count; the record size
 /// can change). Returns the new bytes and handle-stream size.
 pub fn set_own_handle(data: &[u8], handle_bits: usize, new: u64) -> Option<(Vec<u8>, usize)> {
-    let form = raw::get_byte(data, OWN_HANDLE_BIT);
+    let at = own_handle_bit(data)?;
+    let form = raw::get_byte(data, at);
     if form >> 4 != 0 {
         return None;
     }
-    let old_end = OWN_HANDLE_BIT + 8 + 8 * (form & 0x0F) as usize;
+    let old_end = at + 8 + 8 * (form & 0x0F) as usize;
     let total = raw::bit_len(data);
     let data_end = total - handle_bits;
-    let mut bits: Vec<u8> = (0..OWN_HANDLE_BIT).map(|b| raw::get_bit(data, b)).collect();
+    let mut bits: Vec<u8> = (0..at).map(|b| raw::get_bit(data, b)).collect();
     let n = if new == 0 {
         0
     } else {
@@ -410,8 +430,10 @@ mod tests {
 
     #[test]
     fn rewrite_and_own_handle() {
-        // header: 18 bits, own handle 02 0F B8, 6 data bits, refs C.2 03F7, 4.2 0FB8, 5.0
+        // header: object type `10` + RS (18 bits), own handle 02 0F B8, 6
+        // data bits, refs C.2 03F7, 4.2 0FB8, 5.0
         let mut bits = vec![0u8; 18];
+        bits[0] = 1;
         for b in [0x02u8, 0x0F, 0xB8] {
             bits.extend((0..8).rev().map(|k| (b >> k) & 1));
         }

@@ -31,6 +31,9 @@ samples and steps that produced it.
   the `fingerprint` comparison in `docs/acadrust-0.6.7.md`.
 - 0.6.7 reads the `PRESSUREPARTERRORBLOCK` `3DSOLID` that 0.6.5 dropped;
   no 0.6.7-written drawing has been opened in Civil 3D yet.
+- S123/S124 are Civil 3D 2027 drawings (one-byte object types, zero
+  speed GUIDs); keep `tests/civil3d_2027.rs` passing
+  (`docs/civil3d-2027.md`).
 - LandXML export is **low priority** for now.
 - Current focus: **creating alignments** in existing Civil 3D drawings
   (handle stream, style/label-set/site references, registration, adding

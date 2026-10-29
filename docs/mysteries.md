@@ -130,6 +130,10 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Where:** after the cache in S57's X5 alignment.
 - **Seen:** a record with a zero speed-interval GUID made Civil 3D add a
   617-bit block and 2 strings that no other record has.
+- **Also seen:** Civil 3D 2027 itself writes a zero GUID: S123 and S124
+  each have one speed (0:60, 0:100) with no interval block and an all-zero
+  GUID in the table entry. civil3drust gives such entries a fresh GUID
+  when it rewrites the speeds (D-045).
 
 ## MIST14 — the half-circle rule
 
@@ -137,6 +141,20 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   is drawn as exactly 180° ending where the next line leaves it (S118);
   its start is not stored. One sample only.
 - **Test:** a second such curve drawn with a different sweep.
+
+## MIST15 — the flag 16 bits before the section-2 end
+
+- **Where:** section 2, the bit 16 before its end, between the
+  design-criteria flags (19 criteria-based design, 18 criteria file,
+  17 check set, 14 check for tangency; `aecc_criteria`).
+- **Seen:** 1 in the S5–S23 drawings, S10, S89 and the Civil 3D 2027
+  drawings S123/S124; 0 in every S24-based drawing (247 records). Exactly
+  the drawings whose implied PI display (MIST6) is 1, so it is probably
+  another per-alignment option taken from the drawing's defaults.
+- **Test:** compare the Alignment Properties tabs (Design Criteria, Point
+  of Intersection, Constraint Editing) of S11's and S24's alignments for a
+  setting that differs; then change it on one alignment and save.
+- **civil3drust today:** copies the template's value.
 
 ## Not sampled yet (not mysteries, just gaps)
 

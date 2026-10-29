@@ -237,16 +237,45 @@ pub fn ensure_class(
     Ok(n)
 }
 
-/// Write the object type (class number) at the start of a record: the
-/// two-byte form `10` + RS, which every AECC record in the samples uses.
-pub fn set_object_type(data: &mut [u8], class_number: i16) -> Result<(), CreateError> {
-    if (raw::get_bit(data, 0), raw::get_bit(data, 1)) != (1, 0) {
-        return Err(lay("object type is not in the two-byte form"));
-    }
+/// Write the object type (class number) at the start of a record in the
+/// form AutoCAD uses (BOT): `00` + byte for 0–255, `01` + (n − 0x1F0) for
+/// 496–751, `10` + RS otherwise. The template record may use the other
+/// form (S123's companion class 736 vs S44's 1056), so the record can grow
+/// or shrink by 8 bits. Returns the new bytes and handle-stream size.
+pub fn set_object_type(
+    data: &[u8],
+    handle_bits: usize,
+    class_number: i16,
+) -> Result<(Vec<u8>, usize), CreateError> {
+    let old = crate::handle_refs::object_type_bits(data)
+        .ok_or_else(|| lay("object type form 11 is not valid"))?;
     let v = class_number as u16;
-    raw::set_byte(data, 2, (v & 0xFF) as u8);
-    raw::set_byte(data, 10, (v >> 8) as u8);
-    Ok(())
+    let mut w = crate::aecc_build::Bits::default();
+    match v {
+        0..=0xFF => {
+            w.bit(0);
+            w.bit(0);
+            w.byte(v as u8);
+        }
+        0x1F0..=0x2EF => {
+            w.bit(0);
+            w.bit(1);
+            w.byte((v - 0x1F0) as u8);
+        }
+        _ => {
+            w.bit(1);
+            w.bit(0);
+            w.byte((v & 0xFF) as u8);
+            w.byte((v >> 8) as u8);
+        }
+    }
+    let total = raw::bit_len(data);
+    let data_end = total - handle_bits;
+    let new_data_end = data_end - old + w.len();
+    w.copy(data, old, total);
+    let bytes = w.into_bytes();
+    let hb = bytes.len() * 8 - new_data_end;
+    Ok((bytes, hb))
 }
 
 fn is_layer(doc: &CadDocument, h: u64) -> bool {
@@ -466,6 +495,7 @@ pub fn create_alignment(
     // --- Insert into the target. ---
     if opts.parcel_entry {
         let comp_class = ensure_class(target, donor, COMPANION)?;
+        let (comp, comp_hb) = set_object_type(&comp, comp_hb, comp_class)?;
         let (reg, reg_hb) = t_reg
             .with_entry(
                 &t_reg_rec,
@@ -498,11 +528,7 @@ pub fn create_alignment(
                 handle: Handle::new(comp_h),
                 owner: Handle::new(t_reg.handle),
                 raw_dxf_codes,
-                raw_dwg_data: Some({
-                    let mut c = comp;
-                    set_object_type(&mut c, comp_class)?;
-                    c
-                }),
+                raw_dwg_data: Some(comp),
                 raw_dwg_handle_bits: comp_hb as i64,
                 raw_dwg_version,
             },
@@ -527,9 +553,9 @@ pub fn create_alignment(
         entities.push((l.handle, label_h, data, hb, LABEL_GROUP));
     }
     let wrote_label = entities.len() == 2;
-    for (src, new_h, mut data, hb, class) in entities {
+    for (src, new_h, data, hb, class) in entities {
         let n = ensure_class(target, donor, class)?;
-        set_object_type(&mut data, n)?;
+        let (data, hb) = set_object_type(&data, hb, n)?;
         let mut e = donor
             .entities()
             .find(|e| e.common().handle.value() == src)

@@ -72,11 +72,11 @@ fn main() {
     if let Some(st) = style {
         targets[5] = st;
     }
-    let (mut d, hb) =
+    let (d, hb) =
         handle_refs::rewrite_refs(&d, hb, new_h, &targets).unwrap_or_else(|| fail("refs"));
     let class =
         ensure_class(&mut plain.doc, &donor.doc, "AECC_ALIGNMENT").unwrap_or_else(|e| fail(e));
-    set_object_type(&mut d, class).unwrap_or_else(|e| fail(e));
+    let (d, hb) = set_object_type(&d, hb, class).unwrap_or_else(|e| fail(e));
     let mut e = base
         .doc
         .entities()
@@ -153,11 +153,11 @@ fn copy_style(base: &raw::Opened, plain: &mut raw::Opened, h: u64) -> u64 {
         .collect();
     let (d, hb) = handle_refs::set_own_handle(&rec.data, rec.handle_bits, new_h)
         .unwrap_or_else(|| fail("style own handle"));
-    let (mut d, hb) =
+    let (d, hb) =
         handle_refs::rewrite_refs(&d, hb, new_h, &targets).unwrap_or_else(|| fail("style refs"));
     let class =
         ensure_class(&mut plain.doc, &base.doc, "AECC_ALIGNMENT_STYLE").unwrap_or_else(|e| fail(e));
-    set_object_type(&mut d, class).unwrap_or_else(|e| fail(e));
+    let (d, hb) = set_object_type(&d, hb, class).unwrap_or_else(|e| fail(e));
     let obj = base
         .doc
         .objects

@@ -14,7 +14,21 @@ versions follow [Semantic Versioning](https://semver.org/).
 - MIST7: drawing units and Civil 3D release ruled out (S123 feet, S124
   meters, both Civil 3D 2027: same element header).
 
+### Fixed
+- Records whose class number is 500–751 store the object type in one byte
+  (`01` + byte): own handles are now read and written after either form,
+  and `set_object_type` writes the form for the number (it now returns
+  new bytes). Using a Civil 3D 2027 drawing (S123/S124) as the donor
+  failed before.
+- A design-speed entry with an all-zero GUID (Civil 3D 2027) no longer
+  corrupts the record when speeds are rewritten: the identity's second
+  copy is found through the table, and zero GUIDs get fresh ones.
+
 ### Added
+- Samples S123/S124 (Civil 3D 2027, feet and meters), `docs/civil3d-2027.md`,
+  `tests/civil3d_2027.rs`, `handle_refs::object_type_bits`,
+  `aecc_design_speed::entry_guid_bits` and `ZERO_GUID`; MIST15 in
+  `docs/mysteries.md`.
 - `aecc_build::pi_display` / `set_pi_display` and `PI_DISPLAY_*`: the
   implied point-of-intersection display option (MIST6). Sample S122
   (three alignments set to 1, 2, 3) and `tests/create_samples.rs`

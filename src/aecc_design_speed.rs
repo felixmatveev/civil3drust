@@ -120,6 +120,28 @@ pub fn empty_alignment_table(rec: &RawRecord) -> Option<(Vec<DesignSpeed>, usize
     })
 }
 
+/// An all-zero GUID.
+pub const ZERO_GUID: [u8; 16] = [0; 16];
+
+/// Bit offsets of each table entry's GUID, in stored order.
+pub fn entry_guid_bits(rec: &RawRecord) -> Result<Vec<usize>, SpeedError> {
+    let (start, _, entries) = locate(rec)?;
+    let data = &rec.data;
+    let bad = || err("design-speed table not readable");
+    let (_, q) = raw::read_bl(data, start).ok_or_else(bad)?;
+    let (_, q) = raw::read_bl(data, q).ok_or_else(bad)?;
+    let (_, mut q) = raw::read_bl(data, q).ok_or_else(bad)?;
+    let mut out = Vec::with_capacity(entries.len());
+    for _ in &entries {
+        let (_, p) = raw::read_bl(data, q).ok_or_else(bad)?;
+        let (_, p) = raw::read_bd(data, p).ok_or_else(bad)?;
+        let (_, p) = raw::read_bd(data, p).ok_or_else(bad)?;
+        out.push(p);
+        q = p + 128;
+    }
+    Ok(out)
+}
+
 /// The interval block of an alignment without design speeds: BL 0 ×4.
 const EMPTY_INTERVALS: [u8; 8] = [1, 0, 1, 0, 1, 0, 1, 0];
 
@@ -167,12 +189,15 @@ pub fn set_design_speeds(
     let old_intervals = old_interval_count(data, end)?;
     // GUIDs: old ones first (the first interval's, then the rest in table
     // order), then fresh ones.
+    // A zero GUID (S123, Civil 3D 2027: a speed with no interval) is not
+    // reused: written into an interval it would make the identity
+    // ambiguous, and Civil 3D saves zero-GUID records differently (MIST13).
     let mut ids: Vec<[u8; 16]> = Vec::new();
-    if old_intervals > 0 {
+    if old_intervals > 0 && first != ZERO_GUID {
         ids.push(first);
     }
     for e in &old {
-        if !ids.contains(&e.id) {
+        if e.id != ZERO_GUID && !ids.contains(&e.id) {
             ids.push(e.id);
         }
     }

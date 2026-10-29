@@ -807,3 +807,33 @@ option is added.
 
 **Alternatives.** Keep copying it: the option would silently follow
 whatever template record was used.
+
+## D-044: Object types are written in AutoCAD's form for the number
+
+**Context.** Every AECC record in the 2024 samples used the two-byte
+object type (`10` + RS, class numbers ≥ 752). In S123/S124 (Civil 3D
+2027) the companion class is 736/738 and uses `01` + byte. Templates and
+targets can disagree.
+
+**Decision.** The own handle is located after whichever form a record
+uses (`object_type_bits`), and `set_object_type` writes `00` + byte for
+0–255, `01` + (n − 0x1F0) for 496–751 and `10` + RS otherwise, shifting
+the rest of the record by 8 bits when the form changes.
+
+**Alternatives.** Always write `10` + RS: readable by acadrust, but not
+the form AutoCAD writes for those numbers, so unverified in Civil 3D.
+
+## D-045: Zero speed GUIDs are replaced when speeds are rewritten
+
+**Context.** S123/S124 store a design speed with an all-zero GUID and no
+interval. Reusing it would put a zero GUID in the new interval (the
+alignment's identity), which Civil 3D saves with an extra block (MIST13,
+S57 X5) and which cannot be located by value.
+
+**Decision.** `set_design_speeds` treats zero GUIDs as missing and writes
+fresh version-4 GUIDs; non-zero GUIDs are kept as before. The identity's
+second copy is found through the table structure.
+
+**Alternatives.** Keep the zero GUID and skip the identity update:
+matches the source file, but leaves the interval and table without a
+usable identity.
