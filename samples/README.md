@@ -158,6 +158,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S144 | `S144_S143_renamed.dwg` | Civil 3D 2024 | S143 with F9E renamed to `Alignment - (RENAMED)` (owner), saved. MIST1 unchanged; MIST4 added and section 2 grows 457 → 589 bits. | 473892 | `db18047adc9b5795` |
 | S145 | `S145_S144_last_tangent_longer.dwg` | Civil 3D 2024 | S144 with the last tangent lengthened 200 → 284.6951 (owner), saved. MIST1 entirely different. | 473446 | `dcd456102a5ec8e8` |
 | S146 | `S146_S144_moved_north_100.dwg` | Civil 3D 2024 | S144 moved 100 north, shape unchanged (owner), saved. MIST1 bytes 1–4 kept, bytes 0 and 5–7 changed. | 473857 | `109ab017562ad6ac` |
+| S147 | `S147_S146_moved_west_100.dwg` | Civil 3D 2024 | S146 moved 100 west (start (−100, 100)), shape unchanged (owner), saved. | 473021 | `925c85f92a6856d4` |
+| S148 | `S148_S146_rotated_90.dwg` | Civil 3D 2024 | S146 rotated 90° counter-clockwise about its start point (0, 100) (owner), saved. | 473853 | `06c287cbff3806a5` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

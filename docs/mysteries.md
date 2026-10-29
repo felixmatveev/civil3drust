@@ -51,14 +51,20 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   | S24, S143, S144 | — (S144 renamed) | `EE 1E 81 38 E6 21 CE 8B` |
   | S145 | last tangent 200 → 284.6951 | `A4 DD 51 64 A5 60 D7 B1` |
   | S146 | moved 100 north | `0A 1E 81 38 E6 A1 1E 06` |
+  | S147 | S146 moved 100 west | `32 1E 81 38 E6 61 6C 2E` |
+  | S148 | S146 rotated 90° about its start | `52 1E 81 38 E6 21 1C 6B` |
 
   A length change rewrites every byte; a pure move keeps bytes 1–4 and
   changes 0 and 5–7. The two 100-ft single tangents in different
   drawings and directions (S44 FB8, S123 8F01) also share exactly bytes
-  1–4 (`5C BE 8C E9`). So bytes 1–4 follow the shape and the outer bytes
-  the location — a packed or mixed value rather than a plain hash.
-- **Next tests:** move only east, then only north (do X and Y affect
-  different bytes?); rotate without moving.
+  1–4 (`5C BE 8C E9`).
+- **Split:** across S144–S148, 38 bits never change under moves or
+  rotation: bytes 1–4 and the low 6 bits of byte 5 (the 100-ft tangents
+  agree on these too, `0x43`/`0x03`). The other 28 bits — the 2 leading
+  bits, byte 0, the top 2 bits of byte 5 and bytes 6–7 — change with any
+  move or rotation. So MIST1 looks like a 38-bit shape value (invariant
+  under rigid motion) combined with a 28-bit placement value, not one
+  hash. The shape part is not the total length as a float.
 - **civil3drust today:** copies the template's value.
 
 ## MIST2 — the optional +44-bit field after MIST1
