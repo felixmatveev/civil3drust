@@ -42,6 +42,10 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   recomputing records civil3drust had generated. So it is a deterministic
   value computed from the alignment — most likely a hash or checksum —
   and not a timestamp or random ID.
+- **Not the name:** S144 (S143 renamed) keeps the same value, moved 34
+  bits later by the fields the rename added in front of it.
+- **Next tests:** move the alignment without changing its shape; change
+  one length.
 - **civil3drust today:** copies the template's value.
 
 ## MIST2 — the optional +44-bit field after MIST1
@@ -57,7 +61,8 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Where:** bits 300–330 of the 589-bit section-2 form (criteria
   samples, S79–S81).
 - **Seen:** varies between records with otherwise identical section 2;
-  probably a cache.
+  probably a cache. The 589-bit form is not specific to design criteria:
+  renaming an alignment (S144) also produced it.
 
 ## MIST4 — the +28-bit field after the class header
 
@@ -65,7 +70,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   32-bit value. Content `0000000100000000000000000100` in every case.
 - **Seen:** exactly in alignments edited in the Alignment Properties
   dialog or made with the layout tools (S9, S22, S59, S74/S78, S79–S88,
-  S89, S98–S100). Records without it are accepted.
+  S89, S98–S100, and a rename in S144). Records without it are accepted.
 - **Question:** what the two set bits mean (a "modified by UI" marker, a
   version of a sub-object?).
 

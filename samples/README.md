@@ -155,6 +155,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S141 | `S141_S120_civ3d_proxy_off.dwg` | Civil 3D 2024 | The same drawing saved with PROXYGRAPHICS 0 (owner). Every record differs from S140 only in its graphics (placeholders); everything after them is identical. | 478159 | `4ef161902cc900fa` |
 | S142 | `S142_S137_civ3d_save_a.dwg` | Civil 3D 2024 | S137 saved by the owner (MIST1 save-twice test, first save). F9E differs from S139 by an element-ID list (2, 3, 4) and a few bits near the end; MIST1 unchanged. | 476357 | `a52d8b3d147b7e8e` |
 | S143 | `S143_S137_civ3d_save_b.dwg` | Civil 3D 2024 | The same drawing saved again a few minutes later (owner). F9E is byte-identical to S142. | 474277 | `07e09051d6d941d3` |
+| S144 | `S144_S143_renamed.dwg` | Civil 3D 2024 | S143 with F9E renamed to `Alignment - (RENAMED)` (owner), saved. MIST1 unchanged; MIST4 added and section 2 grows 457 → 589 bits. | 473892 | `db18047adc9b5795` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8
