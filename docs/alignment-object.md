@@ -2121,25 +2121,8 @@ of one element (D-042).
 
 ## Open questions
 
-Updated after S119. Answered questions are recorded in their sections.
-
-1. **Section 2 fields:** the 66-bit cache (rewritten on every save,
-   computed from the geometry: S94 = S96; algorithm unknown), the
-   optional +44-bit field after it, the 31-bit field, the +28-bit field
-   (Alignment Properties dialog / layout tools), and the 2-bit flag Civil
-   3D changed when re-saving S7.
-2. **Post-type value** `BL 2, 2, 2, 0, x`: x = 1 or 3, per drawing.
-3. **Element header** `0x04020008` (same in every record), the arc flag
-   bit after it (set by some Civil 3D saves), the `−1` values in the
-   curve parameter block (p2, the n1 BDs), and the line-spiral group's
-   `BL 256`.
-4. **S89's curve speed interval**: third distance 84.63 instead of 35.72.
-5. **Topology**: vertex flags 2/10/50/178 and the a/b face IDs on
-   companion edges; site containers are not written (read-only, D-038).
-6. **Not sampled yet**: offset alignments (no element records, S1-style
-   imports), station equations (data seen in S9, not decoded), spiral
-   groups other than line-spiral (S120 → S121), a counter-example to the
-   half-circle rule for a centre curve with nothing before it (S118).
+Tracked as MIST1 … MIST14 in [`mysteries.md`](mysteries.md), each with
+its location, the samples that show it and a test to settle it.
 
 Answered since the first list: the start station (S9), multi-element
 layout (S5), the element kind prefixes (tangent 2, arc 4, group 10),

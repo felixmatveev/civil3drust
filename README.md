@@ -43,24 +43,12 @@ sample drawings (S1–S120) and the evidence for each finding are in
 
 ### Still unexplained
 
-None of these stop Civil 3D from opening our files; they are copied or
-recomputed.
-
-- **Section 2 caches:** the 66-bit field (rewritten by Civil 3D on every
-  save, so a cache of the geometry), the optional +44-bit field, a 31-bit
-  field, and the +28-bit field added by the Alignment Properties dialog.
-- **Post-type value** `BL 2, 2, 2, 0, 1|3`: follows the drawing, meaning
-  unknown.
-- **Element header** `0x04020008` and the arc flag bit after it; the
-  `−1` parameters in curve records; the line-spiral group's `256` field.
-- **One speed-interval distance** on a curve in S89 (84.63 where 35.72 is
-  expected).
-- **Topology:** companion vertex flags (2/10/50/178) and the face IDs on
-  edges; writing site containers (needs a planar arrangement).
-- **Not sampled yet:** offset and other alignment types, station
-  equations (seen, not decoded), most spiral groups, counter-examples for
-  a few curve rules (a centre curve with nothing before it is drawn as a
-  half circle).
+The open fields and behaviours are tracked as **MIST1 … MIST14** in
+[`docs/mysteries.md`](docs/mysteries.md): section-2 caches (MIST1–MIST5),
+the per-drawing post-type value (MIST6), element header, flag and
+parameter fields (MIST7–MIST10), one speed-interval distance (MIST11),
+topology flags (MIST12), a zero-GUID block (MIST13) and the half-circle
+rule (MIST14). None of them stops Civil 3D from opening our files.
 
 ### Milestones reached
 
