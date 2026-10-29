@@ -82,6 +82,17 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   S124 (meters), both new drawings from Civil 3D 2027, have the same
   header as every Civil 3D 2024 sample. The owner's imperial-vs-metric
   hypothesis (with `0x02` as the feet unit code) does not hold.
+- **Not text:** the owner read the bytes as control characters (EOT STX
+  NUL BS). The value is a BL in the data stream, stored low byte first
+  (`08 00 02 04`); strings live in the separate string stream.
+- **Not alignment-specific:** in S119 the same 32-bit value (as a full BL)
+  also occurs in `AECC_PROFILE_STYLE`, the profile-view band styles,
+  `AECC_SVFIGURE_STYLE`, `AECC_TURNOUT_STYLE`, `AECC_TREE_NODE`,
+  `AECC_LABEL_NODE` and `AECC_LABEL_COLLECTOR_STYLE`; neighbours
+  `0x04010008` (label styles) and `0x05020008` (surface and table styles)
+  occur too. A chance match of 34 bits is very unlikely at these counts,
+  so it looks like a generic Civil 3D sub-object tag, possibly a version
+  pair (4.2, 4.1, 5.2) with a type code 8.
 - **Status:** no setting found that changes it; civil3drust writes it as
   a constant. Still open in case another element type or DWG format
   version shows a different value.
