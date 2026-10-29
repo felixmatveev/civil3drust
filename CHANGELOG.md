@@ -20,6 +20,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   and `set_object_type` writes the form for the number (it now returns
   new bytes). Using a Civil 3D 2027 drawing (S123/S124) as the donor
   failed before.
+- `hexview` and `viewer` build again: both now handle spiral segments
+  (`Segment::Spiral`, added with the line-spiral groups), shown as a
+  field in hexview and drawn as a clothoid in the viewer.
 - A design-speed entry with an all-zero GUID (Civil 3D 2027) no longer
   corrupts the record when speeds are rewritten: the identity's second
   copy is found through the table, and zero GUIDs get fresh ones.

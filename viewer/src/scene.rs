@@ -207,6 +207,12 @@ fn alignment_view(d: &civil3drust::aecc_elements::DecodedElements) -> AlignmentV
                 };
                 arc_points(p3(g.center), g.radius, a0, sweep)
             }
+            Segment::Spiral { geometry: g, .. } => {
+                let n = 32;
+                (0..=n)
+                    .map(|i| p3(g.point_at(g.length * i as f64 / n as f64).0))
+                    .collect()
+            }
         };
         if path.is_empty() {
             path.extend(pts);

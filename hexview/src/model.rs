@@ -704,6 +704,14 @@ fn civil_fields(rec: &RawRecord) -> (Option<String>, Vec<Field>) {
                             "arc ({:.3}, {:.3}) → ({:.3}, {:.3}), R={:.4}, L={:.4}",
                             start.x, start.y, end.x, end.y, geometry.radius, geometry.length
                         ),
+                        Segment::Spiral {
+                            start,
+                            end,
+                            geometry,
+                        } => format!(
+                            "spiral ({:.3}, {:.3}) → ({:.3}, {:.3}), into R={:.4}, L={:.4}",
+                            start.x, start.y, end.x, end.y, geometry.radius, geometry.length
+                        ),
                     };
                     f.push(Field::new(format!("Element {i}"), v).at(bit));
                 }
