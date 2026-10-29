@@ -135,6 +135,12 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S122 | `S122_S24_pi_display_1_2_3.dwg` | Civil 3D 2024 | MIST6 (owner): S24 with three identical alignments, `Alignment - (1)` (F9E), `(2)` (1008), `(3)` (100A), differing only in Alignment Properties → Point of Intersection: by change in alignment direction, by individual curves and curve group, do not display. S121 is reserved for the filled copy of S120. | 473452 | `fae3cf4fcf76e16f` |
 | S123 | `S123_c3d2027_feet_tangent.dwg` | Civil 3D 2027 | MIST7 (owner): new drawing, alignment `TEST` (8F01), one tangent (0,0) → (100,0). INSUNITS 2 (feet), MEASUREMENT 0. Sent as the metric file; its header says feet. | 996486 | `00fafe99a7034f42` |
 | S124 | `S124_c3d2027_meters_tangent.dwg` | Civil 3D 2027 | MIST7 (owner): new drawing, alignment `test` (71B4), one tangent (0,0) → (100,0). INSUNITS 6 (meters), MEASUREMENT 1. Sent as the imperial file; its header says meters. | 984766 | `2a1df2654f26278a` |
+| S125 | `S125_S24_header_control.dwg` | civil3drust | MIST7 control: S24 read and written by civil3drust (acadrust 0.6.7) with no change (`exp_header … keep`). Its AECC records are identical to S24. | 448774 | `ec4cf24112440968` |
+| S126 | `S126_S24_header_04010008.dwg` | civil3drust | MIST7: S24 with the header of all four elements of F9E set to `0x04010008` (middle byte 2 → 1; the value seen in label styles). | 448806 | `209370d60783dd07` |
+| S127 | `S127_S24_header_04030008.dwg` | civil3drust | MIST7: as S126 with `0x04030008` (middle byte 2 → 3; not seen anywhere). | 448774 | `2507e627f48875b4` |
+| S128 | `S128_S24_header_05020008.dwg` | civil3drust | MIST7: as S126 with `0x05020008` (top byte 4 → 5; the value seen in surface and table styles). | 448774 | `aa1234cdd97f7bfa` |
+| S129 | `S129_S24_header_04020009.dwg` | civil3drust | MIST7: as S126 with `0x04020009` (low byte 8 → 9). | 448774 | `80bac881a1a75dfd` |
+| S130 | `S130_S24_header_08000204.dwg` | civil3drust | MIST7: as S126 with `0x08000204` (bytes reversed: the EOT STX NUL BS reading). | 448774 | `00d54e1ad2442be2` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

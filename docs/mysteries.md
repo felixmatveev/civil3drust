@@ -93,6 +93,13 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   occur too. A chance match of 34 bits is very unlikely at these counts,
   so it looks like a generic Civil 3D sub-object tag, possibly a version
   pair (4.2, 4.1, 5.2) with a type code 8.
+- **Experiment (pending, owner):** S125–S130, made with
+  `exp_header` from S24 (alignment F9E, three tangents and a free curve):
+  S125 is an unchanged control written by civil3drust; S126–S130 set the
+  header of all four elements to `0x04010008`, `0x04030008`,
+  `0x05020008`, `0x04020009` and `0x08000204`. For each: does Civil 3D
+  open it, what does AUDIT say, is the alignment drawn and editable, and
+  what does a re-save write back?
 - **Status:** no setting found that changes it; civil3drust writes it as
   a constant. Still open in case another element type or DWG format
   version shows a different value.

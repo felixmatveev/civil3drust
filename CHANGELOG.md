@@ -11,6 +11,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   table, unexplained fields, milestones); open questions refreshed.
 - Open questions moved to `docs/mysteries.md` as MIST1–MIST14.
 - MIST6 solved: the post-type value is the implied PI display option.
+- MIST7 experiment: `examples/exp_header.rs` and samples S125–S130
+  (S24 with the element header changed, plus a control).
 - MIST7: the header value also occurs in other Civil 3D classes (S119);
   likely a generic sub-object tag, not text.
 - Priorities: Civil 3D 2027 support is low priority; `hexview` and
