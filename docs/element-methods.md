@@ -76,7 +76,7 @@ the arcs and lines in each record's proxy graphics.
 
 | method | status | samples |
 |---|---|---|
-| Fixed Spiral | planned | S120 → S121 |
+| Fixed Spiral | record kind 6, code 0: start point, unit direction, two BDs (length, end radius — order open), a bit (direction?) | partly, S121 |
 | Free Spiral (between two entities) | planned | S120 → S121 |
 | Free Compound Spiral-Spiral (between two curves) | planned | S120 → S121 |
 | Free Reverse Spiral-Spiral (between two curves) | planned | S120 → S121 |

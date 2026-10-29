@@ -181,7 +181,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 ## MIST10 — the `256` in the line-spiral group
 
 - **Where:** S119 element 7, the BL after the IDs (before the start
-  point).
+  point); also in S121's fixed spiral at the same place.
 - **Hypothesis:** spiral definition or type flags (clothoid, by length vs
   A). S121 (spiral methods) should vary it.
 

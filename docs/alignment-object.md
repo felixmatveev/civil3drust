@@ -2122,6 +2122,34 @@ the centre. The centre curve now starts at SC. Computed TS and SC match
 the drawing to 4 decimals. The group's line and spiral are separate parts
 of one element (D-042).
 
+## Spirals (S120 → S121 …)
+
+S120's 21 empty alignments are filled one spiral method at a time.
+
+**Fixed Spiral (S121, FD7).** Line 1 (0,0 → 100,0, kind 0, after 3),
+then spiral 3 (before 1). The spiral is a new record kind, prefix
+`…00110` (value 6; lines 2, curves 4, line-spiral groups 10):
+
+```text
+BL 0x04020008, B flag 0, BD −1, BD −1, BL n1 1, BD −1,
+BL code 0, BL id 3, BL before 1, BL after 0,      (no bit before the IDs)
+BL 256                                             (as in S119's group; MIST10)
+B  1                                               (clockwise? — to confirm)
+RD start X, Y        100, 0     (the line's end)
+RD direction X, Y    1, 0       (unit, the line's direction)
+BD 200, BD 200                  (length and end radius, order unknown)
+BD 0.0 (`10`)?                  (one `BL 0` fewer follows than after other
+                                 records of S116/S120 alignments; possibly a
+                                 start radius 0 = infinite)
+```
+
+The proxy graphics draw a clothoid from (100, 0) to (295.0575,
+−32.7428), which is exactly L = 200 with end radius 200 (R = 100 would
+end at (280.90, −62.05)), so the description's R = 100 is not what was
+stored. Open until a fixed spiral with L ≠ R, counter-clockwise and
+outward is sampled: which BD is the length, the meaning of the bit before
+the start point, and the trailing `10`.
+
 ## Open questions
 
 Tracked as MIST1 … MIST15 in [`mysteries.md`](mysteries.md), each with
