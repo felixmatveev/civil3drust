@@ -11,6 +11,7 @@ versions follow [Semantic Versioning](https://semver.org/).
   table, unexplained fields, milestones); open questions refreshed.
 - Open questions moved to `docs/mysteries.md` as MIST1–MIST14.
 - MIST6 solved: the post-type value is the implied PI display option.
+- MIST7: owner hypothesis (imperial vs metric) and its test recorded.
 
 ### Added
 - `aecc_build::pi_display` / `set_pi_display` and `PI_DISPLAY_*`: the

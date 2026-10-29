@@ -78,6 +78,12 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Seen:** identical in every record of every sample. The BL after it is
   the line kind (0, 4, 5, 9) in line records.
 - **Question:** version / class tag of the element sub-object?
+- **Hypothesis (owner):** tied to the imperial (US customary) versus metric
+  setup; every sample so far is in feet. The byte `0x02` would match
+  AutoCAD's unit code for feet (meters is 6), but that is only a guess.
+  Test: the same alignment in a drawing from the Civil 3D metric template,
+  and one in S24 after switching Drawing Settings → Drawing units to
+  Meters.
 
 ## MIST8 — the curve flag bit
 
