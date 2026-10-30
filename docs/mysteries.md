@@ -157,6 +157,10 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   copies it today.
 - **Layout of the Properties form after MIST1:** `BL 0x1600101F`, the
   FILETIME, then MIST2 (`BL 0x0D00D773, BL n`).
+- **Plan (owner):** drop the block (`BL 0x1600101F` + FILETIME) rather
+  than keep or rewrite the stamp; versioning will be handled another way.
+  Next: test whether Civil 3D accepts the Properties form without it (and
+  which marker, if any, announces it — compare MIST4 and S158).
 
 ## MIST4 — the +28-bit field after the class header
 
