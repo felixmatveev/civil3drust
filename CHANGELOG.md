@@ -84,6 +84,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   copy is found through the table, and zero GUIDs get fresh ones.
 
 ### Added
+- MIST12: companion edge flag `0x20` (with vertex a = b = 1) marks an
+  alignment whose geometry came from an object; kept by re-saves, cleared
+  by layout-tool edits. A candidate for the API's `CreationMode`.
 - Sample S161 (alignments created from a polyline and with the layout
   tools): the creation method is not stored in section 2 (not MIST4);
   layout-tool alignments store their design speed without an interval

@@ -347,6 +347,16 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Seen:** civil3drust writes the uniform form (flags 10, a = b = 0,
   D-040) and Civil 3D accepts it (S111). Site containers (S104–S112) are
   not written.
+- **Edge flags and creation (S161):** the alignment made from a polyline
+  (8C49) has edge flags `0x030` and first vertex (flags, a, b) = (2, 1,
+  1); the one made with the layout tools (8C55) has `0x810` and (10, 0,
+  0), and a companion 76 data bits shorter with 2 handle references fewer.
+  Across all samples (300 decoded companions) the values seen are `0x010`,
+  `0x030`, `0x810` and `0x830`. The `0x20` bit with (2 or 50, 1, 1)
+  follows "geometry taken from an object": S25 FB8 and S161 8C49 have it
+  when created, a plain re-save keeps it (S26 `0x030` → S28 `0x830`), and
+  a layout-tool edit clears it (S5 `0x030` → S11 `0x810`, a curve added).
+  `0x800` has no simple rule yet (S11 `0x810` → S12 `0x010`).
 
 ## MIST13 — Civil 3D's extra block for a zero GUID
 

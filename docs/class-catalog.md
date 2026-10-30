@@ -101,7 +101,7 @@ hierarchy the field most likely belongs to (inferred from its position).
 | check set (handle ref 6) | `DesignCheckSetId` | model | nulled when the target lacks it |
 | companion (handle refs 2, 3) | `SiteId` / `IsSiteless` (via the companion or site container) | model | `aecc_site` |
 | station equations | `StationEquations` | open | gap (S9) |
-| — | `CreationMode` (`RuleBasedCreation` 1, `ManuallyCreation` 2) | open | not located; not MIST4 and not in section 2 (S161: polyline- and layout-created alignments have identical section 2) |
+| — | `CreationMode` (`RuleBasedCreation` 1, `ManuallyCreation` 2) | open | no field in the alignment record (S161: polyline- and layout-created alignments differ only in geometry, name, MIST1 and the speed interval); the companion's edge flag `0x20` marks geometry taken from an object and is cleared by layout edits (MIST12) — a candidate, not confirmed |
 | — | `Length`, `EndingStation`, `ReferencePoint` | derived | not stored (checked against S24's listing) |
 
 ### `AlignmentEntity` sub-objects (element records)
