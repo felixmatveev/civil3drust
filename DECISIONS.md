@@ -876,3 +876,21 @@ place until S158 shows whether plain removal is accepted.
 **Alternatives.** Keep copying it: a value from another alignment, with a
 marker that must stay consistent. Add it ourselves: Civil 3D does that on
 save.
+
+## D-048: The public Civil 3D API is the naming framework
+
+**Context.** Decoded fields were named after where they sit in the record
+(section 2, post-cache block) or as MIST numbers. The owner proposed using
+Civil 3D's public .NET API as the framework and extending it with the
+reverse-engineered parts.
+
+**Decision.** `docs/class-catalog.md` maps every decoded field to the
+public class and property it stores (names and meanings only from
+Autodesk's API reference, per the cleanroom rules), and classifies the
+rest as derived, cache, plumbing or open. New findings are added there in
+API terms; the record maps stay the place for bit positions. The working
+model is that a record follows the C++ class hierarchy, base class first,
+with typed sub-objects that start with a tag.
+
+**Alternatives.** Keep naming by position: precise, but says nothing about
+what a field is for or whether it must be kept.

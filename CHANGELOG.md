@@ -81,6 +81,14 @@ versions follow [Semantic Versioning](https://semver.org/).
   copy is found through the table, and zero GUIDs get fresh ones.
 
 ### Added
+- `docs/class-catalog.md`: every decoded alignment field mapped to the
+  public Civil 3D API class and property it stores, or classified as
+  derived, cache, serialization plumbing or open (D-048); the record seen
+  as a C++ class hierarchy with typed sub-objects. MIST1 is probably
+  `Entity.FingerPrint`; MIST3's `0x1600101F` + FILETIME block is shared by
+  82 classes.
+- `examples/tags.rs`: candidate sub-object tags (full-form BLs reused
+  across classes).
 - Samples S123/S124 (Civil 3D 2027, feet and meters), `docs/civil3d-2027.md`,
   `tests/civil3d_2027.rs`, `handle_refs::object_type_bits`,
   `aecc_design_speed::entry_guid_bits` and `ZERO_GUID`; MIST15 in

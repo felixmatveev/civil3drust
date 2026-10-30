@@ -28,6 +28,9 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Seen:** differs per alignment; Civil 3D writes a new value on every
   save (S57), the same value for the same geometry (S94 = S96 after an
   element was deleted and re-added). All zeros is accepted (S56 X1).
+- **Public name (probable):** `Entity.FingerPrint`, a read/write UInt64
+  on Civil 3D's base entity class (API reference): 64 bits, stored before
+  any alignment-specific field (`docs/class-catalog.md`).
 - **civil3drust:** zeroes it (D-046) whenever it creates an alignment or
   writes its geometry; `aecc_build::geometry_key_bit` finds it by the
   14 bits that always precede it (section-2 bit 165, 199 or 241 in all
@@ -157,6 +160,10 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   copies it today.
 - **Layout of the Properties form after MIST1:** `BL 0x1600101F`, the
   FILETIME, then MIST2 (`BL 0x0D00D773, BL n`).
+- **Shared block:** `BL 0x1600101F` + FILETIME occurs in 82 classes
+  (styles, label sets, check sets …); S24's styles are stamped when that
+  drawing was made, 2026-10-22 19:56:44 UTC. It is a base-class "date
+  modified" block, not an alignment field (`docs/class-catalog.md`).
 - **Plan (owner):** drop the block (`BL 0x1600101F` + FILETIME) rather
   than keep or rewrite the stamp; versioning will be handled another way.
   Next: test whether Civil 3D accepts the Properties form without it (and
