@@ -142,6 +142,21 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Seen:** varies between records with otherwise identical section 2;
   probably a cache. The 589-bit form is not specific to design criteria:
   renaming an alignment (S144) also produced it.
+- **Identified: a timestamp.** In the Alignment Properties form, MIST1 is
+  followed by `BL 0x1600101F` (34 bits) and a raw 64-bit little-endian
+  integer; bits 300–330 lie inside that integer. Read as a Windows
+  FILETIME (100-ns ticks since 1601-01-01, UTC) all 36 distinct values in
+  the 154 records that have it fall on 21–29 Oct 2026, the days the
+  samples were made, with 1 ms resolution (low 4 bits always 0):
+  S144's rename is stamped 22:03:55 UTC (15:03:55 Pacific; the owner sent
+  the file at 15:04), S122's three alignments 15:33:31, :42 and :48 UTC,
+  seconds apart. Geometry edits by grips keep it (S145–S150 all carry
+  S144's stamp), so it is the time of the last Alignment Properties
+  edit. The 98 alignments made by `create_alignment` from S113's `EMPTY`
+  template (S116, S120 …) all carry that template's stamp: civil3drust
+  copies it today.
+- **Layout of the Properties form after MIST1:** `BL 0x1600101F`, the
+  FILETIME, then MIST2 (`BL 0x0D00D773, BL n`).
 
 ## MIST4 — the +28-bit field after the class header
 

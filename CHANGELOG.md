@@ -7,6 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- MIST3 identified as the time of the last Alignment Properties edit: a
+  Windows FILETIME after `BL 0x1600101F` in the Properties form.
 - MIST2 (the re-save field) is removed with its format marker set back
   to `0x1148` instead of being copied, when civil3drust creates an
   alignment or writes its geometry (D-047): `aecc_build::
