@@ -120,7 +120,7 @@ shows only what the alignment style draws, and can't tell elements apart
 (one polyline per tangent, but also arrow shafts and other primitives).
 
 ## D-008: Edits leave the volatile header field and label groups alone
-Date: 2026-10-20 · Status: accepted
+Date: 2026-10-20 · Status: accepted; the volatile-field part superseded by D-046 (it is MIST1, now zeroed)
 
 **Context.** When Civil 3D lengthens a segment (S5 → S6) it changes the
 tangent records, the display cache, an unidentified ~64-bit field in the
@@ -232,7 +232,7 @@ alignments: duplicate logic; the PI view covers both. Shift fixed arcs
 rigidly: plausible, but not yet observed in a sample.
 
 ## D-014: Generate alignments by rewriting a template of the same shape
-Date: 2026-10-21 · Status: accepted
+Date: 2026-10-21 · Status: accepted; transitional under D-049 (template-based writing)
 
 **Context.** The owner asked for a DWG with a given alignment produced by
 civil3drust. Creating an `AECC_ALIGNMENT` record from nothing needs the
@@ -440,7 +440,7 @@ usable. Write the whole record from scratch: the unknown regions (section
 2, the post-cache block) would have to be invented rather than copied.
 
 ## D-025: Alignment creation from a template; registry rebuilt
-Date: 2026-10-22 · Status: accepted
+Date: 2026-10-22 · Status: accepted; transitional under D-049 (template companion and label group)
 
 **Context.** D-021 needed a donor that was the target plus one alignment,
 because the registry entry layout was unknown. S24/S25/S44/S48 decoded it
@@ -459,7 +459,7 @@ contain undecoded parcel data, which Civil 3D regenerates anyway (S35), so
 copying a template companion is enough.
 
 ## D-026: Model alignments as minimal parameters; caches are derived
-Date: 2026-10-22 · Status: accepted (direction)
+Date: 2026-10-22 · Status: accepted (direction); extended by D-049
 
 **Context.** The record map (docs/alignment-map.md) shows most of an
 alignment record is either constant or derived from the geometry: proxy
@@ -479,7 +479,7 @@ cache writers. The S56 experiments decide which caches can be omitted.
 hides what matters and drags undecoded data into every new object.
 
 ## D-027: Proxy graphics optional, on by default
-Date: 2026-10-23 · Status: accepted
+Date: 2026-10-23 · Status: accepted; the 66-bit field note superseded by D-046; proxy graphics open under D-049
 
 **Context.** S56/S57: Civil 3D accepts an alignment without proxy graphics
 and regenerates them. The graphics are what AutoCAD, viewers and other
@@ -496,6 +496,7 @@ alignment would be invisible outside Civil 3D until Civil 3D re-saves the
 file.
 
 ## D-028: Alignment type values named only from samples
+Date: 2026-10-23 · Status: accepted
 
 **Context.** O1 (S58/S59) showed the alignment type is a small integer:
 1 = Centerline, 4 = Miscellaneous. Civil 3D offers more types (Offset,
@@ -510,6 +511,7 @@ as plain numbers until a sample (S61) shows which type they are.
 Civil 3D UI: convenient, but not backed by a sample.
 
 ## D-029: Class entries copied from the donor, numbered by position
+Date: 2026-10-23 · Status: accepted
 
 **Context.** A Civil 3D drawing without alignments (S65) has no
 `AECC_ALIGNMENT` class entry, and class numbers differ between templates
@@ -526,6 +528,7 @@ is consistent with D-015.
 flags and version fields would be guesses until compared across samples.
 
 ## D-030: Minimal drawings postponed
+Date: 2026-10-23 · Status: accepted; reframed by D-049 — minimal drawings are part of the end goal
 
 **Context.** S64–S73: Civil 3D opens a plain AutoCAD drawing holding only an
 alignment, but uses only alignment styles from its own style collection,
@@ -540,6 +543,7 @@ template-based approach; findings so far are in alignment-map.md §6.
 unknown records before the alignment work is finished.
 
 ## D-031: Design speeds move with the start station
+Date: 2026-10-23 · Status: accepted
 
 **Context.** Civil 3D removes all design speeds when the start station of
 an alignment changes (S82, owner checked), even when they would still lie
@@ -555,6 +559,7 @@ without. Civil 3D's behaviour is available as an option
 loses user data for no reason; the owner prefers the better behaviour.
 
 ## D-032: Hex viewer maps records in the decompressed objects section
+Date: 2026-10-27 · Status: accepted
 
 **Context.** A hex view that labels bytes by object needs a byte offset
 for each record. From R2004 on, sections are stored as compressed pages,
@@ -575,6 +580,7 @@ Patch acadrust to report offsets while reading: duplicates what the handle
 map already gives.
 
 ## D-033: acadrust 0.6.7, with Architecture records restored to raw
+Date: 2026-10-27 · Status: accepted
 
 **Context.** acadrust 0.6.7 reads every class whose DXF name starts with
 `AEC` into its Architecture types, which catches all Civil 3D `AECC_*`
@@ -599,6 +605,7 @@ the conversion is needed meanwhile and keeps working afterwards.
 
 
 ## D-034: hexview compares records with a recursive bit diff
+Date: 2026-10-27 · Status: accepted
 
 **Context.** The owner wants to compare two drawings in hexview and paste
 the differences into a conversation. DWG record data is a bit stream:
@@ -620,6 +627,7 @@ earlier, see O1 notes). A byte-level diff: simple, but misaligned after the
 first shift.
 
 ## D-035: Arc layout by constraint code; floating curves take the short way
+Date: 2026-10-27 · Status: accepted
 
 **Context.** S94 (first tangent deleted in Civil 3D) turned the free curve
 after it into a floating curve: constraint code `n2` 15, radius, start
@@ -640,6 +648,7 @@ such field was found in S94's record (n1, p2, p3 are unchanged from the
 free form), and the short curve is the one Civil 3D displays.
 
 ## D-036: Element edits in place, following Civil 3D's own edits
+Date: 2026-10-27 · Status: accepted
 
 **Context.** Adding and removing elements on an existing alignment
 (current focus). `set_geometry` (D-024) rebuilds the whole element list
@@ -668,6 +677,7 @@ predates the interval block. Copy Civil 3D's stale speed state exactly:
 reproduces a state that crashes Civil 3D's editor.
 
 ## D-037: Only the first chain is the alignment; detached pieces are kept
+Date: 2026-10-27 · Status: accepted
 
 **Context.** Deleting the tangent between two curves in Civil 3D (S100)
 leaves two disconnected pieces in one alignment record: two records
@@ -691,6 +701,7 @@ Refusing to decode such alignments: hides geometry Civil 3D shows and
 blocks edits of the alignment proper.
 
 ## D-038: New alignments are siteless; site membership is read-only
+Date: 2026-10-28 · Status: accepted
 
 **Context.** O7 (S101–S106): an alignment in a site is part of the site's
 container, one record per site holding every alignment in it as a
@@ -710,6 +721,7 @@ patching the geometry points only: same problem as soon as the site has
 more than one alignment.
 
 ## D-039: Any alignment can be a template
+Date: 2026-10-28 · Status: accepted; transitional under D-049 (templates)
 
 **Context.** `create_alignment` refused S98's `Remove first` (its last
 handle reference is a design check set, which `alignment_refs` required
@@ -732,6 +744,7 @@ alignment around. Map check sets across drawings by name: no sample of
 two drawings with different check sets yet.
 
 ## D-040: Companions are rewritten in the uniform form of S49
+Date: 2026-10-28 · Status: accepted; transitional under D-049 (edge flags and tail still copied from the template)
 
 **Context.** A siteless alignment's companion holds its topology: nodes
 at the element end points and one edge through them (polyline with
@@ -758,6 +771,7 @@ per position: they depend on history we can't reproduce. Verified: S110
 → S111, accepted and kept (renumbered only).
 
 ## D-041: Curves keep their constraint; whole circles are single elements
+Date: 2026-10-28 · Status: accepted
 
 **Context.** S117 shows each curve method stores its own constraint
 (codes 0, 1, 8, 11, 13, 21, 28) except the fixed ones, which Civil 3D
@@ -778,6 +792,7 @@ reading: loses the method Civil 3D shows and would change the record on
 save.
 
 ## D-042: Spiral groups resolve into one entry per part
+Date: 2026-10-28 · Status: accepted
 
 **Context.** S119's element 7 is a single record holding a line and a
 spiral (code 162). Stations, lengths, the companion graph and the
@@ -796,6 +811,7 @@ caller would need to split it. Converting groups to separate records:
 would change what Civil 3D reads back.
 
 ## D-043: The implied PI display is a model field, not a copied constant
+Date: 2026-10-29 · Status: accepted
 
 **Context.** The post-type value (MIST6) was copied from the template
 record. S122 shows it is the per-alignment implied PI display option.
@@ -809,6 +825,7 @@ option is added.
 whatever template record was used.
 
 ## D-044: Object types are written in AutoCAD's form for the number
+Date: 2026-10-29 · Status: accepted
 
 **Context.** Every AECC record in the 2024 samples used the two-byte
 object type (`10` + RS, class numbers ≥ 752). In S123/S124 (Civil 3D
@@ -824,6 +841,7 @@ the rest of the record by 8 bits when the form changes.
 the form AutoCAD writes for those numbers, so unverified in Civil 3D.
 
 ## D-045: Zero speed GUIDs are replaced when speeds are rewritten
+Date: 2026-10-29 · Status: accepted
 
 **Context.** S123/S124 store a design speed with an all-zero GUID and no
 interval. Reusing it would put a zero GUID in the new interval (the
@@ -839,6 +857,7 @@ matches the source file, but leaves the interval and table without a
 usable identity.
 
 ## D-046: MIST1 is zeroed, never copied
+Date: 2026-10-29 · Status: accepted
 
 **Context.** MIST1, the 66-bit section-2 value, is computed by Civil 3D
 from the alignment's geometry (shape and placement, S142–S150). Civil 3D
@@ -857,6 +876,7 @@ length.
 misleading. Compute it: the formula is unknown.
 
 ## D-047: MIST2 is removed, never copied or added
+Date: 2026-10-29 · Status: accepted
 
 **Context.** MIST2 (`BL 0x0D00D773, BL n`) is added by Civil 3D when it
 re-saves an alignment, announced by the format marker at section-2 bit
@@ -884,6 +904,7 @@ marker that must stay consistent. Add it ourselves: Civil 3D does that on
 save.
 
 ## D-048: The public Civil 3D API is the naming framework
+Date: 2026-10-30 · Status: accepted
 
 **Context.** Decoded fields were named after where they sit in the record
 (section 2, post-cache block) or as MIST numbers. The owner proposed using
@@ -900,3 +921,53 @@ with typed sub-objects that start with a tag.
 
 **Alternatives.** Keep naming by position: precise, but says nothing about
 what a field is for or whether it must be kept.
+
+## D-049: End goal — files both programs read the same; Civil 3D builds its own caches
+Date: 2026-10-30 · Status: accepted
+
+**Context.** The owner set the project's end goal: open existing Civil 3D
+drawings, or create one from scratch, edit or modify it, and write a file
+that both civil3drust and Civil 3D read more or less the same. Civil 3D's
+records carry much that is not model data: caches and history (MIST1,
+MIST2, the date-modified block, speed intervals, the element-ID list,
+proxy graphics), and serialization plumbing (sub-object tags, presence
+markers). Experiments show Civil 3D rebuilds the caches on its own save
+(S35, S57, S131, S157, S160). Civil 3D's code looks old and layered;
+the cleanroom route lets civil3drust reproduce its behaviour with simple,
+minimal code instead of its structure (no factories over factories).
+
+**Decision.**
+
+1. **What we write.** Every field of a record civil3drust writes falls in
+   one of three groups (`docs/class-catalog.md`):
+   - *model data*, written from civil3drust's own model (D-026);
+   - *required plumbing*, written exactly and by rule — only what Civil 3D
+     rejects a record without (a tag, marker or header earns its place by
+     a rejection test, as S151, S154 and S158 did);
+   - *everything else is omitted*: caches, history and timestamps are
+     never copied from a template and never added; when civil3drust
+     rewrites a record that has them, it removes or zeroes them (D-046,
+     D-047) and leaves Civil 3D to rebuild them for itself.
+2. **Default for a new field:** test omitting it first; if Civil 3D
+   rejects that, find the rule (a constant, a marker) and write it; copy a
+   template's bits only as a documented interim step, tracked as a MIST.
+3. **"Read the same" is the acceptance test:** Civil 3D opens the file
+   without RECOVER and with a clean AUDIT, and its re-save, read back by
+   civil3drust, gives the same model. Bits that Civil 3D adds on its own
+   save are expected and are not differences.
+4. **Templates and donors are transitional** (D-014, D-025, D-039, D-040):
+   allowed only for content not yet written by rule. Writing from scratch,
+   including minimal drawings with our own styles (D-030), is the end
+   state.
+5. **Minimal code:** each writer is plain data plus rules; no mirror of
+   Civil 3D's class factories or layering. Where the record follows a
+   class hierarchy (D-048), it is described in the docs, not rebuilt as
+   one in code.
+6. **Open: proxy graphics** (D-027). They are a cache Civil 3D does not
+   need, but they are what plain AutoCAD and other viewers draw. D-027
+   (written by default, optional) stands until the owner decides.
+
+**Alternatives.** Reproduce Civil 3D's records byte for byte: ties
+civil3drust to undecoded internals and copies stale history into every
+object. Decompile Civil 3D to learn its structure: excluded by the
+cleanroom rules, and its structure is what we want to avoid.

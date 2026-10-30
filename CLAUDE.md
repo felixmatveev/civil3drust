@@ -38,6 +38,13 @@ samples and steps that produced it.
 - `hexview/` and `viewer/` are **frozen**: leave them as they are (no
   updates for library changes) until the owner says otherwise.
 - LandXML export is **low priority** for now.
+- End goal (D-049): open or create Civil 3D drawings, edit them, and write
+  files that civil3drust and Civil 3D read the same. Write model data and
+  only the plumbing Civil 3D requires (proved by a rejection test); never
+  copy or add caches, history or timestamps — Civil 3D rebuilds them.
+  Acceptance: no RECOVER, clean AUDIT, and Civil 3D's re-save reads back
+  to the same model. Keep the code minimal (no mirror of Civil 3D's class
+  structure); templates are transitional.
 - Current focus: **creating alignments** in existing Civil 3D drawings
   (handle stream, style/label-set/site references, registration, adding
   and removing elements).

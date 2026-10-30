@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- DECISIONS.md: D-049 records the end goal (files civil3drust and Civil 3D
+  read the same; model data plus required plumbing only; Civil 3D
+  rebuilds its own caches) and the acceptance test; status notes added to
+  the decisions it affects (D-008, D-014, D-025, D-026, D-027, D-030,
+  D-039, D-040), and missing Date/Status lines filled in (D-028–D-048).
 - MIST2 is now also removed in the Alignment Properties form, with its
   own marker at section-2 bits 115–124 (`0100000001` → `0011000001`);
   accepted by Civil 3D (S159, re-saved S160). D-047 updated.
