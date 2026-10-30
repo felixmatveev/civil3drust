@@ -169,7 +169,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S155 | `S155_S131_mist2_removed_marker_1148.dwg` | civil3drust | MIST2 test: S131 with MIST2 removed and the format marker at section-2 bit 115 set back 0x1188 → 0x1148 (`exp_mist2 … remove-marker`). | 450179 | `9e50379cdc1cf95e` |
 | S156 | `S156_S152_civ3d_resaved.dwg` | Civil 3D 2024 | S152 (second MIST2 value 0) opened without errors and saved (owner). The 0 is kept, re-encoded as a 2-bit BL (section 2 457 → 449 bits). | 473377 | `58a30adbfaeec27e` |
 | S157 | `S157_S155_civ3d_resaved.dwg` | Civil 3D 2024 | S155 opened without errors, AUDIT clean, saved (owner). Civil 3D restored the marker `0x1188` and MIST2 `0x0D00D773, 2`: F9E is identical to S131. | 473569 | `b370c67a4ed4348c` |
-| S158 | `S158_S144_mist2_removed_properties_form.dwg` | civil3drust | MIST2 test: S144 (Alignment Properties form) with MIST2 removed and nothing else changed (`exp_mist2 … remove`): does that form need a marker change? | 452195 | `d21e0f6cc421bf3d` |
+| S158 | `S158_S144_mist2_removed_properties_form.dwg` | civil3drust | MIST2 test: S144 (Alignment Properties form) with MIST2 removed and nothing else changed (`exp_mist2 … remove`). **Rejected** (owner): RECOVER, F9E "Error 34 (eWrongObjectType)", discarded. | 452195 | `d21e0f6cc421bf3d` |
+| S159 | `S159_S144_mist2_removed_props_marker.dwg` | civil3drust | MIST2 test: S144 (Alignment Properties form) with MIST2 removed and section-2 bits 115–124 set from the "present" pattern `0100000001` to the "absent" pattern `0011000001` seen in S113/S74 (`exp_mist2 … remove-marker`); section 2 589 → 545 bits. | 452195 | `2ac224d4a0ca4b80` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

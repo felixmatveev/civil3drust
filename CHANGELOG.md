@@ -81,6 +81,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   copy is found through the table, and zero GUIDs get fresh ones.
 
 ### Added
+- MIST2 in the Alignment Properties form: plain removal rejected (S158);
+  its marker found at section-2 bits 115–124 (`0100000001` with MIST2,
+  `0011000001` without). `exp_mist2 … remove-marker` handles both forms;
+  test sample S159.
 - `docs/class-catalog.md`: every decoded alignment field mapped to the
   public Civil 3D API class and property it stores, or classified as
   derived, cache, serialization plumbing or open (D-048); the record seen

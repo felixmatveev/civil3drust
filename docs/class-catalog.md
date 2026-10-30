@@ -73,7 +73,7 @@ hierarchy the field most likely belongs to (inferred from its position).
 | field | API | category | notes |
 |---|---|---|---|
 | `BL 80, 0, 80, 80, 0` | — | plumbing | class header, same in every record |
-| format marker at bit 115: `0x1148` / `0x1188` | — | plumbing | says whether the MIST2 block is present (MIST5) |
+| format marker at bit 115: `0x1148` / `0x1188` (plain form), `0011000001` / `0100000001` (Properties form) | — | plumbing | says whether the MIST2 block is present (MIST5; S154, S158) |
 | 28 bits at bit 119 (Properties form only) | — | open | MIST4: added by an Alignment Properties edit |
 | 64 bits after the 14-bit anchor (MIST1) | `Entity.FingerPrint` (UInt64), probably | cache | Civil 3D recomputes it from shape and placement; zeroed (D-046) |
 | `BL 0x1600101F` + FILETIME (Properties form only) | — (a "date modified" stamp; no public property found) | cache | MIST3; the same block is in 82 classes (styles, label sets, check sets …), e.g. S24's styles are stamped when the drawing was made (2026-10-22 19:56:44 UTC); plan: drop it |

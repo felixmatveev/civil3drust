@@ -94,9 +94,12 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   restores on save when missing. civil3drust never copies or adds it: it
   removes it together with the format marker (`0x1188` → `0x1148`) when
   creating an alignment or writing its geometry (D-047). Not done yet for
-  the Alignment Properties form, whose marker is unknown — S158 tests
-  plain removal there. The meaning of `0x0D00D773` and of the second
-  value is not decoded.
+  the Alignment Properties form: plain removal there is rejected (S158,
+  eWrongObjectType). That form also has a marker at section-2 bits
+  115–124: `0100000001` with MIST2 (108 records), `0011000001` without
+  (44 records, e.g. S113, S74, S116/S117 — accepted by Civil 3D). S159
+  removes MIST2 and sets the "absent" pattern (pending). The meaning of
+  `0x0D00D773` and of the second value is not decoded.
 
 - **Where:** right after MIST1 when present (section 2 grows 413 → 457).
 - **Seen:** added by Civil 3D re-saves (S4, S8, S11, S12, S48, S51) and to

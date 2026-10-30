@@ -4,7 +4,8 @@
 //! Modes: `zero-first` (first BL → 0), `zero-second` (second BL → 0),
 //! `zero-both`, `remove` (drop the 44 bits; section 2 back to 413 bits),
 //! `remove-marker` (drop them and set the format marker at section-2 bit
-//! 115 back from `0x1188` to `0x1148`, as in never-resaved records).
+//! 115 to its "absent" pattern: `0x1188` → `0x1148` in the plain form,
+//! `0100000001` → `0011000001` in the Alignment Properties form).
 //! Zeroed values keep their encoding so the rest of the record stays in
 //! place.
 //!
@@ -72,16 +73,26 @@ fn main() {
                     .unwrap_or_else(|| fail("no common entity data"))
                     .start_bit;
                 let m = s2 + 115;
-                if raw::get_bit(d, m) != 0
-                    || raw::get_bit(d, m + 1) != 0
-                    || raw::read_bl(d, m).map(|x| x.0) != Some(0x1188)
-                {
-                    fail("format marker 0x1188 not found at section-2 bit 115");
+                let marker: String = (m..m + 10)
+                    .map(|b| char::from(b'0' + raw::get_bit(d, b)))
+                    .collect();
+                // Bits 115..125 with MIST2 present → absent (all samples):
+                // plain form `0010001000` → `0001001000` (0x1188 → 0x1148),
+                // Properties form `0100000001` → `0011000001`.
+                let to = match marker.as_str() {
+                    "0010001000" => "0001001000",
+                    "0100000001" => "0011000001",
+                    _ => fail(format!("unknown marker bits {marker} at section-2 bit 115")),
+                };
+                for (i, c) in to.bytes().enumerate() {
+                    let (byte, mask) = ((m + i) / 8, 1u8 << (7 - (m + i) % 8));
+                    if c == b'1' {
+                        src[byte] |= mask;
+                    } else {
+                        src[byte] &= !mask;
+                    }
                 }
-                for (i, b) in 0x1148u32.to_le_bytes().iter().enumerate() {
-                    raw::set_byte(&mut src, m + 2 + 8 * i, *b);
-                }
-                println!("format marker 0x1188 -> 0x1148");
+                println!("format marker {marker} -> {to}");
             }
             let d = &src;
             let mut w = Bits::default();
