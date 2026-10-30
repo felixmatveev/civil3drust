@@ -12,6 +12,9 @@ drawings. API pages used are listed at the end.
 
 ## Field categories
 
+Which fields Civil 3D checks and which it rebuilds is collected in
+`civil3d-rejects.md` and `civil3d-rebuilds.md`.
+
 | category | meaning | how civil3drust treats it |
 |---|---|---|
 | **model** | the value behind a public API property | decoded, edited, written |

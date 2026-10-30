@@ -89,6 +89,11 @@ versions follow [Semantic Versioning](https://semver.org/).
   copy is found through the table, and zero GUIDs get fresh ones.
 
 ### Added
+- `docs/civil3d-rejects.md`: every condition Civil 3D was seen to reject
+  (RECOVER), crash on, report in AUDIT or quietly change, with samples
+  and how the writer guards against it; ends in the pre-write check list.
+- `docs/civil3d-rebuilds.md`: what Civil 3D accepts missing, zeroed or
+  stale and rebuilds on save — the parts civil3drust leaves to it (D-049).
 - `tools/c3d_api_dump/`: a read-only Civil 3D add-in (`C3DDUMP`) that
   writes each alignment's public API values (`CreationMode`,
   `FingerPrint`, design speeds, entity constraints, …) to a text file,

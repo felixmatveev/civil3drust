@@ -78,4 +78,4 @@ samples and steps that produced it.
 - `python3 tools/rebuild_from_report.py report.txt a_record.bin out.bin` (rebuild B's record from A's dump and a `--diff --filter <handle>` report)
 - `tools/c3d_api_dump/` (C# Civil 3D add-in, owner runs it: `NETLOAD`, `C3DDUMP` → `<drawing>.api.txt` with each alignment's public API values)
 - `cargo run --release --example tags -- [--min N] [--min-classes K] [--class AECC_X] a.dwg ...` (candidate sub-object tags; noisy, confirm before use)
-- Record map: `docs/alignment-map.md`; layout methods → constraints: `docs/element-methods.md`; open questions: `docs/mysteries.md` (MIST1…, never renumbered); classes and fields in public API terms: `docs/class-catalog.md` (D-048)
+- Record map: `docs/alignment-map.md`; layout methods → constraints: `docs/element-methods.md`; open questions: `docs/mysteries.md` (MIST1…, never renumbered); classes and fields in public API terms: `docs/class-catalog.md` (D-048); what Civil 3D rejects/crashes on/repairs (pre-write checks): `docs/civil3d-rejects.md`; what it accepts missing and rebuilds: `docs/civil3d-rebuilds.md`
