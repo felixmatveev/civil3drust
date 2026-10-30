@@ -84,6 +84,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   copy is found through the table, and zero GUIDs get fresh ones.
 
 ### Added
+- `tools/c3d_api_dump/`: a read-only Civil 3D add-in (`C3DDUMP`) that
+  writes each alignment's public API values (`CreationMode`,
+  `FingerPrint`, design speeds, entity constraints, …) to a text file,
+  to compare with what civil3drust decodes.
 - MIST12: companion edge flag `0x20` (with vertex a = b = 1) marks an
   alignment whose geometry came from an object; kept by re-saves, cleared
   by layout-tool edits. A candidate for the API's `CreationMode`.

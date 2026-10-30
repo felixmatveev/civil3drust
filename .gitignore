@@ -17,3 +17,6 @@ Cargo.lock.bak
 *.dxf
 !samples/*.dwg
 !samples/*.dxf
+/tools/c3d_api_dump/bin/
+/tools/c3d_api_dump/obj/
+*.api.txt
