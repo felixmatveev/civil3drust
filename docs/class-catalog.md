@@ -91,7 +91,7 @@ hierarchy the field most likely belongs to (inferred from its position).
 |---|---|---|---|
 | element count + element sub-objects | `Entities` (`AlignmentEntityCollection`) | model | see below |
 | station at the end of element 0, speed intervals (element start/end, point) | — | derived | rebuilt from geometry and speeds |
-| design-speed table: `BL 0, BL 1, BL n`, n × {`BL 1`, station, speed, GUID} | `DesignSpeeds`: `Station`, `Value`; `SpeedNumber` = position; `Comment` = a string in the string stream | model | GUIDs: random per speed (D-045 for zero GUIDs) |
+| design-speed table: `BL 0, BL 1, BL n`, n × {`BL 1`, station, speed, GUID} | `DesignSpeeds`: `Station`, `Value`; `SpeedNumber` = position; `Comment` = a string in the string stream | model | GUIDs: random per speed with an interval; zero, without an interval, for layout-tool alignments (S161 8C56, S123) — D-045 |
 | `BD 100` after the table | — | open | constant in every sample |
 | element-ID list (`BL n`, n BDs) | — | cache | added after some saves; cleared (`clear_element_id_list`) |
 | alignment type BL | `AlignmentType`: Centerline 1, Offset 2, CurbReturn 3, Utility 4, Rail 5 | model | 1 and 4 seen (S58/S59; the UI calls 4 "Miscellaneous") |
@@ -101,7 +101,7 @@ hierarchy the field most likely belongs to (inferred from its position).
 | check set (handle ref 6) | `DesignCheckSetId` | model | nulled when the target lacks it |
 | companion (handle refs 2, 3) | `SiteId` / `IsSiteless` (via the companion or site container) | model | `aecc_site` |
 | station equations | `StationEquations` | open | gap (S9) |
-| — | `CreationMode` (`RuleBasedCreation` 1, `ManuallyCreation` 2) | open | not located; a candidate for MIST4 |
+| — | `CreationMode` (`RuleBasedCreation` 1, `ManuallyCreation` 2) | open | not located; not MIST4 and not in section 2 (S161: polyline- and layout-created alignments have identical section 2) |
 | — | `Length`, `EndingStation`, `ReferencePoint` | derived | not stored (checked against S24's listing) |
 
 ### `AlignmentEntity` sub-objects (element records)

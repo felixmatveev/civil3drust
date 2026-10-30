@@ -873,6 +873,12 @@ geometry (`create_alignment`, `set_geometry`, element edits; the
 Alignment Properties form has no known marker, so its MIST2 is left in
 place until S158 shows whether plain removal is accepted.
 
+**Update (S158–S160).** Plain removal in the Properties form was
+rejected (S158); that form has its own marker at section-2 bits 115–124
+(`0100000001` present, `0011000001` absent). Removing MIST2 and setting
+the absent pattern is accepted (S159) and restored by Civil 3D on save
+(S160), so `remove_resave_field` now handles both forms.
+
 **Alternatives.** Keep copying it: a value from another alignment, with a
 marker that must stay consistent. Add it ourselves: Civil 3D does that on
 save.

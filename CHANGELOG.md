@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- MIST2 is now also removed in the Alignment Properties form, with its
+  own marker at section-2 bits 115–124 (`0100000001` → `0011000001`);
+  accepted by Civil 3D (S159, re-saved S160). D-047 updated.
 - MIST3 identified as the time of the last Alignment Properties edit: a
   Windows FILETIME after `BL 0x1600101F` in the Properties form.
   Plan: drop the block (to be tested).
@@ -81,6 +84,11 @@ versions follow [Semantic Versioning](https://semver.org/).
   copy is found through the table, and zero GUIDs get fresh ones.
 
 ### Added
+- Sample S161 (alignments created from a polyline and with the layout
+  tools): the creation method is not stored in section 2 (not MIST4);
+  layout-tool alignments store their design speed without an interval
+  and with a zero GUID; the 617-bit difference matches MIST13's block;
+  MIST1 matches S123's for the same geometry.
 - MIST2 in the Alignment Properties form: plain removal rejected (S158);
   its marker found at section-2 bits 115–124 (`0100000001` with MIST2,
   `0011000001` without). `exp_mist2 … remove-marker` handles both forms;

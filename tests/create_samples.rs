@@ -904,8 +904,8 @@ fn geometry_key_located_and_zeroed() {
 }
 
 /// MIST2 (the re-save field) is removed with its format marker set back,
-/// giving exactly the record Civil 3D accepted in S155; the Alignment
-/// Properties form is left alone; created alignments never carry a
+/// giving exactly the records Civil 3D accepted in S155 (plain form) and
+/// S159 (Alignment Properties form); created alignments never carry a
 /// template's MIST2 (D-047).
 #[test]
 fn resave_field_removed_not_copied() {
@@ -932,10 +932,17 @@ fn resave_field_removed_not_copied() {
     assert_eq!((d.clone(), hb), (s155.data.clone(), s155.handle_bits));
     assert_eq!(marker(&d), MARKER_WITHOUT_RESAVE_FIELD);
     assert!(resave_field_bit(&d).is_none());
-    // Properties form: no known marker, left in place.
+    // Properties form: removed with its own marker, giving exactly S159,
+    // which Civil 3D accepted.
     let s144 = rec("samples/S144_S143_renamed.dwg", 0xF9E);
     assert!(resave_field_bit(&s144.data).is_some());
-    assert!(remove_resave_field(&s144.data, s144.handle_bits).is_none());
+    let (d, hb) = remove_resave_field(&s144.data, s144.handle_bits).unwrap();
+    let s159 = rec("samples/S159_S144_mist2_removed_props_marker.dwg", 0xF9E);
+    assert_eq!((d.clone(), hb), (s159.data.clone(), s159.handle_bits));
+    assert!(resave_field_bit(&d).is_none());
+    // A record whose marker was not switched (S158) is left alone.
+    let s158 = rec("samples/S158_S144_mist2_removed_properties_form.dwg", 0xF9E);
+    assert!(remove_resave_field(&s158.data, s158.handle_bits).is_none());
 
     // Created from a re-saved template (S131's F9E): no MIST2, marker 0x1148.
     let donor = raw::open("samples/S131_S125_civ3d_resaved.dwg").unwrap();

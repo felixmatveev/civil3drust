@@ -28,6 +28,10 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Seen:** differs per alignment; Civil 3D writes a new value on every
   save (S57), the same value for the same geometry (S94 = S96 after an
   element was deleted and re-added). All zeros is accepted (S56 X1).
+- **Deterministic across drawings and releases:** S161's `from polyline`
+  ((0,0) → (100,0), company template, Civil 3D 2024) has exactly the
+  value of S123's tangent (same geometry, Civil 3D 2027):
+  `35 5C BE 8C E9 03 C0 A6`.
 - **Public name (probable):** `Entity.FingerPrint`, a read/write UInt64
   on Civil 3D's base entity class (API reference): 64 bits, stored before
   any alignment-specific field (`docs/class-catalog.md`).
@@ -88,18 +92,19 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   value from the extents or the end points). The formula is still
   unknown.
 
-## MIST2 — the optional +44-bit field after MIST1 — **PARTIALLY SOLVED (S151–S157)**
+## MIST2 — the optional +44-bit field after MIST1 — **PARTIALLY SOLVED (S151–S160)**
 
 - **Status:** a field Civil 3D adds when it re-saves an alignment and
   restores on save when missing. civil3drust never copies or adds it: it
   removes it together with the format marker (`0x1188` → `0x1148`) when
-  creating an alignment or writing its geometry (D-047). Not done yet for
-  the Alignment Properties form: plain removal there is rejected (S158,
-  eWrongObjectType). That form also has a marker at section-2 bits
+  creating an alignment or writing its geometry (D-047), in both forms.
+  In the Alignment Properties form plain removal is rejected (S158,
+  eWrongObjectType); that form has its own marker at section-2 bits
   115–124: `0100000001` with MIST2 (108 records), `0011000001` without
-  (44 records, e.g. S113, S74, S116/S117 — accepted by Civil 3D). S159
-  removes MIST2 and sets the "absent" pattern (pending). The meaning of
-  `0x0D00D773` and of the second value is not decoded.
+  (44 records, e.g. S113, S74, S116/S117). Removing MIST2 and setting the
+  "absent" pattern is accepted (S159), and Civil 3D restores both on save
+  (S160 = S144). The meaning of `0x0D00D773` and of the second value is
+  not decoded.
 
 - **Where:** right after MIST1 when present (section 2 grows 413 → 457).
 - **Seen:** added by Civil 3D re-saves (S4, S8, S11, S12, S48, S51) and to
@@ -181,6 +186,11 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   S89, S98–S100, and a rename in S144). Records without it are accepted.
 - **Question:** what the two set bits mean (a "modified by UI" marker, a
   version of a sub-object?).
+- **Not the creation method:** an alignment created from a polyline and
+  one created with the layout tools (S161) both have the plain form
+  without it; the API's `CreationMode` is not stored here. It appears
+  only after a later edit in Alignment Properties or with the layout
+  tools.
 
 ## MIST5 — the 2-bit flag at S7 bit 2677
 
@@ -347,6 +357,13 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   each have one speed (0:60, 0:100) with no interval block and an all-zero
   GUID in the table entry. civil3drust gives such entries a fresh GUID
   when it rewrites the speeds (D-045).
+- **Lead (S161):** Civil 3D 2024 does the same for an alignment made with
+  the layout tools (8C56: no interval, zero GUID), while one made from a
+  polyline (8C49) has its speed with an interval and a random GUID. The
+  difference is exactly 617 bits and 2 strings — the size of MIST13's
+  block. So the block is probably a speed interval (with its two
+  strings) that Civil 3D added for the zero-GUID entry. To confirm by
+  comparing S57 X5's block with S161 8C49's interval.
 
 ## MIST14 — the half-circle rule
 
