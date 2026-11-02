@@ -110,7 +110,7 @@ enum Planned<'a> {
 /// Bit offset of the ID field of an arc record and the bit after its
 /// after-link.
 fn arc_id_bits(data: &[u8], header_bit: usize) -> Option<(usize, usize)> {
-    let (_, k) = raw::read_bl(data, header_bit)?;
+    let (_, k) = crate::aecc_alignment::read_element_header(data, header_bit)?;
     let k = k + 1; // flag
     let (_, k) = raw::read_bd(data, k)?;
     let (_, k) = raw::read_bd(data, k)?;
@@ -210,7 +210,7 @@ fn write_elements(
     if raw::read_bl(data, count_bit) != Some((d.record_count() as i32, first - 11)) {
         return Err(err("element count not where expected"));
     }
-    let flags = crate::aecc_build::element_header_flags(data, d);
+    let flags = crate::aecc_build::element_header_flags(rec);
     let mut w = Bits::default();
     w.copy(data, 0, count_bit);
     w.bl(plan.len() as i32);

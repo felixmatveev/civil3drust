@@ -325,6 +325,15 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   removed, S167 curve added: no RECOVER, AUDIT clean, options still off)
   and its re-saves (S168, S169) read back to the same elements, still
   unlocked.
+- **The lock is per element (S172):** in S171 (the re-save of a created,
+  unlocked alignment S170) the owner locked one element only; Civil 3D
+  wrote `0x02` in tangent 2's header and nowhere else, and left the
+  "Lock all parameter constraints" bit at 0. So the flag byte is each
+  element's own parameter lock and bit 15 is the "lock all" option
+  (turning it off unlocked every element, S164). New elements take the
+  option's value; existing ones keep their byte (D-051, test
+  `lock_is_per_element_s170_s172`). Open: whether Civil 3D sets bit 15
+  when every element is locked one by one.
 - **Status:** behaviour mapped (S125–S139, S164): `0x0008` must be 8, the
   flag byte (`0x02` = parameters locked) is optional, and `0x04` closes the
   header. Still open: the meaning of the `0x04` byte and of flag bit 0x01

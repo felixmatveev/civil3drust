@@ -181,6 +181,9 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S167 | `S167_S166_curve_added_unlocked.dwg` | civil3drust | D-051 test: S166 with a free curve R 30 added after tangent 2 (`edit_elements F9E curve 2 30`); the new element gets the unlocked header. Civil 3D 2024: opens, AUDIT clean, options off (owner). | 450246 | `d361525ef5828008` |
 | S168 | `S168_S166_civ3d_resaved.dwg` | Civil 3D 2024 | S166 re-saved by Civil 3D (owner): same elements, headers still unlocked, lock flag 0. | 474757 | `c93175af2a29bde3` |
 | S169 | `S169_S167_civ3d_resaved.dwg` | Civil 3D 2024 | S167 re-saved by Civil 3D (owner): same elements, headers still unlocked, lock flag 0. | 472034 | `5b84ee03236c00c0` |
+| S170 | `S170_S24_created_unlocked.dwg` | civil3drust | D-052 test: S24 plus `UNLOCKED` (FB3) created from S163 (options on) with 0,-100 → 100,-100 (R 40) → 200,0 → 300,0, written with both Constraint Editing options off and no lock bytes. Civil 3D 2024: opens, AUDIT clean (owner). | 449890 | `8877c4f69b9be25a` |
+| S171 | `S171_S170_civ3d_resaved.dwg` | Civil 3D 2024 | S170 re-saved (owner): `UNLOCKED` unchanged, still unlocked; `Alignment - (1)` still locked. | 472896 | `48aaadade4ec89f2` |
+| S172 | `S172_S171_one_element_locked.dwg` | Civil 3D 2024 | S171 with only tangent 2 of `UNLOCKED` locked (owner): its header gains `0x02`, the other elements and bit 15 ("Lock all") stay off. The arc record and `Alignment - (1)` also changed (layout-tool edit; not examined). | 473178 | `29ad2ae808e4fb94` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

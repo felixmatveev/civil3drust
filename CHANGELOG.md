@@ -18,6 +18,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 - Samples S166–S169: element edits of the unlocked S164 and their
   Civil 3D re-saves; accepted, AUDIT clean, read back the same (test
   `unlocked_edits_survive_civil3d_resave_s166_s169`).
+- Samples S170–S172: an alignment created unlocked, its Civil 3D re-save,
+  and the same with one element locked by the owner. The lock byte is per
+  element; bit 15 is "Lock all". Test `lock_is_per_element_s170_s172`.
 - New alignments are written with both Constraint Editing options off
   (no flag byte per element); `aecc_criteria::set_constraint_editing`
   switches them on existing alignments (D-052). Tests

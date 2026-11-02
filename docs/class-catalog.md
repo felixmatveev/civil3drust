@@ -112,7 +112,7 @@ hierarchy the field most likely belongs to (inferred from its position).
 | field | API | category | notes |
 |---|---|---|---|
 | 11-bit kind prefix: tangent `…010`, arc `…100`, group `…1010` | `EntityType` (`AlignmentEntityType`: Line, Arc, … LineSpiral …) | plumbing | our prefixes are not the API's enum values |
-| `BL 0x04020008` | — | plumbing + model | element header (MIST7): `0x0008` must be 8; the third byte is the lock flag (`0x02`, absent when "Lock all parameter constraints" is off, S164); then `0x04` |
+| `BL 0x04020008` | — | plumbing + model | element header (MIST7): `0x0008` must be 8; the third byte is the element's own parameter lock (`0x02`; absent when unlocked, S164, S172); then `0x04` |
 | id, before, after | `EntityId`, `EntityBefore`, `EntityAfter` | model | |
 | line kind 0 / 4 / 5 / 9 | `Constraint1` Fixed/Float/Free + `Constraint2` (`AlignmentLineConstraintType`): TwoPoints / ThroughPoint / Length / NoConstraint | model | element-methods.md |
 | line start/end points, floating length | `StartPoint`, `EndPoint`, `PassThroughPoint1/2`, `Length` | model | |

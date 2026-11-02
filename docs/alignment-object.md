@@ -127,9 +127,10 @@ One record per tangent. In BL = bit-coded long and RD = raw double, as
 defined in the public ODA specification:
 
 ```text
-header           code 00, 0x0008, flag byte 0x02 when parameters are
-                 locked (absent when not, S164), 0x04 — read as the BL
-                 0x04020008 in the locked form (MIST7)
+header           code 00, 0x0008, flag byte 0x02 when this element's
+                 parameters are locked (absent when not; S164, S172),
+                 0x04 — read as the BL 0x04020008 in the locked form
+                 (MIST7)
 BL 0
 BL id            element ID, 1-based
 BL before        ID of the previous element, 0 if none

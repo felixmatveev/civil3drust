@@ -26,7 +26,7 @@
 //! optional radii (free arcs), copying everything else.
 
 use crate::aecc_alignment::TangentRecord;
-use crate::aecc_alignment::{read_element_header, ELEMENT_LOCKED};
+use crate::aecc_alignment::ELEMENT_LOCKED;
 use crate::aecc_arc_edit::station_of;
 use crate::aecc_elements::{
     decode_elements, resolve, ArcDef, ArcParams, ArcRecord, Element, Segment,
@@ -188,13 +188,16 @@ pub fn read_bll(data: &[u8], bit: usize) -> (u64, usize) {
     (v, bit + 3 + 8 * n)
 }
 
-/// Element-header flags of an alignment, from its first element record:
-/// `Some(0x02)` when parameters are locked, `None` when not (MIST7, S164).
-/// Alignments without elements get the locked form, Civil 3D's default.
-pub fn element_header_flags(data: &[u8], d: &crate::aecc_elements::DecodedElements) -> Option<u8> {
-    match d.first_record_bit() {
-        Some(b) => read_element_header(data, b).and_then(|(f, _)| f),
-        None => Some(ELEMENT_LOCKED),
+/// Header flags for a new element of `rec`: `Some(0x02)` (locked) when
+/// the alignment's "Lock all parameter constraints" bit is set, `None`
+/// otherwise (D-051). The lock is per element (S172: one element locked,
+/// the option off), so existing elements keep their own byte; only new
+/// ones follow the option. Without elements the option is not located
+/// yet and the locked form, Civil 3D's default, is used.
+pub fn element_header_flags(rec: &RawRecord) -> Option<u8> {
+    match crate::aecc_criteria::constraint_editing(rec) {
+        Ok(c) if !c.lock_parameters => None,
+        _ => Some(ELEMENT_LOCKED),
     }
 }
 
@@ -340,7 +343,7 @@ pub fn set_geometry(
     let data = &rec.data;
     let eed_bit = eed(data);
     let decoded = decode_elements(rec).map_err(|e| layout(e.to_string()))?;
-    let flags = element_header_flags(&rec.data, &decoded);
+    let flags = element_header_flags(rec);
     if !decoded.detached.is_empty() {
         return Err(layout(
             "the alignment has detached pieces; rebuilding from PIs would drop them",

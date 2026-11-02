@@ -632,3 +632,40 @@ fn set_constraint_editing_matches_civil3d_s163_s164() {
     assert_eq!(span(&set(&on, false)), span(&off));
     assert_eq!(span(&set(&off, true)), span(&on));
 }
+
+// ---- Created unlocked (S170, re-saved S171) and one element locked (S172) ----
+
+fn s17x(path: &str) -> raw::RawRecord {
+    let o = raw::open(path).unwrap();
+    raw::records(&o.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0xFB3)
+        .unwrap()
+}
+
+#[test]
+fn lock_is_per_element_s170_s172() {
+    let ours = s17x("samples/S170_S24_created_unlocked.dwg");
+    let resaved = s17x("samples/S171_S170_civ3d_resaved.dwg");
+    let partial = s17x("samples/S172_S171_one_element_locked.dwg");
+    assert_eq!(header_flags(&ours), [None; 4]);
+    assert_eq!(header_flags(&resaved), [None; 4]);
+    assert_eq!(chain_of(&ours), chain_of(&resaved));
+    // Storage order 1, 4, 2, 3: only tangent 2 locked; "Lock all" stays off.
+    assert_eq!(header_flags(&partial), [None, None, Some(2), None]);
+    assert!(!constraint_editing(&partial).unwrap().lock_parameters);
+    assert_eq!(chain_of(&ours), chain_of(&partial));
+    // A new element follows "Lock all" (off); tangent 2 keeps its lock.
+    let (d, hb, rep) = add_free_curve(&partial, 2, 30.0, 7).unwrap();
+    let r = edited(&partial, (d, hb));
+    let ids: Vec<i32> = decode_elements(&r)
+        .unwrap()
+        .all()
+        .map(|e| e.record.id())
+        .collect();
+    let flags: Vec<(i32, Option<u8>)> = ids.into_iter().zip(header_flags(&r)).collect();
+    let new = rep.added_id.unwrap();
+    for (id, f) in flags {
+        assert_eq!(f, (id == 2).then_some(2), "element {id} (new {new})");
+    }
+}

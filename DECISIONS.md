@@ -1007,6 +1007,12 @@ locked form (Civil 3D's default). civil3drust does not change the lock
 option itself yet; doing so means changing bit 15 and every header
 together.
 
+**Amended 2026-11-02 (S172).** The byte is each element's own lock: with
+the option off, Civil 3D locked one element only. A new element now
+takes the alignment's "Lock all parameter constraints" bit (15 before
+the section-2 end), not the first element's form; existing elements
+still keep their own byte.
+
 **Alternatives.** Always write the locked form: silently turns the
 option back on for unlocked alignments. Read the option from bit 15 only:
 equivalent in every sample, but the headers are what Civil 3D checks.
