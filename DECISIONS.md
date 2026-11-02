@@ -1038,3 +1038,19 @@ is not located yet.
 **Alternatives.** Copy the donor's options: carries a template's settings
 into new objects. Civil 3D's own default (lock on): one more byte per
 element for a setting the user can turn on in Civil 3D.
+
+## D-053: Solved groups take the shortest curve to their point
+
+**Context.** Some spiral groups store a point (or two) instead of a
+position: the curve with spiral through a point (S173 FBC) and the
+reverse curves with spirals (S174). Their equations have several
+solutions, and the record does not say which one Civil 3D chose.
+
+**Decision.** Find all solutions in range (Newton's method from a grid of
+starts, the start limited to the previous curve, the radius to L2/8 …
+10⁶) and take the one whose last curve reaches the point with the
+smallest sweep. This picks Civil 3D's solution in all three samples.
+
+**Alternatives.** The solution nearest the stored curve end: wrong for
+S174 FC2. Store the solved positions: the record has no place for them.
+

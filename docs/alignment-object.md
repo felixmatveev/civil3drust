@@ -2216,6 +2216,8 @@ BL code, BL id, BL before, BL after, BL 256 (MIST10), data:
   8/6   BD L, BD R, BD L curve, B cw  Floating Curve with Spiral (from entity end, radius, length)
   10/161 BD L spiral, BD L line       Floating Line with Spiral (from curve end, length)
   10/162 RD start, BD L spiral        line with spiral into the next curve (S119)
+  20/1  BD L1, BD L2, BD R, RD point  Floating Reverse Curve with Spirals (from curve, radius, through point)
+  20/2  BD L1, BD L2, RD P1, RD P2    Floating Reverse Curve with Spirals (from curve, two points)
 ```
 
 | alignment | stored | drawn joints = computed |
@@ -2238,6 +2240,27 @@ previous curve's radius).
 with five `BL 0` in alignments copied from S113's `EMPTY` (S117, S120)
 and three in S24's: so fixed spirals end with three BDs `0, 0, 1`, not
 four, and free spirals have no trailing bits after the length.
+
+**Reverse curves with spirals (S174).** Kind 20 (prefix `…10100`).
+Both start at a point on the previous curve, which Civil 3D trims there,
+leave it with a spiral of length L1 (curvature 1/R1 → 0), and enter the
+reverse curve with a spiral of length L2 (0 → 1/R2, turning the other
+way). The start point is not stored; it is solved so that the second
+curve passes through the stored point(s):
+
+| alignment | stored | solved (= drawn) |
+|---|---|---|
+| FBF | L1 1000, L2 500, R 200, point (3200, 2900) after a three-point curve R 322.582 | start (2234.7204, 2224.9383), spirals' joint (2823.7016, 2901.8291), SC (3095.1080, 3280.8012) |
+| FC2 | L1 750, L2 650, P1 (4700, 2700), P2 (5900, 3100) after a three-point curve R 300.007 | start (3817.0330, 2103.6556), joint (4442.6995, 2415.7895), SC (4898.6665, 2876.5096), R2 1302.9691 |
+
+The second curve ends at the (last) point; with two points, P1 only
+defines the circle (it lies before the SC in FC2). The equations have
+more than one solution (FC2: another start at angle −0.394 rad with
+R2 1721.16); Civil 3D's is the one with the shortest second curve to the
+end point (0.81 rad against 4.68), the same rule as the through-point
+curve with spiral (S173 FBC). civil3drust searches the start along the
+previous curve (and the radius between L2/8 and 10⁶) with Newton's method
+from a grid of starting values.
 
 ## Open questions
 

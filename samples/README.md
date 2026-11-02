@@ -185,6 +185,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S171 | `S171_S170_civ3d_resaved.dwg` | Civil 3D 2024 | S170 re-saved (owner): `UNLOCKED` unchanged, still unlocked; `Alignment - (1)` still locked. | 472896 | `48aaadade4ec89f2` |
 | S172 | `S172_S171_one_element_locked.dwg` | Civil 3D 2024 | S171 with only tangent 2 of `UNLOCKED` locked (owner): its header gains `0x02`, the other elements and bit 15 ("Lock all") stay off. The arc record and `Alignment - (1)` also changed (layout-tool edit; not examined). | 473178 | `29ad2ae808e4fb94` |
 | S173 | `S173_S120_scs_floating_spirals.dwg` | Civil 3D 2024 | S165 (owner) with `Free Spiral-Curve-Spiral` (FC5: R=400, L1=150, L2=200 between two lines), `Floating Curve with Spiral` by radius and length (FB9: R=200, L1=400, L2=600) and through a point (FBC: R=200, L=400, point (2400, 1800)), `Floating Line with Spiral (from curve end, length)` (FB6: spiral 200, line 400 after a three-point curve); FDA's second line moved. | 499630 | `a6b098e8a4611cf5` |
+| S174 | `S174_S120_reverse_curves_spirals.dwg` | Civil 3D 2024 | S173 (owner) with `Floating Reverse Curve with Spirals` from a three-point curve: through a point (FBF: L=1000, Lout=500, R=200, point (3200, 2900)) and through two points (FC2: L=750, Lout=650, P1 (4700, 2700), P2 (5900, 3100)). | 507227 | `1ad74c95d72317d1` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

@@ -63,8 +63,8 @@ the arcs and lines in each record's proxy graphics.
 | Floating Line with Spiral (from curve end, length) | group kind 10 code 161: BD spiral length, BD line length; spiral out of the previous curve | known, S173 |
 | Floating Curve with Spiral (from entity end, radius, length) | group kind 8 code 6: BD spiral L, BD R, BD curve L, B clockwise | known, S173 |
 | Floating Curve with Spiral (from entity, radius, through point) | group kind 8 code 2: BD L, BD R, RD point; line trimmed to the TS | known, S173 |
-| Floating Reverse Curve with Spirals (from curve, radius, through point) | planned | S120 → S121 |
-| Floating Reverse Curve with Spirals (from curve, two points) | planned | S120 → S121 |
+| Floating Reverse Curve with Spirals (from curve, radius, through point) | group kind 20 code 1: BD L1, BD L2, BD R, RD point; start on the previous curve solved | known, S174 |
+| Floating Reverse Curve with Spirals (from curve, two points) | group kind 20 code 2: BD L1, BD L2, RD P1, RD P2; start and radius solved | known, S174 |
 | Free Spiral-Curve-Spiral (between two entities) | group kind 8 code 0: BD L1, BD R, BD L2 (between two lines) | known, S173 |
 | Free Compound Spiral-Curve-Spiral-Curve-Spiral (between two tangents) | planned | S120 → S121 |
 | Free Reverse Spiral-Curve-Spiral-Spiral-Curve-Spiral (between two tangents) | planned | S120 → S121 |

@@ -10,6 +10,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 - Spiral groups (S173): `Element::Group` with `GroupDef` — spiral-curve-spiral,
   spiral-curve by length or through a point, spiral-line from a curve —
   placed from their neighbours into several parts. Sample S173.
+- Reverse curves with spirals (group kind 20, codes 1 and 2): the start on
+  the previous curve (and the second radius) solved; the previous curve
+  is trimmed. Sample S174.
 
 - Free spirals between two lines (record kind 8): `Element::FreeSpiral`,
   `free_spiral_between`; the lines are extended or trimmed to the spiral.

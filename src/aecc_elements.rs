@@ -783,6 +783,25 @@ pub enum GroupDef {
     /// Code 161 (prefix 10): spiral out of the previous curve, then a line.
     /// Floating Line with Spiral (from curve end, length).
     SpiralLine { spiral: f64, line: f64 },
+    /// Code 1 (prefix 20): from a point on the previous curve, a spiral out
+    /// of it, a spiral the other way into a curve of `radius` ending at
+    /// `point`. Floating Reverse Curve with Spirals (from curve, radius,
+    /// through point).
+    ReverseThrough {
+        l1: f64,
+        l2: f64,
+        radius: f64,
+        point: Point2,
+    },
+    /// Code 2 (prefix 20): as code 1, the second curve through `p1` and
+    /// ending at `p2` (its radius solved). Floating Reverse Curve with
+    /// Spirals (from curve, two points).
+    ReverseTwoPoints {
+        l1: f64,
+        l2: f64,
+        p1: Point2,
+        p2: Point2,
+    },
 }
 
 /// A spiral group record (S173): one record holding several parts.
@@ -810,7 +829,7 @@ pub struct GroupRecord {
 
 fn group_at(data: &[u8], bit: usize) -> Option<GroupRecord> {
     let prefix = kind_prefix(data, bit)?;
-    if prefix != PREFIX_GROUP && prefix != PREFIX_LINE_GROUP {
+    if prefix != PREFIX_GROUP && prefix != PREFIX_LINE_GROUP && prefix != PREFIX_REVERSE_GROUP {
         return None;
     }
     let (_, k) = aecc_alignment::read_element_header(data, bit)?;
@@ -868,6 +887,32 @@ fn group_at(data: &[u8], bit: usize) -> Option<GroupRecord> {
             spiral: bd(&mut k)?,
             line: bd(&mut k)?,
         },
+        (PREFIX_REVERSE_GROUP, 1 | 2) => {
+            let (l1, l2) = (bd(&mut k)?, bd(&mut k)?);
+            let radius = if code == 1 { Some(bd(&mut k)?) } else { None };
+            let n = if code == 1 { 1 } else { 2 };
+            if k + 128 * n > raw::bit_len(data) {
+                return None;
+            }
+            let pt = |b: usize| Point2::new(raw::get_f64(data, b), raw::get_f64(data, b + 64));
+            let p1 = pt(k);
+            let def = match radius {
+                Some(radius) => GroupDef::ReverseThrough {
+                    l1,
+                    l2,
+                    radius,
+                    point: p1,
+                },
+                None => GroupDef::ReverseTwoPoints {
+                    l1,
+                    l2,
+                    p1,
+                    p2: pt(k + 128),
+                },
+            };
+            k += 128 * n;
+            def
+        }
         _ => return None,
     };
     if id < 1 || before < 0 || after < 0 {
@@ -1043,6 +1088,29 @@ fn place_group(
                 },
             ])
         }
+        GroupDef::ReverseThrough {
+            l1,
+            l2,
+            radius,
+            point,
+        } => {
+            let Some(&Segment::Arc {
+                start, geometry, ..
+            }) = before
+            else {
+                return None;
+            };
+            place_reverse(&geometry, start, l1, l2, Some(radius), &[point])
+        }
+        GroupDef::ReverseTwoPoints { l1, l2, p1, p2 } => {
+            let Some(&Segment::Arc {
+                start, geometry, ..
+            }) = before
+            else {
+                return None;
+            };
+            place_reverse(&geometry, start, l1, l2, None, &[p1, p2])
+        }
         GroupDef::SpiralLine { spiral, line } => {
             let prev = before?;
             let Segment::Arc { geometry: g, .. } = prev else {
@@ -1067,6 +1135,151 @@ fn place_group(
             ])
         }
     }
+}
+
+/// The kind prefix of reverse-curve-with-spirals groups (S174).
+pub const PREFIX_REVERSE_GROUP: u16 = 20;
+
+/// Spiral out of `c1` at angle `phi`, a spiral the other way into radius
+/// `r2`: (start on c1, the two spirals, SC, centre of the second curve).
+fn reverse_chain(
+    c1: &ArcGeometry,
+    phi: f64,
+    l1: f64,
+    l2: f64,
+    r2: f64,
+) -> (Point2, SpiralGeometry, SpiralGeometry, Point2, Point2) {
+    let s = Point2::new(
+        c1.center.x + c1.radius * phi.cos(),
+        c1.center.y + c1.radius * phi.sin(),
+    );
+    let dir = if c1.counter_clockwise {
+        (-phi.sin(), phi.cos())
+    } else {
+        (phi.sin(), -phi.cos())
+    };
+    let s1 = SpiralGeometry {
+        start: s,
+        direction: dir,
+        length: l1,
+        radius: f64::INFINITY,
+        start_radius: c1.radius,
+        counter_clockwise: c1.counter_clockwise,
+    };
+    let (m, d1) = s1.point_at(l1);
+    let s2 = SpiralGeometry {
+        start: m,
+        direction: d1,
+        length: l2,
+        radius: r2,
+        start_radius: f64::INFINITY,
+        counter_clockwise: !c1.counter_clockwise,
+    };
+    let (sc, d2) = s2.point_at(l2);
+    let side = if s2.counter_clockwise { 1.0 } else { -1.0 };
+    let c2 = Point2::new(sc.x - side * r2 * d2.1, sc.y + side * r2 * d2.0);
+    (s, s1, s2, sc, c2)
+}
+
+/// Floating reverse curve with spirals (S174): solve where the group
+/// leaves the previous curve `c1` (between `from` and `to` on it) and, for
+/// the two-point method, the second radius, so that the second curve
+/// passes through `points` (its end is the last one). Of several
+/// solutions the one with the shortest second curve is taken, as Civil 3D
+/// does (S174 FC2).
+fn place_reverse(
+    c1: &ArcGeometry,
+    from: Point2,
+    l1: f64,
+    l2: f64,
+    radius: Option<f64>,
+    points: &[Point2],
+) -> Option<Vec<Segment>> {
+    let ang = |p: Point2| (p.y - c1.center.y).atan2(p.x - c1.center.x);
+    let a0 = ang(from);
+    let sense = if c1.counter_clockwise { 1.0 } else { -1.0 };
+    let span = c1.sweep;
+    let phi_at = |t: f64| a0 + sense * t;
+    let end = *points.last()?;
+    // Unknowns: t along c1 and log r2 (only t when the radius is given).
+    let resid = |x: &[f64; 2]| -> [f64; 2] {
+        let r2 = radius.unwrap_or_else(|| x[1].exp());
+        let (.., c2) = reverse_chain(c1, phi_at(x[0]), l1, l2, r2);
+        let f0 = c2.distance_to(points[0]) - r2;
+        let f1 = points.get(1).map_or(0.0, |p| c2.distance_to(*p) - r2);
+        [f0, f1]
+    };
+    let two = radius.is_none();
+    let mut roots: Vec<[f64; 2]> = Vec::new();
+    let (nt, nr) = (24, if two { 12 } else { 1 });
+    for i in 0..=nt {
+        for j in 0..nr {
+            let mut x = [
+                span * i as f64 / nt as f64,
+                (l2 / 4.0).ln() + (1e6f64 / (l2 / 4.0)).ln() * j as f64 / nr as f64,
+            ];
+            for _ in 0..40 {
+                let f = resid(&x);
+                if f[0].abs().max(f[1].abs()) < 1e-9 {
+                    break;
+                }
+                let h = [1e-7, 1e-6];
+                let mut jac = [[0.0; 2]; 2];
+                for (k, hk) in h.iter().enumerate().take(if two { 2 } else { 1 }) {
+                    let mut y = x;
+                    y[k] += hk;
+                    let g = resid(&y);
+                    jac[0][k] = (g[0] - f[0]) / hk;
+                    jac[1][k] = (g[1] - f[1]) / hk;
+                }
+                if two {
+                    let det = jac[0][0] * jac[1][1] - jac[0][1] * jac[1][0];
+                    if det.abs() < 1e-14 {
+                        break;
+                    }
+                    x[0] -= (jac[1][1] * f[0] - jac[0][1] * f[1]) / det;
+                    x[1] -= (-jac[1][0] * f[0] + jac[0][0] * f[1]) / det;
+                } else {
+                    if jac[0][0].abs() < 1e-14 {
+                        break;
+                    }
+                    x[0] -= f[0] / jac[0][0];
+                }
+                if !x[0].is_finite() || !x[1].is_finite() {
+                    break;
+                }
+            }
+            let f = resid(&x);
+            let inside = x[0] >= -1e-9
+                && x[0] <= span + 1e-9
+                && (!two || (x[1] > (l2 / 8.0).ln() && x[1] < 1e6f64.ln()));
+            if inside && f[0].abs().max(f[1].abs()) < 1e-6 {
+                roots.push(x);
+            }
+        }
+    }
+    let mut best: Option<(f64, Vec<Segment>)> = None;
+    for x in roots {
+        let r2 = radius.unwrap_or_else(|| x[1].exp());
+        let (s, s1, s2, sc, c2) = reverse_chain(c1, phi_at(x[0]), l1, l2, r2);
+        let arc = arc_on(&circle(c2, r2, s2.counter_clockwise), sc, end);
+        if best.as_ref().is_none_or(|(w, _)| arc.sweep < *w - 1e-9) {
+            let _ = s;
+            best = Some((
+                arc.sweep,
+                vec![
+                    spiral_segment(s1),
+                    spiral_segment(s2),
+                    Segment::Arc {
+                        start: sc,
+                        end,
+                        geometry: arc,
+                    },
+                ],
+            ));
+        }
+    }
+    best.map(|(_, v)| v)
 }
 
 /// Centre offset from the TS: k along the tangent, `dist` along the normal.
@@ -1810,7 +2023,13 @@ fn resolve_with(
                         .checked_sub(1)
                         .and_then(|j| free(chain.get(j)))
                         .map_or(start, |t| t.end);
-                    let e = free(chain.get(i + 1)).map_or(end, |t| t.start);
+                    let e = free(chain.get(i + 1))
+                        .map(|t| t.start)
+                        .or_else(|| {
+                            // A group starting on the curve trims it (S174).
+                            groups.get(i + 1)?.as_ref()?.first().map(Segment::start)
+                        })
+                        .unwrap_or(end);
                     if s == start && e == end {
                         Segment::Arc {
                             start,

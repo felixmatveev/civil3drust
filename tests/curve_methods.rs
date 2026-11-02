@@ -383,3 +383,52 @@ fn s173_spiral_groups_match_civil3d_drawing() {
         }
     }
 }
+
+/// S174: floating reverse curves with spirals. The group starts on the
+/// previous (three-point) curve, which it trims; joints as Civil 3D drew.
+#[test]
+fn s174_reverse_curves_with_spirals() {
+    let o = raw::open("samples/S174_S120_reverse_curves_spirals.dwg").unwrap();
+    type Case<'a> = (u64, &'a [(f64, f64)], f64);
+    let cases: [Case; 2] = [
+        (
+            0xFBF,
+            &[
+                (1985.0, 2454.5),
+                (2234.7204, 2224.9383),
+                (2823.7016, 2901.8291),
+                (3095.108, 3280.8012),
+                (3200.0, 2900.0),
+            ],
+            200.0,
+        ),
+        (
+            0xFC2,
+            &[
+                (3629.0, 2350.5),
+                (3817.033, 2103.6556),
+                (4442.6995, 2415.7895),
+                (4898.6665, 2876.5096),
+                (5900.0, 3100.0),
+            ],
+            1302.9691,
+        ),
+    ];
+    for (h, want, r2) in cases {
+        let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap();
+        let d = decode_elements(&r).unwrap();
+        let mut got = vec![d.elements[0].segment.start()];
+        got.extend(d.elements.iter().map(|e| e.segment.end()));
+        assert_eq!(got.len(), want.len(), "{h:X}");
+        for (g, w) in got.iter().zip(want) {
+            assert!(near(*g, w.0, w.1), "{h:X}: {got:?}");
+        }
+        let Segment::Arc { geometry, .. } = d.elements[3].segment else {
+            panic!("{h:X}: no second curve")
+        };
+        assert!((geometry.radius - r2).abs() < 1e-3 && !geometry.counter_clockwise);
+    }
+}
