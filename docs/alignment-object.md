@@ -2148,7 +2148,7 @@ BL type (0 inward, 1 outward, 2 compound), BL id, BL before, BL after,
 BL 256 (MIST10), B clockwise,
 inward:   RD start X, Y, RD unit direction, BD length, BD end radius
 outward:  BD start radius, BD length, RD start X, Y, RD unit direction
-compound: RD start X, Y, RD unit direction, BD length, BD start radius,
+compound: RD start X, Y, RD unit direction, BD start radius, BD length,
           BD end radius
 BD 0, BD 0, BD 1, BD 0 (MIST16)
 ```
@@ -2173,8 +2173,31 @@ start point and direction are the line's end. Notes:
 - A spiral laid out through a point (D, E) is stored by its computed
   length and radius; the point is its end and is not stored.
 - The clockwise bit: 1 for FD7, B, C (clockwise), 0 for A, D, E.
-- **Open:** in a compound spiral, which of the first two BDs is the length
-  (C has 200 and 200). FD7's header flag is 1 (MIST8).
+- Compound order settled by S165: the owner changed C to L=800,
+  R-end=250 (R-start 300 typed, 200 kept); it stores 200, 800, 250, and
+  only start radius 200 → length 800 → end radius 250 ends where the
+  drawing does (965.1484, −411.2572).
+- FD7's header flag is 1 (MIST8).
+
+**Free spirals between two lines (S165).** `Free Spiral (Between two
+entities)` (FDA, incurve) and `… (1)` (10C5, outcurve), each L=800 between
+two fixed lines. The spiral is a new record kind 8 (prefix `…01000`) that
+stores only its length:
+
+```text
+BL 0x04020008, B flag, BD −1, BD −1, BL n1 1, BD −1,
+BL code (0x000A000A incurve, 0x000A000C outcurve), BL id, BL before,
+BL after, BL 256 (MIST10), BD length, 2 bits `10` (unknown)
+```
+
+Geometry: the spiral turns by the angle Δ between the lines (here
+clockwise), so its radius at the curved end is L / 2Δ = 250.6310; it is
+slid along the first line until its end lies on the second. Both lines are
+extended or trimmed to it (FDA: line 1 drawn to (3047.9642, −422.1033)
+beyond its stored end (3023.5, −439.5); line 2 from (3757.5827, −352.0680)
+instead of (3816.5, −439.5)). Computed start and end equal the drawn
+points to 4 decimals for both samples.
+
 
 ## Open questions
 

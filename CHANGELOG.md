@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Free spirals between two lines (record kind 8): `Element::FreeSpiral`,
+  `free_spiral_between`; the lines are extended or trimmed to the spiral.
+  Compound spirals read as start radius, length, end radius. Sample S165.
 - Element headers without the lock byte (S164): `read_element_header`
   reads both forms for tangents, arcs and spirals, and the writers follow
   the alignment's form (`encode_element_header`, `element_header_flags`;

@@ -258,3 +258,57 @@ fn s162_spirals_match_civil3d_drawing() {
         assert!(near(d.elements[0].segment.end(), sp.start.x, sp.start.y));
     }
 }
+
+/// S165: free spirals between two lines (incurve and outcurve, L = 800)
+/// and SPIRAL C edited to settle the compound spiral's field order; the
+/// expected points are where Civil 3D's drawn spiral starts and ends.
+#[test]
+fn s165_free_spirals_and_compound_order() {
+    let o = raw::open("samples/S165_S120_free_spiral.dwg").unwrap();
+    let get = |h: u64| {
+        let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap();
+        decode_elements(&r).unwrap()
+    };
+    for (h, start, end, inward) in [
+        (0xFDA, (3047.9642, -422.1033), (3757.5827, -352.068), true),
+        (
+            0x10C5,
+            (5857.3832, -263.5831),
+            (6496.9412, -578.9068),
+            false,
+        ),
+    ] {
+        let d = get(h);
+        assert_eq!(d.record_count(), 3);
+        let Element::FreeSpiral(sp) = &d.elements[1].record else {
+            panic!("{h:X}: no free spiral")
+        };
+        assert_eq!(sp.length, 800.0);
+        let Segment::Spiral {
+            start: s,
+            end: e,
+            geometry: g,
+        } = d.elements[1].segment
+        else {
+            panic!("{h:X}: not a spiral segment")
+        };
+        assert!(near(s, start.0, start.1) && near(e, end.0, end.1), "{h:X}");
+        let r = if inward { g.radius } else { g.start_radius };
+        assert!((r - 250.631).abs() < 1e-3 && !g.counter_clockwise);
+        // Both lines meet the spiral.
+        assert!(near(d.elements[0].segment.end(), start.0, start.1));
+        assert!(near(d.elements[2].segment.start(), end.0, end.1));
+    }
+    let d = get(0x10A1);
+    let Element::Spiral(sp) = &d.elements[1].record else {
+        panic!("no spiral")
+    };
+    assert_eq!(
+        (sp.start_radius, sp.length, sp.end_radius),
+        (200.0, 800.0, 250.0)
+    );
+    assert!(near(d.elements[1].segment.end(), 965.1484, -411.2572));
+}

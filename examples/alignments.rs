@@ -72,6 +72,13 @@ fn main() {
                             2 => "compound",
                             _ => "?",
                         },
+                        Element::FreeSpiral(sp) => {
+                            if sp.code == civil3drust::aecc_elements::FREE_SPIRAL_INCURVE {
+                                "free, incurve"
+                            } else {
+                                "free, outcurve"
+                            }
+                        }
                         _ => "line-spiral group",
                     },
                     g.start_radius,

@@ -189,7 +189,7 @@ fn encode_kept(
         (Element::Tangent(t), Rewrite::FloatingFrom(_) | Rewrite::FloatingTo(_)) => {
             return Err(err(format!("tangent {} cannot become a curve", t.id)));
         }
-        (Element::LineSpiral(_) | Element::Spiral(_), _) => {
+        (Element::LineSpiral(_) | Element::Spiral(_) | Element::FreeSpiral(_), _) => {
             return Err(err(format!("spiral {}: not editable yet", el.id())));
         }
     }
@@ -509,7 +509,7 @@ pub fn remove_element(
                 Rewrite::FixedTangent(t.start, prev.segment.end())
             }
             Element::Tangent(_) => Rewrite::Links,
-            Element::LineSpiral(_) | Element::Spiral(_) => {
+            Element::LineSpiral(_) | Element::Spiral(_) | Element::FreeSpiral(_) => {
                 return Err(err(format!(
                     "spiral {}: not editable yet",
                     crate::aecc_alignment::Linked::id(&prev.record)
@@ -736,7 +736,7 @@ pub fn replace_elements(
                     t.id
                 )))
             }
-            Element::LineSpiral(_) | Element::Spiral(_) => {
+            Element::LineSpiral(_) | Element::Spiral(_) | Element::FreeSpiral(_) => {
                 return Err(err(format!(
                     "spiral {}: not editable yet",
                     crate::aecc_alignment::Linked::id(e)

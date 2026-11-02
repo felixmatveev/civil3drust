@@ -348,7 +348,9 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 
 - **Where:** S119 element 7, the BL after the IDs (before the start
   point); also in every fixed spiral record (S121, S162) at the same
-  place, whatever the spiral type.
+  place, whatever the spiral type, and in the free spirals of S165
+  (kind 8). The free spiral record also ends with 2 unexplained bits `10`
+  after its length.
 - **Hypothesis:** spiral definition or type flags (clothoid, by length vs
   A). S121 (spiral methods) should vary it.
 

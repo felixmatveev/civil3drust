@@ -335,6 +335,8 @@ pub enum Element {
     LineSpiral(LineSpiralRecord),
     /// A spiral with its own start point and direction (S121, S162).
     Spiral(SpiralRecord),
+    /// A spiral between two lines, by length (S165).
+    FreeSpiral(FreeSpiralRecord),
 }
 
 impl Element {
@@ -344,6 +346,7 @@ impl Element {
             Self::Arc(a) => a.header_bit,
             Self::LineSpiral(g) => g.header_bit,
             Self::Spiral(g) => g.header_bit,
+            Self::FreeSpiral(g) => g.header_bit,
         }
     }
     /// Bit offset just after the record.
@@ -353,6 +356,7 @@ impl Element {
             Self::Arc(a) => a.end_bit,
             Self::LineSpiral(g) => g.end_bit,
             Self::Spiral(g) => g.end_bit,
+            Self::FreeSpiral(g) => g.end_bit,
         }
     }
 }
@@ -364,6 +368,7 @@ impl Linked for Element {
             Self::Arc(a) => a.id,
             Self::LineSpiral(g) => g.id,
             Self::Spiral(g) => g.id,
+            Self::FreeSpiral(g) => g.id,
         }
     }
     fn before(&self) -> i32 {
@@ -372,6 +377,7 @@ impl Linked for Element {
             Self::Arc(a) => a.before,
             Self::LineSpiral(g) => g.before,
             Self::Spiral(g) => g.before,
+            Self::FreeSpiral(g) => g.before,
         }
     }
     fn after(&self) -> i32 {
@@ -380,6 +386,7 @@ impl Linked for Element {
             Self::Arc(a) => a.after,
             Self::LineSpiral(g) => g.after,
             Self::Spiral(g) => g.after,
+            Self::FreeSpiral(g) => g.after,
         }
     }
 }
@@ -489,7 +496,7 @@ pub const PREFIX_SPIRAL: u16 = 6;
 /// BL 256 (MIST10), B clockwise,
 /// inward:   RD start X, Y, RD unit direction, BD length, BD end radius
 /// outward:  BD start radius, BD length, RD start X, Y, RD unit direction
-/// compound: RD start X, Y, RD unit direction, BD length, BD start radius,
+/// compound: RD start X, Y, RD unit direction, BD start radius, BD length,
 ///           BD end radius
 /// then BD × 4 (0, 0, 1, 0 in every sample)
 /// ```
@@ -576,12 +583,13 @@ fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
             start = point(k)?;
             d = point(k + 128)?;
             k += 256;
-            length = bd(&mut k)?;
+            // Compound: start radius first (S165 C: 200, 800, 250).
             start_radius = if kind == SPIRAL_COMPOUND {
                 bd(&mut k)?
             } else {
                 inf
             };
+            length = bd(&mut k)?;
             end_radius = bd(&mut k)?;
         }
         SPIRAL_OUTWARD => {
@@ -628,6 +636,116 @@ fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
         end_radius,
         tail,
     })
+}
+
+/// The kind prefix of free-spiral records (S165).
+pub const PREFIX_FREE_SPIRAL: u16 = 8;
+/// Free-spiral codes (S165): a spiral from the line before into the line
+/// after, curvature rising (incurve) or falling (outcurve).
+pub const FREE_SPIRAL_INCURVE: i32 = 0x000A_000A;
+pub const FREE_SPIRAL_OUTCURVE: i32 = 0x000A_000C;
+
+/// A free spiral between two lines (kind prefix 8; S165): only its length
+/// is stored. Layout after the parameter block:
+///
+/// ```text
+/// BL code (0xA000A incurve, 0xA000C outcurve), BL id, BL before,
+/// BL after, BL 256 (MIST10), BD length, 2 bits `10` (meaning unknown)
+/// ```
+///
+/// It turns by the angle Δ between the two lines, so its radius at the
+/// curved end is L / 2Δ; it is slid along the first line until it ends on
+/// the second, which both lines are extended or trimmed to.
+#[derive(Debug, Clone, PartialEq)]
+pub struct FreeSpiralRecord {
+    pub header_bit: usize,
+    pub end_bit: usize,
+    pub id: i32,
+    pub before: i32,
+    pub after: i32,
+    pub flag: bool,
+    pub code: i32,
+    pub mode: i32,
+    pub length: f64,
+    /// The two bits after the length.
+    pub tail_bits: u8,
+}
+
+fn free_spiral_at(data: &[u8], bit: usize) -> Option<FreeSpiralRecord> {
+    if kind_prefix(data, bit)? != PREFIX_FREE_SPIRAL {
+        return None;
+    }
+    let (_, k) = aecc_alignment::read_element_header(data, bit)?;
+    let flag = raw::get_bit(data, k) == 1;
+    let (_, k) = raw::read_bd(data, k + 1)?;
+    let (_, k) = raw::read_bd(data, k)?;
+    let (n1, mut k) = raw::read_bl(data, k)?;
+    if !(1..=2).contains(&n1) {
+        return None;
+    }
+    for _ in 0..n1 {
+        k = raw::read_bd(data, k)?.1;
+    }
+    let (code, k) = raw::read_bl(data, k)?;
+    if code != FREE_SPIRAL_INCURVE && code != FREE_SPIRAL_OUTCURVE {
+        return None;
+    }
+    let (id, k) = raw::read_bl(data, k)?;
+    let (before, k) = raw::read_bl(data, k)?;
+    let (after, k) = raw::read_bl(data, k)?;
+    let (mode, k) = raw::read_bl(data, k)?;
+    let (length, k) = raw::read_bd(data, k)?;
+    if id < 1 || before < 0 || after < 0 || !(length.is_finite() && length > 0.0) {
+        return None;
+    }
+    let tail_bits = raw::get_bit(data, k) << 1 | raw::get_bit(data, k + 1);
+    Some(FreeSpiralRecord {
+        header_bit: bit,
+        end_bit: k + 2,
+        id,
+        before,
+        after,
+        flag,
+        code,
+        mode,
+        length,
+        tail_bits,
+    })
+}
+
+/// Place a free spiral of length `l` between the line arriving along
+/// `in_dir` through `p` and the line leaving along `out_dir` through `q`:
+/// returns (start on the first line, end on the second, geometry).
+pub fn free_spiral_between(
+    p: Point2,
+    in_dir: (f64, f64),
+    q: Point2,
+    out_dir: (f64, f64),
+    l: f64,
+    incurve: bool,
+) -> Option<(Point2, Point2, SpiralGeometry)> {
+    let (u1, u2) = (unit(in_dir)?, unit(out_dir)?);
+    let c = cross(u1, u2);
+    let delta = c.atan2(u1.0 * u2.0 + u1.1 * u2.1);
+    if c.abs() <= 1e-12 || delta.abs() <= 1e-12 {
+        return None;
+    }
+    let r = l / (2.0 * delta.abs());
+    let inf = f64::INFINITY;
+    let mut g = SpiralGeometry {
+        start: Point2::new(0.0, 0.0),
+        direction: u1,
+        length: l,
+        radius: if incurve { r } else { inf },
+        start_radius: if incurve { inf } else { r },
+        counter_clockwise: delta > 0.0,
+    };
+    let (e, _) = g.point_at(l);
+    let w = (q.x - p.x - e.x, q.y - p.y - e.y);
+    let t = cross(w, u2) / c;
+    let ts = Point2::new(p.x + t * u1.0, p.y + t * u1.1);
+    g.start = ts;
+    Some((ts, Point2::new(ts.x + e.x, ts.y + e.y), g))
 }
 
 fn arc_at(data: &[u8], bit: usize) -> Option<ArcRecord> {
@@ -856,6 +974,9 @@ pub fn element_records(data: &[u8]) -> Vec<Element> {
         if let Some(t) = aecc_alignment::record_at(data, bit) {
             bit = t.end_bit();
             out.push(Element::Tangent(t));
+        } else if let Some(sp) = free_spiral_at(data, bit) {
+            bit = sp.end_bit;
+            out.push(Element::FreeSpiral(sp));
         } else if let Some(sp) = spiral_at(data, bit) {
             bit = sp.end_bit;
             out.push(Element::Spiral(sp));
@@ -1082,6 +1203,31 @@ fn resolve_with(chain: &[Element], pre: &[Placed]) -> Result<Vec<ResolvedElement
     let unsupported = |m: String| DecodeError::BrokenChain(m);
     // Free arcs first: (PC, PT, geometry) by chain index.
     let mut free: Vec<Placed> = pre.to_vec();
+    // Free spirals between two lines (S165): (start, end, geometry).
+    let mut spirals: Vec<Option<(Point2, Point2, SpiralGeometry)>> = vec![None; chain.len()];
+    for (i, e) in chain.iter().enumerate() {
+        if let Element::FreeSpiral(sp) = e {
+            let prev = i.checked_sub(1).and_then(|j| chain.get(j));
+            let (Some(Element::Tangent(a)), Some(Element::Tangent(b))) = (prev, chain.get(i + 1))
+            else {
+                return Err(unsupported(format!(
+                    "free spiral {} is not between two lines (no sample yet)",
+                    sp.id
+                )));
+            };
+            spirals[i] = Some(
+                free_spiral_between(
+                    a.start,
+                    (a.end.x - a.start.x, a.end.y - a.start.y),
+                    b.start,
+                    (b.end.x - b.start.x, b.end.y - b.start.y),
+                    sp.length,
+                    sp.code == FREE_SPIRAL_INCURVE,
+                )
+                .ok_or_else(|| unsupported(format!("free spiral {} doesn't fit", sp.id)))?,
+            );
+        }
+    }
     for (i, e) in chain.iter().enumerate() {
         if let Element::Arc(a) = e {
             let by_centre = match a.def {
@@ -1247,6 +1393,14 @@ fn resolve_with(chain: &[Element], pre: &[Placed]) -> Result<Vec<ResolvedElement
     let mut out = Vec::with_capacity(chain.len());
     for (i, e) in chain.iter().enumerate() {
         let segment = match e {
+            Element::FreeSpiral(_) => {
+                let (start, end, geometry) = spirals[i].expect("placed above");
+                Segment::Spiral {
+                    start,
+                    end,
+                    geometry,
+                }
+            }
             Element::Spiral(sp) => {
                 let g = sp.geometry();
                 Segment::Spiral {
@@ -1262,13 +1416,15 @@ fn resolve_with(chain: &[Element], pre: &[Placed]) -> Result<Vec<ResolvedElement
             Element::Tangent(t) => {
                 let start = i
                     .checked_sub(1)
-                    .and_then(|j| free[j])
-                    .map_or(t.start, |(_, pt, _)| pt);
+                    .and_then(|j| free[j].map(|f| f.1).or(spirals[j].map(|s| s.1)))
+                    .unwrap_or(t.start);
                 let end = free
                     .get(i + 1)
                     .copied()
                     .flatten()
-                    .map_or(t.end, |(pc, _, _)| pc);
+                    .map(|f| f.0)
+                    .or(spirals.get(i + 1).copied().flatten().map(|s| s.0))
+                    .unwrap_or(t.end);
                 Segment::Line { start, end }
             }
             Element::Arc(a) => match a.def {

@@ -316,7 +316,10 @@ fn write_intervals(
                 return Err(err("a speed on a spiral group (no sample yet)"));
             }
         };
-        if matches!(e.record, Element::LineSpiral(_) | Element::Spiral(_)) {
+        if matches!(
+            e.record,
+            Element::LineSpiral(_) | Element::Spiral(_) | Element::FreeSpiral(_)
+        ) {
             return Err(err("a speed on a spiral group (no sample yet)"));
         }
         // The element's own ID and links (S115: Civil 3D rewrote our
