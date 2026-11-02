@@ -791,6 +791,15 @@ pub enum GroupDef {
     /// into the next one, with A1 / A2 = `ratio`. Free Compound / Reverse
     /// Spiral-Spiral (between two curves).
     SpiralSpiralCurves { ratio: f64 },
+    /// Code 0 (prefix 10): spiral out of the previous curve, a line, a spiral
+    /// into the next curve, by spiral lengths (the line's length solved).
+    /// Free Compound / Reverse Spiral-Line-Spiral (between two curves,
+    /// spiral lengths).
+    SpiralLineSpiralLengths { l1: f64, l2: f64 },
+    /// Code 1 (prefix 10): as code 0 by the line's length; the spirals have
+    /// equal A. Free Compound / Reverse Spiral-Line-Spiral (between two
+    /// curves, line length).
+    SpiralLineSpiralLine { line: f64 },
     /// Code 1 (prefix 20): from a point on the previous curve, a spiral out
     /// of it, a spiral the other way into a curve of `radius` ending at
     /// `point`. Floating Reverse Curve with Spirals (from curve, radius,
@@ -895,6 +904,11 @@ fn group_at(data: &[u8], bit: usize) -> Option<GroupRecord> {
             l1: bd(&mut k)?,
             l2: bd(&mut k)?,
         },
+        (PREFIX_LINE_GROUP, 0) => GroupDef::SpiralLineSpiralLengths {
+            l1: bd(&mut k)?,
+            l2: bd(&mut k)?,
+        },
+        (PREFIX_LINE_GROUP, 1) => GroupDef::SpiralLineSpiralLine { line: bd(&mut k)? },
         (PREFIX_LINE_GROUP, 4) => GroupDef::SpiralSpiralCurves { ratio: bd(&mut k)? },
         (PREFIX_LINE_GROUP, 161) => GroupDef::SpiralLine {
             spiral: bd(&mut k)?,
@@ -1006,6 +1020,18 @@ fn place_group(
             )?;
             parts.remove(1); // the curve between them has no length
             Some(parts)
+        }
+        GroupDef::SpiralLineSpiralLengths { l1, l2 } => {
+            let Some(&Segment::Arc { geometry, .. }) = before else {
+                return None;
+            };
+            place_spiral_line_spiral(&geometry, next_curve?, Some((l1, l2)), None)
+        }
+        GroupDef::SpiralLineSpiralLine { line } => {
+            let Some(&Segment::Arc { geometry, .. }) = before else {
+                return None;
+            };
+            place_spiral_line_spiral(&geometry, next_curve?, None, Some(line))
         }
         GroupDef::SpiralSpiralCurves { ratio } => {
             let Some(&Segment::Arc {
@@ -1445,6 +1471,152 @@ fn place_spiral_spiral(
         c2.counter_clockwise,
     );
     Some(vec![spiral_segment(s1), spiral_segment(s2)])
+}
+
+/// Spiral out of `c1` at `phi` (length `l1`), a line of length `t`, a
+/// spiral of length `l2` into a curve of radius `c2.radius` turning as
+/// `c2`: (spirals, line ends, centre reached).
+fn sls_chain(
+    c1: &ArcGeometry,
+    phi: f64,
+    l1: f64,
+    t: f64,
+    l2: f64,
+    c2: &ArcGeometry,
+) -> (SpiralGeometry, (Point2, Point2), SpiralGeometry, Point2) {
+    let s = Point2::new(
+        c1.center.x + c1.radius * phi.cos(),
+        c1.center.y + c1.radius * phi.sin(),
+    );
+    let dir = if c1.counter_clockwise {
+        (-phi.sin(), phi.cos())
+    } else {
+        (phi.sin(), -phi.cos())
+    };
+    let s1 = SpiralGeometry {
+        start: s,
+        direction: dir,
+        length: l1,
+        radius: f64::INFINITY,
+        start_radius: c1.radius,
+        counter_clockwise: c1.counter_clockwise,
+    };
+    let (m, d) = s1.point_at(l1);
+    let n = Point2::new(m.x + t * d.0, m.y + t * d.1);
+    let s2 = SpiralGeometry {
+        start: n,
+        direction: d,
+        length: l2,
+        radius: c2.radius,
+        start_radius: f64::INFINITY,
+        counter_clockwise: c2.counter_clockwise,
+    };
+    let (sc, d2) = s2.point_at(l2);
+    let side = if c2.counter_clockwise { 1.0 } else { -1.0 };
+    let c = Point2::new(
+        sc.x - side * c2.radius * d2.1,
+        sc.y + side * c2.radius * d2.0,
+    );
+    (s1, (m, n), s2, c)
+}
+
+/// Spiral-line-spiral between two curves (S176): either the spiral lengths
+/// are stored and the line length is solved, or the line length is stored
+/// and the spirals (with A1 = A2) are solved; in both cases also where the
+/// group leaves the first curve. Of several solutions the shortest group.
+fn place_spiral_line_spiral(
+    c1: &ArcGeometry,
+    c2: &ArcGeometry,
+    lengths: Option<(f64, f64)>,
+    line: Option<f64>,
+) -> Option<Vec<Segment>> {
+    // x = [phi, v]: v is the line length (lengths stored) or ln A.
+    let parts = |x: &[f64; 2]| -> (f64, f64, f64) {
+        match (lengths, line) {
+            (Some((l1, l2)), _) => (l1, x[1], l2),
+            (None, Some(t)) => {
+                let a2 = (2.0 * x[1]).exp();
+                (a2 / c1.radius, t, a2 / c2.radius)
+            }
+            _ => (f64::NAN, f64::NAN, f64::NAN),
+        }
+    };
+    let resid = |x: &[f64; 2]| -> [f64; 2] {
+        let (l1, t, l2) = parts(x);
+        let (.., c) = sls_chain(c1, x[0], l1, t, l2, c2);
+        [c.x - c2.center.x, c.y - c2.center.y]
+    };
+    let scale = c1
+        .radius
+        .max(c2.radius)
+        .max(c1.center.distance_to(c2.center));
+    let starts: Vec<f64> = if lengths.is_some() {
+        vec![0.1 * scale, 0.5 * scale, scale, 2.0 * scale]
+    } else {
+        [0.1, 0.3, 1.0, 3.0]
+            .iter()
+            .map(|f| (f * scale).ln())
+            .collect()
+    };
+    let valid = |x: &[f64; 2]| {
+        x[0].is_finite()
+            && if lengths.is_some() {
+                x[1] >= 0.0 && x[1] < 1e7
+            } else {
+                x[1] > -5.0 && x[1] < 20.0
+            }
+    };
+    let mut best: Option<(f64, [f64; 2])> = None;
+    let nt = 24;
+    for i in 0..nt {
+        for &v in &starts {
+            let mut x = [std::f64::consts::TAU * i as f64 / nt as f64, v];
+            for _ in 0..50 {
+                let r = resid(&x);
+                if r[0].abs().max(r[1].abs()) < 1e-9 * scale {
+                    break;
+                }
+                let mut jac = [[0.0; 2]; 2];
+                for k in 0..2 {
+                    let h = 1e-7 * x[k].abs().max(1.0);
+                    let mut y = x;
+                    y[k] += h;
+                    let g = resid(&y);
+                    jac[0][k] = (g[0] - r[0]) / h;
+                    jac[1][k] = (g[1] - r[1]) / h;
+                }
+                let det = jac[0][0] * jac[1][1] - jac[0][1] * jac[1][0];
+                if det.abs() < 1e-14 {
+                    break;
+                }
+                x[0] -= (jac[1][1] * r[0] - jac[0][1] * r[1]) / det;
+                x[1] -= (-jac[1][0] * r[0] + jac[0][0] * r[1]) / det;
+                if !valid(&x) {
+                    break;
+                }
+            }
+            if !valid(&x) {
+                continue;
+            }
+            let r = resid(&x);
+            if r[0].abs().max(r[1].abs()) > 1e-6 * scale {
+                continue;
+            }
+            let (l1, t, l2) = parts(&x);
+            let total = l1 + t + l2;
+            if best.is_none_or(|(b, _)| total < b - 1e-6) {
+                best = Some((total, [x[0].rem_euclid(std::f64::consts::TAU), x[1]]));
+            }
+        }
+    }
+    let (_, x) = best?;
+    let (l1, t, l2) = parts(&x);
+    let (s1, (m, n), s2, _) = sls_chain(c1, x[0], l1, t, l2, c2);
+    Some(vec![
+        spiral_segment(s1),
+        Segment::Line { start: m, end: n },
+        spiral_segment(s2),
+    ])
 }
 
 /// Centre offset from the TS: k along the tangent, `dist` along the normal.

@@ -16,6 +16,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 - Spiral-spiral groups (S175): between two lines (kind 8 code 8) and
   between two curves (kind 10 code 4, compound or reverse, A1/A2 stored;
   start and A solved, curves trimmed or extended).
+- Spiral-line-spiral groups between two curves (S176): kind 10 code 0 (by
+  spiral lengths, line solved) and code 1 (by line length, spirals with
+  equal A solved), compound or reverse.
 
 - Free spirals between two lines (record kind 8): `Element::FreeSpiral`,
   `free_spiral_between`; the lines are extended or trimmed to the spiral.

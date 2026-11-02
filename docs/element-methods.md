@@ -81,10 +81,10 @@ the arcs and lines in each record's proxy graphics.
 | Free Compound Spiral-Spiral (between two curves) | group kind 10 code 4: BD A1/A2; start on the first curve and A solved | known, S175 |
 | Free Reverse Spiral-Spiral (between two curves) | group kind 10 code 4 (as compound; the curves turn opposite ways) | known, S175 |
 | Free Compound Spiral-Spiral (between two tangents) | group kind 8 code 8: BD L1, BD L2; radius (L1 + L2) / 2Δ | known, S175 |
-| Free Compound Spiral-Line-Spiral (between two curves, spiral lengths) | planned | S120 → S121 |
-| Free Reverse Spiral-Line-Spiral (between two curves, spiral lengths) | planned | S120 → S121 |
-| Free Compound Spiral-Line-Spiral (between two curves, line length) | planned | S120 → S121 |
-| Free Reverse Spiral-Line-Spiral (between two curves, line length) | planned | S120 → S121 |
+| Free Compound Spiral-Line-Spiral (between two curves, spiral lengths) | group kind 10 code 0: BD L1, BD L2; line length and start solved | known, S176 |
+| Free Reverse Spiral-Line-Spiral (between two curves, spiral lengths) | group kind 10 code 0 (curves turn opposite ways) | known, S176 |
+| Free Compound Spiral-Line-Spiral (between two curves, line length) | group kind 10 code 1: BD line length; spirals with equal A solved | known, S176 |
+| Free Reverse Spiral-Line-Spiral (between two curves, line length) | group kind 10 code 1 (curves turn opposite ways) | known, S176 |
 
 ## How the samples are made
 

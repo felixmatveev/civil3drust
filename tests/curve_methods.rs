@@ -494,3 +494,84 @@ fn s175_spiral_spiral_groups() {
         }
     }
 }
+
+/// S176: spiral-line-spiral between two curves, by spiral lengths (line
+/// solved) and by line length (spirals with equal A solved), compound and
+/// reverse. Points as drawn; FEC's 12 000-long spiral is drawn ~0.02 off
+/// the exact clothoid.
+#[test]
+fn s176_spiral_line_spiral() {
+    let o = raw::open("samples/S176_S120_spiral_line_spiral.dwg").unwrap();
+    type Case<'a> = (u64, &'a [(f64, f64)], f64, f64);
+    let cases: [Case; 4] = [
+        (
+            0xFE6,
+            &[
+                (13577.164, 10119.7097),
+                (13971.4112, 10186.5308),
+                (21194.3437, 11623.7236),
+                (21389.2657, 11668.2235),
+            ],
+            7364.5283,
+            1e-3,
+        ),
+        (
+            0xFE9,
+            &[
+                (13280.7034, 30726.3535),
+                (13450.3818, 30832.2115),
+                (18356.1288, 33962.3894),
+                (18699.3002, 34167.6363),
+            ],
+            5819.3099,
+            1e-3,
+        ),
+        (
+            0xFEC,
+            &[
+                (10079.6724, 7037.6971),
+                (15515.8504, 3908.092),
+                (16102.7634, 3783.4599),
+                (21539.4255, 8760.212),
+            ],
+            600.0,
+            3e-2,
+        ),
+        (
+            0xFEF,
+            &[
+                (13923.2411, 19350.8108),
+                (16921.1568, 22470.8383),
+                (17120.7114, 22929.29),
+                (19468.3668, 25893.388),
+            ],
+            500.0,
+            1e-3,
+        ),
+    ];
+    for (h, want, line, tol) in cases {
+        let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap();
+        let d = decode_elements(&r).unwrap();
+        assert_eq!(d.record_count(), 3, "{h:X}");
+        // Group parts: spiral, line, spiral (elements 1..=3).
+        let got: Vec<Point2> = std::iter::once(d.elements[1].segment.start())
+            .chain(d.elements[1..4].iter().map(|e| e.segment.end()))
+            .collect();
+        for (g, w) in got.iter().zip(want) {
+            assert!(
+                (g.x - w.0).abs() < tol && (g.y - w.1).abs() < tol,
+                "{h:X}: {got:?}"
+            );
+        }
+        assert!(
+            (d.elements[2].segment.length() - line).abs() < 1e-3,
+            "{h:X}"
+        );
+        // Both curves are trimmed to the group.
+        assert_eq!(d.elements[0].segment.end(), got[0]);
+        assert_eq!(d.elements[4].segment.start(), got[3]);
+    }
+}

@@ -2218,6 +2218,8 @@ BL code, BL id, BL before, BL after, BL 256 (MIST10), data:
   10/162 RD start, BD L spiral        line with spiral into the next curve (S119)
   8/8   BD L1, BD L2                  Free Compound Spiral-Spiral (between two tangents)
   10/4  BD A1/A2                      Free Compound / Reverse Spiral-Spiral (between two curves)
+  10/0  BD L1, BD L2                  Free Compound / Reverse Spiral-Line-Spiral (between two curves, spiral lengths)
+  10/1  BD line length                Free Compound / Reverse Spiral-Line-Spiral (between two curves, line length)
   20/1  BD L1, BD L2, BD R, RD point  Floating Reverse Curve with Spirals (from curve, radius, through point)
   20/2  BD L1, BD L2, RD P1, RD P2    Floating Reverse Curve with Spirals (from curve, two points)
 ```
@@ -2283,6 +2285,25 @@ from a grid of starting values.
   3940.27 (within 0.005; increasing the integration accuracy doesn't
   change civil3drust's points, so Civil 3D's very long spirals are drawn
   slightly off the exact clothoid).
+
+**Spiral-line-spiral groups (S176).** Between two three-point curves: a
+spiral out of the first (1/R1 → 0), a line, a spiral into the second
+(0 → 1/R2), compound or reverse by the curves' senses. Both curves are
+trimmed to the group.
+
+| alignment | stored | solved (= drawn) |
+|---|---|---|
+| FE6 compound, spiral lengths (10/0) | L1 400, L2 200 | line 7364.5283 |
+| FE9 reverse, spiral lengths (10/0) | L1 200, L2 400 | line 5819.3099 |
+| FEC compound, line length (10/1) | line 600 | L1 6529.05, L2 12057.80 |
+| FEF reverse, line length (10/1) | line 500 | L1 4556.89, L2 3885.79 |
+
+With the line length stored, the spirals have **equal A** (A² = R1·L1 =
+R2·L2: FEC 22.51 million, FEF 9.65 million); that, the start on the
+first curve and the tangency to the second curve fix the group. One
+solution in each sample. Points match the drawing to 4 decimals except
+FEC (within 0.02; its second spiral is 12 058 long and turns 3.2 rad, like
+S175 FE0).
 
 ## Open questions
 
