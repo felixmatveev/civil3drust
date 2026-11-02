@@ -50,8 +50,8 @@ MIST1, a geometry cache, is partially solved and zeroed),
 element header, flag and
 parameter fields (MIST7–MIST10), one speed-interval distance (MIST11),
 topology flags (MIST12), a zero-GUID block (MIST13) and the half-circle
-rule (MIST14) and a section-2 flag (MIST15). MIST6 (implied PI display) is
-solved. None of them stops Civil 3D from opening our files.
+rule (MIST14). MIST6 (implied PI display) and MIST15 (tangency
+constraint swapping) are solved. None of them stops Civil 3D from opening our files.
 
 ### Milestones reached
 

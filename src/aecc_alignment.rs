@@ -41,6 +41,37 @@ pub const ELEMENT_HEADER: i32 = 0x0402_0008;
 /// Former name of [`ELEMENT_HEADER`].
 pub const TANGENT_HEADER: i32 = ELEMENT_HEADER;
 
+/// Flag byte in an element header when "Lock all parameter constraints"
+/// is on (MIST7, S164). The byte is absent when the option is off.
+pub const ELEMENT_LOCKED: u8 = 0x02;
+
+/// Read an element header at `bit`: code `00`, the 16-bit value `0x0008`,
+/// an optional flag byte (present, with bit [`ELEMENT_LOCKED`], when the
+/// alignment's parameters are locked), then the byte `0x04`. Returns the
+/// flag byte (`None` when absent) and the bit after the header. The locked
+/// form is the 32-bit [`ELEMENT_HEADER`] read as a BL.
+pub fn read_element_header(data: &[u8], bit: usize) -> Option<(Option<u8>, usize)> {
+    if raw::get_bit(data, bit) != 0
+        || raw::get_bit(data, bit + 1) != 0
+        || raw::get_byte(data, bit + 2) != 0x08
+        || raw::get_byte(data, bit + 10) != 0x00
+    {
+        return None;
+    }
+    let flags = raw::get_byte(data, bit + 18);
+    let next = if flags == 0x04 {
+        (None, bit + 26)
+    } else if flags & ELEMENT_LOCKED != 0 && raw::get_byte(data, bit + 26) == 0x04 {
+        (Some(flags), bit + 34)
+    } else {
+        return None;
+    };
+    if next.1 > raw::bit_len(data) {
+        return None;
+    }
+    Some(next)
+}
+
 /// An element record linked to its neighbours by ID.
 pub trait Linked {
     fn id(&self) -> i32;
@@ -152,7 +183,7 @@ pub fn tangent_records(data: &[u8], from: usize) -> Vec<TangentRecord> {
     let mut out = Vec::new();
     let mut bit = from;
     let n = raw::bit_len(data);
-    while bit + 34 <= n {
+    while bit + 26 <= n {
         if let Some(rec) = record_at(data, bit) {
             bit = rec.end_bit();
             out.push(rec);
@@ -164,17 +195,7 @@ pub fn tangent_records(data: &[u8], from: usize) -> Vec<TangentRecord> {
 }
 
 pub(crate) fn record_at(data: &[u8], bit: usize) -> Option<TangentRecord> {
-    // Cheap pre-check: code 00 followed by the header's first byte (0x08).
-    if raw::get_bit(data, bit) != 0
-        || raw::get_bit(data, bit + 1) != 0
-        || raw::get_byte(data, bit + 2) != 0x08
-    {
-        return None;
-    }
-    let (h, k) = raw::read_bl(data, bit)?;
-    if h != ELEMENT_HEADER {
-        return None;
-    }
+    let (_, k) = read_element_header(data, bit)?;
     let (kind, k) = raw::read_bl(data, k)?;
     let (id, k) = raw::read_bl(data, k)?;
     let (before, k) = raw::read_bl(data, k)?;
@@ -399,9 +420,9 @@ pub struct DecodedAlignment {
 pub const STATION_GAP_BITS: usize = 41;
 
 /// The leading part of that gap. Bits 1–3 and 6 are the Design Criteria
-/// check boxes (`aecc_criteria`, O3) and bit 4 varies (S9), so they are not
-/// checked.
-const STATION_GAP_PREFIX: [u8; 17] = [0, 2, 2, 2, 2, 1, 2, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0];
+/// check boxes (`aecc_criteria`, O3), bits 4 and 5 the Constraint Editing
+/// options (MIST15, S163; lock, S164), so they are not checked.
+const STATION_GAP_PREFIX: [u8; 17] = [0, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0];
 
 /// Read the start station stored before the tangent whose header is at
 /// `first_header_bit` (the first element of the chain).

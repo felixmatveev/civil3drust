@@ -28,7 +28,8 @@ template and does not add them. The opposite list — what Civil 3D refuses
 Not everything Civil 3D could rebuild may be left out. These look like
 caches but are checked; see `civil3d-rejects.md`:
 
-- the element tag `0x04020008` and the MIST2 tag `0x0D00D773`;
+- the element header (`0x0008`, lock flag, `0x04`) and the MIST2 tag
+  `0x0D00D773`;
 - the format marker, which must match whether MIST2 is present;
 - the string count (three strings per free arc);
 - the alignment style reference;

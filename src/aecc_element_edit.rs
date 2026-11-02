@@ -134,13 +134,16 @@ fn encode_kept(
     after: i32,
     rewrite: Rewrite,
 ) -> Result<(), ElementEditError> {
+    // Each kept record keeps its own header form (locked or not).
+    let flags = crate::aecc_alignment::read_element_header(data, el.header_bit())
+        .ok_or_else(|| err(format!("element {}: header not readable", el.id())))?
+        .0;
     match (el, rewrite) {
         (Element::Tangent(t), Rewrite::FixedTangent(a, b)) => {
-            encode_tangent(w, t.id, before, after, a, b);
+            encode_tangent(w, flags, t.id, before, after, a, b);
         }
         (Element::Tangent(t), Rewrite::Links) => {
-            w.bits(0b00, 2);
-            w.rl(crate::aecc_alignment::ELEMENT_HEADER);
+            crate::aecc_build::encode_element_header(w, flags);
             w.bl(t.kind);
             w.bl(t.id);
             w.bl(before);
@@ -164,7 +167,7 @@ fn encode_kept(
                 n2: ARC_FLOATING_START,
                 ..a.params
             };
-            encode_free_arc(w, a.flag, &params, (a.id, before, after), radius);
+            encode_free_arc(w, flags, a.flag, &params, (a.id, before, after), radius);
             w.rd(start.x);
             w.rd(start.y);
         }
@@ -176,7 +179,7 @@ fn encode_kept(
                 n2: ARC_FLOATING_END,
                 ..a.params
             };
-            encode_free_arc(w, a.flag, &params, (a.id, before, after), radius);
+            encode_free_arc(w, flags, a.flag, &params, (a.id, before, after), radius);
             w.rd(end.x);
             w.rd(end.y);
         }
@@ -207,6 +210,7 @@ fn write_elements(
     if raw::read_bl(data, count_bit) != Some((d.record_count() as i32, first - 11)) {
         return Err(err("element count not where expected"));
     }
+    let flags = crate::aecc_build::element_header_flags(data, d);
     let mut w = Bits::default();
     w.copy(data, 0, count_bit);
     w.bl(plan.len() as i32);
@@ -230,7 +234,7 @@ fn write_elements(
                 end,
             } => {
                 w.bits(crate::aecc_build::PREFIX_TANGENT as u64, 11);
-                encode_tangent(&mut w, *id, *before, *after, *start, *end);
+                encode_tangent(&mut w, flags, *id, *before, *after, *start, *end);
             }
             Planned::NewFreeArc {
                 id,
@@ -243,6 +247,7 @@ fn write_elements(
                 // p1 (design speed) −1 (S96).
                 encode_free_arc(
                     &mut w,
+                    flags,
                     false,
                     &FREE_ARC_PARAMS,
                     (*id, *before, *after),

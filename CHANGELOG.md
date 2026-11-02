@@ -7,6 +7,14 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Element headers without the lock byte (S164): `read_element_header`
+  reads both forms for tangents, arcs and spirals, and the writers follow
+  the alignment's form (`encode_element_header`, `element_header_flags`;
+  D-051). Tests `unlocked_element_headers_read_s164` and
+  `edits_keep_the_unlocked_form_s164`.
+- `aecc_criteria::constraint_editing`: the Constraint Editing options
+  "Always perform implied tangency constraint swapping" (bit 16 before the
+  section-2 end) and "Lock all parameter constraints" (bit 15).
 - Fixed spiral records (kind 6): `Element::Spiral`, `SpiralRecord`
   (inward, outward, compound), resolved with linear curvature;
   `SpiralGeometry::start_radius`. Sample S162 and test
@@ -16,7 +24,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 - MIST15: the Constraint Editing option "Always perform implied tangency
   constraint swapping" (confirmed by S163).
 - MIST7: "Lock all parameter constraints" off removes the `0x02` byte from
-  every element header (S164); the reader does not handle that form yet.
+  every element header (S164) and clears bit 15 before the section-2 end.
+- MIST15 marked SOLVED (S163). The start-station check no longer requires
+  the lock bit, so S164's start station is found.
 - DECISIONS.md: D-049 records the end goal (files civil3drust and Civil 3D
   read the same; model data plus required plumbing only; Civil 3D
   rebuilds its own caches) and the acceptance test; status notes added to

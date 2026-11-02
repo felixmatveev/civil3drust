@@ -102,3 +102,26 @@ pub fn set_criteria(rec: &RawRecord, data: &mut [u8], c: Criteria) -> Result<(),
     }
     Ok(())
 }
+
+/// The Constraint Editing options of Alignment Properties, as stored next
+/// to the Design Criteria check boxes (MIST15, S163, S164).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ConstraintEditing {
+    /// "Always perform implied tangency constraint swapping" (16 bits
+    /// before the section-2 end; S163).
+    pub swap_tangency: bool,
+    /// "Lock all parameter constraints" (15 bits before; on by default).
+    /// Every element header also carries it as the flag byte `0x02`
+    /// (MIST7, S164).
+    pub lock_parameters: bool,
+}
+
+/// The Constraint Editing options of `rec` (read only; changing the lock
+/// also needs every element header changed).
+pub fn constraint_editing(rec: &RawRecord) -> Result<ConstraintEditing, CriteriaError> {
+    let e = section2_end(rec)?;
+    Ok(ConstraintEditing {
+        swap_tangency: raw::get_bit(&rec.data, e - 16) == 1,
+        lock_parameters: raw::get_bit(&rec.data, e - 15) == 1,
+    })
+}

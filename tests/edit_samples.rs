@@ -491,3 +491,89 @@ fn interval_links_match_civil3d_s115() {
         }
     }
 }
+
+// ---- "Lock all parameter constraints" (MIST7, S163 on / S164 off) ----
+
+use civil3drust::aecc_alignment::read_element_header;
+use civil3drust::aecc_criteria::constraint_editing;
+
+fn lock_sample(path: &str) -> raw::RawRecord {
+    let o = raw::open(path).unwrap();
+    raw::records(&o.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0xF9E)
+        .unwrap()
+}
+
+/// The header flag byte of every element (`None`: no byte).
+fn header_flags(r: &raw::RawRecord) -> Vec<Option<u8>> {
+    decode_elements(r)
+        .unwrap()
+        .all()
+        .map(|e| {
+            read_element_header(&r.data, e.record.header_bit())
+                .unwrap()
+                .0
+        })
+        .collect()
+}
+
+const S163: &str = "samples/S163_S24_tangency_swapping_on.dwg";
+const S164: &str = "samples/S164_S24_lock_parameters_off.dwg";
+
+#[test]
+fn unlocked_element_headers_read_s164() {
+    let (on, off) = (lock_sample(S163), lock_sample(S164));
+    assert_eq!(header_flags(&on), [Some(2); 4]);
+    assert_eq!(header_flags(&off), [None; 4]);
+    let (a, b) = (
+        decode_elements(&on).unwrap(),
+        decode_elements(&off).unwrap(),
+    );
+    assert_eq!(chain_of(&on), chain_of(&off));
+    assert_eq!(a.stored_start_station, Some(0.0));
+    assert_eq!(b.stored_start_station, Some(0.0));
+    assert!((a.length() - b.length()).abs() < 1e-12);
+    // The alignment-wide option sits next to MIST15.
+    let (c, d) = (
+        constraint_editing(&on).unwrap(),
+        constraint_editing(&off).unwrap(),
+    );
+    assert!(c.lock_parameters && c.swap_tangency);
+    assert!(!d.lock_parameters && !d.swap_tangency);
+}
+
+#[test]
+fn edits_keep_the_unlocked_form_s164() {
+    for (path, want) in [(S163, Some(2)), (S164, None)] {
+        let r = lock_sample(path);
+        // Remove the arc (ID 4), then add a curve back on tangent 1.
+        let (d, hb, _) = remove_element(&r, 4, 7).unwrap();
+        let r1 = edited(&r, (d, hb));
+        assert_eq!(header_flags(&r1), [want; 3], "{path} remove");
+        let (d, hb, _) = add_free_curve(&r1, 1, 50.0, 7).unwrap();
+        let r2 = edited(&r1, (d, hb));
+        assert_eq!(header_flags(&r2), [want; 4], "{path} add");
+        // Whole-geometry rewrite.
+        let pis = [
+            Point2::new(0.0, 0.0),
+            Point2::new(100.0, 0.0),
+            Point2::new(100.0, 100.0),
+        ];
+        let (d, hb, _) = civil3drust::aecc_build::set_geometry(&r, &pis, &[Some(30.0)]).unwrap();
+        let r3 = edited(&r, (d, hb));
+        assert_eq!(header_flags(&r3), [want; 3], "{path} set_geometry");
+        assert_eq!(
+            constraint_editing(&r3).unwrap().lock_parameters,
+            want.is_some()
+        );
+    }
+    // The unlocked form is the locked one without the flag byte: the
+    // same edit on S163 and S164 gives records 8 bits per element apart.
+    let on = lock_sample(S163);
+    let off = lock_sample(S164);
+    let (d1, _, _) = remove_element(&on, 4, 7).unwrap();
+    let (d2, _, _) = remove_element(&off, 4, 7).unwrap();
+    let n = |d: &Vec<u8>| raw::bit_len(d);
+    assert!(n(&d1) >= n(&d2) + 3 * 8);
+}

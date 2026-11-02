@@ -314,11 +314,17 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   present when parameters are locked (`0x02`; MIST7's "third byte"), then
   `0x04`. The earlier tests fit: values with bit 0x02 were accepted, 0 and
   1 were not.
-- **civil3drust:** the reader expects the locked form (`0x04020008`) and
-  finds no elements in S164.
-- **Status:** behaviour mapped (S125–S139, S164); the lock option changes
-  it. civil3drust writes `0x04020008`, the only value seen in
-  Civil 3D's own drawings. Still open in case another element type or DWG format
+- **The same option is also an alignment flag:** bit 15 before the
+  section-2 end is 1 in S24 and S163 and 0 in S164 (MIST15 entry).
+- **civil3drust:** `aecc_alignment::read_element_header` reads both forms
+  (flag byte or none) for tangents, arcs and spirals; S164 decodes like
+  S163. Writers follow the alignment: a rewritten element keeps its own
+  header, a new one takes the form of the alignment's first element
+  (locked when it has none) (D-051; test `edits_keep_the_unlocked_form_s164`).
+- **Status:** behaviour mapped (S125–S139, S164): `0x0008` must be 8, the
+  flag byte (`0x02` = parameters locked) is optional, and `0x04` closes the
+  header. Still open: the meaning of the `0x04` byte and of flag bit 0x01
+  (kept by Civil 3D, S132), and whether another element type or DWG format
   version shows a different value.
 
 ## MIST8 — the curve flag bit
@@ -395,7 +401,13 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   its start is not stored. One sample only.
 - **Test:** a second such curve drawn with a different sweep.
 
-## MIST15 — the flag 16 bits before the section-2 end
+## MIST15 — the flag 16 bits before the section-2 end — **SOLVED (S163)**
+
+- **Answer:** Alignment Properties → Constraint Editing → "Always perform
+  implied tangency constraint swapping" (1 = on). The neighbouring bit 15
+  is "Lock all parameter constraints" (S164). Both are read by
+  `aecc_criteria::constraint_editing`; moved to `alignment-object.md`
+  ("Design criteria"). Bit 13 before the end is still unexplained.
 
 - **Where:** section 2, the bit 16 before its end, between the
   design-criteria flags (19 criteria-based design, 18 criteria file,
@@ -418,9 +430,12 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Confirmed (S163):** turning "Always perform implied tangency
   constraint swapping" on sets the flag (0 → 1); nothing else in that
   region changes.
-- **Not "Lock all parameter constraints":** turning that off (S164) does
-  not touch bits 13–22 before the section-2 end; it changes every element
-  record instead (MIST7). Bits 15 and 13 remain unexplained.
+- **"Lock all parameter constraints" is bit 15 (S164):** turning it off
+  clears the bit 15 before the section-2 end (1 in S24 and S163) and
+  removes the flag byte from every element header (MIST7). (An earlier
+  note said S164 left bits 13–22 alone; that comparison was made before
+  civil3drust could read S164's elements and was wrong.) Bit 13 remains
+  unexplained.
 
 ## MIST16 — the four BDs after a spiral's geometry
 

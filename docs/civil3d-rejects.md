@@ -16,7 +16,7 @@ How to read a row: **condition** in the file → **Civil 3D's response** →
 |---|---|---|---|
 | String stream too short: each free arc needs 3 empty strings (tangent-only 12 strings, one arc 15, two arcs 18) | does not open; RECOVER deletes the alignment (it reads past the end of the strings) | S46; fixed in S50 (S49 compared) | guarded: `set_geometry` sets the string count from the arcs |
 | Alignment type 2, 3 or 5 on a plain alignment (Offset, CurbReturn, Rail need data a plain alignment lacks) | errors; RECOVER removes the alignments | S61 → S63 | guarded: `create_alignment --type` names only 1 and 4; other numbers are an experiment option |
-| Element sub-object tag with a wrong type part: top byte ≠ 4, or third byte without bit 0x02 | "Error 34 (eWrongObjectType)", alignment discarded | S126, S128, S136, S138 | guarded: elements are always written with `0x04020008` |
+| Element sub-object tag with a wrong type part: top byte ≠ 4, or third byte without bit 0x02 | "Error 34 (eWrongObjectType)", alignment discarded | S126, S128, S136, S138 | guarded: elements are written as `0x08 0x00 [0x02] 0x04`, the flag byte present exactly when the alignment's parameters are locked (S164, D-051) |
 | Element sub-object tag with a wrong low word (anything but `0x0008`: 0, 7, 9, `0x0108`) | "Error 151 (eOutOfRange)", alignment discarded | S129, S133, S134, S135 | guarded: as above |
 | Element tag bytes reversed (`0x08000204`) | eOutOfRange, discarded; the drawing opens very slowly and draws with glitches | S130 | guarded: as above |
 | MIST2 tag ≠ `0x0D00D773` | eWrongObjectType, alignment discarded | S151, S153 | guarded: civil3drust never writes MIST2 (D-047) |
@@ -59,7 +59,8 @@ What a file civil3drust writes must satisfy, from the rows above:
 
 1. Every free arc has its 3 strings; the string count matches the elements.
 2. Alignment type is 1 or 4 unless the data for other types is written.
-3. Every element starts with `0x04020008`.
+3. Every element starts with `0x0008`, then `0x02` if the alignment's
+   parameters are locked (none if not), then `0x04`.
 4. MIST2 is absent and the format marker says "absent" (or both present,
    untouched, as Civil 3D wrote them).
 5. Each companion's tail matches its handle references.

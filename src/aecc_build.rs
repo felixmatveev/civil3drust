@@ -26,7 +26,7 @@
 //! optional radii (free arcs), copying everything else.
 
 use crate::aecc_alignment::TangentRecord;
-use crate::aecc_alignment::ELEMENT_HEADER;
+use crate::aecc_alignment::{read_element_header, ELEMENT_LOCKED};
 use crate::aecc_arc_edit::station_of;
 use crate::aecc_elements::{
     decode_elements, resolve, ArcDef, ArcParams, ArcRecord, Element, Segment,
@@ -188,10 +188,39 @@ pub fn read_bll(data: &[u8], bit: usize) -> (u64, usize) {
     (v, bit + 3 + 8 * n)
 }
 
-/// Encode a tangent record (without its prefix).
-pub fn encode_tangent(w: &mut Bits, id: i32, before: i32, after: i32, a: Point2, b: Point2) {
+/// Element-header flags of an alignment, from its first element record:
+/// `Some(0x02)` when parameters are locked, `None` when not (MIST7, S164).
+/// Alignments without elements get the locked form, Civil 3D's default.
+pub fn element_header_flags(data: &[u8], d: &crate::aecc_elements::DecodedElements) -> Option<u8> {
+    match d.first_record_bit() {
+        Some(b) => read_element_header(data, b).and_then(|(f, _)| f),
+        None => Some(ELEMENT_LOCKED),
+    }
+}
+
+/// Encode an element header: code `00`, `0x0008`, the flag byte if any,
+/// `0x04`. With `Some(0x02)` this is [`ELEMENT_HEADER`] as a raw long.
+pub fn encode_element_header(w: &mut Bits, flags: Option<u8>) {
     w.bits(0b00, 2);
-    w.rl(ELEMENT_HEADER);
+    w.byte(0x08);
+    w.byte(0x00);
+    if let Some(f) = flags {
+        w.byte(f);
+    }
+    w.byte(0x04);
+}
+
+/// Encode a tangent record (without its prefix).
+pub fn encode_tangent(
+    w: &mut Bits,
+    flags: Option<u8>,
+    id: i32,
+    before: i32,
+    after: i32,
+    a: Point2,
+    b: Point2,
+) {
+    encode_element_header(w, flags);
     w.bl(0);
     w.bl(id);
     w.bl(before);
@@ -204,13 +233,13 @@ pub fn encode_tangent(w: &mut Bits, id: i32, before: i32, after: i32, a: Point2,
 /// Encode a free-arc record (without its prefix).
 pub fn encode_free_arc(
     w: &mut Bits,
+    flags: Option<u8>,
     flag: bool,
     params: &ArcParams,
     ids: (i32, i32, i32),
     radius: f64,
 ) {
-    w.bits(0b00, 2);
-    w.rl(ELEMENT_HEADER);
+    encode_element_header(w, flags);
     w.bit(flag as u8);
     w.bd(params.p1);
     w.bd(params.p2);
@@ -311,6 +340,7 @@ pub fn set_geometry(
     let data = &rec.data;
     let eed_bit = eed(data);
     let decoded = decode_elements(rec).map_err(|e| layout(e.to_string()))?;
+    let flags = element_header_flags(&rec.data, &decoded);
     if !decoded.detached.is_empty() {
         return Err(layout(
             "the alignment has detached pieces; rebuilding from PIs would drop them",
@@ -424,14 +454,21 @@ pub fn set_geometry(
         match e {
             Element::Tangent(t) => {
                 w.bits(PREFIX_TANGENT as u64, 11);
-                encode_tangent(&mut w, t.id, t.before, t.after, t.start, t.end);
+                encode_tangent(&mut w, flags, t.id, t.before, t.after, t.start, t.end);
             }
             Element::Arc(a) => {
                 w.bits(PREFIX_ARC as u64, 11);
                 let ArcDef::Free { radius, .. } = a.def else {
                     unreachable!()
                 };
-                encode_free_arc(&mut w, a.flag, &a.params, (a.id, a.before, a.after), radius);
+                encode_free_arc(
+                    &mut w,
+                    flags,
+                    a.flag,
+                    &a.params,
+                    (a.id, a.before, a.after),
+                    radius,
+                );
             }
             Element::LineSpiral(_) | Element::Spiral(_) => unreachable!("not a plain layout"),
         }

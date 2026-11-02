@@ -988,3 +988,25 @@ can reproduce them. Spiral records are recognised by their kind prefix
 **Alternatives.** Separate geometry types per spiral type: more code for
 the same formula.
 
+## D-051: Element headers follow the alignment's lock setting
+
+**Date:** 2026-11-02. **Status:** accepted.
+
+**Context.** S164 showed that the element header is not the fixed BL
+`0x04020008`: with "Lock all parameter constraints" off, the byte `0x02`
+is missing from every element, and the alignment's bit 15 before the
+section-2 end is 0. Civil 3D rejects a header with the byte present but
+without bit 0x02 (S126, S128), so the byte cannot simply be dropped or
+always written.
+
+**Decision.** The reader accepts both forms (`read_element_header`). The
+writers keep the alignment's setting, which is model data: a rewritten
+element keeps its own header, a new element takes the form of the
+alignment's first element, and an alignment without elements gets the
+locked form (Civil 3D's default). civil3drust does not change the lock
+option itself yet; doing so means changing bit 15 and every header
+together.
+
+**Alternatives.** Always write the locked form: silently turns the
+option back on for unlocked alignments. Read the option from bit 15 only:
+equivalent in every sample, but the headers are what Civil 3D checks.

@@ -127,7 +127,9 @@ One record per tangent. In BL = bit-coded long and RD = raw double, as
 defined in the public ODA specification:
 
 ```text
-BL 0x04020008    header; identical in every record of every sample (meaning unknown)
+header           code 00, 0x0008, flag byte 0x02 when parameters are
+                 locked (absent when not, S164), 0x04 — read as the BL
+                 0x04020008 in the locked form (MIST7)
 BL 0
 BL id            element ID, 1-based
 BL before        ID of the previous element, 0 if none
@@ -1346,6 +1348,15 @@ Alignment Properties, which adds the user-name string).**
   criteria-based design checked; design criteria file, design check set
   and check for tangency unchecked. `aecc_criteria::Criteria` names the
   four bits.
+
+  Two Constraint Editing options sit between them (MIST15, solved):
+
+  | bits before section-2 end | meaning | default | samples |
+  |---|---|---|---|
+  | 16 | always perform implied tangency constraint swapping | 0 in S24, 1 in S11 | S163 |
+  | 15 | lock all parameter constraints (also the `0x02` byte in every element header) | 1 | S164 |
+
+  `aecc_criteria::constraint_editing` reads both.
 - `C0 control`: unchanged apart from the edited-record form; every
   alignment now references check set 4D3 (set on save).
 

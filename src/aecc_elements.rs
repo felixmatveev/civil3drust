@@ -33,7 +33,7 @@
 //! [`Segment`]s: arcs get centre, radius, direction and length; tangents
 //! next to a free arc are trimmed to its PC or PT.
 
-use crate::aecc_alignment::{self, DecodeError, Linked, TangentRecord, ELEMENT_HEADER};
+use crate::aecc_alignment::{self, DecodeError, Linked, TangentRecord};
 use crate::alignment::Point2;
 use crate::raw::{self, RawRecord};
 
@@ -418,16 +418,7 @@ pub struct LineSpiralRecord {
 }
 
 fn line_spiral_at(data: &[u8], bit: usize) -> Option<LineSpiralRecord> {
-    if raw::get_bit(data, bit) != 0
-        || raw::get_bit(data, bit + 1) != 0
-        || raw::get_byte(data, bit + 2) != 0x08
-    {
-        return None;
-    }
-    let (h, k) = raw::read_bl(data, bit)?;
-    if h != ELEMENT_HEADER {
-        return None;
-    }
+    let (_, k) = aecc_alignment::read_element_header(data, bit)?;
     let flag = raw::get_bit(data, k) == 1;
     let (p1, k) = raw::read_bd(data, k + 1)?;
     let (p2, k) = raw::read_bd(data, k)?;
@@ -548,17 +539,10 @@ fn kind_prefix(data: &[u8], bit: usize) -> Option<u16> {
 }
 
 fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
-    if kind_prefix(data, bit)? != PREFIX_SPIRAL
-        || raw::get_bit(data, bit) != 0
-        || raw::get_bit(data, bit + 1) != 0
-        || raw::get_byte(data, bit + 2) != 0x08
-    {
+    if kind_prefix(data, bit)? != PREFIX_SPIRAL {
         return None;
     }
-    let (h, k) = raw::read_bl(data, bit)?;
-    if h != ELEMENT_HEADER {
-        return None;
-    }
+    let (_, k) = aecc_alignment::read_element_header(data, bit)?;
     let flag = raw::get_bit(data, k) == 1;
     let (_, k) = raw::read_bd(data, k + 1)?;
     let (_, k) = raw::read_bd(data, k)?;
@@ -647,16 +631,7 @@ fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
 }
 
 fn arc_at(data: &[u8], bit: usize) -> Option<ArcRecord> {
-    if raw::get_bit(data, bit) != 0
-        || raw::get_bit(data, bit + 1) != 0
-        || raw::get_byte(data, bit + 2) != 0x08
-    {
-        return None;
-    }
-    let (h, k) = raw::read_bl(data, bit)?;
-    if h != ELEMENT_HEADER {
-        return None;
-    }
+    let (_, k) = aecc_alignment::read_element_header(data, bit)?;
     let flag = raw::get_bit(data, k) == 1;
     let (p1, k) = raw::read_bd(data, k + 1)?;
     let (p2, k) = raw::read_bd(data, k)?;
@@ -877,7 +852,7 @@ pub fn element_records(data: &[u8]) -> Vec<Element> {
     let mut out = Vec::new();
     let mut bit = 0;
     let n = raw::bit_len(data);
-    while bit + 34 <= n {
+    while bit + 26 <= n {
         if let Some(t) = aecc_alignment::record_at(data, bit) {
             bit = t.end_bit();
             out.push(Element::Tangent(t));
@@ -1838,7 +1813,7 @@ fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, Deco
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::aecc_alignment::decode;
+    use crate::aecc_alignment::{decode, ELEMENT_HEADER};
 
     struct Bits(Vec<u8>, usize);
     impl Bits {
