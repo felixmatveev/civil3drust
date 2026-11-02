@@ -344,6 +344,12 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   carry the front and back (before/after) constraints. Test: elements
   with each tangency constraint (fixed, floating front, floating back,
   free) and their header bytes.
+  The grid's Tangency Constraint drop-down for a line offers "Not
+  Constrained (Fixed)" and "Constrained by Next (Floating)" (owner's
+  screenshot); these are already the tangent's kind BL after the header
+  (0 fixed, 4 floating, 5 floating by length, 9 free), so the header
+  bytes are probably not the tangency constraint. Switch tangent 1 of
+  S172 to floating and compare the header too.
 - **Status:** behaviour mapped (S125–S139, S164): `0x0008` must be 8, the
   flag byte (`0x02` = parameters locked) is optional, and `0x04` closes the
   header. Still open: the meaning of the `0x04` byte and of flag bit 0x01
