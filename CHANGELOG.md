@@ -33,6 +33,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   `SpiralGeometry::start_radius`. Sample S162 and test
   `s162_spirals_match_civil3d_drawing`; MIST16.
 
+### Fixed
+- Re-linking a kept arc in element edits read the header as a fixed
+  32-bit value and broke unlocked alignments with arcs (S171, S172).
+
 ### Changed
 - `docs/element-methods.md`: sample descriptions are hints; stored records
   checked against Civil 3D's drawing are the ground truth.
