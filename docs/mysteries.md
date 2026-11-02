@@ -304,8 +304,20 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Unchanged in a 2020 drawing** (AC1027, `AeccLand110` classes; a
   production drawing checked locally, not committed): every element
   record of its 10 alignments starts with `0x04020008`, one per element.
-- **Status:** behaviour mapped (S125–S139); no setting found that
-  changes it. civil3drust writes `0x04020008`, the only value seen in
+- **"Lock all parameter constraints" (S164):** with the option off (Alignment
+  Properties → Constraint Editing), every element record is 8 bits
+  shorter: the byte `0x02` after `0x0008` is gone, and the next byte
+  (`0x04`) follows directly. S163 (option on) with those four bytes
+  removed is identical to S164 except for the edit timestamp (MIST3) and
+  the MIST15 flag. So the "header" is not one fixed 32-bit value: `0x0008`
+  (code `00` + 16 bits, the part that must equal 8), an optional byte
+  present when parameters are locked (`0x02`; MIST7's "third byte"), then
+  `0x04`. The earlier tests fit: values with bit 0x02 were accepted, 0 and
+  1 were not.
+- **civil3drust:** the reader expects the locked form (`0x04020008`) and
+  finds no elements in S164.
+- **Status:** behaviour mapped (S125–S139, S164); the lock option changes
+  it. civil3drust writes `0x04020008`, the only value seen in
   Civil 3D's own drawings. Still open in case another element type or DWG format
   version shows a different value.
 
@@ -403,6 +415,12 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   is on in both, as are the bits 15 and 13 before the section-2 end —
   one of them is probably that option. Test: S24 with the swapping option
   turned on (and a copy with "Lock all parameter constraints" off).
+- **Confirmed (S163):** turning "Always perform implied tangency
+  constraint swapping" on sets the flag (0 → 1); nothing else in that
+  region changes.
+- **Not "Lock all parameter constraints":** turning that off (S164) does
+  not touch bits 13–22 before the section-2 end; it changes every element
+  record instead (MIST7). Bits 15 and 13 remain unexplained.
 
 ## MIST16 — the four BDs after a spiral's geometry
 

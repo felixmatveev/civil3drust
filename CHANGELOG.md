@@ -13,8 +13,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   `s162_spirals_match_civil3d_drawing`; MIST16.
 
 ### Changed
-- MIST15: probably the Constraint Editing option "Always perform implied
-  tangency constraint swapping" (S11 on, S24 off; test requested).
+- MIST15: the Constraint Editing option "Always perform implied tangency
+  constraint swapping" (confirmed by S163).
+- MIST7: "Lock all parameter constraints" off removes the `0x02` byte from
+  every element header (S164); the reader does not handle that form yet.
 - DECISIONS.md: D-049 records the end goal (files civil3drust and Civil 3D
   read the same; model data plus required plumbing only; Civil 3D
   rebuilds its own caches) and the acceptance test; status notes added to
