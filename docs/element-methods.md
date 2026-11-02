@@ -78,9 +78,9 @@ the arcs and lines in each record's proxy graphics.
 |---|---|---|
 | Fixed Spiral | record kind 6: type 0 inward (L, end R), 1 outward (start R, L), 2 compound (start R, L, end R); start point, unit direction, clockwise bit. Through-point variants store the computed L and R | known, S121, S162, S165 |
 | Free Spiral (between two entities) | record kind 8: code 0xA000A incurve / 0xA000C outcurve, BD length only; placed between two lines, radius L / 2Δ | known (between lines), S165 |
-| Free Compound Spiral-Spiral (between two curves) | planned | S120 → S121 |
-| Free Reverse Spiral-Spiral (between two curves) | planned | S120 → S121 |
-| Free Compound Spiral-Spiral (between two tangents) | planned | S120 → S121 |
+| Free Compound Spiral-Spiral (between two curves) | group kind 10 code 4: BD A1/A2; start on the first curve and A solved | known, S175 |
+| Free Reverse Spiral-Spiral (between two curves) | group kind 10 code 4 (as compound; the curves turn opposite ways) | known, S175 |
+| Free Compound Spiral-Spiral (between two tangents) | group kind 8 code 8: BD L1, BD L2; radius (L1 + L2) / 2Δ | known, S175 |
 | Free Compound Spiral-Line-Spiral (between two curves, spiral lengths) | planned | S120 → S121 |
 | Free Reverse Spiral-Line-Spiral (between two curves, spiral lengths) | planned | S120 → S121 |
 | Free Compound Spiral-Line-Spiral (between two curves, line length) | planned | S120 → S121 |

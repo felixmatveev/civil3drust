@@ -13,6 +13,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 - Reverse curves with spirals (group kind 20, codes 1 and 2): the start on
   the previous curve (and the second radius) solved; the previous curve
   is trimmed. Sample S174.
+- Spiral-spiral groups (S175): between two lines (kind 8 code 8) and
+  between two curves (kind 10 code 4, compound or reverse, A1/A2 stored;
+  start and A solved, curves trimmed or extended).
 
 - Free spirals between two lines (record kind 8): `Element::FreeSpiral`,
   `free_spiral_between`; the lines are extended or trimmed to the spiral.

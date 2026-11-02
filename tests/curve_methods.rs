@@ -432,3 +432,65 @@ fn s174_reverse_curves_with_spirals() {
         assert!((geometry.radius - r2).abs() < 1e-3 && !geometry.counter_clockwise);
     }
 }
+
+/// S175: spiral-spiral groups. Between two lines (two spirals, no curve)
+/// and between two curves (compound and reverse; A1 / A2 = 1 stored, the
+/// rest solved). Points as Civil 3D drew them; FE0's spirals are 8300 and
+/// 3900 long, where Civil 3D's drawing differs from the exact clothoid
+/// by about 0.005.
+#[test]
+fn s175_spiral_spiral_groups() {
+    let o = raw::open("samples/S175_S120_spiral_spiral.dwg").unwrap();
+    type Case<'a> = (u64, &'a [(f64, f64)], f64);
+    let cases: [Case; 3] = [
+        (
+            0xFE3,
+            &[
+                (6305.5, 98.5),
+                (7355.6223, 1256.1543),
+                (7760.0423, 1530.425),
+                (8280.3228, 1273.0499),
+                (9416.0, 226.5),
+            ],
+            1e-3,
+        ),
+        (
+            0xFDD,
+            &[
+                (4338.0, 654.0),
+                (4505.7253, 128.5308),
+                (4914.5125, 1230.8547),
+                (5954.3616, 1239.3772),
+                (5724.0, 512.5),
+            ],
+            1e-3,
+        ),
+        (
+            0xFE0,
+            &[
+                (12300.0, 803.0),
+                (13032.9913, 2342.632),
+                (17598.41, -441.9337),
+                (21418.0683, 99.8103),
+                (19152.5, -104.0),
+            ],
+            1e-2,
+        ),
+    ];
+    for (h, want, tol) in cases {
+        let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap();
+        let d = decode_elements(&r).unwrap();
+        let mut got = vec![d.elements[0].segment.start()];
+        got.extend(d.elements.iter().map(|e| e.segment.end()));
+        assert_eq!(got.len(), want.len(), "{h:X}");
+        for (g, w) in got.iter().zip(want) {
+            assert!(
+                (g.x - w.0).abs() < tol && (g.y - w.1).abs() < tol,
+                "{h:X}: {got:?}"
+            );
+        }
+    }
+}

@@ -2216,6 +2216,8 @@ BL code, BL id, BL before, BL after, BL 256 (MIST10), data:
   8/6   BD L, BD R, BD L curve, B cw  Floating Curve with Spiral (from entity end, radius, length)
   10/161 BD L spiral, BD L line       Floating Line with Spiral (from curve end, length)
   10/162 RD start, BD L spiral        line with spiral into the next curve (S119)
+  8/8   BD L1, BD L2                  Free Compound Spiral-Spiral (between two tangents)
+  10/4  BD A1/A2                      Free Compound / Reverse Spiral-Spiral (between two curves)
   20/1  BD L1, BD L2, BD R, RD point  Floating Reverse Curve with Spirals (from curve, radius, through point)
   20/2  BD L1, BD L2, RD P1, RD P2    Floating Reverse Curve with Spirals (from curve, two points)
 ```
@@ -2261,6 +2263,26 @@ end point (0.81 rad against 4.68), the same rule as the through-point
 curve with spiral (S173 FBC). civil3drust searches the start along the
 previous curve (and the radius between L2/8 and 10⁶) with Newton's method
 from a grid of starting values.
+
+**Spiral-spiral groups (S175).**
+
+- *Between two tangents* (FE3, code 8/8: L1 500, L2 600): two spirals
+  meeting without a curve; the radius at the joint is (L1 + L2) / 2Δ =
+  348.4002 and the position follows the spiral-curve-spiral formulas with
+  a curve of zero length: TS (7355.6223, 1256.1543), joint (7760.0423,
+  1530.4250), ST (8280.3228, 1273.0499), exactly as drawn.
+- *Between two curves* (FDD compound, FE0 reverse; code 10/4): only the
+  ratio A1/A2 (1.0) is stored. A spiral leaves the first curve (1/R1 → 0)
+  and a spiral enters the second (0 → 1/R2), turning the same way
+  (compound) or the other way (reverse), with A1² = R1·L1 and A2² =
+  R2·L2. The start on the first curve and A are solved so that the second
+  spiral ends tangent to the second curve; both curves are trimmed or
+  extended to the spirals (FE0's first curve is drawn 282° long, past its
+  stored end at 237°). One solution in each sample: FDD L1 1585.27, L2
+  1116.99 (points within 0.0003 of the drawing); FE0 L1 8312.75, L2
+  3940.27 (within 0.005; increasing the integration accuracy doesn't
+  change civil3drust's points, so Civil 3D's very long spirals are drawn
+  slightly off the exact clothoid).
 
 ## Open questions
 

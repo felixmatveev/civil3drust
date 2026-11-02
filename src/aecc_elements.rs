@@ -783,6 +783,14 @@ pub enum GroupDef {
     /// Code 161 (prefix 10): spiral out of the previous curve, then a line.
     /// Floating Line with Spiral (from curve end, length).
     SpiralLine { spiral: f64, line: f64 },
+    /// Code 8 (prefix 8): two spirals meeting without a curve between two
+    /// lines (radius (L1 + L2) / 2Δ). Free Compound Spiral-Spiral (between
+    /// two tangents).
+    SpiralSpiralLines { l1: f64, l2: f64 },
+    /// Code 4 (prefix 10): a spiral out of the previous curve and a spiral
+    /// into the next one, with A1 / A2 = `ratio`. Free Compound / Reverse
+    /// Spiral-Spiral (between two curves).
+    SpiralSpiralCurves { ratio: f64 },
     /// Code 1 (prefix 20): from a point on the previous curve, a spiral out
     /// of it, a spiral the other way into a curve of `radius` ending at
     /// `point`. Floating Reverse Curve with Spirals (from curve, radius,
@@ -883,6 +891,11 @@ fn group_at(data: &[u8], bit: usize) -> Option<GroupRecord> {
                 clockwise,
             }
         }
+        (PREFIX_GROUP, 8) => GroupDef::SpiralSpiralLines {
+            l1: bd(&mut k)?,
+            l2: bd(&mut k)?,
+        },
+        (PREFIX_LINE_GROUP, 4) => GroupDef::SpiralSpiralCurves { ratio: bd(&mut k)? },
         (PREFIX_LINE_GROUP, 161) => GroupDef::SpiralLine {
             spiral: bd(&mut k)?,
             line: bd(&mut k)?,
@@ -972,8 +985,37 @@ fn place_group(
     before: Option<&Segment>,
     prev_line: Option<&TangentRecord>,
     next_line: Option<&TangentRecord>,
+    next_curve: Option<&ArcGeometry>,
 ) -> Option<Vec<Segment>> {
     match def {
+        GroupDef::SpiralSpiralLines { l1, l2 } => {
+            let (a, b) = (prev_line?, next_line?);
+            let u1 = unit((a.end.x - a.start.x, a.end.y - a.start.y))?;
+            let u2 = unit((b.end.x - b.start.x, b.end.y - b.start.y))?;
+            let delta = cross(u1, u2).atan2(u1.0 * u2.0 + u1.1 * u2.1).abs();
+            if delta <= 1e-9 {
+                return None;
+            }
+            let radius = (l1 + l2) / (2.0 * delta);
+            let mut parts = place_group(
+                GroupDef::SpiralCurveSpiral { l1, radius, l2 },
+                before,
+                prev_line,
+                next_line,
+                next_curve,
+            )?;
+            parts.remove(1); // the curve between them has no length
+            Some(parts)
+        }
+        GroupDef::SpiralSpiralCurves { ratio } => {
+            let Some(&Segment::Arc {
+                start, geometry, ..
+            }) = before
+            else {
+                return None;
+            };
+            place_spiral_spiral(&geometry, start, next_curve?, ratio)
+        }
         GroupDef::SpiralCurveSpiral { l1, radius, l2 } => {
             let (a, b) = (prev_line?, next_line?);
             let pi = a.end;
@@ -1280,6 +1322,129 @@ fn place_reverse(
         }
     }
     best.map(|(_, v)| v)
+}
+
+/// Spiral out of `c1` at angle `phi` (A1 = `ratio` · A2) and spiral into a
+/// curve of radius `r2` in sense `ccw2`: (start, spirals, SC, centre).
+fn spiral_spiral_chain(
+    c1: &ArcGeometry,
+    phi: f64,
+    a2: f64,
+    ratio: f64,
+    r2: f64,
+    ccw2: bool,
+) -> (SpiralGeometry, SpiralGeometry, Point2, Point2) {
+    let a1 = ratio * a2;
+    let (l1, l2) = (a1 * a1 / c1.radius, a2 * a2 / r2);
+    let s = Point2::new(
+        c1.center.x + c1.radius * phi.cos(),
+        c1.center.y + c1.radius * phi.sin(),
+    );
+    let dir = if c1.counter_clockwise {
+        (-phi.sin(), phi.cos())
+    } else {
+        (phi.sin(), -phi.cos())
+    };
+    let s1 = SpiralGeometry {
+        start: s,
+        direction: dir,
+        length: l1,
+        radius: f64::INFINITY,
+        start_radius: c1.radius,
+        counter_clockwise: c1.counter_clockwise,
+    };
+    let (m, d1) = s1.point_at(l1);
+    let s2 = SpiralGeometry {
+        start: m,
+        direction: d1,
+        length: l2,
+        radius: r2,
+        start_radius: f64::INFINITY,
+        counter_clockwise: ccw2,
+    };
+    let (sc, d2) = s2.point_at(l2);
+    let side = if ccw2 { 1.0 } else { -1.0 };
+    let c2 = Point2::new(sc.x - side * r2 * d2.1, sc.y + side * r2 * d2.0);
+    (s1, s2, sc, c2)
+}
+
+/// Spiral-spiral between two curves (S175): solve where the spirals leave
+/// `c1` and their parameter A so that the second spiral ends tangent to
+/// `c2`. Compound or reverse follows from the curves' senses.
+fn place_spiral_spiral(
+    c1: &ArcGeometry,
+    from: Point2,
+    c2: &ArcGeometry,
+    ratio: f64,
+) -> Option<Vec<Segment>> {
+    let a0 = (from.y - c1.center.y).atan2(from.x - c1.center.x);
+    let sense = if c1.counter_clockwise { 1.0 } else { -1.0 };
+    let resid = |x: &[f64; 2]| -> [f64; 2] {
+        let (.., c) = spiral_spiral_chain(
+            c1,
+            a0 + sense * x[0],
+            x[1].exp(),
+            ratio,
+            c2.radius,
+            c2.counter_clockwise,
+        );
+        [c.x - c2.center.x, c.y - c2.center.y]
+    };
+    let scale = c1.radius.min(c2.radius);
+    let mut best: Option<(f64, [f64; 2])> = None;
+    let nt = 24;
+    for i in 0..=nt {
+        for f in [0.5, 1.0, 2.0, 5.0, 20.0] {
+            // The start may lie past the curve's stored end, which is then
+            // extended (S175 FE0): search the whole circle.
+            let mut x = [
+                std::f64::consts::TAU * i as f64 / nt as f64,
+                (scale * f).ln(),
+            ];
+            for _ in 0..40 {
+                let r = resid(&x);
+                if r[0].abs().max(r[1].abs()) < 1e-9 * (1.0 + scale) {
+                    break;
+                }
+                let mut jac = [[0.0; 2]; 2];
+                for k in 0..2 {
+                    let mut y = x;
+                    y[k] += 1e-7;
+                    let g = resid(&y);
+                    jac[0][k] = (g[0] - r[0]) / 1e-7;
+                    jac[1][k] = (g[1] - r[1]) / 1e-7;
+                }
+                let det = jac[0][0] * jac[1][1] - jac[0][1] * jac[1][0];
+                if det.abs() < 1e-14 {
+                    break;
+                }
+                x[0] -= (jac[1][1] * r[0] - jac[0][1] * r[1]) / det;
+                x[1] -= (-jac[1][0] * r[0] + jac[0][0] * r[1]) / det;
+                if !(x[1] > -5.0 && x[1] < 30.0) || !x[0].is_finite() {
+                    break;
+                }
+            }
+            let r = resid(&x);
+            let ok =
+                x[1] > -5.0 && x[1] < 30.0 && r[0].abs().max(r[1].abs()) < 1e-6 * (1.0 + scale);
+            let x = [x[0].rem_euclid(std::f64::consts::TAU), x[1]];
+            // Of several solutions, the shortest spirals.
+            let a = x[1].exp();
+            if ok && best.is_none_or(|(b, _)| a < b - 1e-9) {
+                best = Some((a, x));
+            }
+        }
+    }
+    let (_, x) = best?;
+    let (s1, s2, ..) = spiral_spiral_chain(
+        c1,
+        a0 + sense * x[0],
+        x[1].exp(),
+        ratio,
+        c2.radius,
+        c2.counter_clockwise,
+    );
+    Some(vec![spiral_segment(s1), spiral_segment(s2)])
 }
 
 /// Centre offset from the TS: k along the tangent, `dist` along the normal.
@@ -2021,8 +2186,13 @@ fn resolve_with(
                     };
                     let s = i
                         .checked_sub(1)
-                        .and_then(|j| free(chain.get(j)))
-                        .map_or(start, |t| t.end);
+                        .and_then(|j| {
+                            free(chain.get(j)).map(|t| t.end).or_else(|| {
+                                // A group ending on the curve trims it (S175).
+                                groups.get(j)?.as_ref()?.last().map(Segment::end)
+                            })
+                        })
+                        .unwrap_or(start);
                     let e = free(chain.get(i + 1))
                         .map(|t| t.start)
                         .or_else(|| {
@@ -2442,9 +2612,24 @@ fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, Deco
         } else {
             None
         };
+        let next_curve = match chained.get(i + 1) {
+            Some(Element::Arc(ArcRecord {
+                def: ArcDef::ThreePoint {
+                    start, mid, end, ..
+                },
+                ..
+            })) => arc_through(*start, *mid, *end),
+            _ => None,
+        };
         groups[i] = Some(
-            place_group(def, before.as_ref(), prev_line.as_ref(), next_line.as_ref())
-                .ok_or_else(|| unsupported("its neighbours don't place it (no sample yet)"))?,
+            place_group(
+                def,
+                before.as_ref(),
+                prev_line.as_ref(),
+                next_line.as_ref(),
+                next_curve.as_ref(),
+            )
+            .ok_or_else(|| unsupported("its neighbours don't place it (no sample yet)"))?,
         );
     }
     for i in 1..chained.len() {
