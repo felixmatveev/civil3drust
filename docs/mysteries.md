@@ -329,7 +329,8 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 ## MIST10 — the `256` in the line-spiral group
 
 - **Where:** S119 element 7, the BL after the IDs (before the start
-  point); also in S121's fixed spiral at the same place.
+  point); also in every fixed spiral record (S121, S162) at the same
+  place, whatever the spiral type.
 - **Hypothesis:** spiral definition or type flags (clothoid, by length vs
   A). S121 (spiral methods) should vary it.
 
@@ -395,6 +396,16 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   of Intersection, Constraint Editing) of S11's and S24's alignments for a
   setting that differs; then change it on one alignment and save.
 - **civil3drust today:** copies the template's value.
+
+## MIST16 — the four BDs after a spiral's geometry
+
+- **Where:** the end of every spiral record (kind 6), after the lengths
+  and radii: `BD 0, BD 0, BD 1, BD 0`.
+- **Seen:** identical in all six spirals of S162 (inward, outward,
+  compound, through-point).
+- **Hypothesis:** a 2D vector pair or spiral-definition parameters at
+  their defaults (spiral type other than clothoid, e.g. the cubic or
+  sinusoidal spirals Civil 3D offers, might change them).
 
 ## Not sampled yet (not mysteries, just gaps)
 

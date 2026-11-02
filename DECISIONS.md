@@ -971,3 +971,20 @@ minimal code instead of its structure (no factories over factories).
 civil3drust to undecoded internals and copies stale history into every
 object. Decompile Civil 3D to learn its structure: excluded by the
 cleanroom rules, and its structure is what we want to avoid.
+
+## D-050: Spirals keep their start radius; straight ends are infinite
+
+**Context.** Fixed spirals (S162) can start or end on a line (inward,
+outward) or between two radii (compound). `SpiralGeometry` had only the
+end radius, for the line-spiral group.
+
+**Decision.** `SpiralGeometry` gets `start_radius`; a straight end is
+`f64::INFINITY` (not 0, which Civil 3D's records never use for a radius).
+Points are computed from linear curvature between the two radii. The
+record keeps the stored fields as they are (`SpiralRecord`), so writing
+can reproduce them. Spiral records are recognised by their kind prefix
+(6) because their type code 0 would also parse as a curve's code 0.
+
+**Alternatives.** Separate geometry types per spiral type: more code for
+the same formula.
+

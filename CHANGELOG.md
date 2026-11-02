@@ -6,6 +6,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Fixed spiral records (kind 6): `Element::Spiral`, `SpiralRecord`
+  (inward, outward, compound), resolved with linear curvature;
+  `SpiralGeometry::start_radius`. Sample S162 and test
+  `s162_spirals_match_civil3d_drawing`; MIST16.
+
 ### Changed
 - DECISIONS.md: D-049 records the end goal (files civil3drust and Civil 3D
   read the same; model data plus required plumbing only; Civil 3D

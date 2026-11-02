@@ -76,7 +76,7 @@ the arcs and lines in each record's proxy graphics.
 
 | method | status | samples |
 |---|---|---|
-| Fixed Spiral | record kind 6, code 0: start point, unit direction, two BDs (length, end radius — order open), a bit (direction?) | partly, S121 |
+| Fixed Spiral | record kind 6: type 0 inward (L, end R), 1 outward (start R, L), 2 compound (L?, start R, end R); start point, unit direction, clockwise bit. Through-point variants store the computed L and R | known (compound L/R order open), S121, S162 |
 | Free Spiral (between two entities) | planned | S120 → S121 |
 | Free Compound Spiral-Spiral (between two curves) | planned | S120 → S121 |
 | Free Reverse Spiral-Spiral (between two curves) | planned | S120 → S121 |

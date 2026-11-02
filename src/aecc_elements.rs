@@ -333,6 +333,8 @@ pub enum Element {
     Arc(ArcRecord),
     /// A line followed by a spiral, one record (S119).
     LineSpiral(LineSpiralRecord),
+    /// A spiral with its own start point and direction (S121, S162).
+    Spiral(SpiralRecord),
 }
 
 impl Element {
@@ -341,6 +343,7 @@ impl Element {
             Self::Tangent(t) => t.header_bit,
             Self::Arc(a) => a.header_bit,
             Self::LineSpiral(g) => g.header_bit,
+            Self::Spiral(g) => g.header_bit,
         }
     }
     /// Bit offset just after the record.
@@ -349,6 +352,7 @@ impl Element {
             Self::Tangent(t) => t.end_bit(),
             Self::Arc(a) => a.end_bit,
             Self::LineSpiral(g) => g.end_bit,
+            Self::Spiral(g) => g.end_bit,
         }
     }
 }
@@ -359,6 +363,7 @@ impl Linked for Element {
             Self::Tangent(t) => t.id,
             Self::Arc(a) => a.id,
             Self::LineSpiral(g) => g.id,
+            Self::Spiral(g) => g.id,
         }
     }
     fn before(&self) -> i32 {
@@ -366,6 +371,7 @@ impl Linked for Element {
             Self::Tangent(t) => t.before,
             Self::Arc(a) => a.before,
             Self::LineSpiral(g) => g.before,
+            Self::Spiral(g) => g.before,
         }
     }
     fn after(&self) -> i32 {
@@ -373,6 +379,7 @@ impl Linked for Element {
             Self::Tangent(t) => t.after,
             Self::Arc(a) => a.after,
             Self::LineSpiral(g) => g.after,
+            Self::Spiral(g) => g.after,
         }
     }
 }
@@ -473,6 +480,169 @@ fn line_spiral_at(data: &[u8], bit: usize) -> Option<LineSpiralRecord> {
         spiral_length,
         ts: nan,
         sc: nan,
+    })
+}
+
+/// Spiral types (the code BL of a spiral record, S162).
+pub const SPIRAL_INWARD: i32 = 0;
+pub const SPIRAL_OUTWARD: i32 = 1;
+pub const SPIRAL_COMPOUND: i32 = 2;
+/// The kind prefix (11 bits before the header) of spiral records.
+pub const PREFIX_SPIRAL: u16 = 6;
+
+/// A spiral element record (kind prefix 6; S121, S162). Layout after the
+/// parameter block (`B flag, BD p1, BD p2, BL n1, n1 × BD`):
+///
+/// ```text
+/// BL type (0 inward, 1 outward, 2 compound), BL id, BL before, BL after,
+/// BL 256 (MIST10), B clockwise,
+/// inward:   RD start X, Y, RD unit direction, BD length, BD end radius
+/// outward:  BD start radius, BD length, RD start X, Y, RD unit direction
+/// compound: RD start X, Y, RD unit direction, BD length, BD start radius,
+///           BD end radius
+/// then BD × 4 (0, 0, 1, 0 in every sample)
+/// ```
+///
+/// Spirals laid out through a point (S162 D, E) store the computed length
+/// and radius; the point is their end.
+#[derive(Debug, Clone, PartialEq)]
+pub struct SpiralRecord {
+    pub header_bit: usize,
+    pub end_bit: usize,
+    pub id: i32,
+    pub before: i32,
+    pub after: i32,
+    pub flag: bool,
+    pub kind: i32,
+    pub mode: i32,
+    pub clockwise: bool,
+    pub start: Point2,
+    pub direction: (f64, f64),
+    pub length: f64,
+    /// `f64::INFINITY` at the straight end of inward and outward spirals.
+    pub start_radius: f64,
+    pub end_radius: f64,
+    /// The four BDs after the geometry (0, 0, 1, 0 so far).
+    pub tail: [f64; 4],
+}
+
+impl SpiralRecord {
+    pub fn geometry(&self) -> SpiralGeometry {
+        SpiralGeometry {
+            start: self.start,
+            direction: self.direction,
+            length: self.length,
+            radius: self.end_radius,
+            start_radius: self.start_radius,
+            counter_clockwise: !self.clockwise,
+        }
+    }
+}
+
+/// The 11-bit kind prefix before an element header, if there is room.
+fn kind_prefix(data: &[u8], bit: usize) -> Option<u16> {
+    let start = bit.checked_sub(11)?;
+    Some((0..11).fold(0u16, |v, i| {
+        v << 1 | u16::from(raw::get_bit(data, start + i))
+    }))
+}
+
+fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
+    if kind_prefix(data, bit)? != PREFIX_SPIRAL
+        || raw::get_bit(data, bit) != 0
+        || raw::get_bit(data, bit + 1) != 0
+        || raw::get_byte(data, bit + 2) != 0x08
+    {
+        return None;
+    }
+    let (h, k) = raw::read_bl(data, bit)?;
+    if h != ELEMENT_HEADER {
+        return None;
+    }
+    let flag = raw::get_bit(data, k) == 1;
+    let (_, k) = raw::read_bd(data, k + 1)?;
+    let (_, k) = raw::read_bd(data, k)?;
+    let (n1, mut k) = raw::read_bl(data, k)?;
+    if !(1..=2).contains(&n1) {
+        return None;
+    }
+    for _ in 0..n1 {
+        k = raw::read_bd(data, k)?.1;
+    }
+    let (kind, k) = raw::read_bl(data, k)?;
+    let (id, k) = raw::read_bl(data, k)?;
+    let (before, k) = raw::read_bl(data, k)?;
+    let (after, k) = raw::read_bl(data, k)?;
+    let (mode, k) = raw::read_bl(data, k)?;
+    let clockwise = raw::get_bit(data, k) == 1;
+    let mut k = k + 1;
+    let point = |b: usize| -> Option<Point2> {
+        (b + 128 <= raw::bit_len(data))
+            .then(|| Point2::new(raw::get_f64(data, b), raw::get_f64(data, b + 64)))
+    };
+    let bd = |k: &mut usize| -> Option<f64> {
+        let (v, q) = raw::read_bd(data, *k)?;
+        *k = q;
+        Some(v)
+    };
+    let inf = f64::INFINITY;
+    let (start, d, length, start_radius, end_radius);
+    match kind {
+        SPIRAL_INWARD | SPIRAL_COMPOUND => {
+            start = point(k)?;
+            d = point(k + 128)?;
+            k += 256;
+            length = bd(&mut k)?;
+            start_radius = if kind == SPIRAL_COMPOUND {
+                bd(&mut k)?
+            } else {
+                inf
+            };
+            end_radius = bd(&mut k)?;
+        }
+        SPIRAL_OUTWARD => {
+            start_radius = bd(&mut k)?;
+            length = bd(&mut k)?;
+            start = point(k)?;
+            d = point(k + 128)?;
+            k += 256;
+            end_radius = inf;
+        }
+        _ => return None,
+    }
+    let mut tail = [0.0; 4];
+    for t in &mut tail {
+        *t = bd(&mut k)?;
+    }
+    let ok = |v: f64| v.is_finite() && v > 0.0 && v < 1e9;
+    let small = |v: i32| (0..100_000).contains(&v);
+    if id < 1
+        || !small(before)
+        || !small(after)
+        || !ok(length)
+        || !(ok(start_radius) || start_radius == inf)
+        || !(ok(end_radius) || end_radius == inf)
+        || !(start.x.is_finite() && start.y.is_finite())
+        || (d.x.hypot(d.y) - 1.0).abs() > 1e-6
+    {
+        return None;
+    }
+    Some(SpiralRecord {
+        header_bit: bit,
+        end_bit: k,
+        id,
+        before,
+        after,
+        flag,
+        kind,
+        mode,
+        clockwise,
+        start,
+        direction: (d.x, d.y),
+        length,
+        start_radius,
+        end_radius,
+        tail,
     })
 }
 
@@ -711,6 +881,9 @@ pub fn element_records(data: &[u8]) -> Vec<Element> {
         if let Some(t) = aecc_alignment::record_at(data, bit) {
             bit = t.end_bit();
             out.push(Element::Tangent(t));
+        } else if let Some(sp) = spiral_at(data, bit) {
+            bit = sp.end_bit;
+            out.push(Element::Spiral(sp));
         } else if let Some(a) = arc_at(data, bit) {
             bit = a.end_bit;
             out.push(Element::Arc(a));
@@ -774,14 +947,19 @@ pub struct SpiralGeometry {
     /// Unit direction at the start.
     pub direction: (f64, f64),
     pub length: f64,
-    /// Radius at the end (the curve it enters).
+    /// Radius at the end (`f64::INFINITY` when the spiral ends on a line).
     pub radius: f64,
+    /// Radius at the start (`f64::INFINITY` when it starts from a line).
+    pub start_radius: f64,
     pub counter_clockwise: bool,
 }
 
 impl SpiralGeometry {
     /// Point and unit direction at distance `s` from the start.
     pub fn point_at(&self, s: f64) -> (Point2, (f64, f64)) {
+        if self.start_radius.is_finite() || !self.radius.is_finite() {
+            return self.point_at_general(s);
+        }
         let a2 = self.radius * self.length;
         let (x, y) = clothoid(s, a2);
         let t = s * s / (2.0 * a2);
@@ -796,6 +974,42 @@ impl SpiralGeometry {
         );
         let (c, sn) = (t.cos(), t.sin());
         (p, (c * u.0 + sn * n.0, c * u.1 + sn * n.1))
+    }
+
+    /// Curvature at distance `s` (positive, whatever the sense).
+    fn curvature(&self, s: f64) -> f64 {
+        let k = |r: f64| if r.is_finite() { 1.0 / r } else { 0.0 };
+        let (k0, k1) = (k(self.start_radius), k(self.radius));
+        k0 + (k1 - k0) * s / self.length
+    }
+
+    /// Any linear-curvature spiral (outward, compound): the heading is
+    /// integrated with Simpson's rule.
+    fn point_at_general(&self, s: f64) -> (Point2, (f64, f64)) {
+        let side = if self.counter_clockwise { 1.0 } else { -1.0 };
+        let a0 = self.direction.1.atan2(self.direction.0);
+        let k0 = self.curvature(0.0);
+        let heading = |t: f64| a0 + side * (k0 * t + (self.curvature(t) - k0) * t / 2.0);
+        let n = 512;
+        let h = s / n as f64;
+        let (mut x, mut y) = (0.0, 0.0);
+        for i in 0..=n {
+            let w = if i == 0 || i == n {
+                1.0
+            } else if i % 2 == 1 {
+                4.0
+            } else {
+                2.0
+            };
+            let a = heading(i as f64 * h);
+            x += w * a.cos();
+            y += w * a.sin();
+        }
+        let a = heading(s);
+        (
+            Point2::new(self.start.x + x * h / 3.0, self.start.y + y * h / 3.0),
+            (a.cos(), a.sin()),
+        )
     }
 }
 
@@ -850,6 +1064,7 @@ pub fn line_spiral_into(
         direction: u,
         length: l,
         radius: r,
+        start_radius: f64::INFINITY,
         counter_clockwise: c.counter_clockwise,
     };
     let (sc, _) = g.point_at(l);
@@ -1057,6 +1272,14 @@ fn resolve_with(chain: &[Element], pre: &[Placed]) -> Result<Vec<ResolvedElement
     let mut out = Vec::with_capacity(chain.len());
     for (i, e) in chain.iter().enumerate() {
         let segment = match e {
+            Element::Spiral(sp) => {
+                let g = sp.geometry();
+                Segment::Spiral {
+                    start: sp.start,
+                    end: g.point_at(sp.length).0,
+                    geometry: g,
+                }
+            }
             Element::LineSpiral(g) => Segment::Line {
                 start: g.start,
                 end: g.ts,

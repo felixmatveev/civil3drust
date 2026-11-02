@@ -2126,29 +2126,44 @@ of one element (D-042).
 
 S120's 21 empty alignments are filled one spiral method at a time.
 
-**Fixed Spiral (S121, FD7).** Line 1 (0,0 → 100,0, kind 0, after 3),
-then spiral 3 (before 1). The spiral is a new record kind, prefix
-`…00110` (value 6; lines 2, curves 4, line-spiral groups 10):
+**Fixed spirals (S121, S162).** S162 is S121 plus five alignments
+`SPIRAL A`–`E`, each a line (x0,0 → x0+100,0) and one spiral after it.
+Every spiral is one record of kind 6 (prefix `…00110`; lines 2, curves 4,
+line-spiral groups 10):
 
 ```text
-BL 0x04020008, B flag 0, BD −1, BD −1, BL n1 1, BD −1,
-BL code 0, BL id 3, BL before 1, BL after 0,      (no bit before the IDs)
-BL 256                                             (as in S119's group; MIST10)
-B  1                                               (clockwise? — to confirm)
-RD start X, Y        100, 0     (the line's end)
-RD direction X, Y    1, 0       (unit, the line's direction)
-BD 200, BD 200                  (length and end radius, order unknown)
-BD 0.0 (`10`)?                  (one `BL 0` fewer follows than after other
-                                 records of S116/S120 alignments; possibly a
-                                 start radius 0 = infinite)
+BL 0x04020008, B flag, BD −1, BD −1, BL n1 1, BD −1,
+BL type (0 inward, 1 outward, 2 compound), BL id, BL before, BL after,
+BL 256 (MIST10), B clockwise,
+inward:   RD start X, Y, RD unit direction, BD length, BD end radius
+outward:  BD start radius, BD length, RD start X, Y, RD unit direction
+compound: RD start X, Y, RD unit direction, BD length, BD start radius,
+          BD end radius
+BD 0, BD 0, BD 1, BD 0 (MIST16)
 ```
 
-The proxy graphics draw a clothoid from (100, 0) to (295.0575,
-−32.7428), which is exactly L = 200 with end radius 200 (R = 100 would
-end at (280.90, −62.05)), so the description's R = 100 is not what was
-stored. Open until a fixed spiral with L ≠ R, counter-clockwise and
-outward is sampled: which BD is the length, the meaning of the bit before
-the start point, and the trailing `10`.
+| alignment | description (owner) | stored | drawn end = computed end |
+|---|---|---|---|
+| FD7 `Fixed Spiral` | inward, clockwise, R=100, L=200 | type 0, cw, L 200, R 200 | (295.0575, −32.7428) |
+| 1071 `SPIRAL A` | after a line, inward, ccw, L=150, R=80 | type 0, ccw, L 120, R 300 | (619.5209, 7.9772) |
+| 109F `SPIRAL B` | outward, clockwise, L=120, R=300 | type 1, cw, R 300, L 120 | (918.7232, −15.9270) |
+| 10A1 `SPIRAL C` | compound, cw, L=200, R-start=150, R-end=300 | type 2, cw, 200, 200, 300 | (1275.3496, −83.5756) |
+| 10A3 `SPIRAL D` | incurve, point (1400, 45) | type 0, ccw, L 118.1325, R 45.8811 | (1400, 45) |
+| 10AE `SPIRAL E` | outcurve, point (1400, 45) | type 1, ccw, R 88.1522, L 111.6352 | (1400, 45) |
+
+Each computed end (linear curvature from the start radius to the end
+radius over the length, integrated numerically) equals the last point of
+the spiral polyline in the record's proxy graphics to 4 decimals; the
+start point and direction are the line's end. Notes:
+
+- The values are what Civil 3D stored, not always what the descriptions
+  say: A holds B's numbers (L 120, R 300) and C's start radius is 200, not
+  150; FD7's radius is 200. The drawing confirms the stored values.
+- A spiral laid out through a point (D, E) is stored by its computed
+  length and radius; the point is its end and is not stored.
+- The clockwise bit: 1 for FD7, B, C (clockwise), 0 for A, D, E.
+- **Open:** in a compound spiral, which of the first two BDs is the length
+  (C has 200 and 200). FD7's header flag is 1 (MIST8).
 
 ## Open questions
 

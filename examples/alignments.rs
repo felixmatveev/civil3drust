@@ -34,18 +34,17 @@ fn main() {
             }
         };
         let start = d.stored_start_station.unwrap_or(0.0);
-        let arcs = d
-            .elements
-            .iter()
-            .filter(|e| matches!(e.segment, Segment::Arc { .. }))
-            .count();
+        let count = |f: fn(&Segment) -> bool| d.elements.iter().filter(|e| f(&e.segment)).count();
+        let arcs = count(|s| matches!(s, Segment::Arc { .. }));
+        let spirals = count(|s| matches!(s, Segment::Spiral { .. }));
         println!(
-            "\n[{:X}] {}  {} element(s) ({} tangent, {} arc), length {:.4}, stations {:.2}-{:.2}{}",
+            "\n[{:X}] {}  {} element(s) ({} tangent, {} arc, {} spiral), length {:.4}, stations {:.2}-{:.2}{}",
             d.handle,
             d.name.as_deref().unwrap_or("?"),
             d.elements.len(),
-            d.elements.len() - arcs,
+            d.elements.len() - arcs - spirals,
             arcs,
+            spirals,
             d.length(),
             start,
             start + d.length(),
@@ -64,8 +63,18 @@ fn main() {
                     "tangent (line-spiral group, line)".to_string()
                 }
                 (Segment::Line { .. }, _) => "tangent".to_string(),
-                (Segment::Spiral { geometry: g, .. }, _) => format!(
-                    "spiral (line-spiral group) into R={:.4} {}",
+                (Segment::Spiral { geometry: g, .. }, rec) => format!(
+                    "spiral ({}) R {:.4} -> {:.4} {}",
+                    match rec {
+                        Element::Spiral(sp) => match sp.kind {
+                            0 => "inward",
+                            1 => "outward",
+                            2 => "compound",
+                            _ => "?",
+                        },
+                        _ => "line-spiral group",
+                    },
+                    g.start_radius,
                     g.radius,
                     if g.counter_clockwise { "left" } else { "right" }
                 ),

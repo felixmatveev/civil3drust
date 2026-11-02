@@ -171,3 +171,90 @@ fn s119_line_spiral_group_before_centre_curve() {
     assert!(near(s, 233.016, 2097.0713) && near(e, 204.1145, 2161.4898));
     assert!((d.length() - 1019.3793).abs() < 1e-3);
 }
+
+/// S162: fixed spirals of every type after a line from (x0, 0) to
+/// (x0 + 100, 0); expected ends are the last points of the spiral Civil
+/// 3D drew in each record's proxy graphics.
+#[test]
+fn s162_spirals_match_civil3d_drawing() {
+    use civil3drust::aecc_elements::{SPIRAL_COMPOUND, SPIRAL_INWARD, SPIRAL_OUTWARD};
+    let o = raw::open("samples/S162_S120_free_spirals.dwg").unwrap();
+    let inf = f64::INFINITY;
+    // handle, type, clockwise, length, start R, end R, drawn end
+    let cases = [
+        (
+            0xFD7,
+            SPIRAL_INWARD,
+            true,
+            200.0,
+            inf,
+            200.0,
+            (295.0575, -32.7428),
+        ),
+        (
+            0x1071,
+            SPIRAL_INWARD,
+            false,
+            120.0,
+            inf,
+            300.0,
+            (619.5209, 7.9772),
+        ),
+        (
+            0x109F,
+            SPIRAL_OUTWARD,
+            true,
+            120.0,
+            300.0,
+            inf,
+            (918.7232, -15.927),
+        ),
+        (
+            0x10A1,
+            SPIRAL_COMPOUND,
+            true,
+            200.0,
+            200.0,
+            300.0,
+            (1275.3496, -83.5756),
+        ),
+        (
+            0x10A3,
+            SPIRAL_INWARD,
+            false,
+            118.1325,
+            inf,
+            45.8811,
+            (1400.0, 45.0),
+        ),
+        (
+            0x10AE,
+            SPIRAL_OUTWARD,
+            false,
+            111.6352,
+            88.1522,
+            inf,
+            (1400.0, 45.0),
+        ),
+    ];
+    for (h, kind, cw, l, r0, r1, end) in cases {
+        let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap();
+        let d = decode_elements(&r).unwrap();
+        let Element::Spiral(sp) = &d.elements[1].record else {
+            panic!("{h:X}: no spiral record")
+        };
+        assert_eq!((sp.kind, sp.clockwise, sp.mode), (kind, cw, 256), "{h:X}");
+        let close = |a: f64, b: f64| (a == b) || (a - b).abs() < 1e-4;
+        assert!(
+            close(sp.length, l) && close(sp.start_radius, r0) && close(sp.end_radius, r1),
+            "{h:X}"
+        );
+        assert_eq!(sp.tail, [0.0, 0.0, 1.0, 0.0]);
+        let e = d.elements[1].segment.end();
+        assert!(near(e, end.0, end.1), "{h:X}: {e:?}");
+        assert!(near(d.elements[0].segment.end(), sp.start.x, sp.start.y));
+    }
+}
