@@ -79,6 +79,7 @@ fn main() {
                                 "free, outcurve"
                             }
                         }
+                        Element::Group(_) => "group",
                         _ => "line-spiral group",
                     },
                     g.start_radius,

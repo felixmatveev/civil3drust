@@ -252,7 +252,7 @@ fn s162_spirals_match_civil3d_drawing() {
             close(sp.length, l) && close(sp.start_radius, r0) && close(sp.end_radius, r1),
             "{h:X}"
         );
-        assert_eq!(sp.tail, [0.0, 0.0, 1.0, 0.0]);
+        assert_eq!(sp.tail, [0.0, 0.0, 1.0]);
         let e = d.elements[1].segment.end();
         assert!(near(e, end.0, end.1), "{h:X}: {e:?}");
         assert!(near(d.elements[0].segment.end(), sp.start.x, sp.start.y));
@@ -311,4 +311,75 @@ fn s165_free_spirals_and_compound_order() {
         (200.0, 800.0, 250.0)
     );
     assert!(near(d.elements[1].segment.end(), 965.1484, -411.2572));
+}
+
+/// S173: spiral groups (one record, several parts). Expected points are
+/// the joints of the path Civil 3D drew in each record's proxy graphics.
+#[test]
+fn s173_spiral_groups_match_civil3d_drawing() {
+    let o = raw::open("samples/S173_S120_scs_floating_spirals.dwg").unwrap();
+    let joints = |h: u64| -> Vec<(f64, f64)> {
+        let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap();
+        let d = decode_elements(&r).unwrap();
+        let mut v = vec![d.elements[0].segment.start()];
+        v.extend(d.elements.iter().map(|e| e.segment.end()));
+        v.into_iter().map(|p| (p.x, p.y)).collect()
+    };
+    let cases: [(u64, &[(f64, f64)]); 4] = [
+        // Free Spiral-Curve-Spiral: line, TS, SC, CS, ST, line end.
+        (
+            0xFC5,
+            &[
+                (511.0, 803.0),
+                (1029.5984, 1291.2202),
+                (1144.8417, 1386.8694),
+                (1535.443, 1409.0588),
+                (1697.6567, 1293.0199),
+                (2205.0, 862.0),
+            ],
+        ),
+        // Floating Curve with Spiral (radius, length).
+        (
+            0xFB9,
+            &[
+                (428.0, 2008.0),
+                (1113.5, 2176.5),
+                (1494.4754, 2142.3444),
+                (1241.06, 1834.1561),
+            ],
+        ),
+        // Floating Curve with Spiral (radius, through point): line trimmed.
+        (
+            0xFBC,
+            &[
+                (1809.5, 1752.5),
+                (1971.3346, 1820.2081),
+                (2353.0101, 1845.3614),
+                (2400.0, 1800.0),
+            ],
+        ),
+        // Floating Line with Spiral (from curve end, length).
+        (
+            0xFB6,
+            &[
+                (2377.5, 1495.0),
+                (3051.5, 1554.0),
+                (3122.3887, 1740.4594),
+                (3233.9661, 2124.5824),
+            ],
+        ),
+    ];
+    for (h, want) in cases {
+        let got = joints(h);
+        assert_eq!(got.len(), want.len(), "{h:X}: {got:?}");
+        for (g, w) in got.iter().zip(want) {
+            assert!(
+                (g.0 - w.0).abs() < 1e-3 && (g.1 - w.1).abs() < 1e-3,
+                "{h:X}: {got:?}"
+            );
+        }
+    }
 }

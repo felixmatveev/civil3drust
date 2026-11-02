@@ -337,6 +337,8 @@ pub enum Element {
     Spiral(SpiralRecord),
     /// A spiral between two lines, by length (S165).
     FreeSpiral(FreeSpiralRecord),
+    /// A spiral group: spiral-curve-spiral, spiral-curve, spiral-line (S173).
+    Group(GroupRecord),
 }
 
 impl Element {
@@ -347,6 +349,7 @@ impl Element {
             Self::LineSpiral(g) => g.header_bit,
             Self::Spiral(g) => g.header_bit,
             Self::FreeSpiral(g) => g.header_bit,
+            Self::Group(g) => g.header_bit,
         }
     }
     /// Bit offset just after the record.
@@ -357,6 +360,7 @@ impl Element {
             Self::LineSpiral(g) => g.end_bit,
             Self::Spiral(g) => g.end_bit,
             Self::FreeSpiral(g) => g.end_bit,
+            Self::Group(g) => g.end_bit,
         }
     }
 }
@@ -369,6 +373,7 @@ impl Linked for Element {
             Self::LineSpiral(g) => g.id,
             Self::Spiral(g) => g.id,
             Self::FreeSpiral(g) => g.id,
+            Self::Group(g) => g.id,
         }
     }
     fn before(&self) -> i32 {
@@ -378,6 +383,7 @@ impl Linked for Element {
             Self::LineSpiral(g) => g.before,
             Self::Spiral(g) => g.before,
             Self::FreeSpiral(g) => g.before,
+            Self::Group(g) => g.before,
         }
     }
     fn after(&self) -> i32 {
@@ -387,6 +393,7 @@ impl Linked for Element {
             Self::LineSpiral(g) => g.after,
             Self::Spiral(g) => g.after,
             Self::FreeSpiral(g) => g.after,
+            Self::Group(g) => g.after,
         }
     }
 }
@@ -498,7 +505,7 @@ pub const PREFIX_SPIRAL: u16 = 6;
 /// outward:  BD start radius, BD length, RD start X, Y, RD unit direction
 /// compound: RD start X, Y, RD unit direction, BD start radius, BD length,
 ///           BD end radius
-/// then BD × 4 (0, 0, 1, 0 in every sample)
+/// then BD × 3 (0, 0, 1 in every sample)
 /// ```
 ///
 /// Spirals laid out through a point (S162 D, E) store the computed length
@@ -520,8 +527,8 @@ pub struct SpiralRecord {
     /// `f64::INFINITY` at the straight end of inward and outward spirals.
     pub start_radius: f64,
     pub end_radius: f64,
-    /// The four BDs after the geometry (0, 0, 1, 0 so far).
-    pub tail: [f64; 4],
+    /// The three BDs after the geometry (0, 0, 1 so far).
+    pub tail: [f64; 3],
 }
 
 impl SpiralRecord {
@@ -602,7 +609,7 @@ fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
         }
         _ => return None,
     }
-    let mut tail = [0.0; 4];
+    let mut tail = [0.0; 3];
     for t in &mut tail {
         *t = bd(&mut k)?;
     }
@@ -639,7 +646,6 @@ fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
 }
 
 /// The kind prefix of free-spiral records (S165).
-pub const PREFIX_FREE_SPIRAL: u16 = 8;
 /// Free-spiral codes (S165): a spiral from the line before into the line
 /// after, curvature rising (incurve) or falling (outcurve).
 pub const FREE_SPIRAL_INCURVE: i32 = 0x000A_000A;
@@ -650,7 +656,7 @@ pub const FREE_SPIRAL_OUTCURVE: i32 = 0x000A_000C;
 ///
 /// ```text
 /// BL code (0xA000A incurve, 0xA000C outcurve), BL id, BL before,
-/// BL after, BL 256 (MIST10), BD length, 2 bits `10` (meaning unknown)
+/// BL after, BL 256 (MIST10), BD length
 /// ```
 ///
 /// It turns by the angle Δ between the two lines, so its radius at the
@@ -667,12 +673,10 @@ pub struct FreeSpiralRecord {
     pub code: i32,
     pub mode: i32,
     pub length: f64,
-    /// The two bits after the length.
-    pub tail_bits: u8,
 }
 
 fn free_spiral_at(data: &[u8], bit: usize) -> Option<FreeSpiralRecord> {
-    if kind_prefix(data, bit)? != PREFIX_FREE_SPIRAL {
+    if kind_prefix(data, bit)? != PREFIX_GROUP {
         return None;
     }
     let (_, k) = aecc_alignment::read_element_header(data, bit)?;
@@ -698,10 +702,9 @@ fn free_spiral_at(data: &[u8], bit: usize) -> Option<FreeSpiralRecord> {
     if id < 1 || before < 0 || after < 0 || !(length.is_finite() && length > 0.0) {
         return None;
     }
-    let tail_bits = raw::get_bit(data, k) << 1 | raw::get_bit(data, k + 1);
     Some(FreeSpiralRecord {
         header_bit: bit,
-        end_bit: k + 2,
+        end_bit: k,
         id,
         before,
         after,
@@ -709,7 +712,6 @@ fn free_spiral_at(data: &[u8], bit: usize) -> Option<FreeSpiralRecord> {
         code,
         mode,
         length,
-        tail_bits,
     })
 }
 
@@ -746,6 +748,330 @@ pub fn free_spiral_between(
     let ts = Point2::new(p.x + t * u1.0, p.y + t * u1.1);
     g.start = ts;
     Some((ts, Point2::new(ts.x + e.x, ts.y + e.y), g))
+}
+
+/// The kind prefix of spiral-group records with codes 0, 2, 6 (and of
+/// free spirals); 10 for line-spiral groups (codes 161, 162).
+pub const PREFIX_GROUP: u16 = 8;
+pub const PREFIX_LINE_GROUP: u16 = 10;
+
+/// What a group record stores (S173). Lengths and radii as typed; the
+/// position comes from the neighbouring elements.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum GroupDef {
+    /// Code 0 (prefix 8): spiral, curve, spiral between two lines meeting
+    /// at a PI. Free Spiral-Curve-Spiral (between two entities).
+    SpiralCurveSpiral { l1: f64, radius: f64, l2: f64 },
+    /// Code 2 (prefix 8): spiral and curve from the line before, the curve
+    /// ending at `point`. Floating Curve with Spiral (from entity, radius,
+    /// through point).
+    SpiralCurveThrough {
+        spiral: f64,
+        radius: f64,
+        point: Point2,
+    },
+    /// Code 6 (prefix 8): spiral and curve from the previous element's end,
+    /// the curve `curve_length` long; a direction bit follows (1 =
+    /// clockwise). Floating Curve with Spiral (from entity end, radius,
+    /// length).
+    SpiralCurveLength {
+        spiral: f64,
+        radius: f64,
+        curve_length: f64,
+        clockwise: bool,
+    },
+    /// Code 161 (prefix 10): spiral out of the previous curve, then a line.
+    /// Floating Line with Spiral (from curve end, length).
+    SpiralLine { spiral: f64, line: f64 },
+}
+
+/// A spiral group record (S173): one record holding several parts.
+///
+/// ```text
+/// BL 0x04020008, B flag, BD p1, BD p2, BL n1, n1 × BD,
+/// BL code, BL id, BL before, BL after, BL 256 (MIST10), data:
+///   code 0:   BD L1, BD R, BD L2
+///   code 2:   BD L, BD R, RD point X, Y
+///   code 6:   BD L spiral, BD R, BD L curve, B clockwise
+///   code 161: BD L spiral, BD L line
+/// ```
+#[derive(Debug, Clone, PartialEq)]
+pub struct GroupRecord {
+    pub header_bit: usize,
+    pub end_bit: usize,
+    pub id: i32,
+    pub before: i32,
+    pub after: i32,
+    pub flag: bool,
+    pub code: i32,
+    pub mode: i32,
+    pub def: GroupDef,
+}
+
+fn group_at(data: &[u8], bit: usize) -> Option<GroupRecord> {
+    let prefix = kind_prefix(data, bit)?;
+    if prefix != PREFIX_GROUP && prefix != PREFIX_LINE_GROUP {
+        return None;
+    }
+    let (_, k) = aecc_alignment::read_element_header(data, bit)?;
+    let flag = raw::get_bit(data, k) == 1;
+    let (_, k) = raw::read_bd(data, k + 1)?;
+    let (_, k) = raw::read_bd(data, k)?;
+    let (n1, mut k) = raw::read_bl(data, k)?;
+    if !(1..=2).contains(&n1) {
+        return None;
+    }
+    for _ in 0..n1 {
+        k = raw::read_bd(data, k)?.1;
+    }
+    let (code, k) = raw::read_bl(data, k)?;
+    let (id, k) = raw::read_bl(data, k)?;
+    let (before, k) = raw::read_bl(data, k)?;
+    let (after, k) = raw::read_bl(data, k)?;
+    let (mode, mut k) = raw::read_bl(data, k)?;
+    let bd = |k: &mut usize| -> Option<f64> {
+        let (v, q) = raw::read_bd(data, *k)?;
+        *k = q;
+        (v.is_finite() && v > 0.0 && v < 1e9).then_some(v)
+    };
+    let def = match (prefix, code) {
+        (PREFIX_GROUP, 0) => GroupDef::SpiralCurveSpiral {
+            l1: bd(&mut k)?,
+            radius: bd(&mut k)?,
+            l2: bd(&mut k)?,
+        },
+        (PREFIX_GROUP, 2) => {
+            let (spiral, radius) = (bd(&mut k)?, bd(&mut k)?);
+            if k + 128 > raw::bit_len(data) {
+                return None;
+            }
+            let point = Point2::new(raw::get_f64(data, k), raw::get_f64(data, k + 64));
+            k += 128;
+            GroupDef::SpiralCurveThrough {
+                spiral,
+                radius,
+                point,
+            }
+        }
+        (PREFIX_GROUP, 6) => {
+            let (spiral, radius, curve_length) = (bd(&mut k)?, bd(&mut k)?, bd(&mut k)?);
+            let clockwise = raw::get_bit(data, k) == 1;
+            k += 1;
+            GroupDef::SpiralCurveLength {
+                spiral,
+                radius,
+                curve_length,
+                clockwise,
+            }
+        }
+        (PREFIX_LINE_GROUP, 161) => GroupDef::SpiralLine {
+            spiral: bd(&mut k)?,
+            line: bd(&mut k)?,
+        },
+        _ => return None,
+    };
+    if id < 1 || before < 0 || after < 0 {
+        return None;
+    }
+    Some(GroupRecord {
+        header_bit: bit,
+        end_bit: k,
+        id,
+        before,
+        after,
+        flag,
+        code,
+        mode,
+        def,
+    })
+}
+
+/// Shift `p` and tangent offset `k` of a clothoid of length `l` entering
+/// radius `r` (curve shifted out by p, centre k along the tangent from
+/// the TS), with the local SC point (x, y) and the spiral angle.
+fn spiral_offsets(r: f64, l: f64) -> (f64, f64, f64, f64, f64) {
+    let (x, y) = clothoid(l, r * l);
+    let th = l / (2.0 * r);
+    (x, y, th, y - r * (1.0 - th.cos()), x - r * th.sin())
+}
+
+fn rotate(v: (f64, f64), a: f64) -> (f64, f64) {
+    let (c, s) = (a.cos(), a.sin());
+    (c * v.0 - s * v.1, s * v.0 + c * v.1)
+}
+
+fn inward(start: Point2, dir: (f64, f64), l: f64, r: f64, ccw: bool) -> SpiralGeometry {
+    SpiralGeometry {
+        start,
+        direction: dir,
+        length: l,
+        radius: r,
+        start_radius: f64::INFINITY,
+        counter_clockwise: ccw,
+    }
+}
+
+fn spiral_segment(g: SpiralGeometry) -> Segment {
+    Segment::Spiral {
+        start: g.start,
+        end: g.point_at(g.length).0,
+        geometry: g,
+    }
+}
+
+/// The parts of a group record placed between its neighbours (S173):
+/// `before` is the resolved element before it (end state), `prev_line`
+/// and `next_line` the stored lines around it.
+fn place_group(
+    def: GroupDef,
+    before: Option<&Segment>,
+    prev_line: Option<&TangentRecord>,
+    next_line: Option<&TangentRecord>,
+) -> Option<Vec<Segment>> {
+    match def {
+        GroupDef::SpiralCurveSpiral { l1, radius, l2 } => {
+            let (a, b) = (prev_line?, next_line?);
+            let pi = a.end;
+            let u1 = unit((a.end.x - a.start.x, a.end.y - a.start.y))?;
+            let u2 = unit((b.end.x - b.start.x, b.end.y - b.start.y))?;
+            let d = cross(u1, u2).atan2(u1.0 * u2.0 + u1.1 * u2.1);
+            let ccw = d > 0.0;
+            let delta = d.abs();
+            if delta <= 1e-9 {
+                return None;
+            }
+            let (_, _, _, p1, k1) = spiral_offsets(radius, l1);
+            let (x2, y2, th2, p2, k2) = spiral_offsets(radius, l2);
+            let t1 = (radius + p1) * (delta / 2.0).tan() + k1 - (p1 - p2) / delta.sin();
+            let t2 = (radius + p2) * (delta / 2.0).tan() + k2 + (p1 - p2) / delta.sin();
+            let ts = Point2::new(pi.x - t1 * u1.0, pi.y - t1 * u1.1);
+            let st = Point2::new(pi.x + t2 * u2.0, pi.y + t2 * u2.1);
+            let side = if ccw { 1.0 } else { -1.0 };
+            let s1 = inward(ts, u1, l1, radius, ccw);
+            let (sc, _) = s1.point_at(l1);
+            let n2 = (-u2.1 * side, u2.0 * side);
+            let cs = Point2::new(st.x - x2 * u2.0 + y2 * n2.0, st.y - x2 * u2.1 + y2 * n2.1);
+            let n1 = (-u1.1 * side, u1.0 * side);
+            let c = Point2::new(
+                ts.x + k1 * u1.0 + (radius + p1) * n1.0,
+                ts.y + k1 * u1.1 + (radius + p1) * n1.1,
+            );
+            let arc = arc_on(&circle(c, radius, ccw), sc, cs);
+            let s2 = SpiralGeometry {
+                start: cs,
+                direction: rotate(u2, -side * th2),
+                length: l2,
+                radius: f64::INFINITY,
+                start_radius: radius,
+                counter_clockwise: ccw,
+            };
+            Some(vec![
+                spiral_segment(s1),
+                Segment::Arc {
+                    start: sc,
+                    end: cs,
+                    geometry: arc,
+                },
+                Segment::Spiral {
+                    start: cs,
+                    end: st,
+                    geometry: s2,
+                },
+            ])
+        }
+        GroupDef::SpiralCurveThrough {
+            spiral,
+            radius,
+            point,
+        } => {
+            let a = prev_line?;
+            let u = unit((a.end.x - a.start.x, a.end.y - a.start.y))?;
+            let mut best: Option<(f64, Vec<Segment>)> = None;
+            for ccw in [true, false] {
+                let side = if ccw { 1.0 } else { -1.0 };
+                let n = (-u.1 * side, u.0 * side);
+                let (_, _, _, p, k) = spiral_offsets(radius, spiral);
+                let off = (
+                    a.start.x + k * u.0 + (radius + p) * n.0 - point.x,
+                    a.start.y + k * u.1 + (radius + p) * n.1 - point.y,
+                );
+                let b = off.0 * u.0 + off.1 * u.1;
+                let disc = b * b - (off.0 * off.0 + off.1 * off.1 - radius * radius);
+                if disc < 0.0 {
+                    continue;
+                }
+                for t in [-b - disc.sqrt(), -b + disc.sqrt()] {
+                    let ts = Point2::new(a.start.x + t * u.0, a.start.y + t * u.1);
+                    let s = inward(ts, u, spiral, radius, ccw);
+                    let (sc, _) = s.point_at(spiral);
+                    let o = t_c(k, u, p + radius, n);
+                    let c = Point2::new(ts.x + o.0, ts.y + o.1);
+                    let arc = arc_on(&circle(c, radius, ccw), sc, point);
+                    if best.as_ref().is_none_or(|(w, _)| arc.sweep < *w) {
+                        best = Some((
+                            arc.sweep,
+                            vec![
+                                spiral_segment(s),
+                                Segment::Arc {
+                                    start: sc,
+                                    end: point,
+                                    geometry: arc,
+                                },
+                            ],
+                        ));
+                    }
+                }
+            }
+            best.map(|(_, v)| v)
+        }
+        GroupDef::SpiralCurveLength {
+            spiral,
+            radius,
+            curve_length,
+            clockwise,
+        } => {
+            let (p, dir) = end_state(before?);
+            let s = inward(p, dir, spiral, radius, !clockwise);
+            let (sc, d) = s.point_at(spiral);
+            let (_, end, arc) = curve_by_length(sc, d, radius, curve_length, clockwise)?;
+            Some(vec![
+                spiral_segment(s),
+                Segment::Arc {
+                    start: sc,
+                    end,
+                    geometry: arc,
+                },
+            ])
+        }
+        GroupDef::SpiralLine { spiral, line } => {
+            let prev = before?;
+            let Segment::Arc { geometry: g, .. } = prev else {
+                return None;
+            };
+            let (p, dir) = end_state(prev);
+            let s = SpiralGeometry {
+                start: p,
+                direction: dir,
+                length: spiral,
+                radius: f64::INFINITY,
+                start_radius: g.radius,
+                counter_clockwise: g.counter_clockwise,
+            };
+            let (st, d) = s.point_at(spiral);
+            Some(vec![
+                spiral_segment(s),
+                Segment::Line {
+                    start: st,
+                    end: Point2::new(st.x + line * d.0, st.y + line * d.1),
+                },
+            ])
+        }
+    }
+}
+
+/// Centre offset from the TS: k along the tangent, `dist` along the normal.
+fn t_c(k: f64, u: (f64, f64), dist: f64, n: (f64, f64)) -> (f64, f64) {
+    (k * u.0 + dist * n.0, k * u.1 + dist * n.1)
 }
 
 fn arc_at(data: &[u8], bit: usize) -> Option<ArcRecord> {
@@ -974,6 +1300,9 @@ pub fn element_records(data: &[u8]) -> Vec<Element> {
         if let Some(t) = aecc_alignment::record_at(data, bit) {
             bit = t.end_bit();
             out.push(Element::Tangent(t));
+        } else if let Some(g) = group_at(data, bit) {
+            bit = g.end_bit;
+            out.push(Element::Group(g));
         } else if let Some(sp) = free_spiral_at(data, bit) {
             bit = sp.end_bit;
             out.push(Element::FreeSpiral(sp));
@@ -1191,15 +1520,22 @@ impl Linked for ResolvedElement {
 /// Resolve chained records into segments. Free arcs need tangents on both
 /// sides that meet at a PI; those tangents are trimmed to the PC / PT.
 pub fn resolve(chain: &[Element]) -> Result<Vec<ResolvedElement>, DecodeError> {
-    resolve_with(chain, &vec![None; chain.len()])
+    resolve_with(chain, &vec![None; chain.len()], &vec![None; chain.len()])
 }
+
+/// Parts of group records placed before [`resolve_with`], by chain index.
+type Parts = Option<Vec<Segment>>;
 
 /// (start, end, geometry) of an arc placed before [`resolve_with`].
 type Placed = Option<(Point2, Point2, ArcGeometry)>;
 
 /// [`resolve`] with some arcs already placed (`pre`, by chain index): the
 /// arcs that continue from the element before them (S117).
-fn resolve_with(chain: &[Element], pre: &[Placed]) -> Result<Vec<ResolvedElement>, DecodeError> {
+fn resolve_with(
+    chain: &[Element],
+    pre: &[Placed],
+    groups: &[Parts],
+) -> Result<Vec<ResolvedElement>, DecodeError> {
     let unsupported = |m: String| DecodeError::BrokenChain(m);
     // Free arcs first: (PC, PT, geometry) by chain index.
     let mut free: Vec<Placed> = pre.to_vec();
@@ -1392,7 +1728,21 @@ fn resolve_with(chain: &[Element], pre: &[Placed]) -> Result<Vec<ResolvedElement
     }
     let mut out = Vec::with_capacity(chain.len());
     for (i, e) in chain.iter().enumerate() {
+        if let Element::Group(g) = e {
+            let parts = groups[i].clone().ok_or_else(|| {
+                unsupported(format!("group {}: its neighbours don't place it", g.id))
+            })?;
+            for (part, segment) in parts.into_iter().enumerate() {
+                out.push(ResolvedElement {
+                    record: e.clone(),
+                    segment,
+                    part,
+                });
+            }
+            continue;
+        }
         let segment = match e {
+            Element::Group(_) => unreachable!(),
             Element::FreeSpiral(_) => {
                 let (start, end, geometry) = spirals[i].expect("placed above");
                 Segment::Spiral {
@@ -1414,9 +1764,23 @@ fn resolve_with(chain: &[Element], pre: &[Placed]) -> Result<Vec<ResolvedElement
                 end: g.ts,
             },
             Element::Tangent(t) => {
+                let group_end =
+                    |j: usize| groups[j].as_ref().and_then(|v| v.last()).map(Segment::end);
+                let group_start = |j: usize| {
+                    groups
+                        .get(j)?
+                        .as_ref()
+                        .and_then(|v| v.first())
+                        .map(Segment::start)
+                };
                 let start = i
                     .checked_sub(1)
-                    .and_then(|j| free[j].map(|f| f.1).or(spirals[j].map(|s| s.1)))
+                    .and_then(|j| {
+                        free[j]
+                            .map(|f| f.1)
+                            .or(spirals[j].map(|s| s.1))
+                            .or(group_end(j))
+                    })
                     .unwrap_or(t.start);
                 let end = free
                     .get(i + 1)
@@ -1424,6 +1788,7 @@ fn resolve_with(chain: &[Element], pre: &[Placed]) -> Result<Vec<ResolvedElement
                     .flatten()
                     .map(|f| f.0)
                     .or(spirals.get(i + 1).copied().flatten().map(|s| s.0))
+                    .or(group_start(i + 1))
                     .unwrap_or(t.end);
                 Segment::Line { start, end }
             }
@@ -1822,6 +2187,7 @@ fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, Deco
     // continue from the resolved end of the elements before them; free
     // lines (kind 9, S113) touch the circles of the curves on both sides.
     let mut pre: Vec<Placed> = vec![None; chained.len()];
+    let mut groups: Vec<Parts> = vec![None; chained.len()];
     // Line-spiral groups into an open centre curve (S119).
     for i in 0..chained.len() {
         let Element::LineSpiral(g) = &chained[i] else {
@@ -1839,6 +2205,29 @@ fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, Deco
         g.ts = ts;
         g.sc = sc;
     }
+    for i in 0..chained.len() {
+        let Element::Group(g) = &chained[i] else {
+            continue;
+        };
+        let (id, def) = (g.id, g.def);
+        let unsupported = |why: &str| DecodeError::BrokenChain(format!("group {id}: {why}"));
+        let line = |j: Option<usize>| match j.and_then(|j| chained.get(j)) {
+            Some(Element::Tangent(t)) if t.kind == aecc_alignment::KIND_FIXED => Some(t.clone()),
+            _ => None,
+        };
+        let (prev_line, next_line) = (line(i.checked_sub(1)), line(Some(i + 1)));
+        let before = if i > 0 {
+            resolve_with(&chained[..i], &pre[..i], &groups[..i])
+                .ok()
+                .and_then(|v| v.last().map(|e| e.segment))
+        } else {
+            None
+        };
+        groups[i] = Some(
+            place_group(def, before.as_ref(), prev_line.as_ref(), next_line.as_ref())
+                .ok_or_else(|| unsupported("its neighbours don't place it (no sample yet)"))?,
+        );
+    }
     for i in 1..chained.len() {
         if let Element::Arc(a) = &chained[i] {
             let (id, def) = (a.id, a.def);
@@ -1851,7 +2240,7 @@ fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, Deco
                 continue;
             }
             let unsupported = |why: &str| DecodeError::BrokenChain(format!("arc {id}: {why}"));
-            let prefix = resolve_with(&chained[..i], &pre[..i])
+            let prefix = resolve_with(&chained[..i], &pre[..i], &groups[..i])
                 .map_err(|_| unsupported("elements before it don't resolve"))?;
             let last = prefix.last().expect("i >= 1");
             let (p, dir) = end_state(&last.segment);
@@ -1926,7 +2315,7 @@ fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, Deco
             t.end = b;
             continue;
         }
-        let prefix = resolve_with(&chained[..i], &pre[..i])
+        let prefix = resolve_with(&chained[..i], &pre[..i], &groups[..i])
             .map_err(|_| unsupported("elements before it don't resolve"))?;
         let last = prefix.last().expect("i >= 1");
         let (p0, dir) = end_state(&last.segment);
@@ -1954,7 +2343,7 @@ fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, Deco
         t.start = a;
         t.end = b;
     }
-    let elements = resolve_with(&chained, &pre)?;
+    let elements = resolve_with(&chained, &pre, &groups)?;
     for w in elements.windows(2) {
         let (e, s) = (w[0].segment.end(), w[1].segment.start());
         if e.distance_to(s) > 1e-6 * (1.0 + e.x.abs().max(e.y.abs())) {

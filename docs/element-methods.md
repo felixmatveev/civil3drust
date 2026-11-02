@@ -60,12 +60,12 @@ the arcs and lines in each record's proxy graphics.
 | method | status | samples |
 |---|---|---|
 | Floating Line with Spiral (from curve, through point) | probable: code 162 line-spiral group (start point, spiral length) — S119, made before a curve's start; method to be confirmed | S119; S120 → S121 |
-| Floating Line with Spiral (from curve end, length) | planned | S120 → S121 |
-| Floating Curve with Spiral (from entity end, radius, length) | planned | S120 → S121 |
-| Floating Curve with Spiral (from entity, radius, through point) | planned | S120 → S121 |
+| Floating Line with Spiral (from curve end, length) | group kind 10 code 161: BD spiral length, BD line length; spiral out of the previous curve | known, S173 |
+| Floating Curve with Spiral (from entity end, radius, length) | group kind 8 code 6: BD spiral L, BD R, BD curve L, B clockwise | known, S173 |
+| Floating Curve with Spiral (from entity, radius, through point) | group kind 8 code 2: BD L, BD R, RD point; line trimmed to the TS | known, S173 |
 | Floating Reverse Curve with Spirals (from curve, radius, through point) | planned | S120 → S121 |
 | Floating Reverse Curve with Spirals (from curve, two points) | planned | S120 → S121 |
-| Free Spiral-Curve-Spiral (between two entities) | planned | S120 → S121 |
+| Free Spiral-Curve-Spiral (between two entities) | group kind 8 code 0: BD L1, BD R, BD L2 (between two lines) | known, S173 |
 | Free Compound Spiral-Curve-Spiral-Curve-Spiral (between two tangents) | planned | S120 → S121 |
 | Free Reverse Spiral-Curve-Spiral-Spiral-Curve-Spiral (between two tangents) | planned | S120 → S121 |
 | Free Reverse Spiral-Curve-Spiral-Spiral (from entity, end curve) | planned | S120 → S121 |

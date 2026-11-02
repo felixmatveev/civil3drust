@@ -2154,7 +2154,7 @@ inward:   RD start X, Y, RD unit direction, BD length, BD end radius
 outward:  BD start radius, BD length, RD start X, Y, RD unit direction
 compound: RD start X, Y, RD unit direction, BD start radius, BD length,
           BD end radius
-BD 0, BD 0, BD 1, BD 0 (MIST16)
+BD 0, BD 0, BD 1 (MIST16)
 ```
 
 | alignment | description (owner) | stored | drawn end = computed end |
@@ -2191,7 +2191,7 @@ stores only its length:
 ```text
 BL 0x04020008, B flag, BD −1, BD −1, BL n1 1, BD −1,
 BL code (0x000A000A incurve, 0x000A000C outcurve), BL id, BL before,
-BL after, BL 256 (MIST10), BD length, 2 bits `10` (unknown)
+BL after, BL 256 (MIST10), BD length
 ```
 
 Geometry: the spiral turns by the angle Δ between the lines (here
@@ -2202,6 +2202,42 @@ beyond its stored end (3023.5, −439.5); line 2 from (3757.5827, −352.0680)
 instead of (3816.5, −439.5)). Computed start and end equal the drawn
 points to 4 decimals for both samples.
 
+
+**Spiral groups (S173).** One record holds several parts; only lengths,
+radii and (sometimes) a point are stored, and the position comes from the
+neighbours. Records of kind 8 (codes 0, 2, 6; free spirals use the same
+kind with codes 0xA000A/0xA000C) and kind 10 (codes 161, 162):
+
+```text
+BL 0x04020008, B flag, BD −1, BD −1, BL n1 1, BD −1,
+BL code, BL id, BL before, BL after, BL 256 (MIST10), data:
+  8/0   BD L1, BD R, BD L2            Free Spiral-Curve-Spiral (between two entities)
+  8/2   BD L, BD R, RD point X, Y     Floating Curve with Spiral (from entity, radius, through point)
+  8/6   BD L, BD R, BD L curve, B cw  Floating Curve with Spiral (from entity end, radius, length)
+  10/161 BD L spiral, BD L line       Floating Line with Spiral (from curve end, length)
+  10/162 RD start, BD L spiral        line with spiral into the next curve (S119)
+```
+
+| alignment | stored | drawn joints = computed |
+|---|---|---|
+| FC5 | 150, 400, 200 between lines meeting at (1347.5, 1590.5) | TS (1029.5984, 1291.2202), SC (1144.8417, 1386.8694), CS (1535.4430, 1409.0588), ST (1697.6567, 1293.0199) |
+| FB9 | 400, 200, 600, cw, after line → (1113.5, 2176.5) | SC (1494.4754, 2142.3444), curve end (1241.0600, 1834.1561) |
+| FBC | 400, 200, (2400, 1800), after line (1809.5, 1752.5) → (2272, 1946) | line trimmed to TS (1971.3346, 1820.2081), SC (2353.0101, 1845.3614) |
+| FB6 | 200, 400 after a three-point curve ending at (3051.5, 1554) | ST (3122.3887, 1740.4594), line end (3233.9661, 2124.5824) |
+
+Geometry: spiral-curve-spiral uses the unsymmetrical spiral formulas
+(shift p = y − R(1 − cos θ), k = x − R sin θ for each spiral; T1 = (R + p1)
+tan(Δ/2) + k1 − (p1 − p2)/sin Δ, T2 = (R + p2) tan(Δ/2) + k2 + (p1 − p2)/sin
+Δ from the PI). The through-point group slides the spiral along the line
+until its curve passes through the point; of the two positions, Civil 3D
+uses the one with the shorter curve to the point. The other two continue
+from the previous element's end (the spiral-line group starts at the
+previous curve's radius).
+
+**Record ends corrected (S173).** The block after the last record starts
+with five `BL 0` in alignments copied from S113's `EMPTY` (S117, S120)
+and three in S24's: so fixed spirals end with three BDs `0, 0, 1`, not
+four, and free spirals have no trailing bits after the length.
 
 ## Open questions
 

@@ -318,7 +318,10 @@ fn write_intervals(
         };
         if matches!(
             e.record,
-            Element::LineSpiral(_) | Element::Spiral(_) | Element::FreeSpiral(_)
+            Element::LineSpiral(_)
+                | Element::Spiral(_)
+                | Element::FreeSpiral(_)
+                | Element::Group(_)
         ) {
             return Err(err("a speed on a spiral group (no sample yet)"));
         }

@@ -411,7 +411,10 @@ pub fn set_geometry(
     let plain_layout = decoded.elements.iter().all(|e| match &e.record {
         Element::Tangent(t) => t.kind == crate::aecc_alignment::KIND_FIXED,
         Element::Arc(a) => matches!(a.def, ArcDef::Free { .. }),
-        Element::LineSpiral(_) | Element::Spiral(_) | Element::FreeSpiral(_) => false,
+        Element::LineSpiral(_)
+        | Element::Spiral(_)
+        | Element::FreeSpiral(_)
+        | Element::Group(_) => false,
     }) && raw::get_bit(data, end0_bit) == 0
         && raw::get_bit(data, end0_bit + 1) == 0
         && (raw::get_f64(data, end0_bit + 2) - old_end0).abs() <= 1e-9 * old_end0.abs().max(1.0);
@@ -473,7 +476,10 @@ pub fn set_geometry(
                     radius,
                 );
             }
-            Element::LineSpiral(_) | Element::Spiral(_) | Element::FreeSpiral(_) => {
+            Element::LineSpiral(_)
+            | Element::Spiral(_)
+            | Element::FreeSpiral(_)
+            | Element::Group(_) => {
                 unreachable!("not a plain layout")
             }
         }

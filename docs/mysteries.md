@@ -378,8 +378,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Where:** S119 element 7, the BL after the IDs (before the start
   point); also in every fixed spiral record (S121, S162) at the same
   place, whatever the spiral type, and in the free spirals of S165
-  (kind 8). The free spiral record also ends with 2 unexplained bits `10`
-  after its length.
+  (kind 8).; and in the spiral groups of S173 (codes 0, 2, 6, 161).
 - **Hypothesis:** spiral definition or type flags (clothoid, by length vs
   A). S121 (spiral methods) should vary it.
 
@@ -468,10 +467,11 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   civil3drust could read S164's elements and was wrong.) Bit 13 remains
   unexplained.
 
-## MIST16 — the four BDs after a spiral's geometry
+## MIST16 — the three BDs after a spiral's geometry
 
-- **Where:** the end of every spiral record (kind 6), after the lengths
-  and radii: `BD 0, BD 0, BD 1, BD 0`.
+- **Where:** the end of every fixed spiral record (kind 6), after the
+  lengths and radii: `BD 0, BD 0, BD 1` (a fourth `BD 0` first counted
+  here belongs to the block after the records, S173).
 - **Seen:** identical in all six spirals of S162 (inward, outward,
   compound, through-point).
 - **Hypothesis:** a 2D vector pair or spiral-definition parameters at

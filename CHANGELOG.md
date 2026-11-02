@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Spiral groups (S173): `Element::Group` with `GroupDef` — spiral-curve-spiral,
+  spiral-curve by length or through a point, spiral-line from a curve —
+  placed from their neighbours into several parts. Sample S173.
+
 - Free spirals between two lines (record kind 8): `Element::FreeSpiral`,
   `free_spiral_between`; the lines are extended or trimmed to the spiral.
   Compound spirals read as start radius, length, end radius. Sample S165.
@@ -37,6 +41,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 ### Fixed
 - Re-linking a kept arc in element edits read the header as a fixed
   32-bit value and broke unlocked alignments with arcs (S171, S172).
+
+### Fixed
+- Fixed spiral records end with three BDs (not four) and free spirals
+  with their length; the extra bits belong to the block after the
+  records.
 
 ### Changed
 - `docs/element-methods.md`: sample descriptions are hints; stored records
