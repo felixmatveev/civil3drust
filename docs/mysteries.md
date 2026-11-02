@@ -336,6 +336,14 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   leaves bit 15 off (owner, observed in Civil 3D 2024): the bit is an
   independent setting, the lock given to new elements, not a summary of
   the elements' locks.
+- **Next lead (deferred until spiral geometry is done):** the Alignment
+  Entities grid shows per element a Tangency Constraint ("Not Constrained
+  (Fixed)", "Constrained on Both Sides (Free)"), the Parameter Constraint
+  lock (the `0x02` byte) and a Parameter Constraint ("Two points",
+  "Radius"). The owner's guess: flag bit `0x01` and/or the closing `0x04`
+  carry the front and back (before/after) constraints. Test: elements
+  with each tangency constraint (fixed, floating front, floating back,
+  free) and their header bytes.
 - **Status:** behaviour mapped (S125–S139, S164): `0x0008` must be 8, the
   flag byte (`0x02` = parameters locked) is optional, and `0x04` closes the
   header. Still open: the meaning of the `0x04` byte and of flag bit 0x01
