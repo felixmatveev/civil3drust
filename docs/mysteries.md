@@ -396,6 +396,13 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   of Intersection, Constraint Editing) of S11's and S24's alignments for a
   setting that differs; then change it on one alignment and save.
 - **civil3drust today:** copies the template's value.
+- **Hypothesis (S11 vs S24 Alignment Properties, owner's screenshots):**
+  the only new difference is Constraint Editing → "Always perform implied
+  tangency constraint swapping": on in S11 `Alignment - (2)` (flag 1),
+  off in S24 `Alignment - (1)` (flag 0). "Lock all parameter constraints"
+  is on in both, as are the bits 15 and 13 before the section-2 end —
+  one of them is probably that option. Test: S24 with the swapping option
+  turned on (and a copy with "Lock all parameter constraints" off).
 
 ## MIST16 — the four BDs after a spiral's geometry
 
