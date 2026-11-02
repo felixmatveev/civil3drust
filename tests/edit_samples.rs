@@ -577,3 +577,27 @@ fn edits_keep_the_unlocked_form_s164() {
     let n = |d: &Vec<u8>| raw::bit_len(d);
     assert!(n(&d1) >= n(&d2) + 3 * 8);
 }
+
+#[test]
+fn unlocked_edits_survive_civil3d_resave_s166_s169() {
+    for (ours, resaved, n) in [
+        (
+            "samples/S166_S164_arc_removed_unlocked.dwg",
+            "samples/S168_S166_civ3d_resaved.dwg",
+            3,
+        ),
+        (
+            "samples/S167_S166_curve_added_unlocked.dwg",
+            "samples/S169_S167_civ3d_resaved.dwg",
+            4,
+        ),
+    ] {
+        let (a, b) = (lock_sample(ours), lock_sample(resaved));
+        assert_eq!(header_flags(&a), vec![None; n]);
+        assert_eq!(header_flags(&b), vec![None; n]);
+        assert_eq!(chain_of(&a), chain_of(&b));
+        let (da, db) = (decode_elements(&a).unwrap(), decode_elements(&b).unwrap());
+        assert!((da.length() - db.length()).abs() < 1e-9);
+        assert!(!constraint_editing(&b).unwrap().lock_parameters);
+    }
+}

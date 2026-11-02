@@ -15,6 +15,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   the alignment's form (`encode_element_header`, `element_header_flags`;
   D-051). Tests `unlocked_element_headers_read_s164` and
   `edits_keep_the_unlocked_form_s164`.
+- Samples S166–S169: element edits of the unlocked S164 and their
+  Civil 3D re-saves; accepted, AUDIT clean, read back the same (test
+  `unlocked_edits_survive_civil3d_resave_s166_s169`).
 - `aecc_criteria::constraint_editing`: the Constraint Editing options
   "Always perform implied tangency constraint swapping" (bit 16 before the
   section-2 end) and "Lock all parameter constraints" (bit 15).

@@ -321,6 +321,10 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   S163. Writers follow the alignment: a rewritten element keeps its own
   header, a new one takes the form of the alignment's first element
   (locked when it has none) (D-051; test `edits_keep_the_unlocked_form_s164`).
+  Civil 3D 2024 accepted civil3drust's unlocked edits (S166 element
+  removed, S167 curve added: no RECOVER, AUDIT clean, options still off)
+  and its re-saves (S168, S169) read back to the same elements, still
+  unlocked.
 - **Status:** behaviour mapped (S125–S139, S164): `0x0008` must be 8, the
   flag byte (`0x02` = parameters locked) is optional, and `0x04` closes the
   header. Still open: the meaning of the `0x04` byte and of flag bit 0x01
