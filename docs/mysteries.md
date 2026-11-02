@@ -332,8 +332,10 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   element's own parameter lock and bit 15 is the "lock all" option
   (turning it off unlocked every element, S164). New elements take the
   option's value; existing ones keep their byte (D-051, test
-  `lock_is_per_element_s170_s172`). Open: whether Civil 3D sets bit 15
-  when every element is locked one by one.
+  `lock_is_per_element_s170_s172`). Locking every element one by one
+  leaves bit 15 off (owner, observed in Civil 3D 2024): the bit is an
+  independent setting, the lock given to new elements, not a summary of
+  the elements' locks.
 - **Status:** behaviour mapped (S125–S139, S164): `0x0008` must be 8, the
   flag byte (`0x02` = parameters locked) is optional, and `0x04` closes the
   header. Still open: the meaning of the `0x04` byte and of flag bit 0x01

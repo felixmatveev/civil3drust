@@ -1355,7 +1355,7 @@ Alignment Properties, which adds the user-name string).**
   | bits before section-2 end | meaning | default | samples |
   |---|---|---|---|
   | 16 | always perform implied tangency constraint swapping | 0 in S24, 1 in S11 | S163 |
-  | 15 | lock all parameter constraints (also the `0x02` byte in every element header) | 1 | S164 |
+  | 15 | lock all parameter constraints: the lock new elements get; turning it off unlocks every element, locking elements one by one leaves it off (each element's own lock is the `0x02` header byte) | 1 | S164, S172 |
 
   `aecc_criteria::constraint_editing` reads both and
   `set_constraint_editing` writes them (also adding or removing the lock

@@ -1011,7 +1011,8 @@ together.
 the option off, Civil 3D locked one element only. A new element now
 takes the alignment's "Lock all parameter constraints" bit (15 before
 the section-2 end), not the first element's form; existing elements
-still keep their own byte.
+still keep their own byte. Locking every element by hand leaves the
+bit off (owner), which confirms it is the default for new elements.
 
 **Alternatives.** Always write the locked form: silently turns the
 option back on for unlocked alignments. Read the option from bit 15 only:
