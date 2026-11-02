@@ -24,6 +24,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   `s162_spirals_match_civil3d_drawing`; MIST16.
 
 ### Changed
+- `docs/element-methods.md`: sample descriptions are hints; stored records
+  checked against Civil 3D's drawing are the ground truth.
 - MIST15: the Constraint Editing option "Always perform implied tangency
   constraint swapping" (confirmed by S163).
 - MIST7: "Lock all parameter constraints" off removes the `0x02` byte from

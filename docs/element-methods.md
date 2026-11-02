@@ -88,6 +88,14 @@ the arcs and lines in each record's proxy graphics.
 
 ## How the samples are made
 
+**Ground truth.** The owner's descriptions are hints, not measurements:
+Civil 3D's dynamic input reuses earlier values or the value under the
+cursor, and typos happen in both the command line and the description.
+A finding rests on the stored record checked against the geometry Civil
+3D drew (proxy graphics); where the description disagrees, the docs note
+it and follow the drawing (S121 FD7, S162 A and C, S165 C).
+
+
 S116 is prepared by civil3drust: S24 plus 14 empty alignments named after
 the 14 curve methods (owner's highlighted list, which adds Fixed Curve
 (Three point) and Free Curve Fillet (radius) as controls). The owner lays
