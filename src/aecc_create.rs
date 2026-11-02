@@ -458,7 +458,7 @@ pub fn create_alignment(
                 lock_parameters: false,
             },
         )
-        .map_err(|e| lay(&e.to_string()))?
+        .map_err(|e| lay(e.to_string()))?
     };
     let mut align = bytes;
     let mut rec = RawRecord {
