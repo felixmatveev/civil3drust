@@ -601,3 +601,34 @@ fn unlocked_edits_survive_civil3d_resave_s166_s169() {
         assert!(!constraint_editing(&b).unwrap().lock_parameters);
     }
 }
+
+/// Switching the options rewrites bits 16/15 and every header: S163 with
+/// both off equals S164 from the criteria flags to the end of the element
+/// list, and S164 with both on equals S163.
+#[test]
+fn set_constraint_editing_matches_civil3d_s163_s164() {
+    use civil3drust::aecc_criteria::{set_constraint_editing, ConstraintEditing};
+    let span = |r: &raw::RawRecord| -> Vec<u8> {
+        let d = decode_elements(r).unwrap();
+        let a = d.first_record_bit().unwrap() - 21 - 20;
+        let z = d.records_end_bit().unwrap();
+        (a..z).map(|i| raw::get_bit(&r.data, i)).collect()
+    };
+    let set = |r: &raw::RawRecord, on: bool| {
+        let c = ConstraintEditing {
+            swap_tangency: on,
+            lock_parameters: on,
+        };
+        let (data, handle_bits) = set_constraint_editing(r, c).unwrap();
+        let out = raw::RawRecord {
+            data,
+            handle_bits,
+            ..r.clone()
+        };
+        assert_eq!(constraint_editing(&out).unwrap(), c);
+        out
+    };
+    let (on, off) = (lock_sample(S163), lock_sample(S164));
+    assert_eq!(span(&set(&on, false)), span(&off));
+    assert_eq!(span(&set(&off, true)), span(&on));
+}

@@ -439,6 +439,27 @@ pub fn create_alignment(
     };
     // Never carry the template's re-save caches over (D-046, D-047).
     let (bytes, hb) = aecc_build::drop_caches(bytes, hb);
+    // New alignments get the simple Constraint Editing options: no
+    // tangency swapping, parameters unlocked (no flag byte per element;
+    // D-052). An empty alignment keeps the template's flags (no element
+    // to locate them by).
+    let (bytes, hb) = if pis.is_empty() {
+        (bytes, hb)
+    } else {
+        let r = RawRecord {
+            data: bytes,
+            handle_bits: hb,
+            ..rec.clone()
+        };
+        crate::aecc_criteria::set_constraint_editing(
+            &r,
+            crate::aecc_criteria::ConstraintEditing {
+                swap_tangency: false,
+                lock_parameters: false,
+            },
+        )
+        .map_err(|e| lay(&e.to_string()))?
+    };
     let mut align = bytes;
     let mut rec = RawRecord {
         data: align.clone(),

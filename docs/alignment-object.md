@@ -1356,7 +1356,10 @@ Alignment Properties, which adds the user-name string).**
   | 16 | always perform implied tangency constraint swapping | 0 in S24, 1 in S11 | S163 |
   | 15 | lock all parameter constraints (also the `0x02` byte in every element header) | 1 | S164 |
 
-  `aecc_criteria::constraint_editing` reads both.
+  `aecc_criteria::constraint_editing` reads both and
+  `set_constraint_editing` writes them (also adding or removing the lock
+  byte in every element header). `create_alignment` writes both off
+  (D-052).
 - `C0 control`: unchanged apart from the edited-record form; every
   alignment now references check set 4D3 (set on save).
 

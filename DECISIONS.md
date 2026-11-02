@@ -1010,3 +1010,24 @@ together.
 **Alternatives.** Always write the locked form: silently turns the
 option back on for unlocked alignments. Read the option from bit 15 only:
 equivalent in every sample, but the headers are what Civil 3D checks.
+
+## D-052: New alignments are written with Constraint Editing off
+
+**Date:** 2026-11-02. **Status:** accepted.
+
+**Context.** The two Constraint Editing options are bits 16 and 15 before
+the section-2 end; the lock is also a `0x02` byte in every element header
+(D-051). A bit cannot be left out (the fields after it would shift), so
+"uninitialized" is not available; the cheapest form is both off, which
+also drops one byte per element. Civil 3D accepts unlocked alignments
+and keeps them unlocked on re-save (S166–S169).
+
+**Decision.** `create_alignment` writes swapping off and parameters
+unlocked, whatever the donor had (`aecc_criteria::set_constraint_editing`).
+Edits of existing alignments keep the user's setting (D-051). An empty
+alignment keeps the template's bits: without elements the section-2 end
+is not located yet.
+
+**Alternatives.** Copy the donor's options: carries a template's settings
+into new objects. Civil 3D's own default (lock on): one more byte per
+element for a setting the user can turn on in Civil 3D.

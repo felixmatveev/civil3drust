@@ -82,7 +82,7 @@ hierarchy the field most likely belongs to (inferred from its position).
 | `BL 0x1600101F` + FILETIME (Properties form only) | — (a "date modified" stamp; no public property found) | cache | MIST3; the same block is in 82 classes (styles, label sets, check sets …), e.g. S24's styles are stamped when the drawing was made (2026-10-22 19:56:44 UTC); plan: drop it |
 | `BL 0x0D00D773, BL n` (MIST2) | — | cache | added on re-save; removed (D-047); n = 2 centerline, 1 utility |
 | design criteria flags (bits 19, 18, 17, 14 before the section-2 end) | `UseDesignSpeed` (probable), `UseDesignCriteriaFile`, `UseDesignCheckSet`; tangency check (no public property found) | model | `aecc_criteria` |
-| flags 16 and 15 before the section-2 end | Constraint Editing options "Always perform implied tangency constraint swapping" and "Lock all parameter constraints" (no public property found) | model | `aecc_criteria::constraint_editing`; MIST15 solved (S163, S164) |
+| flags 16 and 15 before the section-2 end | Constraint Editing options "Always perform implied tangency constraint swapping" and "Lock all parameter constraints" (no public property found) | model | `aecc_criteria::constraint_editing` / `set_constraint_editing`; new alignments both off (D-052); MIST15 solved (S163, S164) |
 | start station (a BD ending 20 bits before the section-2 end) | `StartingStation` / `ReferencePointStation` | model | `aecc_station` |
 | first-element ID (twice) | — | derived | `aecc_station::set_first_element` |
 | name, description (string stream) | `Name`, `Description` | model | `string_stream` |

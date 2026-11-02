@@ -278,6 +278,22 @@ fn rename_s24_alignment_any_length() {
 /// The two-tangent alignment civil3drust writes equals the one Civil 3D
 /// wrote for the same polyline (S44 FF3) from the element count to the
 /// string stream, except for the two copies of the identity value.
+/// `r` with both Constraint Editing options off, as `create_alignment`
+/// writes them (D-052).
+fn unlocked(r: raw::RawRecord) -> raw::RawRecord {
+    use civil3drust::aecc_criteria::{set_constraint_editing, ConstraintEditing};
+    let off = ConstraintEditing {
+        swap_tangency: false,
+        lock_parameters: false,
+    };
+    let (data, handle_bits) = set_constraint_editing(&r, off).unwrap();
+    raw::RawRecord {
+        data,
+        handle_bits,
+        ..r
+    }
+}
+
 #[test]
 fn two_tangents_match_civil3d_s44() {
     use civil3drust::{aecc_elements::Element, proxy_graphics as pg, string_stream};
@@ -307,6 +323,9 @@ fn two_tangents_match_civil3d_s44() {
         .into_iter()
         .find(|r| r.handle == 0xFF3)
         .unwrap();
+    // New alignments are written with Constraint Editing off (D-052);
+    // compare with Civil 3D's record set the same way.
+    let theirs = unlocked(theirs);
     let span = |r: &raw::RawRecord| -> (Vec<u8>, Vec<u8>, usize) {
         let g = pg::find(&r.data, 4096).unwrap();
         let d = decode_elements(r).unwrap();
@@ -382,6 +401,9 @@ fn curves_match_civil3d_s49() {
         .into_iter()
         .find(|r| r.handle == 0x102B)
         .unwrap();
+    // New alignments are written with Constraint Editing off (D-052);
+    // compare with Civil 3D's record set the same way.
+    let theirs = unlocked(theirs);
     let parts = |r: &raw::RawRecord| {
         let g = pg::find(&r.data, 4096).unwrap();
         let d = decode_elements(r).unwrap();
@@ -965,4 +987,48 @@ fn resave_field_removed_not_copied() {
     assert!(resave_field_bit(&a.data).is_none());
     assert_eq!(marker(&a.data), MARKER_WITHOUT_RESAVE_FIELD);
     assert_eq!(decode_elements(&a).unwrap().elements.len(), 1);
+}
+
+/// New alignments get no tangency swapping and unlocked parameters
+/// (D-052): bit 16 and 15 before the section-2 end 0, no flag byte in the
+/// element headers, whatever the donor had.
+#[test]
+fn created_alignment_is_unlocked() {
+    use civil3drust::aecc_alignment::read_element_header;
+    use civil3drust::aecc_criteria::constraint_editing;
+    // S163's donor has swapping on and parameters locked.
+    let donor = raw::open("samples/S163_S24_tangency_swapping_on.dwg").unwrap();
+    let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+    let pis = [
+        Point2::new(0.0, 0.0),
+        Point2::new(100.0, 0.0),
+        Point2::new(200.0, 100.0),
+    ];
+    let c = create_alignment(
+        &mut t.doc,
+        &donor.doc,
+        "U",
+        &pis,
+        &[Some(40.0)],
+        9,
+        CreateOptions::default(),
+    )
+    .unwrap();
+    let r = raw::records(&t.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == c.alignment)
+        .unwrap();
+    let ce = constraint_editing(&r).unwrap();
+    assert!(!ce.swap_tangency && !ce.lock_parameters);
+    let d = decode_elements(&r).unwrap();
+    assert_eq!(d.elements.len(), 3);
+    for e in d.all() {
+        assert_eq!(
+            read_element_header(&r.data, e.record.header_bit())
+                .unwrap()
+                .0,
+            None
+        );
+    }
+    assert!(d.stored_start_station == Some(0.0));
 }

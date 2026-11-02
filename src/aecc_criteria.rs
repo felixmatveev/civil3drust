@@ -125,3 +125,54 @@ pub fn constraint_editing(rec: &RawRecord) -> Result<ConstraintEditing, Criteria
         lock_parameters: raw::get_bit(&rec.data, e - 15) == 1,
     })
 }
+
+/// Set the Constraint Editing options. The lock is stored twice, as bit 15
+/// and as the flag byte of every element header (MIST7, S164), so every
+/// header is rewritten: `0x02` added when locking, removed when unlocking
+/// (other flag bits are kept). Returns the new bytes and handle-stream
+/// size. Alignments with spiral groups are refused (their inner headers
+/// are not enumerated yet).
+pub fn set_constraint_editing(
+    rec: &RawRecord,
+    c: ConstraintEditing,
+) -> Result<(Vec<u8>, usize), CriteriaError> {
+    use crate::aecc_alignment::{read_element_header, ELEMENT_LOCKED};
+    use crate::aecc_build::{encode_element_header, Bits};
+    let d = decode_elements(rec).map_err(|e| CriteriaError(e.to_string()))?;
+    if d.has_groups() {
+        return Err(CriteriaError("spiral groups not handled yet".into()));
+    }
+    let e = section2_end(rec)?;
+    let mut data = rec.data.clone();
+    for (k, v) in [(16, c.swap_tangency), (15, c.lock_parameters)] {
+        let b = e - k;
+        let (byte, m) = (b / 8, 1u8 << (7 - b % 8));
+        if v {
+            data[byte] |= m;
+        } else {
+            data[byte] &= !m;
+        }
+    }
+    let mut headers: Vec<usize> = d.all().map(|x| x.record.header_bit()).collect();
+    headers.sort_unstable();
+    let total = raw::bit_len(&data);
+    let data_end = total - rec.handle_bits;
+    let mut w = Bits::default();
+    let mut at = 0;
+    for h in headers {
+        let (flags, next) = read_element_header(&data, h)
+            .ok_or_else(|| CriteriaError(format!("element header at bit {h} not readable")))?;
+        let rest = flags.unwrap_or(0) & !ELEMENT_LOCKED;
+        // Other flag bits without the lock are rejected by Civil 3D
+        // (S126, S128), so unlocking drops the whole byte.
+        let new = c.lock_parameters.then_some(rest | ELEMENT_LOCKED);
+        w.copy(&data, at, h);
+        encode_element_header(&mut w, new);
+        at = next;
+    }
+    let new_data_end = data_end + w.len() - at;
+    w.copy(&data, at, total);
+    let bytes = w.into_bytes();
+    let hb = bytes.len() * 8 - new_data_end;
+    Ok((bytes, hb))
+}

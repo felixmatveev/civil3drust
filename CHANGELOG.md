@@ -18,6 +18,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 - Samples S166–S169: element edits of the unlocked S164 and their
   Civil 3D re-saves; accepted, AUDIT clean, read back the same (test
   `unlocked_edits_survive_civil3d_resave_s166_s169`).
+- New alignments are written with both Constraint Editing options off
+  (no flag byte per element); `aecc_criteria::set_constraint_editing`
+  switches them on existing alignments (D-052). Tests
+  `created_alignment_is_unlocked`, `set_constraint_editing_matches_civil3d_s163_s164`.
 - `aecc_criteria::constraint_editing`: the Constraint Editing options
   "Always perform implied tangency constraint swapping" (bit 16 before the
   section-2 end) and "Lock all parameter constraints" (bit 15).
