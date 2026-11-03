@@ -2679,6 +2679,28 @@ not warned and are unchanged.
   the composed JSON and keeps it as a group (S205 → S212, S214 → S215).
   The geometry is the same, only the piece IDs change.
 
+**Groups from typed parameters (S216).** `aecc_layout::layout` writes the
+JSON from the fixed elements and a `Group` (method, neighbours, typed
+parameters); the group object it writes for S178 11F8 from 130, 550,
+160, 210 is Civil 3D's line for line (test `layout_json`). S216 (S178,
+template 11F8, `exp_group_params` and `exp_chains --json-tweak`):
+
+| alignment | element records | JSON group |
+|---|---|---|
+| 1208 `G direct … 11F8` | fixed line and curve only, linked to each other | 130, 550, 160, 210 (as typed) |
+| 120B `G group … 11F8` | the same, linked to the group's ID 3 (no record has it) | as typed |
+| 120E `G direct … 11DE` | fixed curve and line, linked to each other | **150**, 170, **500**, 190 (typed 110, 170, 450, 190) |
+| 1211 `G direct … 11D4` | the two fixed curves | as typed |
+| 1214, 1217 `S178 11DE/11F8 …` | all pieces (as S205) | `Spiral1Length` + 20 in the JSON only |
+
+civil3drust's reader refuses the first four (the chain has a gap or a
+missing ID), so they were written by cutting the pieces out of a full
+record. Questions: does Civil 3D build the pieces from the JSON when
+there are none (1208–1211), does it use the JSON's parameters over the
+pieces' (120E, 1214, 1217), and does it accept either linking.
+
+Civil 3D results: pending.
+
 ## Open questions
 
 Tracked as MIST1 … MIST15 in [`mysteries.md`](mysteries.md), each with

@@ -1,0 +1,242 @@
+//! Experiment (S216): a spiral group written only as typed parameters.
+//!
+//! For each source alignment with a JSON layout (S177/S178), a new
+//! alignment is created in the target from `<template hex>` (an alignment
+//! in Civil 3D's JSON form, e.g. S178 11F8). Its element records are only
+//! the source's fixed elements (no group pieces); its JSON
+//! (`aecc_layout::layout`) holds those elements and the group with the
+//! source's typed parameters, or the ones given. Civil 3D rebuilds group
+//! pieces from the JSON when MIST1 does not match (S214 → S215); the
+//! question is whether it also builds them when there are none.
+//!
+//! The record is first written with the source's full element list
+//! (`replace_elements`), then the pieces are cut out (count, records,
+//! three strings each): civil3drust's own reader refuses a chain with the
+//! group missing, so `replace_elements` cannot write it directly.
+//!
+//! Each spec: `source.dwg:HANDLE:direct|group[:p1,p2,…]`
+//! - `direct`: the two fixed elements linked to each other;
+//! - `group`: linked to the group's ID, as in the JSON (no record has it);
+//! - parameters: replace the source's typed ones (method order).
+//!
+//! Usage: exp_group_params target.dwg out.dwg <template hex> spec ...
+
+use civil3drust::aecc_alignment::{header_bytes, ElementHeader, Linked};
+use civil3drust::aecc_build::element_header_flags;
+use civil3drust::aecc_build::Bits;
+use civil3drust::aecc_create::{create_alignment, CreateOptions};
+use civil3drust::aecc_element_edit::replace_elements;
+use civil3drust::aecc_elements::{decode_elements, element_records, Element};
+use civil3drust::aecc_encode::encode_element;
+use civil3drust::aecc_layout::{group_parameters, layout, set_layout, Group, Json};
+use civil3drust::alignment::Point2;
+use civil3drust::raw::{self, RawRecord};
+use civil3drust::{aecc_topology, string_stream};
+
+fn fail(m: impl std::fmt::Display) -> ! {
+    eprintln!("error: {m}");
+    std::process::exit(1);
+}
+
+fn num(j: &Json, k: &str) -> f64 {
+    match j.get(k) {
+        Some(Json::Num(v)) => *v,
+        _ => fail(format!("JSON: no {k}")),
+    }
+}
+
+fn set_links(e: &mut Element, before: i32, after: i32) {
+    match e {
+        Element::Tangent(t) => {
+            t.before = before;
+            t.after = after;
+        }
+        Element::Arc(a) => {
+            a.before = before;
+            a.after = after;
+        }
+        _ => fail("only fixed lines and curves"),
+    }
+}
+
+fn main() {
+    let a: Vec<String> = std::env::args().collect();
+    if a.len() < 5 {
+        fail("usage: exp_group_params target.dwg out.dwg <template hex> source.dwg:H:direct|group[:p,…] ...");
+    }
+    let template = u64::from_str_radix(&a[3], 16).unwrap_or_else(|_| fail("template"));
+    let mut target = raw::open(&a[1]).unwrap_or_else(|e| fail(e));
+    let donor = raw::open(&a[1]).unwrap_or_else(|e| fail(e));
+    let mut seed = 0x5EED_0216u64;
+    for spec in &a[4..] {
+        let parts: Vec<&str> = spec.split(':').collect();
+        let (file, h, mode) = (parts[0], parts[1], parts[2]);
+        let h = u64::from_str_radix(h, 16).unwrap_or_else(|_| fail("handle"));
+        let s = raw::open(file).unwrap_or_else(|e| fail(e));
+        let rec = raw::records(&s.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap_or_else(|| fail(format!("{h:X} not in {file}")));
+        let text = string_stream::layout_json(&rec.data, rec.handle_bits)
+            .unwrap_or_else(|| fail(format!("{h:X}: no JSON")));
+        let j = Json::parse(&text).unwrap_or_else(|e| fail(e));
+        let Some(Json::Arr(objs)) = j.get("RGObjects") else {
+            fail("no RGObjects")
+        };
+        let g = objs
+            .iter()
+            .find(|o| num(o, "RGObjectType") == 7.0)
+            .unwrap_or_else(|| fail("no group"));
+        let method = match num(g, "ConstraintType") as i32 {
+            2569 => "SSCSS",
+            2561 => "SSCS",
+            2565 => "SCSS",
+            c => fail(format!("group type {c}")),
+        };
+        let names = group_parameters(method).unwrap();
+        let typed: Vec<f64> = names
+            .iter()
+            .map(|n| num(g.get("ConstraintParameters").unwrap(), n))
+            .collect();
+        let params = match parts.get(3) {
+            Some(p) => p
+                .split(',')
+                .map(|v| v.parse().unwrap_or_else(|_| fail("parameter")))
+                .collect(),
+            None => typed.clone(),
+        };
+        let (prev, next) = (num(g, "PreviousId") as i32, num(g, "NextId") as i32);
+        let gid = num(g, "Id") as i32;
+        // The fixed elements: the records whose IDs are fixed objects.
+        let fixed_ids: Vec<i32> = objs
+            .iter()
+            .filter(|o| num(o, "RGObjectType") != 7.0)
+            .map(|o| num(o, "Id") as i32)
+            .collect();
+        let mut fixed: Vec<Element> = element_records(&rec.data)
+            .into_iter()
+            .filter(|e| fixed_ids.contains(&e.id()))
+            .collect();
+        for e in &mut fixed {
+            let (b, n) = (e.before(), e.after());
+            let link = |x: i32| -> i32 {
+                if fixed_ids.contains(&x) || x == 0 {
+                    return x;
+                }
+                // A piece: link to the other fixed element or to the group.
+                match mode {
+                    "direct" => {
+                        if e.id() == prev {
+                            next
+                        } else {
+                            prev
+                        }
+                    }
+                    _ => gid,
+                }
+            };
+            let (nb, nn) = (link(b), link(n));
+            set_links(e, nb, nn);
+        }
+        let name = format!(
+            "G {mode} {} {h:X} {}",
+            file.rsplit('/').next().unwrap().split('_').next().unwrap(),
+            names
+                .iter()
+                .zip(&params)
+                .map(|(n, v)| format!("{}={v}", n.replace("Length", "").replace("Arc", "")))
+                .collect::<Vec<_>>()
+                .join(" ")
+        );
+        seed = seed
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
+        let opts = CreateOptions {
+            template: Some(template),
+            ..CreateOptions::default()
+        };
+        let pis = [Point2::new(0.0, 0.0), Point2::new(100.0, 0.0)];
+        let created = create_alignment(&mut target.doc, &donor.doc, &name, &pis, &[], seed, opts)
+            .unwrap_or_else(|e| fail(format!("{name}: create: {e:?}")));
+        let nh = created.alignment;
+        let new = raw::records(&target.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == nh)
+            .unwrap();
+        let locked = element_header_flags(&new).is_some();
+        let json = layout(
+            &fixed,
+            &[Group {
+                method,
+                previous: prev,
+                next,
+                params,
+            }],
+            locked,
+        )
+        .unwrap_or_else(|e| fail(e));
+        let (b, hb) = set_layout(&new, &json).unwrap_or_else(|e| fail(e));
+        let new = RawRecord {
+            data: b,
+            handle_bits: hb,
+            ..new
+        };
+        // Write the source's full element list first (a record civil3drust
+        // can build and check), then cut the group's pieces out of it: the
+        // element count, the records and three strings per piece.
+        let all = element_records(&rec.data);
+        let (b, hb, _) =
+            replace_elements(&new, &all, seed).unwrap_or_else(|e| fail(format!("{name}: {e}")));
+        let full = RawRecord {
+            data: b,
+            handle_bits: hb,
+            ..new
+        };
+        let d = decode_elements(&full).unwrap_or_else(|e| fail(e));
+        let first = d.first_record_bit().unwrap();
+        let end = d.records_end_bit().unwrap();
+        let count_bit = first - 21;
+        let total = raw::bit_len(&full.data);
+        let data_end = total - full.handle_bits;
+        let mut w = Bits::default();
+        w.copy(&full.data, 0, count_bit);
+        w.bl(fixed.len() as i32);
+        let (flags, type_byte) = header_bytes(false, locked);
+        for e in &fixed {
+            let h = ElementHeader {
+                flags,
+                type_byte,
+                next: 0,
+            };
+            encode_element(&mut w, &h, e);
+        }
+        w.copy(&full.data, end, data_end);
+        let new_end = w.len();
+        w.copy(&full.data, data_end, total);
+        let bytes = w.into_bytes();
+        let hb = bytes.len() * 8 - new_end;
+        let pieces = all.len() - fixed.len();
+        let n = string_stream::parse(&bytes, hb).unwrap().strings.len();
+        let (b, hb) =
+            string_stream::set_string_count(&bytes, hb, n - 3 * pieces).unwrap_or_else(|e| fail(e));
+        if !raw::set_record(&mut target.doc, nh, b, hb) {
+            fail("could not write");
+        }
+        aecc_topology::refresh_companion(&mut target.doc, nh).ok();
+        let check = raw::records(&target.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|x| x.handle == nh)
+            .map(|x| match decode_elements(&x) {
+                Ok(d) => format!(
+                    "{} elements, {} detached",
+                    d.elements.len(),
+                    d.detached.len()
+                ),
+                Err(e) => format!("does not decode: {e}"),
+            })
+            .unwrap();
+        println!("{nh:X} {name}: {check}");
+    }
+    acadrust::DwgWriter::write_to_file(&a[2], &target.doc).unwrap_or_else(|e| fail(e));
+    println!("wrote {}", a[2]);
+}

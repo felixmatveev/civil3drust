@@ -94,3 +94,34 @@ fn generated_json_is_composed_from_the_elements() {
         assert!((s1(&theirs) - s1(&ours) - 20.0).abs() < 1e-9, "{h:X}");
     }
 }
+
+#[test]
+fn layout_from_typed_parameters_matches_civil3d_group() {
+    // S178 11F8: line 1, curve 2, Reverse SCSS group typed as 130, 550,
+    // 160, 210. The group object written from those parameters is the
+    // one Civil 3D wrote, line for line.
+    use civil3drust::aecc_alignment::Linked;
+    use civil3drust::aecc_layout::{layout, Group};
+    let (_, j, els) = layouts("S178_S177_long_reverse_spirals.dwg")
+        .into_iter()
+        .find(|(h, _, _)| *h == 0x11F8)
+        .unwrap();
+    let fixed: Vec<Element> = els.into_iter().filter(|e| e.id() <= 2).collect();
+    let ours = layout(
+        &fixed,
+        &[Group {
+            method: "SCSS",
+            previous: 1,
+            next: 2,
+            params: vec![130.0, 550.0, 160.0, 210.0],
+        }],
+        true,
+    )
+    .unwrap()
+    .to_civil3d();
+    let group = |s: &str| -> String {
+        let i = s.find("\"RGObjectType\": 7").unwrap();
+        s[i..].to_string()
+    };
+    assert_eq!(group(&ours), group(&j));
+}

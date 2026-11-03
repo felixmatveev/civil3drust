@@ -280,10 +280,8 @@ impl Parser<'_> {
     }
 }
 
-/// The group methods whose pieces Civil 3D keeps apart (S177, S178), by
-/// piece pattern (`S` spiral, `C` curve), with their constraint type and
-/// parameter names in the JSON.
-/// A group method: piece pattern, constraint type, parameter names.
+/// A group method whose pieces Civil 3D keeps apart (S177, S178): piece
+/// pattern (`S` spiral, `C` curve), constraint type, parameter names.
 type Method = (&'static str, i32, &'static [&'static str]);
 
 const GROUP_METHODS: [Method; 3] = [
@@ -345,69 +343,38 @@ fn pt(p: crate::alignment::Point2) -> Json {
     Json::Arr(vec![num(p.x), num(p.y)])
 }
 
-/// Build the layout JSON for `els` (element records in any order, linked
-/// by before/after IDs): fixed lines and three-point curves as themselves,
-/// each run of pieces starting at a group-member spiral (`member` set) as
-/// one group. The group takes the ID after the highest ID outside the
-/// groups, as Civil 3D numbers it (the pieces' IDs must be higher).
-/// `locked`: the alignment's parameter lock (the element headers' lock,
-/// `aecc_build::element_header_flags`).
-pub fn compose(els: &[Element], locked: bool) -> Result<Json, LayoutError> {
-    let by_id = |id: i32| els.iter().find(|e| e.id() == id);
-    let first = els
+/// A group in the layout: one of the sampled methods (by piece pattern
+/// `"SSCSS"`, `"SSCS"` or `"SCSS"`), the fixed elements before and after
+/// it (0 at an end of the alignment), and its typed parameters in the
+/// method's order (Spiral1, Spiral2, ArcRadius, Spiral3, Spiral4, leaving
+/// out what the method lacks).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Group {
+    pub method: &'static str,
+    pub previous: i32,
+    pub next: i32,
+    pub params: Vec<f64>,
+}
+
+/// The JSON parameter names of `method` (`"SSCSS"`, `"SSCS"`, `"SCSS"`),
+/// in order.
+pub fn group_parameters(method: &str) -> Option<&'static [&'static str]> {
+    GROUP_METHODS
         .iter()
-        .find(|e| e.before() == 0)
-        .ok_or_else(|| err("no first element"))?;
-    // Groups: (group index, pieces in order, method).
-    let mut piece_group: Vec<(i32, usize)> = Vec::new();
-    let mut groups: Vec<(Vec<&Element>, &Method)> = Vec::new();
-    for start in els
-        .iter()
-        .filter(|e| matches!(e, Element::Spiral(s) if s.member.is_some()))
-    {
-        let mut run = vec![start];
-        while let Some(n) = by_id(run.last().unwrap().after()) {
-            if run.len() == 5 {
-                break;
-            }
-            run.push(n);
-        }
-        let code: String = run
-            .iter()
-            .map(|e| match e {
-                Element::Spiral(_) => 'S',
-                Element::Arc(_) => 'C',
-                _ => 'L',
-            })
-            .collect();
-        let method = GROUP_METHODS
-            .iter()
-            .find(|(p, _, _)| code.starts_with(p))
-            .ok_or_else(|| err(format!("pieces {code} after spiral {}", start.id())))?;
-        run.truncate(method.0.len());
-        for e in &run {
-            piece_group.push((e.id(), groups.len()));
-        }
-        groups.push((run, method));
-    }
-    let outside = els
-        .iter()
-        .filter(|e| !piece_group.iter().any(|(id, _)| *id == e.id()));
-    let top = outside.clone().map(|e| e.id()).max().unwrap_or(0);
+        .find(|(p, _, _)| *p == method)
+        .map(|(_, _, n)| *n)
+}
+
+/// Build the layout JSON from the fixed elements (fixed lines and
+/// three-point curves, as records) and the groups between them. The
+/// groups take the IDs after the highest fixed ID, as Civil 3D numbers
+/// them; a fixed element's link to a group's neighbour is written as a
+/// link to the group. `locked`: the alignment's parameter lock.
+pub fn layout(fixed: &[Element], groups: &[Group], locked: bool) -> Result<Json, LayoutError> {
+    let top = fixed.iter().map(|e| e.id()).max().unwrap_or(0);
     let group_id = |g: usize| top + 1 + g as i32;
-    for (id, g) in &piece_group {
-        if *id <= group_id(*g) {
-            return Err(err(format!("piece {id} is not numbered after its group")));
-        }
-    }
-    let map = |id: i32| -> i32 {
-        piece_group
-            .iter()
-            .find(|(p, _)| *p == id)
-            .map_or(id, |(_, g)| group_id(*g))
-    };
     let mut objects: Vec<(i32, Json)> = Vec::new();
-    for e in outside {
+    for e in fixed {
         let (rg, ct, params) = match e {
             Element::Tangent(t) if t.kind == KIND_FIXED => (
                 0,
@@ -441,13 +408,21 @@ pub fn compose(els: &[Element], locked: bool) -> Result<Json, LayoutError> {
                 )))
             }
         };
+        let next = groups
+            .iter()
+            .position(|g| g.previous == e.id())
+            .map_or(e.after(), group_id);
+        let previous = groups
+            .iter()
+            .position(|g| g.next == e.id())
+            .map_or(e.before(), group_id);
         objects.push((
             e.id(),
             obj(vec![
                 ("RGObjectType", num(rg)),
                 ("Id", num(e.id())),
-                ("PreviousId", num(map(e.before()))),
-                ("NextId", num(map(e.after()))),
+                ("PreviousId", num(previous)),
+                ("NextId", num(next)),
                 ("ConstraintLocked", num(constraint_locked(locked))),
                 ("HasAnchorPoint", Json::Bool(false)),
                 ("ConstraintType", num(ct)),
@@ -455,48 +430,127 @@ pub fn compose(els: &[Element], locked: bool) -> Result<Json, LayoutError> {
             ]),
         ));
     }
-    for (g, (pieces, (_, ct, names))) in groups.iter().enumerate() {
-        let values = pieces.iter().map(|e| match e {
-            Element::Spiral(s) => Ok(s.length),
-            Element::Arc(a) => match a.def {
-                ArcDef::ThreePoint {
-                    start, mid, end, ..
-                } => arc_through(start, mid, end)
-                    .map(|g| g.radius)
-                    .ok_or_else(|| err(format!("curve {} is straight", a.id))),
-                _ => Err(err(format!("curve {} is not by three points", a.id))),
-            },
-            _ => Err(err("unexpected piece")),
-        });
-        let params = names
+    for (g, group) in groups.iter().enumerate() {
+        let (_, ct, names) = GROUP_METHODS
             .iter()
-            .zip(values)
-            .map(|(n, v)| v.map(|v| (*n, num(v))))
-            .collect::<Result<Vec<_>, _>>()?;
+            .find(|(p, _, _)| *p == group.method)
+            .ok_or_else(|| err(format!("unknown group method {}", group.method)))?;
+        if names.len() != group.params.len() {
+            return Err(err(format!(
+                "{} takes {} parameters, not {}",
+                group.method,
+                names.len(),
+                group.params.len()
+            )));
+        }
         let id = group_id(g);
         objects.push((
             id,
             obj(vec![
                 ("RGObjectType", num(7)),
                 ("Id", num(id)),
-                ("PreviousId", num(map(pieces[0].before()))),
-                ("NextId", num(map(pieces.last().unwrap().after()))),
+                ("PreviousId", num(group.previous)),
+                ("NextId", num(group.next)),
                 ("ConstraintLocked", num(constraint_locked(locked))),
                 ("ConstraintType", num(*ct)),
                 ("SpiralType", num(256)),
-                ("ConstraintParameters", obj(params)),
+                (
+                    "ConstraintParameters",
+                    obj(names
+                        .iter()
+                        .zip(&group.params)
+                        .map(|(n, v)| (*n, num(*v)))
+                        .collect()),
+                ),
             ]),
         ));
     }
     objects.sort_by_key(|(id, _)| *id);
+    let first = match groups.iter().position(|g| g.previous == 0) {
+        Some(g) => group_id(g),
+        None => fixed
+            .iter()
+            .find(|e| e.before() == 0)
+            .map(|e| e.id())
+            .ok_or_else(|| err("no first element"))?,
+    };
     Ok(obj(vec![
         ("JsonVersion", num(1)),
-        ("FirstId", num(map(first.id()))),
+        ("FirstId", num(first)),
         (
             "RGObjects",
             Json::Arr(objects.into_iter().map(|(_, o)| o).collect()),
         ),
     ]))
+}
+
+/// Build the layout JSON for `els` (element records in any order, linked
+/// by before/after IDs): fixed lines and three-point curves as themselves,
+/// each run of pieces starting at a group-member spiral (`member` set) as
+/// one group with the parameters measured from its pieces ([`layout`]).
+/// The pieces' IDs must be higher than the groups' (as Civil 3D numbers
+/// them).
+pub fn compose(els: &[Element], locked: bool) -> Result<Json, LayoutError> {
+    let by_id = |id: i32| els.iter().find(|e| e.id() == id);
+    let mut pieces: Vec<i32> = Vec::new();
+    let mut groups = Vec::new();
+    for start in els
+        .iter()
+        .filter(|e| matches!(e, Element::Spiral(s) if s.member.is_some()))
+    {
+        let mut run = vec![start];
+        while let Some(n) = by_id(run.last().unwrap().after()) {
+            if run.len() == 5 {
+                break;
+            }
+            run.push(n);
+        }
+        let code: String = run
+            .iter()
+            .map(|e| match e {
+                Element::Spiral(_) => 'S',
+                Element::Arc(_) => 'C',
+                _ => 'L',
+            })
+            .collect();
+        let method = GROUP_METHODS
+            .iter()
+            .find(|(p, _, _)| code.starts_with(p))
+            .ok_or_else(|| err(format!("pieces {code} after spiral {}", start.id())))?;
+        run.truncate(method.0.len());
+        let params = run
+            .iter()
+            .map(|e| match e {
+                Element::Spiral(s) => Ok(s.length),
+                Element::Arc(a) => match a.def {
+                    ArcDef::ThreePoint {
+                        start, mid, end, ..
+                    } => arc_through(start, mid, end)
+                        .map(|g| g.radius)
+                        .ok_or_else(|| err(format!("curve {} is straight", a.id))),
+                    _ => Err(err(format!("curve {} is not by three points", a.id))),
+                },
+                _ => Err(err("unexpected piece")),
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        pieces.extend(run.iter().map(|e| e.id()));
+        groups.push(Group {
+            method: method.0,
+            previous: run[0].before(),
+            next: run.last().unwrap().after(),
+            params,
+        });
+    }
+    let fixed: Vec<Element> = els
+        .iter()
+        .filter(|e| !pieces.contains(&e.id()))
+        .cloned()
+        .collect();
+    let top = fixed.iter().map(|e| e.id()).max().unwrap_or(0);
+    if let Some(p) = pieces.iter().find(|&&p| p <= top + groups.len() as i32) {
+        return Err(err(format!("piece {p} is not numbered after the groups")));
+    }
+    layout(&fixed, &groups, locked)
 }
 
 /// Index of the JSON slot in the string stream: after the class name and

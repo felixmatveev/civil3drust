@@ -227,6 +227,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S213 | `S213_S206_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S206 opened clean, AUDIT clean, but the JSON text is read as the alignments' names and selecting one breaks the GUI; saved (plain form kept, MIST2 added). | 489868 | `bd4cbee7efab2fca` |
 | S214 | `S214_S178_mist1_json_check.dwg` | civil3drust | S178 in place (`exp_json_bisect`): 11D4 MIST1 zeroed only; 11DE re-encoded with MIST1 set back to its original value; 11F8 JSON `ArcRadius` 550 → 550.0000000000011 only. Which change brings the "modified unexpectedly" warning? | 484601 | `910230e8e5c3d64f` |
 | S215 | `S215_S214_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S214 opened clean; warning only for 11D4 (MIST1 zeroed); grouping kept on all three; saved without nudges. 11D4 pieces renumbered 4–8, MIST1 restored to S178's value. | 507546 | `d4b07d26fe00151f` |
+| S216 | `S216_S178_group_from_parameters.dwg` | civil3drust | S178 plus groups written as typed parameters (`exp_group_params`): 1208 (11F8, fixed elements linked to each other, no pieces), 120B (11F8, linked to group ID 3), 120E (11DE with Spiral1 150, R 500), 1211 (11D4); and 1214, 1217 (11DE, 11F8 with all pieces and `Spiral1Length` + 20 in the JSON, `exp_chains --json-tweak`). | 494011 | `0ae04e47b9975dd7` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `aecc_layout::layout` and `Group`: the layout JSON from fixed elements
+  and groups given by method and typed parameters (`compose` now builds
+  on it); `group_parameters`. `examples/exp_group_params`; sample S216
+  (groups without pieces, for Civil 3D to solve).
 - MIST1 is checked for JSON-layout alignments (S214 → S215): a mismatch
   brings the "modified unexpectedly" warning and Civil 3D rebuilds the
   group's pieces from the JSON; a zeroed MIST1 is otherwise harmless.

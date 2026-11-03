@@ -1146,3 +1146,19 @@ methods are composed; anything else is refused.
 keeps stale typed points. Keep the parsed JSON as the model: duplicates
 the element records, which remain the geometry civil3drust reads.
 
+## D-059: Spiral groups are written as typed parameters; Civil 3D solves them
+
+**Context.** For alignments with a JSON layout Civil 3D checks MIST1 and,
+when it does not match, rebuilds the group's pieces from the JSON
+(S214 → S215). civil3drust cannot compute MIST1, so any group it writes
+is re-solved by Civil 3D anyway.
+
+**Decision.** A group is described by its method, its neighbours and its
+typed parameters (`aecc_layout::Group`); the JSON is written from them
+(`layout`). Whether the binary pieces must be written too is being tested
+(S216); civil3drust has no solver for these methods and adds none unless
+Civil 3D requires the pieces.
+
+**Alternatives.** Solve the pieces in civil3drust: a solver per method,
+discarded by Civil 3D on opening.
+
