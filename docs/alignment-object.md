@@ -2741,7 +2741,8 @@ With that, `replace_elements` writes the fixed elements and the JSON
 directly (`exp_group_params` no longer cuts pieces out of a full
 record): **S218** is S216's four parameter-only alignments written this
 way — the same JSON and strings, smaller records because the proxy
-graphics now hold only the fixed elements, not the stale pieces.
+graphics now hold only the fixed elements, not the stale pieces. Owner: clean opening, no visual issues, AUDIT clean (the usual
+"modified unexpectedly" warning).
 
 ## Open questions
 
