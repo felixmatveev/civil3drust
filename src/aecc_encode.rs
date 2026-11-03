@@ -198,12 +198,11 @@ fn line_spiral(w: &mut Bits, g: &LineSpiralRecord) {
 }
 
 fn spiral(w: &mut Bits, s: &SpiralRecord, type_byte: u8) {
-    w.bit(s.params.flag as u8);
     if type_byte == TYPE_GROUP_MEMBER {
-        let m = s.member.unwrap_or_default();
-        m.iter().for_each(|b| w.byte(*b));
+        // The group's start point (MIST17); the spiral's start if unset.
+        point(w, s.member.unwrap_or(s.start));
     }
-    params_after_flag(w, &s.params);
+    params(w, &s.params);
     w.bl(s.kind);
     ids(w, s.id, s.before, s.after);
     w.bl(s.mode);

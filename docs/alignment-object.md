@@ -2417,6 +2417,30 @@ purpose, which makes the pieces fixed). Open: what marks the record as
 having the JSON slot (alignments without these groups have no such
 string), and MIST17.
 
+**Format of the JSON string (S177, S178, S181).** Tab indentation, CRLF
+line ends, no trailing newline, `"key": value`, arrays of numbers on one
+line as `[ x, y ]`, every number written as C `%.17g` (so `1596.536`
+appears as `1596.5360000000001`, `47.0` as `47`). Objects are listed by
+ID. Fixed elements: `RGObjectType` 0 (line, `ConstraintType` 0, two
+`PassThroughPoint`s) or 1 (curve, `ConstraintType` 2, three points),
+`HasAnchorPoint` false; the points are the ones the element was defined
+with (typed), not the trimmed ends of the binary record — any points on
+the same line or circle describe the same element. The group:
+`RGObjectType` 7, the next ID after the fixed elements (the pieces are
+numbered after it), `ConstraintType` 2569/2561/2565, `SpiralType` 256 and
+its parameters in the order Spiral1, Spiral2, ArcRadius, Spiral3, Spiral4
+(the spirals before the arc are 1 and 2, those after it 3 and 4; the
+methods leave out the ones they lack). `aecc_layout::Json` parses and
+writes this format byte for byte (test `layout_json`), and
+`aecc_layout::compose` builds it from the element records.
+
+**MIST17 solved: the group's start point.** The "128 bits after the
+flag" of a member spiral begin one bit earlier, at the flag's position:
+they are two RDs, the group's start point, equal to the spiral's start in
+all 15 member spirals of S177, S178, S180–S182; the parameter flag comes
+after them. The decoder reads `SpiralRecord::member` as that point
+(encode round trip still bit-exact).
+
 ## Generation test (S184, S185)
 
 `examples/exp_chains` writes one new alignment per source alignment:
@@ -2495,6 +2519,21 @@ only valid with the alignment's JSON layout string: the owner's
 hypothesis holds (MIST17). Written as ordinary spirals (`0x04`) the same
 pieces are accepted as fixed elements.
 
+
+**JSON composition test (S197, S198).** The six JSON-type alignments of
+S177 and S178 generated again in S24 (as S189), with the member spirals
+and a layout JSON composed by civil3drust from the element records
+(`exp_chains --json`), inserted after the two description strings
+(string count = rule + 1, D-056):
+
+- **S197**: the JSON as composed; its fixed elements use the binary
+  records' points (the trimmed ends and the curve's stored middle point,
+  not the owner's typed points).
+- **S198**: the same with each group's `Spiral1Length` 20 longer in the
+  JSON only (the binary pieces keep the old length). Shows whether Civil
+  3D re-solves from the JSON on opening, on a nudge, or not at all.
+
+Civil 3D results: pending.
 
 ## Open questions
 

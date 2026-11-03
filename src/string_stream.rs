@@ -195,6 +195,43 @@ pub fn replace(
     Ok((bytes, hb))
 }
 
+/// Insert an empty string before string `index` (or at the end when
+/// `index` is the string count); fill it with [`replace`].
+pub fn insert_empty(
+    data: &[u8],
+    handle_bits: usize,
+    index: usize,
+) -> Result<(Vec<u8>, usize), StringStreamError> {
+    let ss = parse(data, handle_bits)?;
+    let at = match ss.strings.get(index) {
+        Some(s) => s.bit,
+        None if index == ss.strings.len() => ss.size_field,
+        None => return Err(StringStreamError::NotFound(format!("#{index}"))),
+    };
+    let bit = |b: usize| raw::get_bit(data, b);
+    let total = raw::bit_len(data);
+    let mut out: Vec<u8> = (0..at).map(bit).collect();
+    push_bits(&mut out, 0b10, 2);
+    out.extend((at..ss.size_field).map(bit));
+    let new_size = out.len() - ss.start;
+    if new_size & 0x8000 != 0 {
+        return Err(StringStreamError::LargeStream);
+    }
+    push_le16(&mut out, new_size as u16);
+    out.push(1);
+    let new_data_end = out.len();
+    out.extend((ss.data_end..total).map(bit));
+    while !out.len().is_multiple_of(8) {
+        out.push(0);
+    }
+    let mut bytes = vec![0u8; out.len() / 8];
+    for (i, b) in out.iter().enumerate() {
+        bytes[i / 8] |= b << (7 - i % 8);
+    }
+    let hb = out.len() - new_data_end;
+    Ok((bytes, hb))
+}
+
 /// Remove string `index` from the stream entirely (the strings after it
 /// move up by one).
 pub fn remove(

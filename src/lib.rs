@@ -40,6 +40,7 @@ pub mod aecc_element_edit;
 pub mod aecc_elements;
 pub mod aecc_encode;
 pub mod aecc_entity;
+pub mod aecc_layout;
 pub mod aecc_registry;
 pub mod aecc_site;
 pub mod aecc_station;

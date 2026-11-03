@@ -1126,3 +1126,23 @@ S59 and S177–S183 are left alone until sampled.
 
 **Alternatives.** Keep the template's stamp (a false history), or write
 the current time (a cache Civil 3D does not need).
+
+## D-058: The layout JSON is composed from the element records
+
+**Context.** Groups kept apart (S177, S178) need a JSON layout string
+next to their pieces (S189). Civil 3D writes the fixed elements' typed
+points there, which the binary records do not hold; they hold the
+trimmed geometry.
+
+**Decision.** `aecc_layout::compose` writes the fixed elements with the
+points of their binary records (the same line or circle) and the group
+parameters measured from the pieces (spiral lengths, curve radius), in
+Civil 3D's exact text format. When an alignment already has a JSON
+string, it is replaced in place; otherwise it is inserted after the two
+description strings. Only locked elements and the three sampled group
+methods are composed; anything else is refused.
+
+**Alternatives.** Copy the source JSON: impossible for new alignments and
+keeps stale typed points. Keep the parsed JSON as the model: duplicates
+the element records, which remain the geometry civil3drust reads.
+

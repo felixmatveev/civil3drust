@@ -7,6 +7,14 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `aecc_layout`: the JSON layout string — `Json` parses and writes it in
+  Civil 3D's format byte for byte (tabs, CRLF, `%.17g`), `compose` builds
+  it from element records (fixed lines, three-point curves, the three
+  reverse-spiral groups), `set_layout` writes it into the record;
+  `string_stream::insert_empty`. MIST17 solved: a member spiral stores
+  the group's start point (two RDs) before its parameter flag;
+  `SpiralRecord::member` is now that point. `exp_chains --json` /
+  `--json-tweak`; samples S197, S198; test `layout_json`.
 - Generated alignments accepted by Civil 3D: S188 (43 alignments, every
   element kind) opens without RECOVER, AUDIT clean, and its re-save S195
   reads back to the same model; so does S190 → S196. Test

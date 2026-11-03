@@ -516,8 +516,7 @@ impl ParamBlock {
 }
 
 /// Read a parameter block whose flag bit is at `flag_bit` and whose BDs
-/// start at `bd_bit` (the same bit + 1, or + 129 after a group member's
-/// 128-bit block).
+/// start at `bd_bit` (the bit after the flag).
 fn read_params(data: &[u8], flag_bit: usize, bd_bit: usize) -> Option<(ParamBlock, usize)> {
     let flag = raw::get_bit(data, flag_bit) == 1;
     let (p1, k) = raw::read_bd(data, bd_bit)?;
@@ -585,9 +584,10 @@ pub struct SpiralRecord {
     /// The three BDs after the geometry (0, 0, 1 so far).
     pub tail: [f64; 3],
     pub params: ParamBlock,
-    /// The 128 bits after the flag of a group member (header type byte
-    /// 0x0D, S177; MIST17).
-    pub member: Option<[u8; 16]>,
+    /// The group's start point, stored before the parameter block of the
+    /// first spiral of a group kept apart with a JSON layout (header type
+    /// byte 0x0D, S177; MIST17): two RDs, equal to this spiral's start.
+    pub member: Option<Point2>,
 }
 
 impl SpiralRecord {
@@ -616,17 +616,18 @@ fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
         return None;
     }
     // Header 0x0D020008 (S177): the first spiral of a group Civil 3D stored
-    // as separate elements; 128 more bits follow the flag (MIST17).
+    // as separate elements; the group's start point (RD x, RD y) comes
+    // before the parameter flag (MIST17).
     let h = aecc_alignment::read_header(data, bit)?;
     let member_bits = h.type_byte == aecc_alignment::TYPE_GROUP_MEMBER;
-    let member = member_bits.then(|| {
-        let mut m = [0u8; 16];
-        for (i, b) in m.iter_mut().enumerate() {
-            *b = raw::get_byte(data, h.next + 1 + 8 * i);
-        }
-        m
-    });
-    let (params, k) = read_params(data, h.next, h.next + 1 + if member_bits { 128 } else { 0 })?;
+    let (member, flag_bit) = if member_bits {
+        let x = raw::get_f64(data, h.next);
+        let y = raw::get_f64(data, h.next + 64);
+        (Some(Point2::new(x, y)), h.next + 128)
+    } else {
+        (None, h.next)
+    };
+    let (params, k) = read_params(data, flag_bit, flag_bit + 1)?;
     let flag = params.flag;
     let (kind, k) = raw::read_bl(data, k)?;
     let (id, k) = raw::read_bl(data, k)?;

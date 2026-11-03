@@ -208,6 +208,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S194 | `S194_S193_civ3d_resaved.dwg` | Civil 3D 2024 | S193 re-saved (owner): still the plain form, MIST2 added back, no date-modified block; name and elements unchanged. | 473278 | `49ede24abd14f47f` |
 | S195 | `S195_S188_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S188 opened without RECOVER, AUDIT clean, style changed to show arcs and spirals, saved. Reads back to S188's model (curve/spiral/group parameter flags set to 1). | 552707 | `779749687e28b203` |
 | S196 | `S196_S190_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S190 opened cleanly, no errors, style changed to show arcs and spirals, saved. Reads back to S190's model. (S189 needed RECOVER: all six alignments discarded, eWrongObjectType; no re-save kept.) | 493934 | `88a2bc3e7ed8f49b` |
+| S197 | `S197_S24_generated_layout_json.dwg` | civil3drust | JSON composition test: the six JSON-type alignments (S177 FCE, FD1, FD4; S178 11D4, 11DE, 11F8) generated in S24 from template F9E with their member spirals and a layout JSON composed by `aecc_layout::compose` from the element records (`exp_chains --json`). | 460015 | `9deffe40a494e91f` |
+| S198 | `S198_S24_generated_layout_json_tweaked.dwg` | civil3drust | As S197, with each group's `Spiral1Length` 20 longer in the JSON only; binary pieces unchanged (`exp_chains --json-tweak`). | 460015 | `bc09f2e9c4dd3d22` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

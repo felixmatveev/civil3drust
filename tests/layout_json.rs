@@ -1,0 +1,96 @@
+//! The JSON layout string (`aecc_layout`): Civil 3D's strings re-serialize
+//! byte for byte, the group start point (MIST17) is the first spiral's
+//! start, and the generated S197/S198 hold what `compose` builds from
+//! their elements.
+
+use civil3drust::aecc_elements::{element_records, Element};
+use civil3drust::aecc_layout::{compose, Json};
+use civil3drust::{raw, string_stream};
+
+fn layouts(file: &str) -> Vec<(u64, String, Vec<Element>)> {
+    let d = raw::open(format!("samples/{file}")).unwrap();
+    raw::records(&d.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .filter_map(|r| {
+            let j = string_stream::layout_json(&r.data, r.handle_bits)?;
+            Some((r.handle, j, element_records(&r.data)))
+        })
+        .collect()
+}
+
+#[test]
+fn civil3d_json_reserializes_exactly() {
+    let mut n = 0;
+    for f in [
+        "S177_long_spiral_method_alignments.dwg",
+        "S178_S177_long_reverse_spirals.dwg",
+        "S181_S179_civ3d_resaved.dwg",
+    ] {
+        for (h, j, els) in layouts(f) {
+            assert_eq!(Json::parse(&j).unwrap().to_civil3d(), j, "{f} {h:X}");
+            // MIST17: the member spiral stores the group's start point.
+            let m = els
+                .iter()
+                .find_map(|e| match e {
+                    Element::Spiral(s) => s.member.map(|p| (p, s.start)),
+                    _ => None,
+                })
+                .unwrap();
+            assert_eq!(m.0, m.1, "{f} {h:X}");
+            n += 1;
+        }
+    }
+    assert_eq!(n, 9);
+}
+
+#[test]
+fn composed_json_matches_civil3d_structure() {
+    // Same objects, IDs, links, types and parameter names as Civil 3D's;
+    // values differ only where Civil 3D keeps the typed points.
+    for (h, j, els) in layouts("S178_S177_long_reverse_spirals.dwg") {
+        let ours = compose(&els, true).unwrap().to_civil3d();
+        let strip = |s: &str| -> Vec<String> {
+            s.lines()
+                .map(|l| l.split(':').next().unwrap().to_string())
+                .collect()
+        };
+        assert_eq!(strip(&ours), strip(&j), "{h:X}");
+        for key in ["\"ConstraintType\"", "\"PreviousId\"", "\"NextId\""] {
+            let pick = |s: &str| -> Vec<String> {
+                s.lines()
+                    .filter(|l| l.contains(key))
+                    .map(str::to_string)
+                    .collect()
+            };
+            assert_eq!(pick(&ours), pick(&j), "{h:X} {key}");
+        }
+    }
+}
+
+#[test]
+fn generated_json_is_composed_from_the_elements() {
+    let s197 = layouts("S197_S24_generated_layout_json.dwg");
+    assert_eq!(s197.len(), 6);
+    for (h, j, els) in s197 {
+        assert_eq!(compose(&els, true).unwrap().to_civil3d(), j, "{h:X}");
+    }
+    // S198: the same with Spiral1Length + 20 in the JSON only.
+    for (h, j, els) in layouts("S198_S24_generated_layout_json_tweaked.dwg") {
+        let ours = compose(&els, true).unwrap();
+        let theirs = Json::parse(&j).unwrap();
+        let s1 = |v: &Json| -> f64 {
+            let Some(Json::Arr(o)) = v.get("RGObjects") else {
+                panic!()
+            };
+            o.iter()
+                .find_map(
+                    |x| match x.get("ConstraintParameters")?.get("Spiral1Length")? {
+                        Json::Num(v) => Some(*v),
+                        _ => None,
+                    },
+                )
+                .unwrap()
+        };
+        assert!((s1(&theirs) - s1(&ours) - 20.0).abs() < 1e-9, "{h:X}");
+    }
+}

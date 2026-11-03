@@ -9,16 +9,21 @@
 //! record (D-056), and its companion is rebuilt. Each source becomes its
 //! own alignment, so a rejected one only costs itself.
 //!
-//! Usage: cargo run --release --example exp_chains -- target.dwg out.dwg <template hex> source.dwg[:HANDLE,…|:-HANDLE,…] ... [--plain-members]
+//! Usage: cargo run --release --example exp_chains -- target.dwg out.dwg <template hex> source.dwg[:HANDLE,…|:-HANDLE,…] ... [--plain-members] [--json|--json-tweak]
 //!
 //! A source may name the alignments to take (`S177.dwg:FC8,FCB`) or to
 //! leave out (`S177.dwg:-FCE,FD1`). `--plain-members` writes group-member
-//! spirals as ordinary spirals (header type 0x04, no 128-bit block).
+//! spirals as ordinary spirals (header type 0x04, no start point).
+//! `--json` writes the layout JSON (composed from the elements,
+//! `aecc_layout`) into alignments with group-member spirals;
+//! `--json-tweak` also adds 20 to each group's `Spiral1Length` in the JSON
+//! only (S197, S198).
 
 use civil3drust::aecc_alignment::Linked;
 use civil3drust::aecc_create::{create_alignment, CreateOptions};
 use civil3drust::aecc_element_edit::replace_elements;
 use civil3drust::aecc_elements::{decode_elements, element_records, Element};
+use civil3drust::aecc_layout::{compose, set_layout, Json};
 use civil3drust::alignment::Point2;
 use civil3drust::raw::{self, RawRecord};
 use civil3drust::{aecc_design_speed, aecc_topology};
@@ -28,10 +33,27 @@ fn fail(m: impl std::fmt::Display) -> ! {
     std::process::exit(1);
 }
 
+/// Add 20 to every group's `Spiral1Length` in the JSON (the binary
+/// pieces keep the old length).
+fn tweak_spiral1(j: &mut Json) {
+    if let Some(Json::Arr(objs)) = j.get_mut("RGObjects") {
+        for o in objs {
+            if let Some(Json::Num(v)) = o
+                .get_mut("ConstraintParameters")
+                .and_then(|p| p.get_mut("Spiral1Length"))
+            {
+                *v += 20.0;
+            }
+        }
+    }
+}
+
 fn main() {
     let mut a: Vec<String> = std::env::args().collect();
     let plain_members = a.iter().any(|x| x == "--plain-members");
-    a.retain(|x| x != "--plain-members");
+    let json = a.iter().any(|x| x == "--json" || x == "--json-tweak");
+    let tweak = a.iter().any(|x| x == "--json-tweak");
+    a.retain(|x| !x.starts_with("--"));
     if a.len() < 5 {
         fail("usage: exp_chains target.dwg out.dwg <template hex> source.dwg ...");
     }
@@ -101,10 +123,32 @@ fn main() {
                 create_alignment(&mut target.doc, &donor.doc, &name, &pis, &[], seed, opts)
                     .unwrap_or_else(|e| fail(format!("{label}: create: {e:?}")));
             let h = created.alignment;
-            let new = raw::records(&target.doc, "AECC_ALIGNMENT")
+            let mut new = raw::records(&target.doc, "AECC_ALIGNMENT")
                 .into_iter()
                 .find(|r| r.handle == h)
                 .unwrap();
+            // The layout JSON, composed from the element records, for
+            // alignments with group-member spirals.
+            let members = els
+                .iter()
+                .any(|e| matches!(e, Element::Spiral(s) if s.member.is_some()));
+            if json && members {
+                let mut j = compose(&els, true).unwrap_or_else(|e| fail(format!("{label}: {e}")));
+                if tweak {
+                    tweak_spiral1(&mut j);
+                }
+                let (b, hb) =
+                    set_layout(&new, &j).unwrap_or_else(|e| fail(format!("{label}: {e}")));
+                new = RawRecord {
+                    data: b,
+                    handle_bits: hb,
+                    ..new
+                };
+                println!(
+                    "      {label}: layout JSON written{}",
+                    if tweak { " (Spiral1Length + 20)" } else { "" }
+                );
+            }
             // Speeds on spirals can't be written yet: drop them if needed.
             let (bytes, hb) = match replace_elements(&new, &els, seed) {
                 Ok((b, hb, _)) => (b, hb),

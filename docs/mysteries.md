@@ -555,7 +555,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   their defaults (spiral type other than clothoid, e.g. the cubic or
   sinusoidal spirals Civil 3D offers, might change them).
 
-## MIST17 — the 128 bits after a `0x0D020008` element header
+## MIST17 — the 128 bits after a `0x0D020008` element header (solved)
 
 - **Where:** the first spiral of a group Civil 3D stores as separate
   elements (S177 FCE, FD1, FD4): header `0x0D020008`, flag bit, then 128
@@ -574,8 +574,12 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   JSON string: with the `0x0D` member spirals Civil 3D discards them all
   (eWrongObjectType, S189); with the members written as ordinary `0x04`
   spirals (no 128 bits) they open cleanly and re-save unchanged (S190 →
-  S196). A member header requires the JSON string. Still open: what the
-  128 bits are, and the converse (the JSON string with no member spiral).
+  S196). A member header requires the JSON string.
+- **Solved:** the 128 bits start one bit earlier than first read (at the
+  "flag"): two RDs, the group's start point, equal to the member spiral's
+  start in all 15 cases (S177, S178, S180–S182); the parameter flag
+  follows them. Still open: the converse (a JSON string with no member
+  spiral).
 
 ## Not sampled yet (not mysteries, just gaps)
 
