@@ -63,6 +63,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   records.
 
 ### Changed
+- README and `docs/mysteries.md`: widening (offset alignments with widening
+  regions) listed as missing; spiral status updated.
 - `docs/element-methods.md`: sample descriptions are hints; stored records
   checked against Civil 3D's drawing are the ground truth.
 - MIST15: the Constraint Editing option "Always perform implied tangency

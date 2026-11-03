@@ -506,5 +506,11 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 
 - Offset and other alignment types (S1-style imports have no element
   records and a 22-bit gap after the elements instead of 161 bits).
+- Widening: offset alignments with widening regions (start and end
+  stations, offset, transitions in and out — linear, curved, or by
+  criteria) and the parent alignment's link to them. Sample plan: one
+  alignment, an offset alignment, then one widening added, edited and
+  removed, each step saved separately.
 - Station equations (data seen in S9, not decoded).
-- Spiral groups other than line-spiral (S120 → S121).
+- Three long reverse spiral groups to re-sample without copy and paste
+  (S177 FCE, FD1, FD4).

@@ -31,8 +31,7 @@ sample drawings (S1–S120) and the evidence for each finding are in
 |---|---|---|
 | Lines: fixed, floating (end point, length), free (between curves) | ✓ | fixed lines |
 | Curves: every Civil 3D curve method (three point, centre, floating, free fillet by radius or through point), whole circles | ✓ | free curves (fillets) |
-| Spirals: line-with-spiral group | ✓ (first sample) | — |
-| Other spiral groups (SCS, compound, reverse …) | decoding (S120 → S121) | — |
+| Spirals: fixed, free, and every spiral group (SCS, curve or line with spiral, reverse curves, spiral-spiral, spiral-line-spiral, SCSCS, SCSSCS) | ✓ (three long reverse groups provisional, S177) | — |
 | Create an alignment (PIs + fillet radii, or empty) | | ✓ — style, label set, site-less, type, registry and companion |
 | Remove elements, add a free curve, change a length / radius / PIs | | ✓ |
 | Name, description, style, display components | ✓ | ✓ |
@@ -41,6 +40,8 @@ sample drawings (S1–S120) and the evidence for each finding are in
 | Implied PI display option | ✓ | ✓ (`set_pi_display`) |
 | Sites and parcels | ✓ membership | read-only for now (D-038) |
 | Detached pieces after deleting an interior element | ✓ | kept as placeholders (D-037) |
+| Widening (offset alignments with widening regions and transitions) | not sampled yet | — |
+| Offset, curb return and rail alignments; station equations | not sampled yet | — |
 
 ### Still unexplained
 
