@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Tangent kind 3, "Constrained by Next (Floating)": start point only
+  (`KIND_FLOATING_NEXT`, S201). Group-member spirals unlocked: type byte
+  `0x09` with the `02` byte kept (S202); `header_bytes`,
+  `ElementHeader::is_group_member` / `locked`, and
+  `set_constraint_editing` writes Civil 3D's form (S177 → S202 element
+  records bit for bit). Samples S201, S202; MIST7 owner tests recorded.
 - Section-2 JSON flag found: Civil 3D records with a layout JSON are in
   the Properties form with flags `3` (or `0x43`) and `BL 0x01010034`
   (S177, S178, S180–S182); S197/S198 (plain form + JSON) were rejected.

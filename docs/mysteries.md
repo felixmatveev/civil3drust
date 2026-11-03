@@ -265,7 +265,8 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
                 0x04 accepted, dropped on save (S137 → S139)
   type byte     0x04 element; 0x0D first spiral of a group stored as
                 separate elements, 128 more bits after its flag bit
-                (S177, MIST17); 0x03, 0x05: eWrongObjectType
+                (S177, MIST17); 0x09 the same, unlocked (S202);
+                0x03, 0x05: eWrongObjectType
   ```
 
   Civil 3D tells the flag byte from the type byte by bit 0x02: the type
@@ -288,13 +289,33 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   byte and the next bit for both type bytes, with or without the flag
   byte; `set_constraint_editing` keeps the type byte (test
   `group_member_header_unlocked_s177`: S177 unlocked still decodes).
-- **Open tests (owner, Civil 3D only):** (1) compare the Alignment
-  Entities grids of S131 and S132 (every element of S132 has flag bit
-  0x01); (2) switch tangent 1 of S172 to "Constrained by Next
-  (Floating)" (expected: kind 0 → 4, header unchanged); (3) S177
-  `Reverse S-S-C-S-S` with "Lock all parameter constraints" off (an
-  `08 00 0D` header from Civil 3D); (4) S177's three methods sampled
-  again without copy and paste: does Civil 3D use type 0x0D natively?
+- **Owner tests (2026-11-03, Civil 3D 2024):**
+  1. **Flag bit 0x01:** S131 and S132 open cleanly with clean AUDIT, and
+     their Alignment Entities grids are identical (types, tangency and
+     parameter constraints, locks, lengths, stations). The bit has no
+     visible effect there.
+  2. **Tangency constraint (S201):** tangent 1 of S172's `UNLOCKED` set
+     to "Constrained by Next (Floating)". The header is unchanged; the
+     tangent's kind becomes **3** (a new kind: start point only, 128
+     bits instead of 256), and Civil 3D turned the free curve after it
+     into "floating, start point and radius" (code 29 → 15). Geometry
+     unchanged. So the tangency constraint is the kind field, not the
+     header (test `constrained_by_next_is_the_kind_field_s201`).
+  3. **Unlocked group member (S202):** S177 `Reverse S-S-C-S-S` with
+     "Lock all parameter constraints" off. Ordinary elements lose the
+     `02` byte as in S164, but the group member keeps it and its type
+     byte changes `0D` → `09` (bit 0x04 cleared): `08 00 02 09`. So for
+     a group member the lock is type bit 0x04. civil3drust's
+     `set_constraint_editing` on S177 now gives S202's element records
+     bit for bit (test `group_member_header_unlocked_s177_s202`).
+  4. Not needed: S178 was made without copy and paste and has the
+     `0x0D` header too.
+- **Reading after S202:** the byte after `0x0008` with bit 0x02 is
+  followed by another byte; the last byte has no bit 0x02. Bit 0x08 of
+  the last byte marks a group member (128 bits follow). The lock is the
+  `02` byte for ordinary elements and bit 0x04 of the last byte for
+  group members, so the bytes are not one consistent "flags + type"
+  pair; a bit-level reading that explains both is still open.
 
 - **Where:** first BL of every element record (lines, curves, groups).
 - **Seen:** identical in every record of every sample. The BL after it is

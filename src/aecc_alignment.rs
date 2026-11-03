@@ -52,6 +52,23 @@ pub const TYPE_ELEMENT: u8 = 0x04;
 /// elements; 128 more bits follow its flag bit (S177, MIST17).
 pub const TYPE_GROUP_MEMBER: u8 = 0x0D;
 
+/// The group-member type byte with parameters unlocked: Civil 3D keeps
+/// the `0x02` byte and clears bit `0x04` of the type byte (S177 →
+/// S195: `02 0D` → `02 09`).
+pub const TYPE_GROUP_MEMBER_UNLOCKED: u8 = 0x09;
+
+/// Flag and type bytes Civil 3D writes for an element with the lock on
+/// or off: ordinary elements `[02] 04` / `04` (S164), group members
+/// `02 0D` / `02 09` (S195).
+pub fn header_bytes(group_member: bool, locked: bool) -> (Option<u8>, u8) {
+    match (group_member, locked) {
+        (false, true) => (Some(ELEMENT_LOCKED), TYPE_ELEMENT),
+        (false, false) => (None, TYPE_ELEMENT),
+        (true, true) => (Some(ELEMENT_LOCKED), TYPE_GROUP_MEMBER),
+        (true, false) => (Some(ELEMENT_LOCKED), TYPE_GROUP_MEMBER_UNLOCKED),
+    }
+}
+
 /// An element header: code `00`, the 16-bit value `0x0008`, an optional
 /// flag byte, then a type byte (MIST7).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -60,10 +77,27 @@ pub struct ElementHeader {
     /// `0x02` ([`ELEMENT_LOCKED`], the element's parameter lock) is set:
     /// that is how a flag byte is told from the type byte.
     pub flags: Option<u8>,
-    /// [`TYPE_ELEMENT`] or [`TYPE_GROUP_MEMBER`].
+    /// [`TYPE_ELEMENT`], [`TYPE_GROUP_MEMBER`] or
+    /// [`TYPE_GROUP_MEMBER_UNLOCKED`].
     pub type_byte: u8,
     /// The bit after the header.
     pub next: usize,
+}
+
+impl ElementHeader {
+    /// A group member (type bit `0x08`): 128 bits follow the header.
+    pub fn is_group_member(&self) -> bool {
+        self.type_byte & 0x08 != 0
+    }
+    /// Parameters locked: the `0x02` byte for ordinary elements, type bit
+    /// `0x04` for group members (S164, S172, S195).
+    pub fn locked(&self) -> bool {
+        if self.is_group_member() {
+            self.type_byte & 0x04 != 0
+        } else {
+            self.flags.is_some_and(|f| f & ELEMENT_LOCKED != 0)
+        }
+    }
 }
 
 /// Read any element header at `bit` (both type bytes; with or without the
@@ -76,7 +110,8 @@ pub fn read_header(data: &[u8], bit: usize) -> Option<ElementHeader> {
     {
         return None;
     }
-    let is_type = |b: u8| b == TYPE_ELEMENT || b == TYPE_GROUP_MEMBER;
+    let is_type =
+        |b: u8| [TYPE_ELEMENT, TYPE_GROUP_MEMBER, TYPE_GROUP_MEMBER_UNLOCKED].contains(&b);
     let first = raw::get_byte(data, bit + 18);
     let h = if first & ELEMENT_LOCKED == 0 {
         is_type(first).then_some(ElementHeader {
@@ -152,7 +187,12 @@ impl TangentRecord {
         if self.record_end > 0 {
             return self.record_end;
         }
-        self.coords_bit + if self.kind == KIND_FLOATING { 128 } else { 256 }
+        self.coords_bit
+            + if self.kind == KIND_FLOATING || self.kind == KIND_FLOATING_NEXT {
+                128
+            } else {
+                256
+            }
     }
 }
 
@@ -160,6 +200,9 @@ impl TangentRecord {
 pub const KIND_FIXED: i32 = 0;
 /// Element kind of a floating tangent: end point only (S89 element 3).
 pub const KIND_FLOATING: i32 = 4;
+/// Floating tangent "Constrained by Next": start point only, the end
+/// comes from the next element (S195, tangent 1 of `UNLOCKED`).
+pub const KIND_FLOATING_NEXT: i32 = 3;
 /// Floating line from the previous curve's end with a length: `BD
 /// length` (S113 `floating line by length`).
 pub const KIND_FLOATING_LENGTH: i32 = 5;
@@ -232,7 +275,14 @@ pub(crate) fn record_at(data: &[u8], bit: usize) -> Option<TangentRecord> {
     let (before, k) = raw::read_bl(data, k)?;
     let (after, k) = raw::read_bl(data, k)?;
     let small = |v: i32| (0..100_000).contains(&v);
-    if ![KIND_FIXED, KIND_FLOATING, KIND_FLOATING_LENGTH, KIND_FREE].contains(&kind)
+    if ![
+        KIND_FIXED,
+        KIND_FLOATING,
+        KIND_FLOATING_NEXT,
+        KIND_FLOATING_LENGTH,
+        KIND_FREE,
+    ]
+    .contains(&kind)
         || id < 1
         || !small(id)
         || !small(before)
@@ -263,6 +313,28 @@ pub(crate) fn record_at(data: &[u8], bit: usize) -> Option<TangentRecord> {
         });
     }
     let nan = Point2::new(f64::NAN, f64::NAN);
+    if kind == KIND_FLOATING_NEXT {
+        // Constrained by the next element, which must exist.
+        if after == 0 || k + 128 > raw::bit_len(data) {
+            return None;
+        }
+        let start = Point2::new(raw::get_f64(data, k), raw::get_f64(data, k + 64));
+        if !start.x.is_finite() || !start.y.is_finite() {
+            return None;
+        }
+        return Some(TangentRecord {
+            header_bit: bit,
+            coords_bit: k,
+            kind,
+            id,
+            before,
+            after,
+            start,
+            end: nan,
+            length: None,
+            record_end: k + 128,
+        });
+    }
     if kind == KIND_FLOATING_LENGTH {
         let (length, q) = raw::read_bd(data, k)?;
         if before == 0 || !(length.is_finite() && length > 0.0) {

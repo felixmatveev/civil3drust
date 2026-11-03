@@ -162,12 +162,20 @@ pub fn set_constraint_editing(
     for h in headers {
         let hd = read_header(&data, h)
             .ok_or_else(|| CriteriaError(format!("element header at bit {h} not readable")))?;
-        let rest = hd.flags.unwrap_or(0) & !ELEMENT_LOCKED;
-        // A flag byte without bit 0x02 would be read as the type byte
-        // (S126, S128: rejected), so unlocking drops the whole byte.
-        let new = c.lock_parameters.then_some(rest | ELEMENT_LOCKED);
+        let (new, type_byte) = if hd.is_group_member() {
+            // Civil 3D's group-member form (S195): `02 0D` / `02 09`.
+            crate::aecc_alignment::header_bytes(true, c.lock_parameters)
+        } else {
+            let rest = hd.flags.unwrap_or(0) & !ELEMENT_LOCKED;
+            // A flag byte without bit 0x02 would be read as the type byte
+            // (S126, S128: rejected), so unlocking drops the whole byte.
+            (
+                c.lock_parameters.then_some(rest | ELEMENT_LOCKED),
+                hd.type_byte,
+            )
+        };
         w.copy(&data, at, h);
-        encode_header(&mut w, new, hd.type_byte);
+        encode_header(&mut w, new, type_byte);
         at = hd.next;
     }
     let new_data_end = data_end + w.len() - at;

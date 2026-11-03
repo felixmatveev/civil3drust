@@ -670,54 +670,95 @@ fn lock_is_per_element_s170_s172() {
     }
 }
 
-/// The type byte (MIST7): S177's first-of-group spirals use 0x0D. With the
-/// lock removed (`08 00 0D`, the form Civil 3D would write with "Lock all
-/// parameter constraints" off) they still decode, to the same geometry.
+/// The group-member header (MIST7): S177's first-of-group spirals are
+/// `02 0D`; with "Lock all parameter constraints" off Civil 3D writes
+/// `02 09` (S202) and drops the `02` byte of the other elements.
+/// `set_constraint_editing` on S177 gives S202's element records.
 #[test]
-fn group_member_header_unlocked_s177() {
-    use civil3drust::aecc_alignment::{read_header, TYPE_GROUP_MEMBER};
+fn group_member_header_unlocked_s177_s202() {
+    use civil3drust::aecc_alignment::{read_header, TYPE_GROUP_MEMBER_UNLOCKED};
     use civil3drust::aecc_criteria::{set_constraint_editing, ConstraintEditing};
-    let o = raw::open("samples/S177_long_spiral_method_alignments.dwg").unwrap();
-    let mut seen = 0;
-    for r in raw::records(&o.doc, "AECC_ALIGNMENT") {
-        let d = decode_elements(&r).unwrap();
-        let members = d
-            .all()
-            .filter(|e| {
-                read_header(&r.data, e.record.header_bit())
-                    .unwrap()
-                    .type_byte
-                    == TYPE_GROUP_MEMBER
-            })
-            .count();
-        if members == 0 || d.has_groups() {
-            continue;
-        }
-        seen += members;
-        let off = ConstraintEditing {
-            swap_tangency: false,
-            lock_parameters: false,
-        };
-        let (data, handle_bits) = set_constraint_editing(&r, off).unwrap();
-        let u = raw::RawRecord {
-            data,
-            handle_bits,
-            ..r.clone()
-        };
-        let du = decode_elements(&u).unwrap();
-        let hs: Vec<_> = du
-            .all()
-            .map(|e| read_header(&u.data, e.record.header_bit()).unwrap())
-            .collect();
-        assert!(hs.iter().all(|h| h.flags.is_none()));
-        assert_eq!(
-            hs.iter()
-                .filter(|h| h.type_byte == TYPE_GROUP_MEMBER)
-                .count(),
-            members
-        );
-        assert_eq!(d.record_count(), du.record_count());
-        assert!((d.length() - du.length()).abs() < 1e-9, "{:X}", r.handle);
-    }
-    assert_eq!(seen, 3);
+    let rec = |p: &str| {
+        let o = raw::open(p).unwrap();
+        raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == 0xFCE)
+            .unwrap()
+    };
+    let span = |r: &raw::RawRecord| -> Vec<u8> {
+        let d = decode_elements(r).unwrap();
+        let (a, z) = (d.first_record_bit().unwrap(), d.records_end_bit().unwrap());
+        (a..z).map(|i| raw::get_bit(&r.data, i)).collect()
+    };
+    let (s177, s202) = (
+        rec("samples/S177_long_spiral_method_alignments.dwg"),
+        rec("samples/S202_S177_lock_all_off.dwg"),
+    );
+    let hs: Vec<_> = {
+        let d = decode_elements(&s202).unwrap();
+        d.all()
+            .map(|e| read_header(&s202.data, e.record.header_bit()).unwrap())
+            .collect()
+    };
+    let members: Vec<_> = hs.iter().filter(|h| h.is_group_member()).collect();
+    assert_eq!(members.len(), 1);
+    assert_eq!(
+        (members[0].flags, members[0].type_byte),
+        (Some(2), TYPE_GROUP_MEMBER_UNLOCKED)
+    );
+    assert!(hs.iter().all(|h| !h.locked()));
+    assert!(!constraint_editing(&s202).unwrap().lock_parameters);
+    let (a, b) = (
+        decode_elements(&s177).unwrap(),
+        decode_elements(&s202).unwrap(),
+    );
+    assert!((a.length() - b.length()).abs() < 1e-9);
+    let off = ConstraintEditing {
+        swap_tangency: constraint_editing(&s177).unwrap().swap_tangency,
+        lock_parameters: false,
+    };
+    let (data, handle_bits) = set_constraint_editing(&s177, off).unwrap();
+    let ours = raw::RawRecord {
+        data,
+        handle_bits,
+        ..s177.clone()
+    };
+    assert_eq!(span(&ours), span(&s202));
+}
+
+/// Tangency constraint is not in the header (MIST7): S201 is S172 with
+/// tangent 1 set to "Constrained by Next (Floating)". Its kind becomes 3
+/// (start point only), the following free curve becomes "floating, start
+/// point and radius", the headers stay as they were, the geometry too.
+#[test]
+fn constrained_by_next_is_the_kind_field_s201() {
+    use civil3drust::aecc_alignment::KIND_FLOATING_NEXT;
+    use civil3drust::aecc_elements::ARC_FLOATING_START;
+    let (before, after) = (
+        s17x("samples/S172_S171_one_element_locked.dwg"),
+        s17x("samples/S201_S172_line1_constrained_by_next.dwg"),
+    );
+    assert_eq!(header_flags(&before), header_flags(&after));
+    let d = decode_elements(&after).unwrap();
+    let kinds: Vec<String> = d
+        .elements
+        .iter()
+        .map(|e| match &e.record {
+            Element::Tangent(t) => format!("L{}", t.kind),
+            Element::Arc(a) => format!("A{}", a.params.n2),
+            _ => "?".into(),
+        })
+        .collect();
+    assert_eq!(
+        kinds,
+        [
+            format!("L{KIND_FLOATING_NEXT}"),
+            format!("A{ARC_FLOATING_START}"),
+            "L0".into(),
+            "L0".into()
+        ]
+    );
+    let d0 = decode_elements(&before).unwrap();
+    assert!((d.length() - d0.length()).abs() < 1e-9);
+    assert_eq!(chain_of(&before), chain_of(&after));
 }

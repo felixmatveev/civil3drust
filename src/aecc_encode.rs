@@ -12,8 +12,8 @@
 //! in `docs/alignment-object.md`.
 
 use crate::aecc_alignment::{
-    ElementHeader, TangentRecord, KIND_FIXED, KIND_FLOATING, KIND_FLOATING_LENGTH, KIND_FREE,
-    TYPE_GROUP_MEMBER,
+    ElementHeader, TangentRecord, KIND_FIXED, KIND_FLOATING, KIND_FLOATING_LENGTH,
+    KIND_FLOATING_NEXT, KIND_FREE,
 };
 use crate::aecc_build::{encode_header, Bits, PREFIX_ARC, PREFIX_TANGENT};
 use crate::aecc_elements::{
@@ -100,6 +100,7 @@ fn tangent(w: &mut Bits, t: &TangentRecord) {
             point(w, t.end);
         }
         KIND_FLOATING => point(w, t.end),
+        KIND_FLOATING_NEXT => point(w, t.start),
         KIND_FLOATING_LENGTH => w.bd(t.length.unwrap_or(0.0)),
         KIND_FREE => {}
         _ => {}
@@ -198,7 +199,7 @@ fn line_spiral(w: &mut Bits, g: &LineSpiralRecord) {
 }
 
 fn spiral(w: &mut Bits, s: &SpiralRecord, type_byte: u8) {
-    if type_byte == TYPE_GROUP_MEMBER {
+    if type_byte & 0x08 != 0 {
         // The group's start point (MIST17); the spiral's start if unset.
         point(w, s.member.unwrap_or(s.start));
     }

@@ -16,6 +16,7 @@ Status: **known** = decoded from a sample; **probable** = fits a sample but the 
 | Fixed Line (from curve end, length) | kind 0: stored as two points (the length is not kept) | known | S113 |
 | Fixed Line – Best Fit | | later | |
 | Floating Line (from curve, through point) | kind 4: end point only | known | S89 |
+| Line set to "Constrained by Next (Floating)" in the Alignment Entities grid | kind 3: start point only; the end comes from the next element (the free curve after it became "floating, start point and radius", code 15) | known | S201 |
 | Floating Line (from curve end, length) | kind 5: `BD length`; starts at the previous element's end, in its end direction | known | S113 |
 | Floating Line – Best Fit | | later | |
 | Free Line (between two curves) | kind 9: no data; tangent to both neighbouring curves, which it trims | known | S113 |

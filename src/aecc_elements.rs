@@ -619,7 +619,7 @@ fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
     // as separate elements; the group's start point (RD x, RD y) comes
     // before the parameter flag (MIST17).
     let h = aecc_alignment::read_header(data, bit)?;
-    let member_bits = h.type_byte == aecc_alignment::TYPE_GROUP_MEMBER;
+    let member_bits = h.is_group_member();
     let (member, flag_bit) = if member_bits {
         let x = raw::get_f64(data, h.next);
         let y = raw::get_f64(data, h.next + 64);

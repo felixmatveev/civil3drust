@@ -247,12 +247,9 @@ fn write_elements(
             }
             Planned::Encoded(el) => {
                 // The alignment's lock state; group members keep their type.
-                let type_byte = match el {
-                    Element::Spiral(s) if s.member.is_some() => {
-                        crate::aecc_alignment::TYPE_GROUP_MEMBER
-                    }
-                    _ => crate::aecc_alignment::TYPE_ELEMENT,
-                };
+                let member = matches!(el, Element::Spiral(s) if s.member.is_some());
+                let (flags, type_byte) =
+                    crate::aecc_alignment::header_bytes(member, flags.is_some());
                 let h = crate::aecc_alignment::ElementHeader {
                     flags,
                     type_byte,
