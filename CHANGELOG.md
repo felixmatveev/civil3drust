@@ -64,7 +64,7 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - README and `docs/mysteries.md`: widening (offset alignments with widening
-  regions) and grouped alignments listed as missing; spiral status
+  regions) and alignment groups (siteless and per site) listed as missing; spiral status
   updated.
 - `docs/element-methods.md`: sample descriptions are hints; stored records
   checked against Civil 3D's drawing are the ground truth.

@@ -512,8 +512,14 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   alignment, an offset alignment, then one widening added, edited and
   removed, each step saved separately.
 - Station equations (data seen in S9, not decoded).
-- Grouped alignments (owner): how alignments are grouped and where the
-  group is stored. Sample plan: two alignments, saved; then grouped,
-  saved; then one removed from the group, saved.
+- Alignment groups (owner): Civil 3D's own grouping of alignments in the
+  Toolspace (Prospector), both for siteless alignments and separately
+  inside each site. Where a group is stored (its own record, the
+  registry or the site's collection) and how an alignment points to it.
+  Sample plan, each step saved separately from S24:
+  1. two siteless alignments; 2. a group created with both;
+  3. a second group, one alignment moved to it; 4. one alignment taken
+  out of all groups; 5. a site with two alignments and its own group
+  (compare with step 2, and with the sites decoded in S101–S112).
 - Three long reverse spiral groups to re-sample without copy and paste
   (S177 FCE, FD1, FD4).
