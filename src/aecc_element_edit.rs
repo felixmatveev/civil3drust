@@ -105,6 +105,8 @@ enum Planned<'a> {
         start: Point2,
         end: Point2,
     },
+    /// Any element, written from its fields (`aecc_encode`).
+    Encoded(&'a Element),
 }
 
 /// Bit offset of the ID field of an arc record and the bit after its
@@ -242,6 +244,21 @@ fn write_elements(
                 w.bits(crate::aecc_build::PREFIX_TANGENT as u64, 11);
                 encode_tangent(&mut w, flags, *id, *before, *after, *start, *end);
             }
+            Planned::Encoded(el) => {
+                // The alignment's lock state; group members keep their type.
+                let type_byte = match el {
+                    Element::Spiral(s) if s.member.is_some() => {
+                        crate::aecc_alignment::TYPE_GROUP_MEMBER
+                    }
+                    _ => crate::aecc_alignment::TYPE_ELEMENT,
+                };
+                let h = crate::aecc_alignment::ElementHeader {
+                    flags,
+                    type_byte,
+                    next: 0,
+                };
+                crate::aecc_encode::encode_element(&mut w, &h, el);
+            }
             Planned::NewFreeArc {
                 id,
                 before,
@@ -279,6 +296,7 @@ fn write_elements(
             Planned::Kept { el, .. } => matches!(el, Element::Arc(_)),
             Planned::NewFreeArc { .. } => true,
             Planned::NewTangent { .. } => false,
+            Planned::Encoded(el) => matches!(el, Element::Arc(_)),
         })
         .count();
     let strings = string_stream::parse(&bytes, hb)
@@ -720,6 +738,8 @@ pub fn replace_elements(
     if !d.detached.is_empty() {
         return Err(err("the alignment has detached pieces"));
     }
+    // Fixed lines and free curves as before (S97 → S98); every other kind
+    // from its fields (aecc_encode, D-054).
     let mut plan = Vec::with_capacity(els.len());
     for e in els {
         plan.push(match e {
@@ -737,23 +757,9 @@ pub fn replace_elements(
                     after: a.after,
                     radius,
                 },
-                _ => return Err(err(format!("arc {}: only free arcs can be written", a.id))),
+                _ => Planned::Encoded(e),
             },
-            Element::Tangent(t) => {
-                return Err(err(format!(
-                    "tangent {}: only fixed tangents can be written",
-                    t.id
-                )))
-            }
-            Element::LineSpiral(_)
-            | Element::Spiral(_)
-            | Element::FreeSpiral(_)
-            | Element::Group(_) => {
-                return Err(err(format!(
-                    "spiral {}: not editable yet",
-                    crate::aecc_alignment::Linked::id(e)
-                )))
-            }
+            _ => Planned::Encoded(e),
         });
     }
     let head = els

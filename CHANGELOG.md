@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `replace_elements` writes any decoded element (spirals, free spirals,
+  every group) through `aecc_encode`, not only lines and free curves.
+  `examples/exp_chains`: generate one alignment per source alignment of
+  other drawings. Generated samples S184 (43 alignments, every element
+  kind) and S185 (the JSON-type groups' members without a JSON string),
+  for opening in Civil 3D.
 - `aecc_encode::encode_element`: writes any element record (kind prefix,
   header, record) from its decoded fields. Spiral, free-spiral and group
   records now keep their parameter block (`ParamBlock`), group members

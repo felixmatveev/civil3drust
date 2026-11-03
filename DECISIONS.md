@@ -1072,3 +1072,17 @@ values every Civil 3D record shows for the unexplained ones, e.g.
 **Alternatives.** Copy each record's bits from a template and patch the
 known fields: hides layout mistakes and keeps template content.
 
+## D-055: Generated alignments copy the source's string count
+
+**Context.** The empty strings after an alignment's name vary in number
+(3 per curve in S24-family alignments, S46), with no rule known for
+spirals and groups. A wrong count risks a rejection that would hide what
+the generation test (S184) is meant to show.
+
+**Decision.** `exp_chains` gives each new alignment as many strings after
+its name as its source alignment has. Writing from an element list alone
+needs the rule; until it is found, a new alignment with spirals or groups
+gets its count from a Civil 3D-made alignment with the same elements.
+
+**Alternatives.** Use the S24 rule (3 per curve) for everything: untested
+for spirals; a rejection would not tell which part was wrong.

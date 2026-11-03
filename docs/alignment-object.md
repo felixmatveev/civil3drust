@@ -2417,6 +2417,28 @@ purpose, which makes the pieces fixed). Open: what marks the record as
 having the JSON slot (alignments without these groups have no such
 string), and MIST17.
 
+## Generation test (S184, S185)
+
+`examples/exp_chains` writes one new alignment per source alignment:
+`create_alignment` from S24's F9E as template, then `replace_elements`
+with the source's element records re-encoded from their decoded fields
+(`aecc_encode`, D-054), the string count after the name copied from the
+source (D-055), and the companion rebuilt.
+
+- **S184**: 43 alignments covering lines (fixed, floating, free, every
+  S113 method), curves of every S117/S118 method, fixed and free spirals,
+  every spiral group of S176, SCSCS and SCSSCS (S177 FC8, FCB). All read
+  back with the source's element count and length. S119 1061 lost its
+  design speeds (a speed on a spiral group is not written yet).
+- **S185**: the six JSON-type group alignments, with their spirals as
+  group members (`0x0D`) but no JSON string. Expected outcomes: if Civil
+  3D opens them as plain fixed pieces, the members' header does not by
+  itself call for a JSON slot; a RECOVER points at the member header or
+  the 128 bits as the marker (MIST17, owner's hypothesis: the group type
+  decides).
+
+Civil 3D results: pending.
+
 
 ## Open questions
 
