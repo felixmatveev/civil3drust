@@ -112,6 +112,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   `s162_spirals_match_civil3d_drawing`; MIST16.
 
 ### Fixed
+- Element edits no longer rewrite design speeds stored without intervals
+  (Civil 3D's layout-tool form, the only one seen with a JSON layout)
+  when the speeds don't change; they used to gain an interval block.
+  `examples/exp_json_bisect`; samples S203–S205.
 - Element edits counted 3 strings only per curve; spirals and groups need
   3 as well (S184 → S186, D-056). Generated alignments were short, and
   Civil 3D discarded 13 of S184's 43 on open. `exp_chains` no longer

@@ -73,6 +73,7 @@ samples and steps that produced it.
 - `cargo run --release --example exp_json -- in.dwg out.dwg remove|empty` (drop the JSON layout string; experiments S179, S180)
 - `cargo run --release --example exp_chains -- target.dwg out.dwg <template hex> source.dwg[:HANDLE,…|:-HANDLE,…] ... [--plain-members] [--json|--json-tweak]` (one new alignment per source alignment, elements re-encoded; S184, S185, S188–S190, S197–S199)
 - `cargo run --release --example exp_json_form -- in.dwg out.dwg donor.dwg:HANDLE A:h,h B:h,h C:h,h` (section-2 form for the JSON layout; experiment S200)
+- `cargo run --release --example exp_json_bisect -- in.dwg out.dwg json:H reencode:H ...` (composed JSON / re-encode in place; experiment S204)
 - `cd hexview && cargo run --release -- file.dwg [--goto <hex offset|#handle>] [--compare other.dwg]` (hex view with record overlay; `--dump file.dwg` for text)
 - `cd hexview && cargo run --release -- --diff a.dwg b.dwg [--show civil,opaque,unmapped,acad|all] [--filter text]` (record-by-record bit diff of two drawings)
 - `cargo run --release --example fingerprint -- file.dwg [roundtrip.dwg]` (raw-record hashes, for comparing acadrust versions; **writes** a round trip of file.dwg to roundtrip.dwg, overwriting it)

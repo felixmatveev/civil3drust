@@ -2572,6 +2572,33 @@ can, is unknown.
   FB6 and FC2 the plain form with `0x114A` (flag `0x02` set, variant B);
   FB9 and FBC `0x114A` followed by `BL 0x01010034` (variant C).
 
+**Result (owner).** Both RECOVER; every generated alignment discarded
+with eWrongObjectType, in all variants. In S199 (re-save after RECOVER:
+**S203**) S178's three own alignments survive; nudging rebuilds their
+curves and the group sub-entities are there. So the Properties form and
+the JSON flag are not enough either: something else in the generated
+records is wrong.
+
+**What differs (S178 11DE compared with itself after `replace_elements`
+with its own elements).** Besides the zeroed MIST1, the removed
+element-ID list (`[1]`) and the rebuilt proxy graphics, `finish` rewrote
+the design speed: S178 stores it **without an interval** (zero GUID, the
+form Civil 3D uses for layout-tool alignments), and civil3drust wrote it
+with an interval block. Every Civil 3D record with a JSON string has its
+speed without an interval (S177, S178), and every rejected one had an
+interval (S189, S197–S200: from S24's template or written by `finish`).
+`finish` now keeps interval-less speeds as they are when they don't
+change.
+
+**Next test (S204, S205).**
+
+- **S204** (bisect, in place on S178, `exp_json_bisect`): 11D4 gets the
+  composed JSON (nothing else changed); 11DE goes through
+  `replace_elements` with its own elements (speed now kept without an
+  interval); 11F8 unchanged (control).
+- **S205**: S199 generated again with the speed fix: six alignments from
+  S178's 11F8, speeds without intervals.
+
 Civil 3D results: pending.
 
 ## Open questions
