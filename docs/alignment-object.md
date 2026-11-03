@@ -2533,6 +2533,45 @@ and a layout JSON composed by civil3drust from the element records
   JSON only (the binary pieces keep the old length). Shows whether Civil
   3D re-solves from the JSON on opening, on a nudge, or not at all.
 
+**Result (owner).** Both RECOVER, all six alignments discarded,
+"Error 34 (eWrongObjectType)" — as S189 without the JSON. So the string
+alone is not what Civil 3D looks for.
+
+**The JSON flag in section 2.** Every Civil 3D record with a JSON string
+is in the Alignment Properties form, and its section-2 BLs from bit 115
+differ from those of records without one:
+
+| record | section-2 BLs from bit 115 |
+|---|---|
+| S24 F9E, all generated (plain form) | `0x1148`, `0` |
+| S177 FC8, FCB (Properties form, no JSON) | `1`, `0x08010004`, … |
+| S178 11D4, 11DE, 11F8; S180 (JSON emptied) | `3`, `0x01010034`, `0x08010004`, … |
+| S177 FCE, FD1, FD4; S181, S182 (with MIST2) | `0x43`, `0x01010034`, `0x08010004`, … |
+
+So in the Properties form the first BL is a set of flags — `0x01` the
+Alignment Properties header (`0x08010004` …), `0x02` the JSON layout
+(announced by `BL 0x01010034`), `0x40` MIST2 — and each set flag adds its
+tagged block. The JSON slot in the string stream follows the `0x02` flag:
+with the flag and no string the strings shift (S183); with the string and
+no flag the member spiral is not accepted (S189, S197). The Properties
+form also has one more string after the JSON (the user who edited it,
+"felix"). How the plain form (`0x1148`) announces a JSON string, if it
+can, is unknown.
+
+**Next test (S199, S200).**
+
+- **S199**: S178 itself as target, its alignment 11F8 as template, so the
+  six generated alignments inherit Civil 3D's own JSON form (flags 3,
+  `0x01010034`, the user string, the date-modified block); their JSON is
+  replaced by the composed one (`exp_chains --json`). If they open, the
+  composed JSON and member spirals are right and only the form was
+  missing.
+- **S200**: S197 with the section-2 form changed (`exp_json_form`): FB3
+  and FBF get S178 11F8's Properties-form region and date-modified block
+  (copied) and a user string "civil3drust" after the JSON (variant A);
+  FB6 and FC2 the plain form with `0x114A` (flag `0x02` set, variant B);
+  FB9 and FBC `0x114A` followed by `BL 0x01010034` (variant C).
+
 Civil 3D results: pending.
 
 ## Open questions

@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Section-2 JSON flag found: Civil 3D records with a layout JSON are in
+  the Properties form with flags `3` (or `0x43`) and `BL 0x01010034`
+  (S177, S178, S180–S182); S197/S198 (plain form + JSON) were rejected.
+  `examples/exp_json_form` (variants A–C); samples S199 (generated in
+  S178's own JSON form), S200 (form variants).
 - `aecc_layout`: the JSON layout string — `Json` parses and writes it in
   Civil 3D's format byte for byte (tabs, CRLF, `%.17g`), `compose` builds
   it from element records (fixed lines, three-point curves, the three
