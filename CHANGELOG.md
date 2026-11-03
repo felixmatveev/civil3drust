@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `aecc_build::to_plain_form`: records civil3drust writes drop the
+  Alignment Properties header and its date-modified block (MIST3, MIST4)
+  for the plain form (D-057). Samples S191–S194 (S191/S192 rejected,
+  S193 accepted and re-saved plain as S194); test
+  `date_modified_block_dropped_plain_form`.
 - `exp_mist3`: drop the date-modified block (MIST3) of an alignment in
   the Alignment Properties form, alone, with MIST2, or by turning the
   record into the plain form (experiments S191–S193, to be opened in

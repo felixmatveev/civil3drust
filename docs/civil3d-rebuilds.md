@@ -11,7 +11,7 @@ template and does not add them. The opposite list — what Civil 3D refuses
 | Proxy graphics | absent (has-graphics bit 0) | regenerates them from the style and geometry; with PROXYGRAPHICS 0 it writes a placeholder (text + extents) instead | S56 X2 → S57; S140/S141 | written by default, optional (D-027; open under D-049) |
 | MIST1, the 64-bit geometry fingerprint (probably `Entity.FingerPrint`) | all zero | recomputes it from shape and placement | S56 X1 → S57; S142–S150 | zeroed (D-046) |
 | MIST2 (`BL 0x0D00D773, BL n`) with its format marker | both absent (marker "absent") | adds both on the first re-save | S155 → S157 (plain), S159 → S160 (Properties form) | removed (D-047) |
-| Date-modified block (`BL 0x1600101F` + FILETIME, MIST3) | — | written with the time of an Alignment Properties edit | S144, S122 | plan: drop it (test pending) |
+| Date-modified block (`BL 0x1600101F` + FILETIME, MIST3) with the Alignment Properties header (MIST4) | both absent: the plain form | not added back on save; the record stays in the plain form (S193 → S194) | S144, S122; S193, S194 | dropped: `to_plain_form` (D-057) |
 | Identity GUID (first speed interval) | zero | assigns a new random GUID (but see the X5 row in `civil3d-rejects.md` §4) | S56 X3 → S57 | random GUID written |
 | Identity GUID of generated alignments | any value | sometimes replaced by a new GUID on save (S47, S57 X0/X1/X4), sometimes kept (S50 → S51); the rule is not known | S47, S51, S57 | random GUID written |
 | Element-ID list after the speed table | absent (`BL 0`) | adds it after some edits | S50 (accepted); S12, S48, S51 (added) | cleared (`clear_element_id_list`) |

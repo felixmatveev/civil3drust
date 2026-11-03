@@ -77,9 +77,9 @@ hierarchy the field most likely belongs to (inferred from its position).
 |---|---|---|---|
 | `BL 80, 0, 80, 80, 0` | — | plumbing | class header, same in every record |
 | format marker at bit 115: `0x1148` / `0x1188` (plain form), `0011000001` / `0100000001` (Properties form) | — | plumbing | says whether the MIST2 block is present (MIST5; S154, S158) |
-| 28 bits at bit 119 (Properties form only) | — | open | MIST4: added by an Alignment Properties edit |
+| Alignment Properties header (bits 115 to the MIST1 anchor: `BL 1`, `BL 0x08010004`, 26 bits; plain form `BL 0x1148/0x1188, BL 0`) | — | plumbing | MIST4: announces the date-modified block; replaced by the plain form (D-057) |
 | 64 bits after the 14-bit anchor (MIST1) | `Entity.FingerPrint` (UInt64), probably | cache | Civil 3D recomputes it from shape and placement; zeroed (D-046) |
-| `BL 0x1600101F` + FILETIME (Properties form only) | — (a "date modified" stamp; no public property found) | cache | MIST3; the same block is in 82 classes (styles, label sets, check sets …), e.g. S24's styles are stamped when the drawing was made (2026-10-22 19:56:44 UTC); plan: drop it |
+| `BL 0x1600101F` + FILETIME (Properties form only) | — (a "date modified" stamp; no public property found) | history | MIST3; the same block is in 82 classes (styles, label sets, check sets …), e.g. S24's styles are stamped when the drawing was made (2026-10-22 19:56:44 UTC); dropped with the Properties header (D-057, S193) |
 | `BL 0x0D00D773, BL n` (MIST2) | — | cache | added on re-save; removed (D-047); n = 2 centerline, 1 utility |
 | design criteria flags (bits 19, 18, 17, 14 before the section-2 end) | `UseDesignSpeed` (probable), `UseDesignCriteriaFile`, `UseDesignCheckSet`; tangency check (no public property found) | model | `aecc_criteria` |
 | flags 16 and 15 before the section-2 end | Constraint Editing options "Always perform implied tangency constraint swapping" and "Lock all parameter constraints" (no public property found) | model | `aecc_criteria::constraint_editing` / `set_constraint_editing`; new alignments both off (D-052); MIST15 solved (S163, S164) |
@@ -158,8 +158,8 @@ entered here once a test or a decoded block confirms it.
 - **FingerPrint (MIST1):** the API reads and writes it; zero is accepted.
   If data shortcuts or Civil Worksharing compare fingerprints, a zeroed
   value may matter there (untested).
-- **Date-modified block (MIST3):** to be dropped; check whether its absence
-  needs a marker change (compare MIST4 and S158).
+- **Date-modified block (MIST3):** dropped by writing the plain form; the
+  Properties header announces it (S191, S192 rejected, S193 accepted).
 - **CreationMode, CurveGroupIndex, StationEquations, superelevation and
   cant collections:** public properties not yet located in the record.
 - **No public property** for the implied PI display or the tangency

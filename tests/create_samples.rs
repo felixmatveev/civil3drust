@@ -1032,3 +1032,64 @@ fn created_alignment_is_unlocked() {
     }
     assert!(d.stored_start_station == Some(0.0));
 }
+
+/// MIST3 (D-057): civil3drust writes the plain form without the
+/// date-modified block. S144 converted is S193, which Civil 3D accepted
+/// and re-saved in the plain form, without the block (S194); removing
+/// the block alone was rejected (S191, S192).
+#[test]
+fn date_modified_block_dropped_plain_form() {
+    use civil3drust::aecc_build::{
+        geometry_key_bit, to_plain_form, DATE_MODIFIED_TAG, GEOMETRY_KEY_BITS,
+    };
+    let rec = |p: &str| {
+        let o = raw::open(p).unwrap();
+        raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == 0xF9E)
+            .unwrap()
+    };
+    let has_stamp = |r: &raw::RawRecord| {
+        let k = geometry_key_bit(&r.data).unwrap() + GEOMETRY_KEY_BITS;
+        raw::read_bl(&r.data, k).map(|x| x.0 as u32) == Some(DATE_MODIFIED_TAG)
+    };
+    let s144 = rec("samples/S144_S143_renamed.dwg");
+    let s193 = rec("samples/S193_S144_mist3_plain.dwg");
+    let s194 = rec("samples/S194_S193_civ3d_resaved.dwg");
+    assert!(has_stamp(&s144));
+    let (d, hb) = to_plain_form(&s144.data, s144.handle_bits).unwrap();
+    assert_eq!((&d, hb), (&s193.data, s193.handle_bits));
+    assert!(!has_stamp(&s193) && !has_stamp(&s194));
+    assert!(to_plain_form(&s194.data, s194.handle_bits).is_none());
+    let (a, b) = (
+        decode_elements(&s193).unwrap(),
+        decode_elements(&s194).unwrap(),
+    );
+    assert_eq!(a.record_count(), b.record_count());
+    assert!((a.length() - b.length()).abs() < 1e-9);
+    assert_eq!(
+        raw::object_name(&s194.data).as_deref(),
+        Some("Alignment - (RENAMED)")
+    );
+
+    // A new alignment from a Properties-form donor comes out plain.
+    let donor = raw::open("samples/S144_S143_renamed.dwg").unwrap();
+    let mut t = raw::open("samples/S24_ZERO_CIVIL.dwg").unwrap();
+    let pis = [Point2::new(0.0, 0.0), Point2::new(100.0, 0.0)];
+    let c = create_alignment(
+        &mut t.doc,
+        &donor.doc,
+        "P",
+        &pis,
+        &[],
+        3,
+        CreateOptions::default(),
+    )
+    .unwrap();
+    let r = raw::records(&t.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == c.alignment)
+        .unwrap();
+    assert!(!has_stamp(&r));
+    assert!(to_plain_form(&r.data, r.handle_bits).is_none());
+}

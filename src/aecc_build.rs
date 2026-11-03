@@ -926,10 +926,72 @@ pub fn remove_resave_field(data: &[u8], handle_bits: usize) -> Option<(Vec<u8>, 
     Some((bytes, hb))
 }
 
-/// Drop both re-save caches from a record civil3drust writes: zero MIST1
-/// (D-046) and remove MIST2 with its marker (D-047).
+/// Section-2 bits 115 up to the MIST1 anchor in the Alignment Properties
+/// form (MIST1 at section-2 bit 199), with MIST2 present and absent
+/// (S144, S159): `BL 1`, `BL 0x08010004`, then 26 bits (MIST4).
+const PROPERTIES_REGIONS: [&str; 2] = [
+    "0100000001000000010000000000000000010000100000010001000000000000000010",
+    "0011000001000000010000000000000000010000100000010001000000000000000010",
+];
+
+/// MIST3's tag: `BL 0x1600101F` starts the date-modified block (a 64-bit
+/// FILETIME follows) after MIST1 in the Alignment Properties form.
+pub const DATE_MODIFIED_TAG: u32 = 0x1600_101F;
+
+/// Turn an Alignment Properties form record into the plain form Civil 3D
+/// writes for an alignment never edited in Alignment Properties (D-057):
+/// section-2 bits 115 up to the MIST1 anchor become `BL 0x1148, BL 0`,
+/// and the date-modified block (MIST3) and MIST2 after MIST1 are removed.
+/// Civil 3D accepts it and keeps the plain form on save (S193 → S194);
+/// removing the block alone is rejected (S191, S192).
+///
+/// `None` when the record is not in the known Properties form (the longer
+/// forms of S59 and S177–S183 are left alone). Returns the new bytes and
+/// handle-stream size.
+pub fn to_plain_form(data: &[u8], handle_bits: usize) -> Option<(Vec<u8>, usize)> {
+    let s2 = crate::aecc_entity::entity_common(data)?.start_bit;
+    let key = geometry_key_bit(data)?;
+    let region = s2 + 115..key - GEOMETRY_KEY_ANCHOR.len();
+    let bits: String = region
+        .clone()
+        .map(|b| char::from(b'0' + raw::get_bit(data, b)))
+        .collect();
+    if !PROPERTIES_REGIONS.contains(&bits.as_str()) {
+        return None;
+    }
+    let stamp = key + GEOMETRY_KEY_BITS;
+    if raw::get_bit(data, stamp) != 0
+        || raw::get_bit(data, stamp + 1) != 0
+        || raw::read_bl(data, stamp).map(|x| x.0 as u32) != Some(DATE_MODIFIED_TAG)
+    {
+        return None;
+    }
+    let mut end = stamp + 34 + 64;
+    if resave_field_bit(data) == Some(end) {
+        end += 44;
+    }
+    let total = raw::bit_len(data);
+    let data_end = total - handle_bits;
+    let mut w = Bits::default();
+    w.copy(data, 0, region.start);
+    w.bl(MARKER_WITHOUT_RESAVE_FIELD as i32);
+    w.bl(0);
+    w.copy(data, region.end, stamp);
+    w.copy(data, end, data_end);
+    let new_data_end = w.len();
+    w.copy(data, data_end, total);
+    let bytes = w.into_bytes();
+    let hb = bytes.len() * 8 - new_data_end;
+    Some((bytes, hb))
+}
+
+/// Drop the caches and history from a record civil3drust writes: the
+/// Properties form becomes the plain form without the date-modified block
+/// (D-057), MIST2 is removed with its marker (D-047) and MIST1 zeroed
+/// (D-046).
 pub fn drop_caches(data: Vec<u8>, handle_bits: usize) -> (Vec<u8>, usize) {
-    let (mut data, hb) = remove_resave_field(&data, handle_bits).unwrap_or((data, handle_bits));
+    let (data, hb) = to_plain_form(&data, handle_bits).unwrap_or((data, handle_bits));
+    let (mut data, hb) = remove_resave_field(&data, hb).unwrap_or((data, hb));
     clear_geometry_key(&mut data);
     (data, hb)
 }

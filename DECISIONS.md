@@ -1105,3 +1105,24 @@ Civil 3D's own drawings carry are kept when an alignment is edited.
 
 **Alternatives.** Copy counts from a Civil 3D-made alignment (D-055):
 wrong as soon as anything else in the record differs.
+
+## D-057: Drop the date-modified stamp by writing the plain form
+
+**Date:** 2026-11-03. **Status:** accepted.
+
+**Context.** Alignments edited in Alignment Properties carry a longer
+section-2 header (MIST4) and, after MIST1, a date-modified block
+(`BL 0x1600101F` + FILETIME, MIST3). It is history, which D-049 says not
+to copy. Removing the block alone, with or without MIST2, is rejected
+(S191, S192: eWrongObjectType). Replacing the header with the plain
+form's `BL 0x1148, BL 0` and removing the block and MIST2 is accepted,
+and Civil 3D keeps the plain form on save (S193 → S194).
+
+**Decision.** `drop_caches`, which runs on every record civil3drust
+writes, first turns a Properties-form record into the plain form
+(`aecc_build::to_plain_form`), then removes MIST2 and zeroes MIST1. Only
+the 70-bit header seen in S144/S159 is converted; the longer headers of
+S59 and S177–S183 are left alone until sampled.
+
+**Alternatives.** Keep the template's stamp (a false history), or write
+the current time (a cache Civil 3D does not need).

@@ -146,7 +146,15 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   (S156). The meaning of `0x0D00D773` and of the second value is still
   unknown.
 
-## MIST3 — the 31-bit section-2 field
+## MIST3 — the 31-bit section-2 field — **PARTIALLY SOLVED (S191–S194)**
+
+- **Status:** a date-modified stamp (FILETIME) that only the Alignment
+  Properties form carries. civil3drust drops it by writing the plain
+  form (D-057); Civil 3D accepts that and does not add the stamp back on
+  save (S193 → S194). Removing the block while keeping the Properties
+  form is rejected (S191, S192). What in the Properties header announces
+  the block is not decoded.
+
 
 - **Where:** bits 300–330 of the 589-bit section-2 form (criteria
   samples, S79–S81).
@@ -185,9 +193,24 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   removed only; S192 block and MIST2 removed, marker "MIST2 absent" (as
   S159); S193 turned into the plain form (bits 115…anchor → `BL 0x1148,
   BL 0`, block and MIST2 removed). S193's section 2 is then identical
-  to S155's (the plain form of the same alignment). Results pending.
+  to S155's (the plain form of the same alignment).
+- **Results (owner, Civil 3D 2024):** S191 and S192: very slow to open,
+  RECOVER "Reading handle F9E object type AeccDbAlignment Error 34
+  (eWrongObjectType), Object discarded". S193: opens, no issues;
+  re-saved as S194, still the plain form (`BL 0x1188, BL 0` with MIST2
+  added back as on any re-save), no date-modified block, name and
+  elements unchanged. So the Properties header announces the block, and
+  the plain form is the way to drop it.
 
-## MIST4 — the +28-bit field after the class header
+## MIST4 — the +28-bit field after the class header — **handled (D-057)**
+
+- **Status:** part of the Alignment Properties header (section-2 bits
+  115 up to the MIST1 anchor: `BL 1`, `BL 0x08010004`, 26 bits), which
+  announces the date-modified block (MIST3, S191/S192 rejected without
+  it). civil3drust replaces the header with the plain form's
+  `BL 0x1148, BL 0` (S193 accepted). Longer forms (S59: 112 bits; S177–
+  S183: 104 bits) are left as they are. Its fields are not decoded.
+
 
 - **Where:** section-2 bit 119, after `BL 1` instead of the plain form's
   32-bit value. Content `0000000100000000000000000100` in every case.
