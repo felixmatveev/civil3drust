@@ -54,10 +54,12 @@ versions follow [Semantic Versioning](https://semver.org/).
   `s162_spirals_match_civil3d_drawing`; MIST16.
 
 ### Fixed
+- Spirals with the group-member header (type byte `0x0D`, S177) are now
+  read without the lock byte too: `aecc_alignment::read_header` returns
+  flags and type byte for both forms; `set_constraint_editing` keeps the
+  type byte. MIST7 survey of all samples written up.
 - Re-linking a kept arc in element edits read the header as a fixed
   32-bit value and broke unlocked alignments with arcs (S171, S172).
-
-### Fixed
 - Fixed spiral records end with three BDs (not four) and free spirals
   with their length; the extra bits belong to the block after the
   records.
