@@ -22,6 +22,7 @@ template and does not add them. The opposite list — what Civil 3D refuses
 | Speed interval of a speed on the first element | absent, with a zero GUID in the table | accepted; this is how Civil 3D itself stores a layout-tool alignment's default speed | S161 8C56, S123/S124 (2027) | intervals written; omitting them is a candidate |
 | Civil 3D drawing infrastructure (settings, style collections, registry) | a plain AutoCAD drawing | builds it when it opens or saves the drawing | S64 → S65; S67 → S68/S69 | not written; drawings must be Civil 3D-saved (D-030) |
 | Names | any length (1 to 65 characters tried) | kept | S36 → S39, S37 → S40 | written as given |
+| Parameter flag of curves, spirals and groups (the first bit of the record) | 0 (unsolved, as civil3drust writes new and re-encoded elements) | sets it to 1 on save; geometry unchanged | S188 → S195, S190 → S196 | written as 0 for new elements |
 
 ## Not tolerated
 

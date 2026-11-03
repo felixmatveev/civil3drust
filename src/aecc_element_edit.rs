@@ -741,6 +741,17 @@ pub fn replace_elements(
     if !d.detached.is_empty() {
         return Err(err("the alignment has detached pieces"));
     }
+    // Group-member spirals are only valid with a JSON layout string
+    // (S189: eWrongObjectType without it; MIST17).
+    let members = els
+        .iter()
+        .any(|e| matches!(e, Element::Spiral(s) if s.member.is_some()));
+    if members && string_stream::layout_json(&rec.data, rec.handle_bits).is_none() {
+        return Err(err(
+            "group-member spirals need the alignment's JSON layout string (S189); \
+             write them as ordinary spirals (member = None)",
+        ));
+    }
     // Fixed lines and free curves as before (S97 → S98); every other kind
     // from its fields (aecc_encode, D-054).
     let mut plan = Vec::with_capacity(els.len());

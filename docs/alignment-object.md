@@ -2471,7 +2471,29 @@ from the rule (`write_elements` now adds 3 per non-line record):
   If S189 is rejected and S190 opens, the member header needs the JSON
   (MIST17); if both open, it does not.
 
-Civil 3D results: pending.
+**Result (owner).**
+
+- **S188**: opens without RECOVER, no apparent issues, AUDIT clean. All
+  43 generated alignments: lines (fixed, floating, free, by length),
+  curves of every method, fixed and free spirals, every spiral group,
+  SCSCS and SCSSCS. Re-saved as **S195**, which reads back to the same
+  model (every element: ID, links, start, length; test
+  `generated_resave`). Civil 3D only set the parameter flag of curves,
+  spirals and groups from 0 to 1 (solved) and changed a few radii in the
+  last bits (1e-14).
+- **S189**: RECOVER, all six discarded, "Error 34 (eWrongObjectType)",
+  with a correct string count. So S185's rejection was the member
+  header, not the strings.
+- **S190**: opens cleanly, no errors. Re-saved as **S196**: same model,
+  flags set to 1 as in S195. The six long reverse assemblies are then
+  plain fixed spirals and curves, without group behaviour.
+
+**Conclusion.** civil3drust writes every element kind it reads, and Civil
+3D accepts them (the owner changed the style to show arcs and spirals for
+the check). A group-member spiral (`0x0D` header and its 128 bits) is
+only valid with the alignment's JSON layout string: the owner's
+hypothesis holds (MIST17). Written as ordinary spirals (`0x04`) the same
+pieces are accepted as fixed elements.
 
 
 ## Open questions

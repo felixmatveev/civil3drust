@@ -569,9 +569,13 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Owner's hypothesis:** the element type is what marks the record: the
   long spiral assemblies come with their own type (the `0x0D` header), and
   that type is what gives the alignment its JSON string slot (S183:
-  removing the slot breaks the alignment). Test while writing: an
-  alignment with a `0x0D` spiral and no JSON slot, and one with the slot
-  and no `0x0D` spiral.
+  removing the slot breaks the alignment).
+- **Confirmed (S189, S190):** the same six alignments written without a
+  JSON string: with the `0x0D` member spirals Civil 3D discards them all
+  (eWrongObjectType, S189); with the members written as ordinary `0x04`
+  spirals (no 128 bits) they open cleanly and re-save unchanged (S190 →
+  S196). A member header requires the JSON string. Still open: what the
+  128 bits are, and the converse (the JSON string with no member spiral).
 
 ## Not sampled yet (not mysteries, just gaps)
 

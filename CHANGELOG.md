@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Generated alignments accepted by Civil 3D: S188 (43 alignments, every
+  element kind) opens without RECOVER, AUDIT clean, and its re-save S195
+  reads back to the same model; so does S190 → S196. Test
+  `generated_resave`. S189 confirms that group-member spirals need the
+  JSON layout string (MIST17; `docs/civil3d-rejects.md`);
+  `replace_elements` now refuses them in an alignment without one.
 - `aecc_build::to_plain_form`: records civil3drust writes drop the
   Alignment Properties header and its date-modified block (MIST3, MIST4)
   for the plain form (D-057). Samples S191–S194 (S191/S192 rejected,
