@@ -125,3 +125,36 @@ fn layout_from_typed_parameters_matches_civil3d_group() {
     };
     assert_eq!(group(&ours), group(&j));
 }
+
+#[test]
+fn json_group_reads_in_place_of_the_gap() {
+    // S216: four alignments hold only the fixed elements and the JSON
+    // group (D-059); the reader keeps the group as unsolved.
+    use civil3drust::aecc_elements::decode_elements;
+    let d = civil3drust::raw::open("samples/S216_S178_group_from_parameters.dwg").unwrap();
+    let mut n = 0;
+    for r in civil3drust::raw::records(&d.doc, "AECC_ALIGNMENT") {
+        let de = decode_elements(&r).unwrap();
+        if [0x1208, 0x120B, 0x120E, 0x1211].contains(&r.handle) {
+            assert_eq!(de.elements.len(), 1, "{:X}", r.handle);
+            assert_eq!(de.unsolved.len(), 1, "{:X}", r.handle);
+            let g = &de.unsolved[0];
+            assert_eq!((g.id, g.previous, g.next), (3, 1, 2), "{:X}", r.handle);
+            assert_eq!(g.following.len(), 1, "{:X}", r.handle);
+            assert!(!de.is_complete());
+            n += 1;
+        } else {
+            assert!(de.is_complete(), "{:X}", r.handle);
+        }
+        if r.handle == 0x120E {
+            let p: Vec<f64> = de.unsolved[0].params.iter().map(|x| x.1).collect();
+            assert_eq!(p, [150.0, 170.0, 500.0, 190.0]);
+        }
+    }
+    assert_eq!(n, 4);
+    // Civil 3D's re-save S217 has every group solved.
+    let d = civil3drust::raw::open("samples/S217_S216_civ3d_resaved.dwg").unwrap();
+    for r in civil3drust::raw::records(&d.doc, "AECC_ALIGNMENT") {
+        assert!(decode_elements(&r).unwrap().is_complete(), "{:X}", r.handle);
+    }
+}

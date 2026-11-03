@@ -229,6 +229,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S215 | `S215_S214_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S214 opened clean; warning only for 11D4 (MIST1 zeroed); grouping kept on all three; saved without nudges. 11D4 pieces renumbered 4–8, MIST1 restored to S178's value. | 507546 | `d4b07d26fe00151f` |
 | S216 | `S216_S178_group_from_parameters.dwg` | civil3drust | S178 plus groups written as typed parameters (`exp_group_params`): 1208 (11F8, fixed elements linked to each other, no pieces), 120B (11F8, linked to group ID 3), 120E (11DE with Spiral1 150, R 500), 1211 (11D4); and 1214, 1217 (11DE, 11F8 with all pieces and `Spiral1Length` + 20 in the JSON, `exp_chains --json-tweak`). | 494011 | `0ae04e47b9975dd7` |
 | S217 | `S217_S216_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S216 opened clean, AUDIT clean, "modified unexpectedly" warning for the six new alignments; saved without nudges. Every group solved from its JSON: pieces built where none were written, 120E with Spiral1 150 / R 500, 1214/1217 with spiral 1 + 20. | 534507 | `cd872afbd687eb02` |
+| S218 | `S218_S178_group_parameters_written.dwg` | civil3drust | S216's four parameter-only alignments (1208, 120B, 120E, 1211) written directly with `replace_elements` (the reader takes the JSON group in place of the gap): same JSON and strings, proxy graphics of the fixed elements only. | 487418 | `08e2b3bb05081991` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

@@ -7,6 +7,13 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `decode_elements` reads a JSON group without pieces in place of the
+  gap: `DecodedElements::unsolved` (`UnsolvedGroup`: ID, constraint type,
+  neighbours, typed parameters, the elements after it),
+  `is_complete()`; `all()` includes the elements after unsolved groups;
+  `Element::set_links`. `replace_elements` can now write parameter-only
+  groups directly; `exp_group_params` uses it. `alignments` prints
+  unsolved groups. Sample S218; test `json_group_reads_in_place_of_the_gap`.
 - Civil 3D solves spiral groups from the JSON alone (S216 → S217): no
   pieces needed, the JSON's parameters win over written pieces.
   Sample S217.

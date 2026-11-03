@@ -9,10 +9,8 @@
 //! pieces from the JSON when MIST1 does not match (S214 → S215); the
 //! question is whether it also builds them when there are none.
 //!
-//! The record is first written with the source's full element list
-//! (`replace_elements`), then the pieces are cut out (count, records,
-//! three strings each): civil3drust's own reader refuses a chain with the
-//! group missing, so `replace_elements` cannot write it directly.
+//! The records are written with `replace_elements`; the reader takes the
+//! JSON group in place of the gap (`DecodedElements::unsolved`).
 //!
 //! Each spec: `source.dwg:HANDLE:direct|group[:p1,p2,…]`
 //! - `direct`: the two fixed elements linked to each other;
@@ -21,13 +19,11 @@
 //!
 //! Usage: exp_group_params target.dwg out.dwg <template hex> spec ...
 
-use civil3drust::aecc_alignment::{header_bytes, ElementHeader, Linked};
+use civil3drust::aecc_alignment::Linked;
 use civil3drust::aecc_build::element_header_flags;
-use civil3drust::aecc_build::Bits;
 use civil3drust::aecc_create::{create_alignment, CreateOptions};
 use civil3drust::aecc_element_edit::replace_elements;
 use civil3drust::aecc_elements::{decode_elements, element_records, Element};
-use civil3drust::aecc_encode::encode_element;
 use civil3drust::aecc_layout::{group_parameters, layout, set_layout, Group, Json};
 use civil3drust::alignment::Point2;
 use civil3drust::raw::{self, RawRecord};
@@ -181,44 +177,8 @@ fn main() {
             handle_bits: hb,
             ..new
         };
-        // Write the source's full element list first (a record civil3drust
-        // can build and check), then cut the group's pieces out of it: the
-        // element count, the records and three strings per piece.
-        let all = element_records(&rec.data);
         let (b, hb, _) =
-            replace_elements(&new, &all, seed).unwrap_or_else(|e| fail(format!("{name}: {e}")));
-        let full = RawRecord {
-            data: b,
-            handle_bits: hb,
-            ..new
-        };
-        let d = decode_elements(&full).unwrap_or_else(|e| fail(e));
-        let first = d.first_record_bit().unwrap();
-        let end = d.records_end_bit().unwrap();
-        let count_bit = first - 21;
-        let total = raw::bit_len(&full.data);
-        let data_end = total - full.handle_bits;
-        let mut w = Bits::default();
-        w.copy(&full.data, 0, count_bit);
-        w.bl(fixed.len() as i32);
-        let (flags, type_byte) = header_bytes(false, locked);
-        for e in &fixed {
-            let h = ElementHeader {
-                flags,
-                type_byte,
-                next: 0,
-            };
-            encode_element(&mut w, &h, e);
-        }
-        w.copy(&full.data, end, data_end);
-        let new_end = w.len();
-        w.copy(&full.data, data_end, total);
-        let bytes = w.into_bytes();
-        let hb = bytes.len() * 8 - new_end;
-        let pieces = all.len() - fixed.len();
-        let n = string_stream::parse(&bytes, hb).unwrap().strings.len();
-        let (b, hb) =
-            string_stream::set_string_count(&bytes, hb, n - 3 * pieces).unwrap_or_else(|e| fail(e));
+            replace_elements(&new, &fixed, seed).unwrap_or_else(|e| fail(format!("{name}: {e}")));
         if !raw::set_record(&mut target.doc, nh, b, hb) {
             fail("could not write");
         }
@@ -228,9 +188,10 @@ fn main() {
             .find(|x| x.handle == nh)
             .map(|x| match decode_elements(&x) {
                 Ok(d) => format!(
-                    "{} elements, {} detached",
+                    "{} elements, {} unsolved group(s), {} after",
                     d.elements.len(),
-                    d.detached.len()
+                    d.unsolved.len(),
+                    d.unsolved.iter().map(|g| g.following.len()).sum::<usize>()
                 ),
                 Err(e) => format!("does not decode: {e}"),
             })

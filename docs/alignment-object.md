@@ -2724,6 +2724,25 @@ refuses such a record (a gap in the chain), so it cannot yet read back
 what it writes; and a writer that creates such an alignment directly
 (not by cutting pieces out).
 
+**Reading a JSON group in place of the gap (D-060).** `decode_elements`
+now looks for JSON groups whose pieces are not stored: the fixed element
+before the group links straight to the one after it, or to the group's
+own ID, which no record has. The chain is cut there; the group becomes
+an `UnsolvedGroup` (ID, `ConstraintType`, neighbours, typed parameters)
+in `DecodedElements::unsolved`, and the elements after it its
+`following` chain (positions known, stations not, since civil3drust does
+not solve the group). `elements` (and so `length()` and the stations)
+ends at the first unsolved group; `all()` includes the following
+elements, so the proxy graphics and the companion cover them;
+`is_complete()` is false until Civil 3D has solved and saved the group.
+The records keep their stored links.
+
+With that, `replace_elements` writes the fixed elements and the JSON
+directly (`exp_group_params` no longer cuts pieces out of a full
+record): **S218** is S216's four parameter-only alignments written this
+way — the same JSON and strings, smaller records because the proxy
+graphics now hold only the fixed elements, not the stale pieces.
+
 ## Open questions
 
 Tracked as MIST1 … MIST15 in [`mysteries.md`](mysteries.md), each with

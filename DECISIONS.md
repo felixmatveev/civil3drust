@@ -1162,3 +1162,20 @@ the JSON, with the JSON's parameters winning over any pieces written
 **Alternatives.** Solve the pieces in civil3drust: a solver per method,
 discarded by Civil 3D on opening.
 
+## D-060: A JSON group without pieces is read as an unsolved group
+
+**Context.** Groups written as JSON only (D-059) leave a gap in the
+element chain that civil3drust's reader refused, so civil3drust could not
+read what it wrote. Civil 3D solves the group on opening; civil3drust has
+no solver for these methods.
+
+**Decision.** `decode_elements` cuts the chain at such a group and
+reports it in `DecodedElements::unsolved` with its typed parameters and
+the elements after it. The alignment proper (`elements`, length,
+stations) ends at the first unsolved group, and `is_complete()` says so.
+Nothing is invented for the missing part.
+
+**Alternatives.** A straight placeholder segment across the gap: wrong
+length and stations presented as real. Solving the methods in
+civil3drust: duplicates what Civil 3D does on opening (D-059).
+

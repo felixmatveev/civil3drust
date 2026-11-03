@@ -117,6 +117,35 @@ fn main() {
             );
             sta += len;
         }
+        for g in &d.unsolved {
+            println!(
+                "  group {} (JSON only, solved by Civil 3D on opening; type {}, between {} and {}): {}",
+                g.id,
+                g.constraint_type,
+                g.previous,
+                g.next,
+                g.params
+                    .iter()
+                    .map(|(k, v)| format!("{k} {v}"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
+            for e in &g.following {
+                let (s, t) = (e.segment.start(), e.segment.end());
+                println!(
+                    "    id {:>2} (before {}, after {})  {}  ({:.4}, {:.4}) -> ({:.4}, {:.4})  L={:.4}  (stations unknown)",
+                    e.id(),
+                    e.before(),
+                    e.after(),
+                    if matches!(e.segment, Segment::Line { .. }) { "tangent" } else { "arc" },
+                    s.x,
+                    s.y,
+                    t.x,
+                    t.y,
+                    e.segment.length()
+                );
+            }
+        }
         for (k, piece) in d.detached.iter().enumerate() {
             println!(
                 "  detached piece {} (ignored by Civil 3D, no stations):",
