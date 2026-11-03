@@ -72,7 +72,7 @@ samples and steps that produced it.
 - `cargo run --release --example exp_json -- in.dwg out.dwg remove|empty` (drop the JSON layout string; experiments S179, S180)
 - `cd hexview && cargo run --release -- file.dwg [--goto <hex offset|#handle>] [--compare other.dwg]` (hex view with record overlay; `--dump file.dwg` for text)
 - `cd hexview && cargo run --release -- --diff a.dwg b.dwg [--show civil,opaque,unmapped,acad|all] [--filter text]` (record-by-record bit diff of two drawings)
-- `cargo run --release --example fingerprint -- file.dwg [roundtrip.dwg]` (raw-record hashes, for comparing acadrust versions)
+- `cargo run --release --example fingerprint -- file.dwg [roundtrip.dwg]` (raw-record hashes, for comparing acadrust versions; **writes** a round trip of file.dwg to roundtrip.dwg, overwriting it)
 - `cargo run --release --example edit_elements -- in.dwg out.dwg <alignment> remove <id> | curve <tangent id> <radius>`
 - `cargo run --release --example sites -- file.dwg` (sites and each alignment's site)
 - `cargo run --release --example scan_elements -- record.bin [handle bits]` (decode a raw `AECC_ALIGNMENT` record dump)

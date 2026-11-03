@@ -2383,8 +2383,26 @@ the fixed curve 3 — the JSON's numbering, not the binary records' (4, 5,
 follows small changes of its neighbours and disappears when they change
 too much. Civil 3D's LandXML export (S178) lists the pieces as plain
 curves and clothoid spirals with the same coordinates as the binary
-records. S179 removes the JSON string, S180 empties it, to see whether the
-grouping (and the group's re-solving) comes from the JSON alone.
+records.
+
+Results:
+
+- **S179** was meant to remove the JSON but was overwritten by mistake
+  with an unmodified acadrust round trip of S178 (JSON kept). It opens
+  cleanly and the groups re-solve when a neighbour is nudged; saved as
+  **S181**, Civil 3D rewrites the JSON with the moved neighbours' points
+  (11D4's end curve point 3 (951, 821.5) → (1075.5, 874.5), 11DE's line
+  start, 11F8's line end). So the JSON is maintained live.
+- **S180** (JSON emptied): opens cleanly, AUDIT clean, but nudging a
+  neighbour no longer re-solves the group, before and after save and
+  reopen. In the saved **S182** the group is cut from the element after
+  it (that element and the rest become a detached piece). An empty JSON
+  string is read as a layout with no groups: the pieces are plain
+  elements and the links Civil 3D re-solves are lost.
+- **S183**: the JSON string really removed (string count one lower).
+  Pending: does Civil 3D rebuild the group without it, or behave as
+  S180?
+
 
 ## Open questions
 
