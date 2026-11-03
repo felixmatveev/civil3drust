@@ -455,6 +455,19 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Seen:** 1 in S10, S14, S15; 0 in S11–S13. Civil 3D sets it after
   geometry edits it saved (S14, S15) and when re-saving our generated free
   curves unchanged (S92 → S93), but not after its own radius edit (S12).
+- **Survey (2026-11-03, every curve record in `samples/`):** 0 in every
+  curve civil3drust generated and in every curve Civil 3D created in the
+  session that saved it (S11, S24, S96 FB3/5, S113 10F4); 1 in curves
+  that already existed when Civil 3D opened the drawing it saved (S14,
+  S15, S28, S93, S131 …), including plain re-saves without edits
+  (S125 → S131, S92 → S93). The only exception is S12 (S11's radius
+  changed, still 0), possibly edited in the same session as S11.
+- **Hypothesis:** the flag means "solved since load": Civil 3D sets it
+  for curves it read from the file and solved, and new curves keep 0
+  until the drawing is opened again. Tests (owner): T1 S24 radius 50 →
+  75, save; T2 S131 (flag 1) radius 50 → 75, save; T3 S131 with a new
+  R 30 curve at PI (200, 50), save; T3b T3's file closed, reopened and
+  saved with no change.
 
 ## MIST9 — the `−1` parameters of curve and group records
 
