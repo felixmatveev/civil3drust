@@ -2324,14 +2324,11 @@ lengths are solved so that the last spiral ends on the second line in its
 direction (FC8 71.6145 and 91.4175; FCB 200.0000 and 258.3333). All joints
 equal the drawing.
 
-*Stored as separate elements, with a JSON layout — provisional.* The
-owner reports that the JSON is a copy-paste artifact (the drawing was
-made over a remote desktop, whose clipboard carried it). So FCE, FD1 and
-FD4 may hold pasted elements rather than what these methods store
-natively; they need to be made again without copy and paste before the
-layout below is taken as the methods' own. The JSON text itself is
-Civil 3D's (its field names match the record fields), but how it got
-into the record is not a Civil 3D storage rule. Free Reverse
+*Stored as separate elements, with a JSON layout.* (Confirmed by S178:
+the owner first suspected a copy-paste artifact of the remote desktop and
+made the three methods again without copy and paste, with new values;
+Civil 3D stored them the same way, and the JSON holds the newly typed
+values.) Free Reverse
 Spiral-Spiral-Curve-Spiral-Spiral (between two curves, FCE), Free Reverse
 Spiral-Curve-Spiral-Curve (from curve, end entity, FD1) and Free Reverse
 Spiral-Curve-Spiral-Spiral (from entity, end curve, FD4) are not group
@@ -2342,7 +2339,7 @@ solving (all joints equal the drawing), and:
 - the first spiral has the element header `0x0D020008` (MIST7 top byte
   13) and 128 more bits after the flag bit (MIST17);
 - the string stream has an extra string after the description: a JSON
-  description of the layout (pasted, see above), e.g. for FCE
+  description of the layout, e.g. for FCE
 
   ```json
   {"JsonVersion": 1, "FirstId": 1, "RGObjects": [
@@ -2366,6 +2363,15 @@ solving (all joints equal the drawing), and:
   `string_stream::layout_json` returns it. The name and description
   readers skip it (it shifted the name by one string; in FD4 the first
   description copy is also empty).
+
+**S178 (re-sample).** 11D4 Reverse SSCSS between two curves (Ls 120,
+180, R 500, Ls 140, 200), 11DE Reverse SCSC from curve to line (Ls 110,
+170, R 450, Ls 190), 11F8 Reverse SCSS from line to curve (Ls 130, R
+550, Ls 160, 210): again separate spirals (kind 6, the first with header
+`0x0D020008`) and three-point curves, plus the JSON string with exactly
+these values; every joint equals the drawing. The spirals keep their
+typed lengths; the curves between them get the typed radius, and the end
+curve is drawn as stored (its radius as built by the owner).
 
 ## Open questions
 

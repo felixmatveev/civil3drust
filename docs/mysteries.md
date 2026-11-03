@@ -421,8 +421,8 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Hypothesis:** spiral definition or type flags (clothoid, by length vs
   A). S121 (spiral methods) should vary it.
 
-- **S177:** Civil 3D's JSON layout text (pasted into the drawing through
-  a remote-desktop clipboard, owner) calls it `"SpiralType": 256`
+- **S177, S178:** the JSON layout string Civil 3D writes for some spiral
+  groups calls it `"SpiralType": 256`
   for the same groups. What other spiral types (cubic, sinusoidal …)
   store is still to be sampled.
 
@@ -531,9 +531,8 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   c1d9c831a7969780`, FD4 `d9582ecdf07f1e80 0000000000000000` (not doubles;
   FCE and FD1 share their last bytes).
 - **Hypothesis:** an identifier tying the elements to the JSON group (ID
-  3), or the group's anchor. The owner reports the JSON came from a
-  copy-paste over remote desktop, so these elements may be pasted ones;
-  re-sample the three methods without copy and paste first.
+  3), or the group's anchor. S178 (made without copy and paste) has the
+  same header and 128 bits.
 
 ## Not sampled yet (not mysteries, just gaps)
 
@@ -560,5 +559,3 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   3. a second group, one alignment moved to it; 4. one alignment taken
   out of all groups; 5. a site with two alignments and its own group
   (compare with step 2, and with the sites decoded in S101–S112).
-- Three long reverse spiral groups to re-sample without copy and paste
-  (S177 FCE, FD1, FD4).

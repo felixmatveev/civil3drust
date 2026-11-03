@@ -23,8 +23,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   26, from a stored TS, curve lengths solved); spirals with element header
   0x0D020008; Civil 3D's JSON layout string (`string_stream::layout_json`),
   skipped by the name and description readers. MIST17; MIST10 named
-  (`SpiralType`). The JSON is a copy-paste artifact (owner); FCE, FD1 and
-  FD4 are provisional until made again without copy and paste.
+  (`SpiralType`). Confirmed by S178 (made without copy and paste): the
+  three long reverse methods are stored as separate elements plus the
+  JSON layout string.
 
 - Free spirals between two lines (record kind 8): `Element::FreeSpiral`,
   `free_spiral_between`; the lines are extended or trimmed to the spiral.

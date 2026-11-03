@@ -658,3 +658,41 @@ fn s177_long_spiral_groups() {
         assert_eq!(json.is_some(), records > 3, "{h:X}");
     }
 }
+
+/// S178: the three long reverse methods made again without copy and paste.
+/// Civil 3D again stores them as separate elements (first spiral with
+/// header 0x0D020008) plus a JSON layout string holding the typed values.
+#[test]
+fn s178_long_reverse_groups_are_stored_apart() {
+    use civil3drust::string_stream;
+    let o = raw::open("samples/S178_S177_long_reverse_spirals.dwg").unwrap();
+    // handle, records, spiral lengths, middle radius (from the JSON).
+    let cases: [(u64, usize, &[f64], f64); 3] = [
+        (0x11D4, 7, &[120.0, 180.0, 140.0, 200.0], 500.0),
+        (0x11DE, 6, &[110.0, 170.0, 190.0], 450.0),
+        (0x11F8, 6, &[130.0, 160.0, 210.0], 550.0),
+    ];
+    for (h, records, spirals, radius) in cases {
+        let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap();
+        let d = decode_elements(&r).unwrap();
+        assert_eq!(d.record_count(), records, "{h:X}");
+        let lengths: Vec<f64> = d
+            .elements
+            .iter()
+            .filter_map(|e| match e.record {
+                Element::Spiral(ref s) => Some(s.length),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(lengths, spirals, "{h:X}");
+        assert!(d.elements.iter().any(|e| matches!(
+            e.segment,
+            Segment::Arc { geometry, .. } if (geometry.radius - radius).abs() < 1e-9
+        )));
+        let json = string_stream::layout_json(&r.data, r.handle_bits).unwrap();
+        assert!(json.contains(&format!("\"ArcRadius\": {radius}")), "{h:X}");
+    }
+}

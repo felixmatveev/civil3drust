@@ -31,7 +31,7 @@ sample drawings (S1–S120) and the evidence for each finding are in
 |---|---|---|
 | Lines: fixed, floating (end point, length), free (between curves) | ✓ | fixed lines |
 | Curves: every Civil 3D curve method (three point, centre, floating, free fillet by radius or through point), whole circles | ✓ | free curves (fillets) |
-| Spirals: fixed, free, and every spiral group (SCS, curve or line with spiral, reverse curves, spiral-spiral, spiral-line-spiral, SCSCS, SCSSCS) | ✓ (three long reverse groups provisional, S177) | — |
+| Spirals: fixed, free, and every spiral group (SCS, curve or line with spiral, reverse curves, spiral-spiral, spiral-line-spiral, SCSCS, SCSSCS) | ✓ | — |
 | Create an alignment (PIs + fillet radii, or empty) | | ✓ — style, label set, site-less, type, registry and companion |
 | Remove elements, add a free curve, change a length / radius / PIs | | ✓ |
 | Name, description, style, display components | ✓ | ✓ |
