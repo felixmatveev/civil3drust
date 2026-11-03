@@ -2655,7 +2655,29 @@ zeroed; 11DE re-encoded with MIST1 set back to its original value;
 11F8 only the JSON's `ArcRadius` changed in its last digits (550 →
 550.0000000000011, the radius measured from the curve piece).
 
-Civil 3D results: pending.
+**Result (owner; re-save S215).** Clean opening; the warning only for
+11D4 (MIST1 zeroed); grouping kept on all three. In S215 Civil 3D
+rebuilt 11D4: its pieces renumbered 4–8 (from 5–9), the member header
+kept, and MIST1 back to exactly S178's value; same geometry and length.
+11DE (re-encoded, MIST1 restored) and 11F8 (ArcRadius last digits) were
+not warned and are unchanged.
+
+**Conclusion.**
+
+- For an alignment with a JSON layout, Civil 3D checks MIST1 (its
+  geometry fingerprint) on opening. A mismatch logs "modified
+  unexpectedly in old version" and Civil 3D **rebuilds the group's
+  pieces from the JSON** (fresh piece IDs) — that is what "the
+  modification won't be kept" means. Alignments without a JSON accept
+  a zero MIST1 silently (S56).
+- The fingerprint does not see the last digits of `ArcRadius` (11F8),
+  but it did see S204's composed JSON for 11D4 (other pass-through points
+  of the fixed curves, MIST1 untouched → warned): it covers the JSON's
+  geometry, probably rounded. Its algorithm is unknown (MIST1).
+- civil3drust cannot compute MIST1, so every generated or edited group
+  alignment gets the warning once; Civil 3D then re-solves the group from
+  the composed JSON and keeps it as a group (S205 → S212, S214 → S215).
+  The geometry is the same, only the piece IDs change.
 
 ## Open questions
 

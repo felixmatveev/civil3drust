@@ -92,6 +92,15 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   value from the extents or the end points). The formula is still
   unknown.
 
+
+- **Checked for JSON-layout alignments (S214 → S215):** with MIST1
+  zeroed, Civil 3D logs "contains new constraint curve group modified
+  unexpectedly in old version. The modification won't be kept in new
+  release." and rebuilds the group's pieces from the JSON (piece IDs
+  renumbered), then writes the same MIST1 value as before. A last-digits
+  change of `ArcRadius` in the JSON did not change it; S204's composed
+  JSON (other pass-through points) did, so it covers the JSON's geometry
+  too, probably rounded.
 ## MIST2 — the optional +44-bit field after MIST1 — **PARTIALLY SOLVED (S151–S160)**
 
 - **Status:** a field Civil 3D adds when it re-saves an alignment and

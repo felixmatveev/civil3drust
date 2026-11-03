@@ -226,6 +226,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S212 | `S212_S205_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S205 opened clean, the same warning for the six generated alignments; nudges update all curves; saved. The generated alignments lost their member header. | 535366 | `d70acc7ac02da51a` |
 | S213 | `S213_S206_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S206 opened clean, AUDIT clean, but the JSON text is read as the alignments' names and selecting one breaks the GUI; saved (plain form kept, MIST2 added). | 489868 | `bd4cbee7efab2fca` |
 | S214 | `S214_S178_mist1_json_check.dwg` | civil3drust | S178 in place (`exp_json_bisect`): 11D4 MIST1 zeroed only; 11DE re-encoded with MIST1 set back to its original value; 11F8 JSON `ArcRadius` 550 → 550.0000000000011 only. Which change brings the "modified unexpectedly" warning? | 484601 | `910230e8e5c3d64f` |
+| S215 | `S215_S214_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S214 opened clean; warning only for 11D4 (MIST1 zeroed); grouping kept on all three; saved without nudges. 11D4 pieces renumbered 4–8, MIST1 restored to S178's value. | 507546 | `d4b07d26fe00151f` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

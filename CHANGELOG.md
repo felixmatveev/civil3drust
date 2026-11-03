@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- MIST1 is checked for JSON-layout alignments (S214 → S215): a mismatch
+  brings the "modified unexpectedly" warning and Civil 3D rebuilds the
+  group's pieces from the JSON; a zeroed MIST1 is otherwise harmless.
+  Sample S215.
 - Generated spiral groups with a composed JSON layout open in Civil 3D
   (S205: no RECOVER, AUDIT clean, groups re-solve on nudges; an Event
   Viewer warning "modified unexpectedly in old version" remains). S206:
