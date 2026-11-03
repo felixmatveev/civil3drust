@@ -70,7 +70,7 @@ samples and steps that produced it.
 - `cargo run --release --example exp_header -- in.dwg out.dwg <alignment handle> <hex value|keep> [element id]` (experiment S125–S130, MIST7)
 - `cargo run --release --example exp_mist2 -- in.dwg out.dwg <alignment handle> zero-first|zero-second|zero-both|remove|remove-marker` (experiments S151–S155, MIST2)
 - `cargo run --release --example exp_json -- in.dwg out.dwg remove|empty` (drop the JSON layout string; experiments S179, S180)
-- `cargo run --release --example exp_chains -- target.dwg out.dwg <template hex> source.dwg[:HANDLE,…|:-HANDLE,…] ...` (one new alignment per source alignment, elements re-encoded; S184, S185)
+- `cargo run --release --example exp_chains -- target.dwg out.dwg <template hex> source.dwg[:HANDLE,…|:-HANDLE,…] ... [--plain-members]` (one new alignment per source alignment, elements re-encoded; S184, S185, S188–S190)
 - `cd hexview && cargo run --release -- file.dwg [--goto <hex offset|#handle>] [--compare other.dwg]` (hex view with record overlay; `--dump file.dwg` for text)
 - `cd hexview && cargo run --release -- --diff a.dwg b.dwg [--show civil,opaque,unmapped,acad|all] [--filter text]` (record-by-record bit diff of two drawings)
 - `cargo run --release --example fingerprint -- file.dwg [roundtrip.dwg]` (raw-record hashes, for comparing acadrust versions; **writes** a round trip of file.dwg to roundtrip.dwg, overwriting it)

@@ -15,7 +15,8 @@
 //! - removing the first element keeps the stationing: the start station
 //!   becomes the old station of the new start, and both copies of the
 //!   first element's ID in section 2 point at the new first element (S94);
-//! - each arc has three empty strings in the string stream (S95, S96).
+//! - each curve has three empty strings in the string stream (S95, S96);
+//!   so does every spiral and spiral group record (S186).
 //!
 //! Then the derived parts are rebuilt: the proxy graphics, the design-speed
 //! intervals (Civil 3D leaves them stale, which breaks its own speed editor,
@@ -29,8 +30,8 @@ use crate::aecc_build::{
 };
 use crate::aecc_design_speed::{design_speeds, set_design_speeds};
 use crate::aecc_elements::{
-    decode_elements, ArcDef, ArcParams, DecodedElements, Element, ResolvedElement, Segment,
-    ARC_FLOATING_END, ARC_FLOATING_START, ARC_FREE,
+    decode_elements, element_records, ArcDef, ArcParams, DecodedElements, Element, ResolvedElement,
+    Segment, ARC_FLOATING_END, ARC_FLOATING_START, ARC_FREE,
 };
 use crate::alignment::Point2;
 use crate::raw::{self, RawRecord};
@@ -286,17 +287,19 @@ fn write_elements(
     let bytes = w.into_bytes();
     let hb = bytes.len() * 8 - new_data_end;
 
-    let arcs_old = d
-        .all()
-        .filter(|e| matches!(e.record, Element::Arc(_)))
+    // Three strings per record that is not a line: curves, spirals and
+    // groups alike (S186: Civil 3D's re-save of S184 follows this for every
+    // alignment; too few strings makes it read past the stream, S184).
+    let arcs_old = element_records(data)
+        .iter()
+        .filter(|e| !matches!(e, Element::Tangent(_)))
         .count();
     let arcs_new = plan
         .iter()
         .filter(|p| match p {
-            Planned::Kept { el, .. } => matches!(el, Element::Arc(_)),
+            Planned::Kept { el, .. } | Planned::Encoded(el) => !matches!(el, Element::Tangent(_)),
             Planned::NewFreeArc { .. } => true,
             Planned::NewTangent { .. } => false,
-            Planned::Encoded(el) => matches!(el, Element::Arc(_)),
         })
         .count();
     let strings = string_stream::parse(&bytes, hb)
@@ -769,6 +772,25 @@ pub fn replace_elements(
         .ok_or_else(|| err("no first element"))?;
     let new = write_elements(rec, &d, &plan)?;
     finish(rec, new, None, Some(head), seed)
+}
+
+/// The number of strings Civil 3D expects in an alignment's string stream
+/// (D-056): 9, plus 3 per design speed with an interval and 1 per speed
+/// without, plus 3 per element record that is not a line (curves, spirals,
+/// spiral groups), plus 1 for a JSON layout string. Civil 3D writes exactly
+/// this on re-save (S186) and accepts more (its own drawings often carry
+/// leftovers); with fewer it reads past the stream (S184: RECOVER, or
+/// garbage strings kept).
+pub fn required_string_count(rec: &RawRecord) -> Result<usize, ElementEditError> {
+    let speeds = design_speeds(rec).map_err(|e| err(e.to_string()))?.len();
+    let intervals =
+        crate::aecc_design_speed::interval_count(rec).map_err(|e| err(e.to_string()))?;
+    let curves = element_records(&rec.data)
+        .iter()
+        .filter(|e| !matches!(e, Element::Tangent(_)))
+        .count();
+    let json = usize::from(string_stream::layout_json(&rec.data, rec.handle_bits).is_some());
+    Ok(9 + 3 * intervals + speeds.saturating_sub(intervals) + 3 * curves + json)
 }
 
 /// Constraint code of a curve (for reports): 29 free, 15 floating, 2

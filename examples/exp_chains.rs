@@ -5,37 +5,33 @@
 //! alignment is created in the target with `create_alignment` (template:
 //! the target's alignment `--template`), and its element list is replaced
 //! by the source's element records, re-encoded from their decoded fields
-//! (`aecc_encode`, D-054). The new alignment gets as many strings after
-//! its name as the source has, and its companion is rebuilt. Each source
-//! becomes its own alignment, so a rejected one only costs itself.
+//! (`aecc_encode`, D-054), with three strings per curve, spiral or group
+//! record (D-056), and its companion is rebuilt. Each source becomes its
+//! own alignment, so a rejected one only costs itself.
 //!
-//! Usage: cargo run --release --example exp_chains -- target.dwg out.dwg <template hex> source.dwg[:HANDLE,…|:-HANDLE,…] ...
+//! Usage: cargo run --release --example exp_chains -- target.dwg out.dwg <template hex> source.dwg[:HANDLE,…|:-HANDLE,…] ... [--plain-members]
 //!
 //! A source may name the alignments to take (`S177.dwg:FC8,FCB`) or to
-//! leave out (`S177.dwg:-FCE,FD1`).
+//! leave out (`S177.dwg:-FCE,FD1`). `--plain-members` writes group-member
+//! spirals as ordinary spirals (header type 0x04, no 128-bit block).
 
 use civil3drust::aecc_alignment::Linked;
 use civil3drust::aecc_create::{create_alignment, CreateOptions};
 use civil3drust::aecc_element_edit::replace_elements;
-use civil3drust::aecc_elements::{decode_elements, element_records};
+use civil3drust::aecc_elements::{decode_elements, element_records, Element};
 use civil3drust::alignment::Point2;
 use civil3drust::raw::{self, RawRecord};
-use civil3drust::{aecc_design_speed, aecc_topology, string_stream};
+use civil3drust::{aecc_design_speed, aecc_topology};
 
 fn fail(m: impl std::fmt::Display) -> ! {
     eprintln!("error: {m}");
     std::process::exit(1);
 }
 
-/// Strings after the name in `rec`'s string stream, and the name's index.
-fn name_and_tail(rec: &RawRecord, name: &str) -> Option<(usize, usize)> {
-    let ss = string_stream::parse(&rec.data, rec.handle_bits).ok()?;
-    let i = ss.strings.iter().rposition(|s| s.text == name)?;
-    Some((i, ss.strings.len() - i - 1))
-}
-
 fn main() {
-    let a: Vec<String> = std::env::args().collect();
+    let mut a: Vec<String> = std::env::args().collect();
+    let plain_members = a.iter().any(|x| x == "--plain-members");
+    a.retain(|x| x != "--plain-members");
     if a.len() < 5 {
         fail("usage: exp_chains target.dwg out.dwg <template hex> source.dwg ...");
     }
@@ -84,7 +80,14 @@ fn main() {
                 skipped += 1;
                 continue;
             }
-            let els = element_records(&rec.data);
+            let mut els = element_records(&rec.data);
+            if plain_members {
+                for e in &mut els {
+                    if let Element::Spiral(s) = e {
+                        s.member = None;
+                    }
+                }
+            }
             seed = seed
                 .wrapping_mul(6364136223846793005)
                 .wrapping_add(1442695040888963407);
@@ -120,20 +123,11 @@ fn main() {
                     (b, hb)
                 }
             };
-            let mut r = RawRecord {
+            let r = RawRecord {
                 data: bytes,
                 handle_bits: hb,
                 ..new.clone()
             };
-            // As many strings after the name as the source has.
-            if let (Some((_, tail)), Some((i, _))) =
-                (name_and_tail(&rec, &src_name), name_and_tail(&r, &name))
-            {
-                let (b, hb) = string_stream::set_string_count(&r.data, r.handle_bits, i + 1 + tail)
-                    .unwrap_or_else(|e| fail(format!("{label}: strings: {e:?}")));
-                r.data = b;
-                r.handle_bits = hb;
-            }
             if !raw::set_record(&mut target.doc, h, r.data.clone(), r.handle_bits) {
                 fail(format!("{label}: could not write the record"));
             }

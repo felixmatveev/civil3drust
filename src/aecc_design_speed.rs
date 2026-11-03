@@ -234,6 +234,12 @@ pub fn set_design_speeds(
         .map_err(|e| err(e.to_string()))
 }
 
+/// Number of design-speed intervals stored after the element records.
+pub fn interval_count(rec: &RawRecord) -> Result<usize, SpeedError> {
+    let (end, _) = identity(rec)?;
+    old_interval_count(&rec.data, end)
+}
+
 /// Number of intervals: after the elements come BL 0 ×3 and the count.
 fn old_interval_count(data: &[u8], end: usize) -> Result<usize, SpeedError> {
     if (0..6).any(|i| raw::get_bit(data, end + i) != EMPTY_INTERVALS[i]) {

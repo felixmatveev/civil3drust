@@ -1074,6 +1074,8 @@ known fields: hides layout mistakes and keeps template content.
 
 ## D-055: Generated alignments copy the source's string count
 
+*Superseded by D-056 (S184 → S186).*
+
 **Context.** The empty strings after an alignment's name vary in number
 (3 per curve in S24-family alignments, S46), with no rule known for
 spirals and groups. A wrong count risks a rejection that would hide what
@@ -1086,3 +1088,20 @@ gets its count from a Civil 3D-made alignment with the same elements.
 
 **Alternatives.** Use the S24 rule (3 per curve) for everything: untested
 for spirals; a rejection would not tell which part was wrong.
+
+## D-056: The string count follows Civil 3D's rule
+
+**Context.** D-055 copied each source's string count. That ignored the
+template's design speed, every generated alignment was short, and 13 of
+them were discarded on open (S184, eOutOfRange). Civil 3D's re-save
+(S186) wrote every remaining alignment with exactly 9 + 3 per speed with
+an interval + 1 per speed without + 3 per non-line element record + 1 for
+a JSON layout string.
+
+**Decision.** civil3drust writes that count: `write_elements` changes it
+by 3 per curve, spiral or group record added or removed, and
+`required_string_count` gives the rule for checks. Extra strings that
+Civil 3D's own drawings carry are kept when an alignment is edited.
+
+**Alternatives.** Copy counts from a Civil 3D-made alignment (D-055):
+wrong as soon as anything else in the record differs.

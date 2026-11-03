@@ -2431,11 +2431,45 @@ source (D-055), and the companion rebuilt.
   back with the source's element count and length. S119 1061 lost its
   design speeds (a speed on a spiral group is not written yet).
 - **S185**: the six JSON-type group alignments, with their spirals as
-  group members (`0x0D`) but no JSON string. Expected outcomes: if Civil
-  3D opens them as plain fixed pieces, the members' header does not by
-  itself call for a JSON slot; a RECOVER points at the member header or
-  the 128 bits as the marker (MIST17, owner's hypothesis: the group type
-  decides).
+  group members (`0x0D`) but no JSON string.
+
+**Result (owner, S186, S187).** Both needed RECOVER.
+
+- S184: 13 alignments discarded with "Error 151 (eOutOfRange)": FB9, FC2,
+  FC5, FC8, FCB, FCE, FE6, FF2, FFB, FFE, 1016, 1019, 102E. The other 30
+  opened. The discarded ones share no element kind: FBF and FC2 are both
+  a single three-point curve (n2 = 2) with identical parameters, yet FBF
+  opened and FC2 was discarded.
+- What they share is the **string count**: copied from the source
+  (D-055), it ignored the template's design speed (3 strings), so every
+  alignment except the S176 spiral A–E ones had 2–3 strings too few.
+  Civil 3D reads past the end of the stream; whether that fails depends
+  on the bits that follow. In the re-save S186, 101C and 1031 keep
+  garbage strings and 100D and 1010 have string streams civil3drust
+  cannot parse: what was read past the end, written back.
+- S186 also gives the rule. Civil 3D rewrote every remaining alignment's
+  string count to exactly **9 + 3 per speed with an interval + 1 per
+  speed without + 3 per record that is not a line + 1 for a JSON string**
+  (all 29 that parse). Curves, spirals, free spirals and every group
+  record count the same, 3; a group counts once however many pieces it
+  has. This extends S46's "3 per arc". Civil 3D's own drawings often have
+  more (leftovers of edits), which it accepts (D-056).
+- In S186 the SCSSCS group (1031, S177 FCB) survived with its group
+  record; Civil 3D set its parameter flag to 1 (solved), as on the other
+  groups. The SCSCS group (102E) was one of the discarded.
+- S185: all six discarded with "Error 34 (eWrongObjectType)". They were
+  also two strings short, so this does not yet tell whether the member
+  header or the missing JSON string caused it.
+
+**Second round (S188–S190).** The same alignments with the string count
+from the rule (`write_elements` now adds 3 per non-line record):
+
+- **S188**: S184's 43 alignments.
+- **S189**: S185's six (member spirals, no JSON).
+- **S190**: the same six with the members written as ordinary spirals
+  (header type `0x04`, no 128-bit block; `exp_chains --plain-members`).
+  If S189 is rejected and S190 opens, the member header needs the JSON
+  (MIST17); if both open, it does not.
 
 Civil 3D results: pending.
 

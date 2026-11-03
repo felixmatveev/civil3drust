@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `aecc_element_edit::required_string_count` and
+  `aecc_design_speed::interval_count`; test `string_count` (Civil 3D's
+  re-save S186 and the generated S188–S190 follow the rule).
+  `exp_chains --plain-members`. Samples S186, S187 (Civil 3D's recovered
+  re-saves of S184, S185) and S188–S190 (regenerated).
 - `replace_elements` writes any decoded element (spirals, free spirals,
   every group) through `aecc_encode`, not only lines and free curves.
   `examples/exp_chains`: generate one alignment per source alignment of
@@ -73,6 +78,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   `s162_spirals_match_civil3d_drawing`; MIST16.
 
 ### Fixed
+- Element edits counted 3 strings only per curve; spirals and groups need
+  3 as well (S184 → S186, D-056). Generated alignments were short, and
+  Civil 3D discarded 13 of S184's 43 on open. `exp_chains` no longer
+  copies the source's count (D-055 superseded).
 - Spirals with the group-member header (type byte `0x0D`, S177) are now
   read without the lock byte too: `aecc_alignment::read_header` returns
   flags and type byte for both forms; `set_constraint_editing` keeps the
