@@ -1101,7 +1101,13 @@ fn place_group(
             first_left,
             ts,
         } => place_long_group(
-            ts, prev_line?, next_line?, &spirals, r1, r2, first_left, false,
+            ts,
+            prev_line?,
+            next_line?,
+            &spirals,
+            (r1, r2),
+            first_left,
+            false,
         ),
         GroupDef::Scsscs {
             spirals,
@@ -1110,7 +1116,13 @@ fn place_group(
             first_left,
             ts,
         } => place_long_group(
-            ts, prev_line?, next_line?, &spirals, r1, r2, first_left, true,
+            ts,
+            prev_line?,
+            next_line?,
+            &spirals,
+            (r1, r2),
+            first_left,
+            true,
         ),
         GroupDef::SpiralLineSpiralLengths { l1, l2 } => {
             let Some(&Segment::Arc { geometry, .. }) = before else {
