@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `exp_mist3`: drop the date-modified block (MIST3) of an alignment in
+  the Alignment Properties form, alone, with MIST2, or by turning the
+  record into the plain form (experiments S191–S193, to be opened in
+  Civil 3D).
 - `aecc_element_edit::required_string_count` and
   `aecc_design_speed::interval_count`; test `string_count` (Civil 3D's
   re-save S186 and the generated S188–S190 follow the rule).

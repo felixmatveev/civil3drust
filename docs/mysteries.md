@@ -176,6 +176,16 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   than keep or rewrite the stamp; versioning will be handled another way.
   Next: test whether Civil 3D accepts the Properties form without it (and
   which marker, if any, announces it — compare MIST4 and S158).
+- **Section-2 bits 115 to the MIST1 anchor, read as BLs:** plain form
+  `BL 0x1148` (`0x1188` with MIST2), `BL 0` (36 bits); Properties form
+  `BL 1`, `BL 0x08010004`, then 26 bits that do not end on a BL boundary
+  (70 bits). The Properties form is 176 bits longer than the plain one:
+  34 here, 98 for the date-modified block, 44 for MIST2.
+- **Experiment (S191–S193, from S144 `F9E`, `exp_mist3`):** S191 block
+  removed only; S192 block and MIST2 removed, marker "MIST2 absent" (as
+  S159); S193 turned into the plain form (bits 115…anchor → `BL 0x1148,
+  BL 0`, block and MIST2 removed). S193's section 2 is then identical
+  to S155's (the plain form of the same alignment). Results pending.
 
 ## MIST4 — the +28-bit field after the class header
 
