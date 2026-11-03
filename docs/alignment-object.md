@@ -2305,6 +2305,60 @@ solution in each sample. Points match the drawing to 4 decimals except
 FEC (within 0.02; its second spiral is 12 058 long and turns 3.2 rad, like
 S175 FE0).
 
+**Long spiral groups (S177).**
+
+*Between two tangents: group records with a stored TS.* Kinds 24 and 26
+have no code field after the parameter block:
+
+```text
+… BL id, BL before, BL after, BL 256, BL n (2 / 1), B first curve left (?), B 0,
+kind 24 (FC8, Free Compound Spiral-Curve-Spiral-Curve-Spiral):  BD L1, R1, L2, R2, L3, RD TS X, Y
+kind 26 (FCB, Free Reverse Spiral-Curve-Spiral-Spiral-Curve-Spiral): BD L1, R1, L2, L3, R2, L4, RD TS X, Y
+```
+
+The TS is the stored start on the first line (FC8 (868.5, 0), FCB (1000,
+0)). From there the pieces follow in order (compound: the middle spiral
+goes from 1/R1 to 1/R2; reverse: R1 → ∞ → R2 the other way); the two curve
+lengths are solved so that the last spiral ends on the second line in its
+direction (FC8 71.6145 and 91.4175; FCB 200.0000 and 258.3333). All joints
+equal the drawing.
+
+*Stored as separate elements, with a JSON layout.* Free Reverse
+Spiral-Spiral-Curve-Spiral-Spiral (between two curves, FCE), Free Reverse
+Spiral-Curve-Spiral-Curve (from curve, end entity, FD1) and Free Reverse
+Spiral-Curve-Spiral-Spiral (from entity, end curve, FD4) are not group
+records. Civil 3D stores their pieces as ordinary spirals (kind 6) and
+three-point curves with fresh IDs (4, 5, …), so they resolve with no
+solving (all joints equal the drawing), and:
+
+- the first spiral has the element header `0x0D020008` (MIST7 top byte
+  13) and 128 more bits after the flag bit (MIST17);
+- the string stream gets an extra string after the description: a JSON
+  description of the layout, e.g. for FCE
+
+  ```json
+  {"JsonVersion": 1, "FirstId": 1, "RGObjects": [
+    {"RGObjectType": 1, "Id": 1, "PreviousId": 0, "NextId": 3, "ConstraintLocked": 2,
+     "HasAnchorPoint": false, "ConstraintType": 2,
+     "ConstraintParameters": {"PassThroughPoint1": [0, 0], …}},
+    …,
+    {"RGObjectType": 7, "Id": 3, "PreviousId": 1, "NextId": 2, "ConstraintLocked": 2,
+     "ConstraintType": 2569, "SpiralType": 256,
+     "ConstraintParameters": {"Spiral1Length": 150, "Spiral2Length": 150,
+       "ArcRadius": 600, "Spiral3Length": 150, "Spiral4Length": 150}}]}
+  ```
+
+  It keeps the method as a group (ID 3, the IDs of the binary records
+  being 4, 5, …) with its parameters, and names fields the binary records
+  hold: `ConstraintType` 2 = three-point curve (n2 = 2) and 0 = fixed
+  line, `ConstraintLocked` 2 (the lock byte 0x02 of the element headers,
+  MIST7) and `"SpiralType": 256` (the BL 256 of every spiral record,
+  MIST10). The group constraint types are 2569 (0xA09, FCE), 2561 (0xA01,
+  FD1) and 2565 (0xA05, FD4); they are not in the binary records.
+  `string_stream::layout_json` returns it. The name and description
+  readers skip it (it shifted the name by one string; in FD4 the first
+  description copy is also empty).
+
 ## Open questions
 
 Tracked as MIST1 … MIST15 in [`mysteries.md`](mysteries.md), each with

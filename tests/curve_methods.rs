@@ -575,3 +575,86 @@ fn s176_spiral_line_spiral() {
         assert_eq!(d.elements[4].segment.start(), got[3]);
     }
 }
+
+/// S177: the five long spiral groups. SCSCS and SCSSCS between tangents are
+/// group records (kinds 24, 26) placed from a stored TS; the three others
+/// are stored by Civil 3D as separate elements, the first spiral with
+/// header 0x0D020008, plus a JSON layout string. Joints as drawn.
+#[test]
+fn s177_long_spiral_groups() {
+    use civil3drust::string_stream;
+    let o = raw::open("samples/S177_long_spiral_method_alignments.dwg").unwrap();
+    type Case<'a> = (u64, &'a str, usize, &'a [(f64, f64)]);
+    let cases: [Case; 5] = [
+        (
+            0xFC8,
+            "Free Compound Spiral-Curve-Spiral-Curve-Spiral (Between two tangents)",
+            3,
+            &[
+                (868.5, 0.0),
+                (1018.3682, 4.6846),
+                (1089.2732, 14.5688),
+                (1185.5983, 40.8748),
+                (1266.2954, 83.405),
+                (1378.4615, 182.6449),
+            ],
+        ),
+        (
+            0xFCB,
+            "Free Reverse Spiral-Curve-Spiral-Spiral-Curve-Spiral (Between two tangents)",
+            3,
+            &[
+                (1000.0, 0.0),
+                (1149.7658, 6.243),
+                (1340.4334, 63.4869),
+                (1596.8707, 218.8276),
+                (1842.8918, 292.6902),
+                (1992.7197, 298.043),
+            ],
+        ),
+        (
+            0xFCE,
+            "Reverse S-S-C-S-S (between two curves)",
+            7,
+            &[
+                (293.0136, -55.5923),
+                (428.8323, -119.1195),
+                (565.2636, -181.2103),
+            ],
+        ),
+        (
+            0xFD1,
+            "Free Reverse Spiral-Curve-Spiral-Curve (From curve, end entity)",
+            6,
+            &[(293.0139, -55.5924), (910.7258, -205.3593)],
+        ),
+        (
+            0xFD4,
+            "Free Reverse Spiral-Curve-Spiral-Spiral (From entity_ end curve)",
+            6,
+            &[
+                (999.9963, 0.0),
+                (1468.8654, 140.7668),
+                (1596.5307, 219.4052),
+            ],
+        ),
+    ];
+    for (h, name, records, want) in cases {
+        let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap();
+        let d = decode_elements(&r).unwrap();
+        assert_eq!(d.name.as_deref(), Some(name), "{h:X}");
+        assert_eq!(d.record_count(), records, "{h:X}");
+        let joints: Vec<Point2> = d.elements.iter().map(|e| e.segment.end()).collect();
+        for w in want {
+            assert!(
+                joints.iter().any(|j| near(*j, w.0, w.1)),
+                "{h:X}: {w:?} not in {joints:?}"
+            );
+        }
+        let json = string_stream::layout_json(&r.data, r.handle_bits);
+        assert_eq!(json.is_some(), records > 3, "{h:X}");
+    }
+}

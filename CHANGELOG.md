@@ -19,6 +19,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 - Spiral-line-spiral groups between two curves (S176): kind 10 code 0 (by
   spiral lengths, line solved) and code 1 (by line length, spirals with
   equal A solved), compound or reverse.
+- Long spiral groups (S177): SCSCS and SCSSCS between tangents (kinds 24,
+  26, from a stored TS, curve lengths solved); spirals with element header
+  0x0D020008; Civil 3D's JSON layout string (`string_stream::layout_json`),
+  skipped by the name and description readers. MIST17; MIST10 named
+  (`SpiralType`).
 
 - Free spirals between two lines (record kind 8): `Element::FreeSpiral`,
   `free_spiral_between`; the lines are extended or trimmed to the spiral.

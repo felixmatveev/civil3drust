@@ -443,13 +443,19 @@ pub fn object_name(data: &[u8]) -> Option<String> {
     structured_name(data).or_else(|| strings_after_impl(data).pop())
 }
 
+/// True for the JSON layout string Civil 3D stores with some spiral groups
+/// (`{ "JsonVersion": 1, "FirstId": …, "RGObjects": [ … ] }`, S177).
+pub fn is_layout_json(s: &str) -> bool {
+    s.trim_start().starts_with('{') && s.contains("\"JsonVersion\"")
+}
+
 fn structured_name(data: &[u8]) -> Option<String> {
     let (b, _) = utf16_strings(data, 7)
         .into_iter()
         .find(|(_, s)| s.starts_with("AeccImp"))?;
     let mut bit = b.checked_sub(10)?;
     let mut strings = Vec::new();
-    for _ in 0..7 {
+    for _ in 0..8 {
         let (n, chars) = match (get_bit(data, bit), get_bit(data, bit + 1)) {
             (0, 1) => (get_byte(data, bit + 2) as usize, bit + 10),
             (1, 0) => (0, bit + 2),
@@ -479,7 +485,14 @@ fn structured_name(data: &[u8]) -> Option<String> {
         }
         bit = chars + 16 * n;
     }
-    if strings.len() < 4 || !strings[0].starts_with("AeccImp") || strings[1] != strings[2] {
+    // Civil 3D inserts a JSON layout string after the description when the
+    // alignment has spiral groups it stores as separate elements (S177).
+    strings.retain(|s| !is_layout_json(s));
+    // In those records the first description copy can be empty (S177 FD4).
+    if strings.len() < 4
+        || !strings[0].starts_with("AeccImp")
+        || (strings[1] != strings[2] && !strings[1].is_empty())
+    {
         return None;
     }
     // With design criteria on, the criteria file path follows the name and

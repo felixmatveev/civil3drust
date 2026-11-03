@@ -66,11 +66,11 @@ the arcs and lines in each record's proxy graphics.
 | Floating Reverse Curve with Spirals (from curve, radius, through point) | group kind 20 code 1: BD L1, BD L2, BD R, RD point; start on the previous curve solved | known, S174 |
 | Floating Reverse Curve with Spirals (from curve, two points) | group kind 20 code 2: BD L1, BD L2, RD P1, RD P2; start and radius solved | known, S174 |
 | Free Spiral-Curve-Spiral (between two entities) | group kind 8 code 0: BD L1, BD R, BD L2 (between two lines) | known, S173 |
-| Free Compound Spiral-Curve-Spiral-Curve-Spiral (between two tangents) | planned | S120 → S121 |
-| Free Reverse Spiral-Curve-Spiral-Spiral-Curve-Spiral (between two tangents) | planned | S120 → S121 |
-| Free Reverse Spiral-Curve-Spiral-Spiral (from entity, end curve) | planned | S120 → S121 |
-| Free Reverse Spiral-Curve-Spiral-Curve (from curve, end entity) | planned | S120 → S121 |
-| Free Reverse Spiral-Spiral-Curve-Spiral-Spiral (between two curves) | planned | S120 → S121 |
+| Free Compound Spiral-Curve-Spiral-Curve-Spiral (between two tangents) | group kind 24: L1, R1, L2, R2, L3, TS point; curve lengths solved | known, S177 |
+| Free Reverse Spiral-Curve-Spiral-Spiral-Curve-Spiral (between two tangents) | group kind 26: L1, R1, L2, L3, R2, L4, TS point; curve lengths solved | known, S177 |
+| Free Reverse Spiral-Curve-Spiral-Spiral (from entity, end curve) | stored as separate fixed elements + JSON layout (ConstraintType 2565) | known, S177 |
+| Free Reverse Spiral-Curve-Spiral-Curve (from curve, end entity) | stored as separate fixed elements + JSON layout (ConstraintType 2561) | known, S177 |
+| Free Reverse Spiral-Spiral-Curve-Spiral-Spiral (between two curves) | stored as separate fixed elements + JSON layout (ConstraintType 2569) | known, S177 |
 
 ## Spirals
 

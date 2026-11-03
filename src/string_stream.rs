@@ -282,11 +282,28 @@ pub fn set_description(
     replace(&d, hb, 2, &text)
 }
 
-/// The description (string 1), if the stream has the alignment layout.
+/// The description (string 1, or string 2 when string 1 is empty, S177),
+/// if the stream has the alignment layout.
 pub fn description(data: &[u8], handle_bits: usize) -> Option<String> {
     let ss = parse(data, handle_bits).ok()?;
-    (ss.strings.len() >= 4 && ss.strings[0].text.starts_with("AeccImp"))
-        .then(|| ss.strings[1].text.clone())
+    (ss.strings.len() >= 4 && ss.strings[0].text.starts_with("AeccImp")).then(|| {
+        let (a, b) = (&ss.strings[1].text, &ss.strings[2].text);
+        if a.is_empty() && !crate::raw::is_layout_json(b) {
+            b.clone()
+        } else {
+            a.clone()
+        }
+    })
+}
+
+/// The JSON layout string Civil 3D adds for spiral groups it stores as
+/// separate elements (S177), if present.
+pub fn layout_json(data: &[u8], handle_bits: usize) -> Option<String> {
+    let ss = parse(data, handle_bits).ok()?;
+    ss.strings
+        .iter()
+        .find(|s| crate::raw::is_layout_json(&s.text))
+        .map(|s| s.text.clone())
 }
 
 #[cfg(test)]

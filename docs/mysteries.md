@@ -373,7 +373,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Hypothesis:** criteria values (minimum radius, superelevation …) left
   unset; a criteria-based alignment with curves would show them.
 
-## MIST10 — the `256` in the line-spiral group
+## MIST10 — the `256` in the line-spiral group — **NAMED (S177)**
 
 - **Where:** S119 element 7, the BL after the IDs (before the start
   point); also in every fixed spiral record (S121, S162) at the same
@@ -381,6 +381,10 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   (kind 8).; and in the spiral groups of S173 (codes 0, 2, 6, 161).
 - **Hypothesis:** spiral definition or type flags (clothoid, by length vs
   A). S121 (spiral methods) should vary it.
+
+- **S177:** Civil 3D's JSON layout string calls it `"SpiralType": 256`
+  for the same groups. What other spiral types (cubic, sinusoidal …)
+  store is still to be sampled.
 
 ## MIST11 — S89's curve speed-interval distance
 
@@ -477,6 +481,17 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Hypothesis:** a 2D vector pair or spiral-definition parameters at
   their defaults (spiral type other than clothoid, e.g. the cubic or
   sinusoidal spirals Civil 3D offers, might change them).
+
+## MIST17 — the 128 bits after a `0x0D020008` element header
+
+- **Where:** the first spiral of a group Civil 3D stores as separate
+  elements (S177 FCE, FD1, FD4): header `0x0D020008`, flag bit, then 128
+  bits, then the usual spiral record.
+- **Seen:** FCE `48b8c75c6ea0e480 413540b99f969780`, FD1 `f46e1fbc70a0e481
+  c1d9c831a7969780`, FD4 `d9582ecdf07f1e80 0000000000000000` (not doubles;
+  FCE and FD1 share their last bytes).
+- **Hypothesis:** an identifier tying the elements to the JSON group (ID
+  3), or the group's anchor.
 
 ## Not sampled yet (not mysteries, just gaps)
 

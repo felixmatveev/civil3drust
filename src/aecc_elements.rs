@@ -488,6 +488,9 @@ fn line_spiral_at(data: &[u8], bit: usize) -> Option<LineSpiralRecord> {
     })
 }
 
+/// Element header of the first spiral of a stored-apart group (S177).
+pub const HEADER_GROUP_MEMBER: i32 = 0x0D02_0008;
+
 /// Spiral types (the code BL of a spiral record, S162).
 pub const SPIRAL_INWARD: i32 = 0;
 pub const SPIRAL_OUTWARD: i32 = 1;
@@ -556,9 +559,17 @@ fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
     if kind_prefix(data, bit)? != PREFIX_SPIRAL {
         return None;
     }
-    let (_, k) = aecc_alignment::read_element_header(data, bit)?;
+    // Header 0x0D020008 (S177): the first spiral of a group Civil 3D stored
+    // as separate elements; 128 more bits follow the flag (MIST17).
+    let (k, extra) = match aecc_alignment::read_element_header(data, bit) {
+        Some((_, k)) => (k, 0),
+        None => match raw::read_bl(data, bit)? {
+            (HEADER_GROUP_MEMBER, k) => (k, 128),
+            _ => return None,
+        },
+    };
     let flag = raw::get_bit(data, k) == 1;
-    let (_, k) = raw::read_bd(data, k + 1)?;
+    let (_, k) = raw::read_bd(data, k + 1 + extra)?;
     let (_, k) = raw::read_bd(data, k)?;
     let (n1, mut k) = raw::read_bl(data, k)?;
     if !(1..=2).contains(&n1) {
@@ -800,6 +811,26 @@ pub enum GroupDef {
     /// equal A. Free Compound / Reverse Spiral-Line-Spiral (between two
     /// curves, line length).
     SpiralLineSpiralLine { line: f64 },
+    /// Kind 24 (no code): spiral, curve, spiral, curve, spiral between two
+    /// lines, compound, from a stored TS. Free Compound
+    /// Spiral-Curve-Spiral-Curve-Spiral (between two tangents).
+    Scscs {
+        spirals: [f64; 3],
+        r1: f64,
+        r2: f64,
+        first_left: bool,
+        ts: Point2,
+    },
+    /// Kind 26 (no code): spiral, curve, spiral, spiral, curve, spiral
+    /// between two lines, reverse, from a stored TS. Free Reverse
+    /// Spiral-Curve-Spiral-Spiral-Curve-Spiral (between two tangents).
+    Scsscs {
+        spirals: [f64; 4],
+        r1: f64,
+        r2: f64,
+        first_left: bool,
+        ts: Point2,
+    },
     /// Code 1 (prefix 20): from a point on the previous curve, a spiral out
     /// of it, a spiral the other way into a curve of `radius` ending at
     /// `point`. Floating Reverse Curve with Spirals (from curve, radius,
@@ -846,7 +877,15 @@ pub struct GroupRecord {
 
 fn group_at(data: &[u8], bit: usize) -> Option<GroupRecord> {
     let prefix = kind_prefix(data, bit)?;
-    if prefix != PREFIX_GROUP && prefix != PREFIX_LINE_GROUP && prefix != PREFIX_REVERSE_GROUP {
+    if ![
+        PREFIX_GROUP,
+        PREFIX_LINE_GROUP,
+        PREFIX_REVERSE_GROUP,
+        PREFIX_SCSCS,
+        PREFIX_SCSSCS,
+    ]
+    .contains(&prefix)
+    {
         return None;
     }
     let (_, k) = aecc_alignment::read_element_header(data, bit)?;
@@ -860,7 +899,9 @@ fn group_at(data: &[u8], bit: usize) -> Option<GroupRecord> {
     for _ in 0..n1 {
         k = raw::read_bd(data, k)?.1;
     }
-    let (code, k) = raw::read_bl(data, k)?;
+    // The long groups (kinds 24, 26) have no code field.
+    let long = prefix == PREFIX_SCSCS || prefix == PREFIX_SCSSCS;
+    let (code, k) = if long { (0, k) } else { raw::read_bl(data, k)? };
     let (id, k) = raw::read_bl(data, k)?;
     let (before, k) = raw::read_bl(data, k)?;
     let (after, k) = raw::read_bl(data, k)?;
@@ -871,6 +912,38 @@ fn group_at(data: &[u8], bit: usize) -> Option<GroupRecord> {
         (v.is_finite() && v > 0.0 && v < 1e9).then_some(v)
     };
     let def = match (prefix, code) {
+        (PREFIX_SCSCS | PREFIX_SCSSCS, _) => {
+            // BL (2 / 1), B first curve left (?), B, lengths and radii, RD TS.
+            let (_, q) = raw::read_bl(data, k)?;
+            let first_left = raw::get_bit(data, q) == 1;
+            k = q + 2;
+            let scscs = prefix == PREFIX_SCSCS;
+            let v: Vec<f64> = (0..if scscs { 5 } else { 6 })
+                .map(|_| bd(&mut k))
+                .collect::<Option<_>>()?;
+            if k + 128 > raw::bit_len(data) {
+                return None;
+            }
+            let ts = Point2::new(raw::get_f64(data, k), raw::get_f64(data, k + 64));
+            k += 128;
+            if scscs {
+                GroupDef::Scscs {
+                    spirals: [v[0], v[2], v[4]],
+                    r1: v[1],
+                    r2: v[3],
+                    first_left,
+                    ts,
+                }
+            } else {
+                GroupDef::Scsscs {
+                    spirals: [v[0], v[2], v[3], v[5]],
+                    r1: v[1],
+                    r2: v[4],
+                    first_left,
+                    ts,
+                }
+            }
+        }
         (PREFIX_GROUP, 0) => GroupDef::SpiralCurveSpiral {
             l1: bd(&mut k)?,
             radius: bd(&mut k)?,
@@ -1021,6 +1094,24 @@ fn place_group(
             parts.remove(1); // the curve between them has no length
             Some(parts)
         }
+        GroupDef::Scscs {
+            spirals,
+            r1,
+            r2,
+            first_left,
+            ts,
+        } => place_long_group(
+            ts, prev_line?, next_line?, &spirals, r1, r2, first_left, false,
+        ),
+        GroupDef::Scsscs {
+            spirals,
+            r1,
+            r2,
+            first_left,
+            ts,
+        } => place_long_group(
+            ts, prev_line?, next_line?, &spirals, r1, r2, first_left, true,
+        ),
         GroupDef::SpiralLineSpiralLengths { l1, l2 } => {
             let Some(&Segment::Arc { geometry, .. }) = before else {
                 return None;
@@ -1617,6 +1708,187 @@ fn place_spiral_line_spiral(
         Segment::Line { start: m, end: n },
         spiral_segment(s2),
     ])
+}
+
+/// Kind prefixes of the long spiral groups between two lines (S177).
+pub const PREFIX_SCSCS: u16 = 24;
+pub const PREFIX_SCSSCS: u16 = 26;
+
+/// One piece of a long group: a spiral from curvature `k0` to `k1` (signed,
+/// + = left) or a curve (k0 = k1) of length `len`.
+#[derive(Clone, Copy)]
+struct Piece {
+    len: f64,
+    k0: f64,
+    k1: f64,
+}
+
+/// Segments for `pieces` laid out from `p` heading along `dir`.
+fn lay_pieces(
+    p: Point2,
+    dir: (f64, f64),
+    pieces: &[Piece],
+) -> Option<(Vec<Segment>, Point2, (f64, f64))> {
+    let (mut p, mut d) = (p, dir);
+    let mut out = Vec::new();
+    for pc in pieces {
+        if pc.len <= 0.0 {
+            continue;
+        }
+        if (pc.k0 - pc.k1).abs() < 1e-15 {
+            let (_, end, arc) = curve_by_length(p, d, 1.0 / pc.k0.abs(), pc.len, pc.k0 < 0.0)?;
+            let (_, nd) = end_state(&Segment::Arc {
+                start: p,
+                end,
+                geometry: arc,
+            });
+            out.push(Segment::Arc {
+                start: p,
+                end,
+                geometry: arc,
+            });
+            p = end;
+            d = nd;
+        } else {
+            let r = |k: f64| {
+                if k == 0.0 {
+                    f64::INFINITY
+                } else {
+                    1.0 / k.abs()
+                }
+            };
+            let ccw = pc.k0 + pc.k1 > 0.0;
+            let g = SpiralGeometry {
+                start: p,
+                direction: d,
+                length: pc.len,
+                radius: r(pc.k1),
+                start_radius: r(pc.k0),
+                counter_clockwise: ccw,
+            };
+            let (end, nd) = g.point_at(pc.len);
+            out.push(Segment::Spiral {
+                start: p,
+                end,
+                geometry: g,
+            });
+            p = end;
+            d = nd;
+        }
+    }
+    Some((out, p, d))
+}
+
+/// SCSCS (compound) or SCSSCS (reverse) between two lines, from a stored
+/// TS on the first line (S177): the two curve lengths are solved so that
+/// the last spiral ends on the second line in its direction.
+fn place_long_group(
+    ts: Point2,
+    a: &TangentRecord,
+    b: &TangentRecord,
+    spirals: &[f64],
+    (r1, r2): (f64, f64),
+    first_left: bool,
+    reverse: bool,
+) -> Option<Vec<Segment>> {
+    let u1 = unit((a.end.x - a.start.x, a.end.y - a.start.y))?;
+    let u2 = unit((b.end.x - b.start.x, b.end.y - b.start.y))?;
+    let delta = cross(u1, u2).atan2(u1.0 * u2.0 + u1.1 * u2.1);
+    let s1 = if first_left { 1.0 } else { -1.0 };
+    let s2 = if reverse { -s1 } else { s1 };
+    let (k1, k2) = (s1 / r1, s2 / r2);
+    let last = *spirals.last()?;
+    let pieces = |a1: f64, a2: f64| -> Vec<Piece> {
+        let mut v = vec![
+            Piece {
+                len: spirals[0],
+                k0: 0.0,
+                k1,
+            },
+            Piece {
+                len: a1,
+                k0: k1,
+                k1,
+            },
+        ];
+        if reverse {
+            v.push(Piece {
+                len: spirals[1],
+                k0: k1,
+                k1: 0.0,
+            });
+            v.push(Piece {
+                len: spirals[2],
+                k0: 0.0,
+                k1: k2,
+            });
+        } else {
+            v.push(Piece {
+                len: spirals[1],
+                k0: k1,
+                k1: k2,
+            });
+        }
+        v.push(Piece {
+            len: a2,
+            k0: k2,
+            k1: k2,
+        });
+        v.push(Piece {
+            len: last,
+            k0: k2,
+            k1: 0.0,
+        });
+        v
+    };
+    // Heading: Δ = Σ (k0 + k1)/2 · len; gives a2 from a1.
+    let turn_without = |a1: f64| -> f64 {
+        pieces(a1, 0.0)
+            .iter()
+            .map(|p| (p.k0 + p.k1) / 2.0 * p.len)
+            .sum()
+    };
+    let a2_of = |a1: f64| (delta - turn_without(a1)) / k2;
+    let off = |a1: f64| -> Option<f64> {
+        let a2 = a2_of(a1);
+        if a2 < -1e-9 {
+            return None;
+        }
+        let (_, end, _) = lay_pieces(ts, u1, &pieces(a1, a2.max(0.0)))?;
+        Some(cross(u2, (end.x - b.start.x, end.y - b.start.y)))
+    };
+    let span = std::f64::consts::TAU * r1;
+    let n = 400;
+    let mut prev: Option<(f64, f64)> = None;
+    let mut root = None;
+    for i in 0..=n {
+        let x = span * i as f64 / n as f64;
+        let Some(f) = off(x) else {
+            prev = None;
+            continue;
+        };
+        if let Some((px, pf)) = prev {
+            if pf == 0.0 || pf * f < 0.0 {
+                let (mut lo, mut hi, mut flo) = (px, x, pf);
+                for _ in 0..80 {
+                    let m = (lo + hi) / 2.0;
+                    let fm = off(m)?;
+                    if (fm < 0.0) == (flo < 0.0) {
+                        lo = m;
+                        flo = fm;
+                    } else {
+                        hi = m;
+                    }
+                }
+                root = Some((lo + hi) / 2.0);
+                break;
+            }
+        }
+        prev = Some((x, f));
+    }
+    let a1 = root?;
+    let (segs, ..) = lay_pieces(ts, u1, &pieces(a1, a2_of(a1).max(0.0)))?;
+    Some(segs)
 }
 
 /// Centre offset from the TS: k along the tangent, `dist` along the normal.
