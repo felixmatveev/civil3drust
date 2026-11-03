@@ -112,9 +112,16 @@ versions follow [Semantic Versioning](https://semver.org/).
   `s162_spirals_match_civil3d_drawing`; MIST16.
 
 ### Fixed
+- `aecc_layout::compose` writes `ConstraintLocked` 0 for unlocked
+  alignments (S202), 2 for locked; generated group members now get
+  Civil 3D's unlocked header `08 00 02 09` (`header_bytes`), not
+  `08 00 0D`, which every earlier generated group had (S185, S189,
+  S197–S200). Samples S205 (regenerated), S206. The interval-less speed
+  rule is limited to alignments with a JSON layout (keeps
+  `civil3d_2027` passing).
 - Element edits no longer rewrite design speeds stored without intervals
-  (Civil 3D's layout-tool form, the only one seen with a JSON layout)
-  when the speeds don't change; they used to gain an interval block.
+  in alignments with a JSON layout (the only form seen there) when the
+  speeds don't change; they used to gain an interval block.
   `examples/exp_json_bisect`; samples S203–S205.
 - Element edits counted 3 strings only per curve; spirals and groups need
   3 as well (S184 → S186, D-056). Generated alignments were short, and

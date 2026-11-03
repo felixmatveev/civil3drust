@@ -34,7 +34,8 @@ fn main() {
         let els = element_records(&rec.data);
         let (bytes, hb) = match what {
             "json" => {
-                let j = compose(&els, true).unwrap_or_else(|e| fail(e));
+                let locked = civil3drust::aecc_build::element_header_flags(&rec).is_some();
+                let j = compose(&els, locked).unwrap_or_else(|e| fail(e));
                 set_layout(&rec, &j).unwrap_or_else(|e| fail(e))
             }
             "reencode" => {

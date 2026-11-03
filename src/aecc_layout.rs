@@ -323,9 +323,15 @@ const GROUP_METHODS: [Method; 3] = [
     ),
 ];
 
-/// `ConstraintLocked` of a locked element (all samples); the unlocked
-/// value has not been seen.
-const LOCKED: f64 = 2.0;
+/// `ConstraintLocked` of every object: 2 with the parameter lock on, 0
+/// with it off (S202: "Lock all parameter constraints" off).
+fn constraint_locked(locked: bool) -> f64 {
+    if locked {
+        2.0
+    } else {
+        0.0
+    }
+}
 
 fn num(v: impl Into<f64>) -> Json {
     Json::Num(v.into())
@@ -344,11 +350,9 @@ fn pt(p: crate::alignment::Point2) -> Json {
 /// each run of pieces starting at a group-member spiral (`member` set) as
 /// one group. The group takes the ID after the highest ID outside the
 /// groups, as Civil 3D numbers it (the pieces' IDs must be higher).
-/// `locked`: the elements' lock state (only locked is known).
+/// `locked`: the alignment's parameter lock (the element headers' lock,
+/// `aecc_build::element_header_flags`).
 pub fn compose(els: &[Element], locked: bool) -> Result<Json, LayoutError> {
-    if !locked {
-        return Err(err("unlocked elements: ConstraintLocked value not known"));
-    }
     let by_id = |id: i32| els.iter().find(|e| e.id() == id);
     let first = els
         .iter()
@@ -444,7 +448,7 @@ pub fn compose(els: &[Element], locked: bool) -> Result<Json, LayoutError> {
                 ("Id", num(e.id())),
                 ("PreviousId", num(map(e.before()))),
                 ("NextId", num(map(e.after()))),
-                ("ConstraintLocked", num(LOCKED)),
+                ("ConstraintLocked", num(constraint_locked(locked))),
                 ("HasAnchorPoint", Json::Bool(false)),
                 ("ConstraintType", num(ct)),
                 ("ConstraintParameters", obj(params)),
@@ -477,7 +481,7 @@ pub fn compose(els: &[Element], locked: bool) -> Result<Json, LayoutError> {
                 ("Id", num(id)),
                 ("PreviousId", num(map(pieces[0].before()))),
                 ("NextId", num(map(pieces.last().unwrap().after()))),
-                ("ConstraintLocked", num(LOCKED)),
+                ("ConstraintLocked", num(constraint_locked(locked))),
                 ("ConstraintType", num(*ct)),
                 ("SpiralType", num(256)),
                 ("ConstraintParameters", obj(params)),

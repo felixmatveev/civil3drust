@@ -216,7 +216,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S202 | `S202_S177_lock_all_off.dwg` | Civil 3D 2024 | MIST7 test (owner): S177 with `Reverse S-S-C-S-S (between two curves)` (FCE) → Constraint Editing → "Lock all parameter constraints" off; saved. Ordinary element headers lose `02`; the group member's header becomes `08 00 02 09`. | 503803 | `53833c0374081751` |
 | S203 | `S203_S199_civ3d_recovered.dwg` | Civil 3D 2024 | Owner: S199 opened slowly, RECOVER, all six generated alignments discarded (eWrongObjectType); S178's three survive, nudging rebuilds their curves, group sub-entities present; saved. | 518745 | `e0962059ed9ab36c` |
 | S204 | `S204_S178_json_bisect.dwg` | civil3drust | S178 edited in place (`exp_json_bisect`): 11D4 JSON replaced by the composed one; 11DE through `replace_elements` with its own elements (speed kept without interval); 11F8 unchanged. | 484757 | `93c44249059b08b4` |
-| S205 | `S205_S178_generated_layout_json_speeds_kept.dwg` | civil3drust | S199 regenerated with `finish` keeping interval-less speeds: six alignments from S178's 11F8 template with composed JSON. | 497628 | `72bc4ac80c2e25c3` |
+| S205 | `S205_S178_generated_layout_json_speeds_kept.dwg` | civil3drust | S199 regenerated with `finish` keeping interval-less speeds and the group-member header in the unlocked form Civil 3D writes (`08 00 02 09`, S202) with `ConstraintLocked` 0 in the composed JSON: six alignments from S178's 11F8 template (Properties + JSON form). | 497786 | `59470b2660c61cd8` |
+| S206 | `S206_S24_generated_layout_json_member_header.dwg` | civil3drust | S197 regenerated with the corrected member header (`08 00 02 09`) and `ConstraintLocked` 0: plain form, no JSON flag, speed with interval. | 460047 | `d41a2828f81c298d` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

@@ -2599,6 +2599,24 @@ change.
 - **S205**: S199 generated again with the speed fix: six alignments from
   S178's 11F8, speeds without intervals.
 
+**A wrong member header in every earlier generated group (found while
+regenerating S205).** `create_alignment` turns Constraint Editing off
+(D-052), so the generated elements are unlocked, and `write_elements`
+wrote the group-member spiral as `08 00 0D`: the locked type byte without
+the `02` byte, a form Civil 3D never writes. With the lock off Civil 3D
+writes `08 00 02 09` (S202, the other session's MIST7 test), and the JSON
+then says `"ConstraintLocked": 0` (S202 FCE). S185, S189 and S197–S200
+all had the bad header, so their eWrongObjectType does not show that the
+JSON flag or the speed form matter. `aecc_alignment::header_bytes` (from
+S202) now gives `02 09`, and `compose` takes the lock state and writes 0
+or 2. S204 is unaffected (edited in place, locked).
+
+- **S205** (regenerated): Properties + JSON form from S178's 11F8,
+  speeds without intervals, header `02 09`, `ConstraintLocked` 0.
+- **S206**: S197 regenerated the same way: plain form, no JSON flag,
+  speed with an interval. If S206 opens, neither the flag nor the speed
+  form is needed; if only S205 opens, one of them is.
+
 Civil 3D results: pending.
 
 ## Open questions

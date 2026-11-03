@@ -133,7 +133,8 @@ fn main() {
                 .iter()
                 .any(|e| matches!(e, Element::Spiral(s) if s.member.is_some()));
             if json && members {
-                let mut j = compose(&els, true).unwrap_or_else(|e| fail(format!("{label}: {e}")));
+                let locked = civil3drust::aecc_build::element_header_flags(&new).is_some();
+                let mut j = compose(&els, locked).unwrap_or_else(|e| fail(format!("{label}: {e}")));
                 if tweak {
                     tweak_spiral1(&mut j);
                 }

@@ -412,11 +412,12 @@ fn finish(
         .map(|s| (s.station, s.speed))
         .collect();
     let speeds = clamp_speeds(&old_speeds, start, start + length);
-    // Speeds stored without intervals (Civil 3D's form for layout-tool
-    // alignments, and the only one seen with a JSON layout, S177/S178)
-    // hold nothing about the elements: keep them as they are when they
-    // don't change (S199 → S203).
-    let no_intervals = crate::aecc_design_speed::interval_count(old).ok() == Some(0);
+    // Speeds stored without intervals hold nothing about the elements. In
+    // an alignment with a JSON layout this is the only form seen (S177,
+    // S178), so it is kept when the speeds don't change (S199 → S203);
+    // elsewhere intervals are written as before (D-031, 2027 donors).
+    let no_intervals = crate::aecc_design_speed::interval_count(old).ok() == Some(0)
+        && string_stream::layout_json(&old.data, old.handle_bits).is_some();
     if !old_speeds.is_empty() && !(no_intervals && speeds == old_speeds) {
         let (bytes, hb) = set_design_speeds(&r, &speeds, seed).map_err(|e| err(e.to_string()))?;
         r = RawRecord {
