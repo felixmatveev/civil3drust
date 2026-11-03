@@ -222,6 +222,10 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S208 | `S208_S131_radius_75.dwg` | Civil 3D 2024 | MIST8 T2 (owner): S131 opened, curve 4 radius 50 → 75, saved. Flag stays 1. | 473286 | `f6dbb74d0b92456f` |
 | S209 | `S209_S131_curve_added.dwg` | Civil 3D 2024 | MIST8 T3 (owner): S131 with a free curve R 30 (ID 5) added at PI (200, 50), saved. New curve flag 0, curve 4 flag 1. | 474085 | `11d8e7487a345d27` |
 | S210 | `S210_S209_reopened_resaved.dwg` | Civil 3D 2024 | MIST8 T3b (owner): S209 closed, reopened, saved unchanged. Curve 5's flag 0 → 1. | 473127 | `aa16ddeafb36d135` |
+| S211 | `S211_S204_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S204 opened clean (AUDIT clean), Event Viewer warning "contains new constraint curve group modified unexpectedly in old version…" for 11D4 and 11DE; nudges update all curves; saved. 11D4 lost its member header, pieces renumbered 4–8. | 510226 | `7e698e53389c297c` |
+| S212 | `S212_S205_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S205 opened clean, the same warning for the six generated alignments; nudges update all curves; saved. The generated alignments lost their member header. | 535366 | `d70acc7ac02da51a` |
+| S213 | `S213_S206_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S206 opened clean, AUDIT clean, but the JSON text is read as the alignments' names and selecting one breaks the GUI; saved (plain form kept, MIST2 added). | 489868 | `bd4cbee7efab2fca` |
+| S214 | `S214_S178_mist1_json_check.dwg` | civil3drust | S178 in place (`exp_json_bisect`): 11D4 MIST1 zeroed only; 11DE re-encoded with MIST1 set back to its original value; 11F8 JSON `ArcRadius` 550 → 550.0000000000011 only. Which change brings the "modified unexpectedly" warning? | 484601 | `910230e8e5c3d64f` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

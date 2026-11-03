@@ -2617,6 +2617,44 @@ or 2. S204 is unaffected (edited in place, locked).
   speed with an interval. If S206 opens, neither the flag nor the speed
   form is needed; if only S205 opens, one of them is.
 
+**Result (owner; re-saves S211–S213).** All three open without RECOVER,
+AUDIT clean. The wrong member header was what Civil 3D had rejected in
+every earlier generated group.
+
+- **S204**: clean; nudges update all curves. Event Viewer, on opening:
+  *Warning — "The alignment '…' contains new constraint curve group
+  modified unexpectedly in old version. The modification won't be kept
+  in new release."* for 11D4 (composed JSON) and 11DE (re-encoded), not
+  for the untouched 11F8.
+- **S205**: clean; nudges update all curves; the same warning for all six
+  generated alignments, none for S178's own three. Generated alignments
+  with a group and a JSON layout are accepted and behave as groups.
+- **S206** (plain form, no JSON flag): opens clean, AUDIT clean, but the
+  JSON string is read as the **name** (Prospector lists the alignments by
+  their JSON text) and the GUI breaks when one is selected. The string
+  slots follow the section-2 flags: without flag `0x02` there is no JSON
+  slot, and string 3 is the name. The `02 09` member spirals themselves
+  were accepted without the flag, so a member header does not require the
+  JSON (the earlier "member needs JSON" reading, S189, came from the bad
+  header). The re-save S213 keeps the plain form (`0x1148` → `0x1188`, MIST2
+  added) and the JSON text as the name.
+- **Re-saves.** S211 11D4 and all six generated alignments in S212 lost
+  the member header (pieces now ordinary `04` spirals); S211 11D4's pieces
+  were renumbered 4–8 (Civil 3D's own S178 record numbered them 5–9). The
+  JSON strings are kept as written. S211 11DE (warned) kept its member
+  header, and its MIST1 came back to S178's original value (zeroed in
+  S204).
+
+**What the warning looks at.** The warned records changed either the
+JSON text (11D4, MIST1 untouched) or MIST1 and the derived parts (11DE,
+JSON untouched); the untouched 11F8 was not warned. A stored value
+depending on both — most likely MIST1, Civil 3D's geometry fingerprint
+(MIST1), if for these alignments it also covers the JSON — would explain
+both. **S214** (in place on S178, `exp_json_bisect`): 11D4 only MIST1
+zeroed; 11DE re-encoded with MIST1 set back to its original value;
+11F8 only the JSON's `ArcRadius` changed in its last digits (550 →
+550.0000000000011, the radius measured from the curve piece).
+
 Civil 3D results: pending.
 
 ## Open questions

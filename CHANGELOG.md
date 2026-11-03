@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Generated spiral groups with a composed JSON layout open in Civil 3D
+  (S205: no RECOVER, AUDIT clean, groups re-solve on nudges; an Event
+  Viewer warning "modified unexpectedly in old version" remains). S206:
+  without the section-2 JSON flag the JSON is read as the name. Samples
+  S211–S213 (owner's re-saves), S214 (warning bisect);
+  `exp_json_bisect` ops `reencode-mist1`, `zero-mist1`, `json-radius`.
 - MIST8 solved: the curve flag is set by Civil 3D for curves read from
   the file (S207–S210, test `curve_flag_set_on_load_s207_s210`).
 - Tangent kind 3, "Constrained by Next (Floating)": start point only
