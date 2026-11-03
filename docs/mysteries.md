@@ -489,6 +489,14 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   circle (FC2), whose p1 is also 0.0 instead of −1.
 - **Hypothesis:** criteria values (minimum radius, superelevation …) left
   unset; a criteria-based alignment with curves would show them.
+- **Plan (2026-11-03), all from S24 `Alignment - (1)` (free curve R 50):**
+  C1 criteria-based design on (default criteria file, design speed 40 at
+  station 0), saved; C2 C1 with the design speed changed to 30, saved;
+  C3 C1 with a second free curve added at PI (200, 50) using the radius
+  the criteria suggest, saved; C4 C1 with the curve's radius changed to
+  one that passes the minimum-radius check, saved. Compare p1, p2 and
+  the n1 values of every curve; the criteria strings and check set are
+  known from S79–S81.
 
 ## MIST10 — the `256` in the line-spiral group — **NAMED (S177)**
 
