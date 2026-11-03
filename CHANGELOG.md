@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `aecc_encode::encode_element`: writes any element record (kind prefix,
+  header, record) from its decoded fields. Spiral, free-spiral and group
+  records now keep their parameter block (`ParamBlock`), group members
+  their 128-bit block, the long groups their two flag fields. Test
+  `encode_roundtrip`: all 332 element records of 22 samples (every kind)
+  re-encode bit for bit.
 - `string_stream::remove` (take a string out of the stream) and
   `examples/exp_json` (drop the JSON layout string: `remove` or `empty`).
   Experiment samples S179 (meant as removed, but overwritten with a plain

@@ -533,6 +533,12 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Hypothesis:** an identifier tying the elements to the JSON group (ID
   3), or the group's anchor. S178 (made without copy and paste) has the
   same header and 128 bits.
+- **Owner's hypothesis:** the element type is what marks the record: the
+  long spiral assemblies come with their own type (the `0x0D` header), and
+  that type is what gives the alignment its JSON string slot (S183:
+  removing the slot breaks the alignment). Test while writing: an
+  alignment with a `0x0D` spiral and no JSON slot, and one with the slot
+  and no `0x0D` spiral.
 
 ## Not sampled yet (not mysteries, just gaps)
 

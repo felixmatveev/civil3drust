@@ -492,6 +492,57 @@ fn line_spiral_at(data: &[u8], bit: usize) -> Option<LineSpiralRecord> {
 /// the locked form (see [`aecc_alignment::read_header`]).
 pub const HEADER_GROUP_MEMBER: i32 = 0x0D02_0008;
 
+/// The parameter block after an element header (curves, spirals, groups):
+/// `B flag, BD p1, BD p2, BL n, n × BD`. p1 is the design speed at the
+/// element (−1 until solved); the rest are −1 in every sample (MIST9).
+#[derive(Debug, Clone, PartialEq)]
+pub struct ParamBlock {
+    pub flag: bool,
+    pub p1: f64,
+    pub p2: f64,
+    pub values: Vec<f64>,
+}
+
+impl ParamBlock {
+    /// The block of every element Civil 3D writes fresh: −1, −1, one −1.
+    pub fn unsolved() -> Self {
+        ParamBlock {
+            flag: false,
+            p1: -1.0,
+            p2: -1.0,
+            values: vec![-1.0],
+        }
+    }
+}
+
+/// Read a parameter block whose flag bit is at `flag_bit` and whose BDs
+/// start at `bd_bit` (the same bit + 1, or + 129 after a group member's
+/// 128-bit block).
+fn read_params(data: &[u8], flag_bit: usize, bd_bit: usize) -> Option<(ParamBlock, usize)> {
+    let flag = raw::get_bit(data, flag_bit) == 1;
+    let (p1, k) = raw::read_bd(data, bd_bit)?;
+    let (p2, k) = raw::read_bd(data, k)?;
+    let (n, mut k) = raw::read_bl(data, k)?;
+    if !(1..=2).contains(&n) {
+        return None;
+    }
+    let mut values = Vec::new();
+    for _ in 0..n {
+        let (v, q) = raw::read_bd(data, k)?;
+        values.push(v);
+        k = q;
+    }
+    Some((
+        ParamBlock {
+            flag,
+            p1,
+            p2,
+            values,
+        },
+        k,
+    ))
+}
+
 /// Spiral types (the code BL of a spiral record, S162).
 pub const SPIRAL_INWARD: i32 = 0;
 pub const SPIRAL_OUTWARD: i32 = 1;
@@ -533,6 +584,10 @@ pub struct SpiralRecord {
     pub end_radius: f64,
     /// The three BDs after the geometry (0, 0, 1 so far).
     pub tail: [f64; 3],
+    pub params: ParamBlock,
+    /// The 128 bits after the flag of a group member (header type byte
+    /// 0x0D, S177; MIST17).
+    pub member: Option<[u8; 16]>,
 }
 
 impl SpiralRecord {
@@ -563,20 +618,16 @@ fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
     // Header 0x0D020008 (S177): the first spiral of a group Civil 3D stored
     // as separate elements; 128 more bits follow the flag (MIST17).
     let h = aecc_alignment::read_header(data, bit)?;
-    let (k, extra) = match h.type_byte {
-        aecc_alignment::TYPE_GROUP_MEMBER => (h.next, 128),
-        _ => (h.next, 0),
-    };
-    let flag = raw::get_bit(data, k) == 1;
-    let (_, k) = raw::read_bd(data, k + 1 + extra)?;
-    let (_, k) = raw::read_bd(data, k)?;
-    let (n1, mut k) = raw::read_bl(data, k)?;
-    if !(1..=2).contains(&n1) {
-        return None;
-    }
-    for _ in 0..n1 {
-        k = raw::read_bd(data, k)?.1;
-    }
+    let member_bits = h.type_byte == aecc_alignment::TYPE_GROUP_MEMBER;
+    let member = member_bits.then(|| {
+        let mut m = [0u8; 16];
+        for (i, b) in m.iter_mut().enumerate() {
+            *b = raw::get_byte(data, h.next + 1 + 8 * i);
+        }
+        m
+    });
+    let (params, k) = read_params(data, h.next, h.next + 1 + if member_bits { 128 } else { 0 })?;
+    let flag = params.flag;
     let (kind, k) = raw::read_bl(data, k)?;
     let (id, k) = raw::read_bl(data, k)?;
     let (before, k) = raw::read_bl(data, k)?;
@@ -652,6 +703,8 @@ fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
         start_radius,
         end_radius,
         tail,
+        params,
+        member,
     })
 }
 
@@ -683,6 +736,7 @@ pub struct FreeSpiralRecord {
     pub code: i32,
     pub mode: i32,
     pub length: f64,
+    pub params: ParamBlock,
 }
 
 fn free_spiral_at(data: &[u8], bit: usize) -> Option<FreeSpiralRecord> {
@@ -690,16 +744,8 @@ fn free_spiral_at(data: &[u8], bit: usize) -> Option<FreeSpiralRecord> {
         return None;
     }
     let (_, k) = aecc_alignment::read_element_header(data, bit)?;
-    let flag = raw::get_bit(data, k) == 1;
-    let (_, k) = raw::read_bd(data, k + 1)?;
-    let (_, k) = raw::read_bd(data, k)?;
-    let (n1, mut k) = raw::read_bl(data, k)?;
-    if !(1..=2).contains(&n1) {
-        return None;
-    }
-    for _ in 0..n1 {
-        k = raw::read_bd(data, k)?.1;
-    }
+    let (params, k) = read_params(data, k, k + 1)?;
+    let flag = params.flag;
     let (code, k) = raw::read_bl(data, k)?;
     if code != FREE_SPIRAL_INCURVE && code != FREE_SPIRAL_OUTCURVE {
         return None;
@@ -722,6 +768,7 @@ fn free_spiral_at(data: &[u8], bit: usize) -> Option<FreeSpiralRecord> {
         code,
         mode,
         length,
+        params,
     })
 }
 
@@ -872,6 +919,10 @@ pub struct GroupRecord {
     pub code: i32,
     pub mode: i32,
     pub def: GroupDef,
+    pub params: ParamBlock,
+    /// Kinds 24 and 26: the BL (2 / 1) and the second bit before the
+    /// lengths (meanings unknown).
+    pub long_fields: Option<(i32, bool)>,
 }
 
 fn group_at(data: &[u8], bit: usize) -> Option<GroupRecord> {
@@ -888,16 +939,8 @@ fn group_at(data: &[u8], bit: usize) -> Option<GroupRecord> {
         return None;
     }
     let (_, k) = aecc_alignment::read_element_header(data, bit)?;
-    let flag = raw::get_bit(data, k) == 1;
-    let (_, k) = raw::read_bd(data, k + 1)?;
-    let (_, k) = raw::read_bd(data, k)?;
-    let (n1, mut k) = raw::read_bl(data, k)?;
-    if !(1..=2).contains(&n1) {
-        return None;
-    }
-    for _ in 0..n1 {
-        k = raw::read_bd(data, k)?.1;
-    }
+    let (params, k) = read_params(data, k, k + 1)?;
+    let flag = params.flag;
     // The long groups (kinds 24, 26) have no code field.
     let long = prefix == PREFIX_SCSCS || prefix == PREFIX_SCSSCS;
     let (code, k) = if long { (0, k) } else { raw::read_bl(data, k)? };
@@ -905,6 +948,7 @@ fn group_at(data: &[u8], bit: usize) -> Option<GroupRecord> {
     let (before, k) = raw::read_bl(data, k)?;
     let (after, k) = raw::read_bl(data, k)?;
     let (mode, mut k) = raw::read_bl(data, k)?;
+    let mut long_fields = None;
     let bd = |k: &mut usize| -> Option<f64> {
         let (v, q) = raw::read_bd(data, *k)?;
         *k = q;
@@ -913,8 +957,9 @@ fn group_at(data: &[u8], bit: usize) -> Option<GroupRecord> {
     let def = match (prefix, code) {
         (PREFIX_SCSCS | PREFIX_SCSSCS, _) => {
             // BL (2 / 1), B first curve left (?), B, lengths and radii, RD TS.
-            let (_, q) = raw::read_bl(data, k)?;
+            let (count, q) = raw::read_bl(data, k)?;
             let first_left = raw::get_bit(data, q) == 1;
+            long_fields = Some((count, raw::get_bit(data, q + 1) == 1));
             k = q + 2;
             let scscs = prefix == PREFIX_SCSCS;
             let v: Vec<f64> = (0..if scscs { 5 } else { 6 })
@@ -1027,6 +1072,8 @@ fn group_at(data: &[u8], bit: usize) -> Option<GroupRecord> {
         code,
         mode,
         def,
+        params,
+        long_fields,
     })
 }
 

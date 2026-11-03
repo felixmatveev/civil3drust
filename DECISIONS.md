@@ -1054,3 +1054,21 @@ smallest sweep. This picks Civil 3D's solution in all three samples.
 **Alternatives.** The solution nearest the stored curve end: wrong for
 S174 FC2. Store the solved positions: the record has no place for them.
 
+## D-054: One encoder per record kind, proved against Civil 3D's records
+
+**Context.** Writing alignments with any element (the step after
+decoding, D-049) needs encoders for every record kind. Fields that look
+constant (the −1 parameters, the spiral `256`, the long groups' flags,
+the group members' 128 bits) are not understood yet.
+
+**Decision.** Decoded records keep every field they read, understood or
+not, and `aecc_encode::encode_element` writes a record from those fields
+alone. A test re-encodes every element record of a broad sample set and
+requires Civil 3D's bits exactly; new record kinds join the set when they
+are decoded. New elements are built by filling the fields (with the
+values every Civil 3D record shows for the unexplained ones, e.g.
+`ParamBlock::unsolved()`), so an encoder is never a copy of template bits.
+
+**Alternatives.** Copy each record's bits from a template and patch the
+known fields: hides layout mistakes and keeps template content.
+
