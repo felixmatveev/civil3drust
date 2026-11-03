@@ -1,0 +1,133 @@
+<?xml version="1.0"?>
+<LandXML xmlns="http://www.landxml.org/schema/LandXML-1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.landxml.org/schema/LandXML-1.2 http://www.landxml.org/schema/LandXML-1.2/LandXML-1.2.xsd" date="2026-11-03" time="10:08:05" version="1.2" language="English" readOnly="false">
+	<Units>
+		<Imperial areaUnit="squareFoot" linearUnit="foot" volumeUnit="cubicYard" temperatureUnit="fahrenheit" pressureUnit="inchHG" diameterUnit="inch" angularUnit="decimal degrees" directionUnit="decimal degrees"></Imperial>
+	</Units>
+	<Project name="C:\Users\felix\Downloads\S177_long_spiral_method_alignments.dwg"></Project>
+	<Application name="Autodesk Civil 3D" desc="Civil 3D" manufacturer="Autodesk, Inc." version="2024" manufacturerURL="www.autodesk.com/civil" timeStamp="2026-11-03T10:08:05"></Application>
+	<Alignments name="">
+		<Alignment name="Free Reverse Spiral-Curve-Spiral-Curve" length="4728.533311907834" staStart="0." desc="Ls1 = 110, Ls2 = 170, R = 450 (turning left), Ls3 = 190">
+			<CoordGeom>
+				<Curve rot="ccw" chord="1639.831056918455" crvType="arc" delta="149.421323551167" dirEnd="59.421323551167" dirStart="270." external="2373.438630118154" length="2216.709958357272" midOrd="625.860476061393" radius="850." tangent="3109.349868081429">
+					<Start>2689.60782047045 -208.977471153708</Start>
+					<Center>2689.60782047045 641.022528846292</Center>
+					<End>2257.194935249925 1372.814231925291</End>
+					<PI>-419.742047610979 -208.977471153708</PI>
+				</Curve>
+				<Spiral length="110." radiusEnd="INF" radiusStart="850." rot="ccw" spiType="clothoid" theta="3.707373968494" totalY="2.371839577714" totalX="109.953953562989" tanLong="73.349422607442" tanShort="36.681293726613">
+					<Start>2257.194935249925 1372.814231925291</Start>
+					<PI>2288.775013376205 1391.474777871109</PI>
+					<End>2354.204460707921 1424.627835327572</End>
+				</Spiral>
+				<Spiral length="170." radiusEnd="450." radiusStart="INF" rot="cw" spiType="clothoid" theta="10.822536130249" totalY="10.676456253679" totalX="169.394457857383" tanLong="113.545868115266" tanShort="56.859930481139">
+					<Start>2354.204460707921 1424.627835327572</Start>
+					<PI>2455.490103232226 1475.949203045979</PI>
+					<End>2500.482757245809 1510.715749885348</End>
+				</Spiral>
+				<Curve rot="cw" chord="654.845184474624" crvType="arc" delta="93.372100498899" dirEnd="318.934060890513" dirStart="52.306161389412" external="205.980957702448" length="733.342762443969" midOrd="141.302014757792" radius="449.999999999999" tangent="477.295523620556">
+					<Start>2500.482757245809 1510.715749885348</Start>
+					<Center>2225.333879198814 1866.795930335592</Center>
+					<End>2564.613202628736 2162.413150221264</End>
+					<PI>2878.161593198925 1802.554256154347</PI>
+				</Curve>
+				<Spiral length="190." radiusEnd="INF" radiusStart="450." rot="cw" spiType="clothoid" theta="12.095775674984" totalY="13.327867156784" totalX="189.154955287039" tanLong="126.963638438061" tanShort="63.603395619722">
+					<Start>2564.613202628736 2162.413150221264</Start>
+					<PI>2522.830404876755 2210.367188073944</PI>
+					<End>2421.217478962043 2286.4893187094</End>
+				</Spiral>
+				<Line dir="306.838285215529" length="1308.480591106593">
+					<Start>2421.217478962043 2286.4893187094</Start>
+					<End>1374. 3071.</End>
+				</Line>
+			</CoordGeom>
+			<Feature name="SpeedStation" code="0" source="Autodesk Civil 3D">
+				<Property label="station" value="0.00000000"></Property>
+				<Property label="speed" value="60.00000000"></Property>
+			</Feature>
+		</Alignment>
+		<Alignment name="Free Reverse Spiral-Curve-Spiral-Spiral" length="2859.437848579703" staStart="0." desc="Ls1 = 130, R = 550 (turning left), Ls2 = 160, Ls3 = 210">
+			<CoordGeom>
+				<Line dir="45.851419381515" length="908.980484798181">
+					<Start>3739. -226.5</Start>
+					<End>4391.226203851756 406.624395954748</End>
+				</Line>
+				<Spiral length="130." radiusEnd="550." radiusStart="INF" rot="cw" spiType="clothoid" theta="6.771319397001" totalY="5.116105271636" totalX="129.818547120766" tanLong="86.730157045648" tanShort="43.391057747144">
+					<Start>4391.226203851756 406.624395954748</Start>
+					<PI>4453.458212168093 467.033809807871</PI>
+					<End>4480.81220539992 500.716786913365</End>
+				</Spiral>
+				<Curve rot="cw" chord="971.963871046928" crvType="arc" delta="124.160313548339" dirEnd="274.919786436175" dirStart="39.080099984515" external="624.621694966518" length="1191.853449449876" midOrd="292.470276773985" radius="550." tangent="1037.899863323055">
+					<Start>4480.81220539992 500.716786913365</Start>
+					<Center>4053.866231508782 847.440214702932</Center>
+					<End>4101.03477842102 1395.413871170274</End>
+					<PI>5135.110747788454 1306.402546818712</PI>
+				</Curve>
+				<Spiral length="160." radiusEnd="INF" radiusStart="550." rot="cw" spiType="clothoid" theta="8.333931565539" totalY="7.745860273539" totalX="159.661819011611" tanLong="106.785117273441" tanShort="53.441032344862">
+					<Start>4101.03477842102 1395.413871170273</Start>
+					<PI>4047.79063678574 1399.997027245177</PI>
+					<End>3941.195046436989 1393.637672772941</End>
+				</Spiral>
+				<Spiral length="210." radiusEnd="1035.795324650936" radiusStart="INF" rot="ccw" spiType="clothoid" theta="5.808152156799" totalY="7.090789663528" totalX="209.784303357376" tanLong="140.075432689627" tanShort="70.068580318323">
+					<Start>3941.195046436989 1393.637672772941</Start>
+					<PI>3801.368225788628 1385.29578626225</PI>
+					<End>3731.360800997502 1388.22263131114</End>
+				</Spiral>
+				<Curve rot="ccw" chord="257.932782631509" crvType="arc" delta="14.304865550305" dirEnd="286.698872577738" dirStart="272.394007027433" external="8.123345373186" length="258.603914331646" midOrd="8.060132843372" radius="1035.795324650936" tangent="129.977825247979">
+					<Start>3731.360800997502 1388.22263131114</Start>
+					<Center>3774.627160952916 2423.113918676603</Center>
+					<End>3477. 1431.</End>
+					<PI>3601.496419783795 1393.651954305329</PI>
+				</Curve>
+			</CoordGeom>
+			<Feature name="SpeedStation" code="0" source="Autodesk Civil 3D">
+				<Property label="station" value="0.00000000"></Property>
+				<Property label="speed" value="60.00000000"></Property>
+			</Feature>
+		</Alignment>
+		<Alignment name="Free Reverse Spiral-Spiral-Curve-Spiral-Spiral (Between two curves)" length="4246.687354346946" staStart="0." desc="Ls1 = 120, Ls2 = 180, R = 500 (the middle curve, turning left), Ls3 = 140, Ls4 = 200">
+			<CoordGeom>
+				<Curve rot="cw" chord="460.183012513734" crvType="arc" delta="54.580119782815" dirEnd="26.100881734818" dirStart="80.681001517634" external="62.852086734894" length="478.054567542098" midOrd="55.856447682278" radius="501.840399143608" tangent="258.908897867622">
+					<Start>49.5 47.</Start>
+					<Center>-31.763537658054 542.217147986531</Center>
+					<End>418.899581739606 321.430964027057</End>
+					<PI>304.991838060748 88.925387050894</PI>
+				</Curve>
+				<Spiral length="120." radiusEnd="INF" radiusStart="501.840399143608" rot="cw" spiType="clothoid" theta="6.85027904619" totalY="4.77751615797" totalX="119.828578576714" tanLong="80.059983165528" tanShort="40.05453584325">
+					<Start>418.899581739606 321.430964027057</Start>
+					<PI>436.521694535209 357.400770563057</PI>
+					<End>462.917517101309 432.984243991603</End>
+				</Spiral>
+				<Spiral length="180." radiusEnd="500." radiusStart="INF" rot="ccw" spiType="clothoid" theta="10.313240312355" totalY="10.77503146657" totalX="179.417674146197" tanLong="120.204290875917" tanShort="60.185762946221">
+					<Start>462.917517101309 432.984243991603</Start>
+					<PI>502.548941043587 546.467378338912</PI>
+					<End>532.244179149878 598.817343909382</End>
+				</Spiral>
+				<Curve rot="ccw" chord="426.891066409768" crvType="arc" delta="50.5408411657" dirEnd="80.104684166682" dirStart="29.563843000982" external="52.91198739413" length="441.052042534473" midOrd="47.848471909159" radius="500." tangent="236.033187929425">
+					<Start>532.244179149874 598.817343909383</Start>
+					<Center>967.147410477587 352.120810936758</Center>
+					<End>881.22312900372 844.682500325204</End>
+					<PI>648.701317407205 804.12053617156</PI>
+				</Curve>
+				<Spiral length="140." radiusEnd="INF" radiusStart="500." rot="ccw" spiType="clothoid" theta="8.021409131832" totalY="6.524192368913" totalX="139.72584888" tanLong="93.429335701711" tanShort="46.753954041707">
+					<Start>881.223129003721 844.682500325203</Start>
+					<PI>927.281542180467 852.717100139395</PI>
+					<End>1020.660912959914 855.772240479471</End>
+				</Spiral>
+				<Spiral length="200." radiusEnd="494.130272660316" radiusStart="INF" rot="cw" spiType="clothoid" theta="11.595278144893" totalY="13.452301133336" totalX="199.182432534888" tanLong="133.620501050048" tanShort="66.927806372275">
+					<Start>1020.660912959914 855.772240479471</Start>
+					<PI>1154.209955319845 860.141632383556</PI>
+					<End>1219.29693464607 875.73061528791</End>
+				</Spiral>
+				<Curve rot="cw" chord="404.855383425668" crvType="arc" delta="311.63246266674" dirEnd="124.898352486881" dirStart="76.530815153621" length="2687.580744270376" midOrd="944.8937982335" radius="494.130272660313">
+					<Start>1219.29693464607 875.73061528791</Start>
+					<Center>1104.202943216281 1356.269999205727</Center>
+					<End>821.500000000002 951.000000000002</End>
+				</Curve>
+			</CoordGeom>
+			<Feature name="SpeedStation" code="0" source="Autodesk Civil 3D">
+				<Property label="station" value="0.00000000"></Property>
+				<Property label="speed" value="60.00000000"></Property>
+			</Feature>
+		</Alignment>
+	</Alignments>
+</LandXML>

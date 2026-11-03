@@ -2373,6 +2373,19 @@ these values; every joint equals the drawing. The spirals keep their
 typed lengths; the curves between them get the typed radius, and the end
 curve is drawn as stored (its radius as built by the owner).
 
+**What the JSON does (owner, S178 in Civil 3D; experiment S179/S180).**
+In Alignment Properties a stored-apart group shows as one entity with
+sub-entities (11F8: entity 2 "Spiral-Curve-Rev-Spiral-Spiral", 2.1–2.4,
+parameter constraint "Spiral1 Length Curve Radius and Reverse…", locked;
+tangency "Constrained on Both Sides (Free)"), between the fixed line 1 and
+the fixed curve 3 — the JSON's numbering, not the binary records' (4, 5,
+…). The group has no controls of its own beyond the entity list; it
+follows small changes of its neighbours and disappears when they change
+too much. Civil 3D's LandXML export (S178) lists the pieces as plain
+curves and clothoid spirals with the same coordinates as the binary
+records. S179 removes the JSON string, S180 empties it, to see whether the
+grouping (and the group's re-solving) comes from the JSON alone.
+
 ## Open questions
 
 Tracked as MIST1 … MIST15 in [`mysteries.md`](mysteries.md), each with

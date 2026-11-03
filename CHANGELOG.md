@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `string_stream::remove` (take a string out of the stream) and
+  `examples/exp_json` (drop the JSON layout string: `remove` or `empty`).
+  Experiment samples S179 (removed) and S180 (emptied).
 - Spiral groups (S173): `Element::Group` with `GroupDef` — spiral-curve-spiral,
   spiral-curve by length or through a point, spiral-line from a curve —
   placed from their neighbours into several parts. Sample S173.

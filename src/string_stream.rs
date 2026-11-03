@@ -195,6 +195,41 @@ pub fn replace(
     Ok((bytes, hb))
 }
 
+/// Remove string `index` from the stream entirely (the strings after it
+/// move up by one).
+pub fn remove(
+    data: &[u8],
+    handle_bits: usize,
+    index: usize,
+) -> Result<(Vec<u8>, usize), StringStreamError> {
+    let ss = parse(data, handle_bits)?;
+    let old = ss
+        .strings
+        .get(index)
+        .ok_or_else(|| StringStreamError::NotFound(format!("#{index}")))?;
+    let bit = |b: usize| raw::get_bit(data, b);
+    let total = raw::bit_len(data);
+    let mut out: Vec<u8> = (0..old.bit).map(bit).collect();
+    out.extend((old.end..ss.size_field).map(bit));
+    let new_size = out.len() - ss.start;
+    if new_size & 0x8000 != 0 {
+        return Err(StringStreamError::LargeStream);
+    }
+    push_le16(&mut out, new_size as u16);
+    out.push(1);
+    let new_data_end = out.len();
+    out.extend((ss.data_end..total).map(bit));
+    while !out.len().is_multiple_of(8) {
+        out.push(0);
+    }
+    let mut bytes = vec![0u8; out.len() / 8];
+    for (i, b) in out.iter().enumerate() {
+        bytes[i / 8] |= b << (7 - i % 8);
+    }
+    let hb = out.len() - new_data_end;
+    Ok((bytes, hb))
+}
+
 /// Rename an object: replace the stream string equal to `old_name` (the
 /// last such string, as the name follows the `AeccImp…` class string)
 /// with `new_name`.
