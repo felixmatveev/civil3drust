@@ -1155,9 +1155,9 @@ is re-solved by Civil 3D anyway.
 
 **Decision.** A group is described by its method, its neighbours and its
 typed parameters (`aecc_layout::Group`); the JSON is written from them
-(`layout`). Whether the binary pieces must be written too is being tested
-(S216); civil3drust has no solver for these methods and adds none unless
-Civil 3D requires the pieces.
+(`layout`). The binary pieces are not needed: Civil 3D builds them from
+the JSON, with the JSON's parameters winning over any pieces written
+(S216 → S217). civil3drust adds no solver for these methods.
 
 **Alternatives.** Solve the pieces in civil3drust: a solver per method,
 discarded by Civil 3D on opening.

@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Civil 3D solves spiral groups from the JSON alone (S216 → S217): no
+  pieces needed, the JSON's parameters win over written pieces.
+  Sample S217.
 - `aecc_layout::layout` and `Group`: the layout JSON from fixed elements
   and groups given by method and typed parameters (`compose` now builds
   on it); `group_parameters`. `examples/exp_group_params`; sample S216

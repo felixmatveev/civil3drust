@@ -2699,7 +2699,30 @@ record. Questions: does Civil 3D build the pieces from the JSON when
 there are none (1208–1211), does it use the JSON's parameters over the
 pieces' (120E, 1214, 1217), and does it accept either linking.
 
-Civil 3D results: pending.
+**Result (owner; re-save S217).** Clean opening, AUDIT clean, the
+"modified unexpectedly" warning for all six new alignments. In S217
+every group is solved **from the JSON**:
+
+- 1208, 120B, 1211 (no pieces written, both linkings): pieces built,
+  identical to S178's (same IDs 4…, points, lengths 130/550/160/210 and
+  120/180/500/140/200); the fixed elements trimmed to the tangent points.
+- 120E (Spiral1 150, R 500 instead of the typed 110, 450): a different
+  group with exactly those values (spirals 150, 170, 190, curve R 500),
+  the fixed curve trimmed to the new tangent point; length 4656.50
+  instead of 4728.53 — the drawing the owner saw differ.
+- 1214, 1217 (pieces written, `Spiral1Length` + 20 in the JSON): spiral 1
+  is now 130 (was 110) and 150 (was 130): the JSON wins over the pieces.
+- Member headers after the save: `09` in 120E, 1214, 1217; none in 1208,
+  120B, 1211 (Civil 3D's own three keep `0D`). Both forms reopen.
+
+**Conclusion (D-059).** A spiral group of these methods is written as
+its JSON object (method and typed parameters) between two fixed
+elements; Civil 3D solves the pieces on opening. The fixed elements may
+be linked to each other or to the group ID. The element records need
+not contain the pieces. What civil3drust still lacks: its own reader
+refuses such a record (a gap in the chain), so it cannot yet read back
+what it writes; and a writer that creates such an alignment directly
+(not by cutting pieces out).
 
 ## Open questions
 
