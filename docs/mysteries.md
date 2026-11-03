@@ -449,7 +449,18 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   the top). Still open: flag bit 0x01, what 0x0008 stands for, and when
   Civil 3D writes type 0x0D (tests listed above).
 
-## MIST8 — the curve flag bit
+## MIST8 — the curve flag bit — **SOLVED (S207–S210)**
+
+- **Answer:** Civil 3D sets the flag on every curve it read from the
+  file when it opens the drawing; a curve created in the session that
+  saves it keeps 0 until the drawing is opened again. Edits don't
+  change it (S207: S24's 0 → 1 with a radius edit; S208: S131's 1 stays
+  1 with a radius edit; S209: a new curve 0 beside the old 1; S210:
+  S209 reopened and saved, the new curve 1). S12's 0 was most likely
+  edited in the same session as S11. It is load-time state, not model
+  data: civil3drust writes 0 for new curves (as Civil 3D does) and keeps
+  the stored value on rewritten ones (test `curve_flag_set_on_load_s207_s210`).
+
 
 - **Where:** the bit right after the header in curve and group records.
 - **Seen:** 1 in S10, S14, S15; 0 in S11–S13. Civil 3D sets it after

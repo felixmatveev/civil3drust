@@ -762,3 +762,44 @@ fn constrained_by_next_is_the_kind_field_s201() {
     assert!((d.length() - d0.length()).abs() < 1e-9);
     assert_eq!(chain_of(&before), chain_of(&after));
 }
+
+/// MIST8: the curve flag is set for curves Civil 3D read from the file;
+/// curves made in the session that saves them keep 0 until the drawing is
+/// opened again (S207–S210).
+#[test]
+fn curve_flag_set_on_load_s207_s210() {
+    let flags = |p: &str| -> Vec<(i32, bool)> {
+        let r = edit_base_f9e(p);
+        decode_elements(&r)
+            .unwrap()
+            .elements
+            .iter()
+            .filter_map(|e| match &e.record {
+                Element::Arc(a) => Some((a.id, a.flag)),
+                _ => None,
+            })
+            .collect()
+    };
+    // S24 (0) opened, radius changed, saved: 1.
+    assert_eq!(flags("samples/S24_ZERO_CIVIL.dwg"), [(4, false)]);
+    assert_eq!(flags("samples/S207_S24_radius_75.dwg"), [(4, true)]);
+    // S131 (1), radius changed: still 1.
+    assert_eq!(flags("samples/S208_S131_radius_75.dwg"), [(4, true)]);
+    // A curve added in the session: 0; after reopening and saving: 1.
+    assert_eq!(
+        flags("samples/S209_S131_curve_added.dwg"),
+        [(4, true), (5, false)]
+    );
+    assert_eq!(
+        flags("samples/S210_S209_reopened_resaved.dwg"),
+        [(4, true), (5, true)]
+    );
+}
+
+fn edit_base_f9e(path: &str) -> raw::RawRecord {
+    let o = raw::open(path).unwrap();
+    raw::records(&o.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0xF9E)
+        .unwrap()
+}

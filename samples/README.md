@@ -218,6 +218,10 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S204 | `S204_S178_json_bisect.dwg` | civil3drust | S178 edited in place (`exp_json_bisect`): 11D4 JSON replaced by the composed one; 11DE through `replace_elements` with its own elements (speed kept without interval); 11F8 unchanged. | 484757 | `93c44249059b08b4` |
 | S205 | `S205_S178_generated_layout_json_speeds_kept.dwg` | civil3drust | S199 regenerated with `finish` keeping interval-less speeds and the group-member header in the unlocked form Civil 3D writes (`08 00 02 09`, S202) with `ConstraintLocked` 0 in the composed JSON: six alignments from S178's 11F8 template (Properties + JSON form). | 497786 | `59470b2660c61cd8` |
 | S206 | `S206_S24_generated_layout_json_member_header.dwg` | civil3drust | S197 regenerated with the corrected member header (`08 00 02 09`) and `ConstraintLocked` 0: plain form, no JSON flag, speed with interval. | 460047 | `d41a2828f81c298d` |
+| S207 | `S207_S24_radius_75.dwg` | Civil 3D 2024 | MIST8 T1 (owner): S24 opened, curve 4 of `Alignment - (1)` radius 50 → 75, saved. Curve flag 0 → 1. | 474150 | `133dd9468c61210b` |
+| S208 | `S208_S131_radius_75.dwg` | Civil 3D 2024 | MIST8 T2 (owner): S131 opened, curve 4 radius 50 → 75, saved. Flag stays 1. | 473286 | `f6dbb74d0b92456f` |
+| S209 | `S209_S131_curve_added.dwg` | Civil 3D 2024 | MIST8 T3 (owner): S131 with a free curve R 30 (ID 5) added at PI (200, 50), saved. New curve flag 0, curve 4 flag 1. | 474085 | `11d8e7487a345d27` |
+| S210 | `S210_S209_reopened_resaved.dwg` | Civil 3D 2024 | MIST8 T3b (owner): S209 closed, reopened, saved unchanged. Curve 5's flag 0 → 1. | 473127 | `aa16ddeafb36d135` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

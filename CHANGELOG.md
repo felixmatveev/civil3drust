@@ -7,6 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- MIST8 solved: the curve flag is set by Civil 3D for curves read from
+  the file (S207–S210, test `curve_flag_set_on_load_s207_s210`).
 - Tangent kind 3, "Constrained by Next (Floating)": start point only
   (`KIND_FLOATING_NEXT`, S201). Group-member spirals unlocked: type byte
   `0x09` with the `02` byte kept (S202); `header_bytes`,
