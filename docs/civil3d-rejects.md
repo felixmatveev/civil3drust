@@ -21,12 +21,14 @@ How to read a row: **condition** in the file → **Civil 3D's response** →
 | Element tag bytes reversed (`0x08000204`) | eOutOfRange, discarded; the drawing opens very slowly and draws with glitches | S130 | guarded: as above |
 | MIST2 tag ≠ `0x0D00D773` | eWrongObjectType, alignment discarded | S151, S153 | guarded: civil3drust never writes MIST2 (D-047) |
 | MIST2 removed while the format marker (section-2 bits 115–124) still says "present" — plain form `0x1188`, Properties form `0100000001` | eWrongObjectType, alignment discarded | S154 (plain), S158 (Properties) | guarded: `remove_resave_field` switches the marker with the field |
+| JSON layout string removed from an alignment that has one (the strings after it move up one slot) | RECOVER; the alignment comes back empty, without a name | S183 (owner) | guarded: civil3drust never removes it; `exp_json remove` is an experiment |
 | Companion tail entry count does not match its handle references (no face-like entry ↔ 3 references; one entry ↔ 5) | companion discarded, eWrongObjectType ("6 errors fixed, 3 objects erased"); the alignments keep dangling companion references | S108 → S109 | guarded: the rebuild keeps the template's edge flags and tail (D-040, test `tail_entry_matches_reference_count`) |
 
 ## 2. Opens, then misbehaves
 
 | condition | Civil 3D's response | samples | civil3drust |
 |---|---|---|---|
+| JSON layout string emptied (string kept, no text) | no RECOVER, AUDIT clean, but the stored-apart spiral groups no longer re-solve; on the next edit they are cut from the following element, which becomes a detached piece; persists after save and reopen | S180 → S182 | guarded: civil3drust never empties it |
 | Null alignment style reference | no RECOVER prompt; alignment listed in Prospector but not drawn; **selecting it crashes Civil 3D** (unhandled access violation reading 0x0098). AUDIT: 3 errors, names "Alignment Style eNullObjectId → Standard"; afterwards it draws as a dot until moved | S67 → S68, S69 | guarded: `create_alignment` refuses a style the target lacks (D-025) |
 | Alignment style with no owner | style dropped on save; alignment shown with the default style; without AUDIT the reference is left broken (points at the dropped style) | S70 → S71 (AUDIT), S72 (no AUDIT) | to check: styles are only referenced from the target today |
 | Alignment style owned outside Civil 3D's style collection (own dictionary) | style ignored; alignment shown with the default style | S73 | to check: as above; own styles need Civil 3D's collection chain (D-030) |

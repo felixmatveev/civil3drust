@@ -2400,8 +2400,22 @@ Results:
   string is read as a layout with no groups: the pieces are plain
   elements and the links Civil 3D re-solves are lost.
 - **S183**: the JSON string really removed (string count one lower).
-  Pending: does Civil 3D rebuild the group without it, or behave as
-  S180?
+  Owner: RECOVER, and the alignments come back empty, without even a
+  name. The strings are read by position: the JSON string is a fixed
+  slot of these alignments' string stream (after the description, before
+  the created-by user and the name), so removing it shifts the name and
+  everything after it. (The re-save sent back was a copy of S181, so
+  there is no recovered sample.)
+
+**Conclusion.** For these three group types the JSON string is the live
+definition: Civil 3D reads it to build the group, keeps it current on
+every edit, and treats an empty one as "no groups". The binary spirals
+and curves are the solved snapshot. To write such a group civil3drust
+would have to write both the JSON and the solved pieces; to edit an
+alignment that has one, it must keep the JSON consistent (or empty it on
+purpose, which makes the pieces fixed). Open: what marks the record as
+having the JSON slot (alignments without these groups have no such
+string), and MIST17.
 
 
 ## Open questions

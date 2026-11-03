@@ -11,7 +11,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   `examples/exp_json` (drop the JSON layout string: `remove` or `empty`).
   Experiment samples S179 (meant as removed, but overwritten with a plain
   round trip of S178 by mistake), S180 (emptied), their Civil 3D re-saves
-  S181 and S182, and S183 (removed, checked).
+  S181 and S182, and S183 (removed, checked; RECOVER, alignments emptied).
+  `docs/civil3d-rejects.md`: removed and emptied JSON layout strings.
 - Spiral groups (S173): `Element::Group` with `GroupDef` — spiral-curve-spiral,
   spiral-curve by length or through a point, spiral-line from a curve —
   placed from their neighbours into several parts. Sample S173.
