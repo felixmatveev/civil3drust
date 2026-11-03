@@ -68,9 +68,9 @@ the arcs and lines in each record's proxy graphics.
 | Free Spiral-Curve-Spiral (between two entities) | group kind 8 code 0: BD L1, BD R, BD L2 (between two lines) | known, S173 |
 | Free Compound Spiral-Curve-Spiral-Curve-Spiral (between two tangents) | group kind 24: L1, R1, L2, R2, L3, TS point; curve lengths solved | known, S177 |
 | Free Reverse Spiral-Curve-Spiral-Spiral-Curve-Spiral (between two tangents) | group kind 26: L1, R1, L2, L3, R2, L4, TS point; curve lengths solved | known, S177 |
-| Free Reverse Spiral-Curve-Spiral-Spiral (from entity, end curve) | stored as separate fixed elements + JSON layout (ConstraintType 2565) | known, S177 |
-| Free Reverse Spiral-Curve-Spiral-Curve (from curve, end entity) | stored as separate fixed elements + JSON layout (ConstraintType 2561) | known, S177 |
-| Free Reverse Spiral-Spiral-Curve-Spiral-Spiral (between two curves) | stored as separate fixed elements + JSON layout (ConstraintType 2569) | known, S177 |
+| Free Reverse Spiral-Curve-Spiral-Spiral (from entity, end curve) | seen as separate fixed elements + pasted JSON (ConstraintType 2565); to be re-sampled without copy and paste | provisional, S177 |
+| Free Reverse Spiral-Curve-Spiral-Curve (from curve, end entity) | seen as separate fixed elements + pasted JSON (ConstraintType 2561); to be re-sampled without copy and paste | provisional, S177 |
+| Free Reverse Spiral-Spiral-Curve-Spiral-Spiral (between two curves) | seen as separate fixed elements + pasted JSON (ConstraintType 2569); to be re-sampled without copy and paste | provisional, S177 |
 
 ## Spirals
 

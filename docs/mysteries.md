@@ -382,7 +382,8 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Hypothesis:** spiral definition or type flags (clothoid, by length vs
   A). S121 (spiral methods) should vary it.
 
-- **S177:** Civil 3D's JSON layout string calls it `"SpiralType": 256`
+- **S177:** Civil 3D's JSON layout text (pasted into the drawing through
+  a remote-desktop clipboard, owner) calls it `"SpiralType": 256`
   for the same groups. What other spiral types (cubic, sinusoidal …)
   store is still to be sampled.
 
@@ -491,7 +492,9 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   c1d9c831a7969780`, FD4 `d9582ecdf07f1e80 0000000000000000` (not doubles;
   FCE and FD1 share their last bytes).
 - **Hypothesis:** an identifier tying the elements to the JSON group (ID
-  3), or the group's anchor.
+  3), or the group's anchor. The owner reports the JSON came from a
+  copy-paste over remote desktop, so these elements may be pasted ones;
+  re-sample the three methods without copy and paste first.
 
 ## Not sampled yet (not mysteries, just gaps)
 

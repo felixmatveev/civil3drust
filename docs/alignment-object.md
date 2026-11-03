@@ -2323,7 +2323,14 @@ lengths are solved so that the last spiral ends on the second line in its
 direction (FC8 71.6145 and 91.4175; FCB 200.0000 and 258.3333). All joints
 equal the drawing.
 
-*Stored as separate elements, with a JSON layout.* Free Reverse
+*Stored as separate elements, with a JSON layout — provisional.* The
+owner reports that the JSON is a copy-paste artifact (the drawing was
+made over a remote desktop, whose clipboard carried it). So FCE, FD1 and
+FD4 may hold pasted elements rather than what these methods store
+natively; they need to be made again without copy and paste before the
+layout below is taken as the methods' own. The JSON text itself is
+Civil 3D's (its field names match the record fields), but how it got
+into the record is not a Civil 3D storage rule. Free Reverse
 Spiral-Spiral-Curve-Spiral-Spiral (between two curves, FCE), Free Reverse
 Spiral-Curve-Spiral-Curve (from curve, end entity, FD1) and Free Reverse
 Spiral-Curve-Spiral-Spiral (from entity, end curve, FD4) are not group
@@ -2333,8 +2340,8 @@ solving (all joints equal the drawing), and:
 
 - the first spiral has the element header `0x0D020008` (MIST7 top byte
   13) and 128 more bits after the flag bit (MIST17);
-- the string stream gets an extra string after the description: a JSON
-  description of the layout, e.g. for FCE
+- the string stream has an extra string after the description: a JSON
+  description of the layout (pasted, see above), e.g. for FCE
 
   ```json
   {"JsonVersion": 1, "FirstId": 1, "RGObjects": [
