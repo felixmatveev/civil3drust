@@ -42,6 +42,7 @@ sample drawings (S1–S120) and the evidence for each finding are in
 | Detached pieces after deleting an interior element | ✓ | kept as placeholders (D-037) |
 | Widening (offset alignments with widening regions and transitions) | not sampled yet | — |
 | Offset, curb return and rail alignments; station equations | not sampled yet | — |
+| Grouped alignments | not sampled yet | — |
 
 ### Still unexplained
 

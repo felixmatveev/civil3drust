@@ -512,5 +512,8 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   alignment, an offset alignment, then one widening added, edited and
   removed, each step saved separately.
 - Station equations (data seen in S9, not decoded).
+- Grouped alignments (owner): how alignments are grouped and where the
+  group is stored. Sample plan: two alignments, saved; then grouped,
+  saved; then one removed from the group, saved.
 - Three long reverse spiral groups to re-sample without copy and paste
   (S177 FCE, FD1, FD4).
