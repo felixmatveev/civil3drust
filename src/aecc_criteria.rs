@@ -136,8 +136,8 @@ pub fn set_constraint_editing(
     rec: &RawRecord,
     c: ConstraintEditing,
 ) -> Result<(Vec<u8>, usize), CriteriaError> {
-    use crate::aecc_alignment::{read_element_header, ELEMENT_LOCKED};
-    use crate::aecc_build::{encode_element_header, Bits};
+    use crate::aecc_alignment::{read_header, ELEMENT_LOCKED};
+    use crate::aecc_build::{encode_header, Bits};
     let d = decode_elements(rec).map_err(|e| CriteriaError(e.to_string()))?;
     if d.has_groups() {
         return Err(CriteriaError("spiral groups not handled yet".into()));
@@ -160,15 +160,15 @@ pub fn set_constraint_editing(
     let mut w = Bits::default();
     let mut at = 0;
     for h in headers {
-        let (flags, next) = read_element_header(&data, h)
+        let hd = read_header(&data, h)
             .ok_or_else(|| CriteriaError(format!("element header at bit {h} not readable")))?;
-        let rest = flags.unwrap_or(0) & !ELEMENT_LOCKED;
-        // Other flag bits without the lock are rejected by Civil 3D
-        // (S126, S128), so unlocking drops the whole byte.
+        let rest = hd.flags.unwrap_or(0) & !ELEMENT_LOCKED;
+        // A flag byte without bit 0x02 would be read as the type byte
+        // (S126, S128: rejected), so unlocking drops the whole byte.
         let new = c.lock_parameters.then_some(rest | ELEMENT_LOCKED);
         w.copy(&data, at, h);
-        encode_element_header(&mut w, new);
-        at = next;
+        encode_header(&mut w, new, hd.type_byte);
+        at = hd.next;
     }
     let new_data_end = data_end + w.len() - at;
     w.copy(&data, at, total);

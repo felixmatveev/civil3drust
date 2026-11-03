@@ -204,13 +204,18 @@ pub fn element_header_flags(rec: &RawRecord) -> Option<u8> {
 /// Encode an element header: code `00`, `0x0008`, the flag byte if any,
 /// `0x04`. With `Some(0x02)` this is [`ELEMENT_HEADER`] as a raw long.
 pub fn encode_element_header(w: &mut Bits, flags: Option<u8>) {
+    encode_header(w, flags, crate::aecc_alignment::TYPE_ELEMENT);
+}
+
+/// Encode an element header with any type byte (MIST7).
+pub fn encode_header(w: &mut Bits, flags: Option<u8>, type_byte: u8) {
     w.bits(0b00, 2);
     w.byte(0x08);
     w.byte(0x00);
     if let Some(f) = flags {
         w.byte(f);
     }
-    w.byte(0x04);
+    w.byte(type_byte);
 }
 
 /// Encode a tangent record (without its prefix).

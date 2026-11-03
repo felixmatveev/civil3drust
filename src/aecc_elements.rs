@@ -488,7 +488,8 @@ fn line_spiral_at(data: &[u8], bit: usize) -> Option<LineSpiralRecord> {
     })
 }
 
-/// Element header of the first spiral of a stored-apart group (S177).
+/// Element header of the first spiral of a stored-apart group (S177), in
+/// the locked form (see [`aecc_alignment::read_header`]).
 pub const HEADER_GROUP_MEMBER: i32 = 0x0D02_0008;
 
 /// Spiral types (the code BL of a spiral record, S162).
@@ -561,12 +562,10 @@ fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
     }
     // Header 0x0D020008 (S177): the first spiral of a group Civil 3D stored
     // as separate elements; 128 more bits follow the flag (MIST17).
-    let (k, extra) = match aecc_alignment::read_element_header(data, bit) {
-        Some((_, k)) => (k, 0),
-        None => match raw::read_bl(data, bit)? {
-            (HEADER_GROUP_MEMBER, k) => (k, 128),
-            _ => return None,
-        },
+    let h = aecc_alignment::read_header(data, bit)?;
+    let (k, extra) = match h.type_byte {
+        aecc_alignment::TYPE_GROUP_MEMBER => (h.next, 128),
+        _ => (h.next, 0),
     };
     let flag = raw::get_bit(data, k) == 1;
     let (_, k) = raw::read_bd(data, k + 1 + extra)?;

@@ -669,3 +669,55 @@ fn lock_is_per_element_s170_s172() {
         assert_eq!(f, (id == 2).then_some(2), "element {id} (new {new})");
     }
 }
+
+/// The type byte (MIST7): S177's first-of-group spirals use 0x0D. With the
+/// lock removed (`08 00 0D`, the form Civil 3D would write with "Lock all
+/// parameter constraints" off) they still decode, to the same geometry.
+#[test]
+fn group_member_header_unlocked_s177() {
+    use civil3drust::aecc_alignment::{read_header, TYPE_GROUP_MEMBER};
+    use civil3drust::aecc_criteria::{set_constraint_editing, ConstraintEditing};
+    let o = raw::open("samples/S177_long_spiral_method_alignments.dwg").unwrap();
+    let mut seen = 0;
+    for r in raw::records(&o.doc, "AECC_ALIGNMENT") {
+        let d = decode_elements(&r).unwrap();
+        let members = d
+            .all()
+            .filter(|e| {
+                read_header(&r.data, e.record.header_bit())
+                    .unwrap()
+                    .type_byte
+                    == TYPE_GROUP_MEMBER
+            })
+            .count();
+        if members == 0 || d.has_groups() {
+            continue;
+        }
+        seen += members;
+        let off = ConstraintEditing {
+            swap_tangency: false,
+            lock_parameters: false,
+        };
+        let (data, handle_bits) = set_constraint_editing(&r, off).unwrap();
+        let u = raw::RawRecord {
+            data,
+            handle_bits,
+            ..r.clone()
+        };
+        let du = decode_elements(&u).unwrap();
+        let hs: Vec<_> = du
+            .all()
+            .map(|e| read_header(&u.data, e.record.header_bit()).unwrap())
+            .collect();
+        assert!(hs.iter().all(|h| h.flags.is_none()));
+        assert_eq!(
+            hs.iter()
+                .filter(|h| h.type_byte == TYPE_GROUP_MEMBER)
+                .count(),
+            members
+        );
+        assert_eq!(d.record_count(), du.record_count());
+        assert!((d.length() - du.length()).abs() < 1e-9, "{:X}", r.handle);
+    }
+    assert_eq!(seen, 3);
+}

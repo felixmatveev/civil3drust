@@ -222,6 +222,47 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 
 ## MIST7 — the element header `0x04020008`
 
+- **Summary (2026-11-03, survey of all samples):**
+
+  ```text
+  00 + 0x0008   must be 8 (0, 7, 9, 0x0108: eOutOfRange)
+  [flag byte]   present exactly when its bit 0x02 is set:
+                0x02 this element's parameters locked (S164, S172)
+                0x01 kept by Civil 3D, meaning unknown (S127 → S132)
+                0x04 accepted, dropped on save (S137 → S139)
+  type byte     0x04 element; 0x0D first spiral of a group stored as
+                separate elements, 128 more bits after its flag bit
+                (S177, MIST17); 0x03, 0x05: eWrongObjectType
+  ```
+
+  Civil 3D tells the flag byte from the type byte by bit 0x02: the type
+  codes seen (0x04, 0x0D) lack it, and a "flag byte" without it (0x00,
+  0x01) is read as a wrong type (S126, S136). This fits every accepted
+  and rejected value of both experiment rounds.
+- **Survey** (every decoded element header in `samples/`, about 1,200):
+  `08 00 02 04` almost everywhere (lines, arcs, spirals, spiral groups
+  and their parts, all releases); `08 00 04` in unlocked elements
+  (S164, S166–S172); `08 00 02 0D` only in S177's three first-of-group
+  spirals; `08 00 03 04` and `08 00 06 04` only in the experiments.
+  Other matches of the pattern are chance: those after the elements lie
+  in the string stream (UTF-16 text), those inside records in numeric
+  data.
+- **A possible family:** the MIST2 tag `0x0D00D773` and the MIST3 tag
+  `0x1600101F` have the same shape (type byte on top, a 16-bit value
+  below), and changing MIST2's tag also gave eWrongObjectType. Possibly
+  one sub-object header scheme with other 16-bit values; not relied on.
+- **civil3drust:** `aecc_alignment::read_header` returns flags, type
+  byte and the next bit for both type bytes, with or without the flag
+  byte; `set_constraint_editing` keeps the type byte (test
+  `group_member_header_unlocked_s177`: S177 unlocked still decodes).
+- **Open tests (owner, Civil 3D only):** (1) compare the Alignment
+  Entities grids of S131 and S132 (every element of S132 has flag bit
+  0x01); (2) switch tangent 1 of S172 to "Constrained by Next
+  (Floating)" (expected: kind 0 → 4, header unchanged); (3) S177
+  `Reverse S-S-C-S-S` with "Lock all parameter constraints" off (an
+  `08 00 0D` header from Civil 3D); (4) S177's three methods sampled
+  again without copy and paste: does Civil 3D use type 0x0D natively?
+
 - **Where:** first BL of every element record (lines, curves, groups).
 - **Seen:** identical in every record of every sample. The BL after it is
   the line kind (0, 4, 5, 9) in line records.
@@ -350,11 +391,9 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   (0 fixed, 4 floating, 5 floating by length, 9 free), so the header
   bytes are probably not the tangency constraint. Switch tangent 1 of
   S172 to floating and compare the header too.
-- **Status:** behaviour mapped (S125–S139, S164): `0x0008` must be 8, the
-  flag byte (`0x02` = parameters locked) is optional, and `0x04` closes the
-  header. Still open: the meaning of the `0x04` byte and of flag bit 0x01
-  (kept by Civil 3D, S132), and whether another element type or DWG format
-  version shows a different value.
+- **Status:** structure mapped (S125–S139, S164, S172, S177; summary at
+  the top). Still open: flag bit 0x01, what 0x0008 stands for, and when
+  Civil 3D writes type 0x0D (tests listed above).
 
 ## MIST8 — the curve flag bit
 

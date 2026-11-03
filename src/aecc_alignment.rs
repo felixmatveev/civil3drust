@@ -45,12 +45,30 @@ pub const TANGENT_HEADER: i32 = ELEMENT_HEADER;
 /// is on (MIST7, S164). The byte is absent when the option is off.
 pub const ELEMENT_LOCKED: u8 = 0x02;
 
-/// Read an element header at `bit`: code `00`, the 16-bit value `0x0008`,
-/// an optional flag byte (present, with bit [`ELEMENT_LOCKED`], when the
-/// alignment's parameters are locked), then the byte `0x04`. Returns the
-/// flag byte (`None` when absent) and the bit after the header. The locked
-/// form is the 32-bit [`ELEMENT_HEADER`] read as a BL.
-pub fn read_element_header(data: &[u8], bit: usize) -> Option<(Option<u8>, usize)> {
+/// Type byte of an ordinary element record (MIST7).
+pub const TYPE_ELEMENT: u8 = 0x04;
+
+/// Type byte of the first spiral of a group Civil 3D stored as separate
+/// elements; 128 more bits follow its flag bit (S177, MIST17).
+pub const TYPE_GROUP_MEMBER: u8 = 0x0D;
+
+/// An element header: code `00`, the 16-bit value `0x0008`, an optional
+/// flag byte, then a type byte (MIST7).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ElementHeader {
+    /// The flag byte, `None` when absent. Present exactly when its bit
+    /// `0x02` ([`ELEMENT_LOCKED`], the element's parameter lock) is set:
+    /// that is how a flag byte is told from the type byte.
+    pub flags: Option<u8>,
+    /// [`TYPE_ELEMENT`] or [`TYPE_GROUP_MEMBER`].
+    pub type_byte: u8,
+    /// The bit after the header.
+    pub next: usize,
+}
+
+/// Read any element header at `bit` (both type bytes; with or without the
+/// flag byte). The locked ordinary form is [`ELEMENT_HEADER`] read as a BL.
+pub fn read_header(data: &[u8], bit: usize) -> Option<ElementHeader> {
     if raw::get_bit(data, bit) != 0
         || raw::get_bit(data, bit + 1) != 0
         || raw::get_byte(data, bit + 2) != 0x08
@@ -58,18 +76,31 @@ pub fn read_element_header(data: &[u8], bit: usize) -> Option<(Option<u8>, usize
     {
         return None;
     }
-    let flags = raw::get_byte(data, bit + 18);
-    let next = if flags == 0x04 {
-        (None, bit + 26)
-    } else if flags & ELEMENT_LOCKED != 0 && raw::get_byte(data, bit + 26) == 0x04 {
-        (Some(flags), bit + 34)
+    let is_type = |b: u8| b == TYPE_ELEMENT || b == TYPE_GROUP_MEMBER;
+    let first = raw::get_byte(data, bit + 18);
+    let h = if first & ELEMENT_LOCKED == 0 {
+        is_type(first).then_some(ElementHeader {
+            flags: None,
+            type_byte: first,
+            next: bit + 26,
+        })?
     } else {
-        return None;
+        let t = raw::get_byte(data, bit + 26);
+        is_type(t).then_some(ElementHeader {
+            flags: Some(first),
+            type_byte: t,
+            next: bit + 34,
+        })?
     };
-    if next.1 > raw::bit_len(data) {
-        return None;
-    }
-    Some(next)
+    (h.next <= raw::bit_len(data)).then_some(h)
+}
+
+/// Read an ordinary element header ([`TYPE_ELEMENT`]) at `bit`. Returns the
+/// flag byte (`None` when absent) and the bit after the header.
+pub fn read_element_header(data: &[u8], bit: usize) -> Option<(Option<u8>, usize)> {
+    read_header(data, bit)
+        .filter(|h| h.type_byte == TYPE_ELEMENT)
+        .map(|h| (h.flags, h.next))
 }
 
 /// An element record linked to its neighbours by ID.
