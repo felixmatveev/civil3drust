@@ -1196,6 +1196,10 @@ temporary: `replace_elements` writes such a group as the JSON object only
 (with the fixed elements and their proxy graphics), as in S218. The
 solver is checked against Civil 3D's solutions (S217). A group the solver
 cannot place stays unsolved (D-060's form) instead of failing the read.
+When pieces are stored as well, the JSON still wins (as in Civil 3D,
+S216 → S217); `DecodeOptions::stored_group_pieces` reads the stored pieces
+instead, for recovering damaged files. Functions that rewrite stored
+records in place read them with that option.
 
 **Alternatives.** D-060 (leave the group unsolved): no stations past the
 gap. Writing the solved pieces: Civil 3D re-solves from the JSON anyway

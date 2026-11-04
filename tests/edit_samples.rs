@@ -696,8 +696,9 @@ fn group_member_header_unlocked_s177_s202() {
     );
     let hs: Vec<_> = {
         let d = decode_elements(&s202).unwrap();
-        d.all()
-            .map(|e| read_header(&s202.data, e.record.header_bit()).unwrap())
+        d.stored_records()
+            .iter()
+            .map(|r| read_header(&s202.data, r.header_bit()).unwrap())
             .collect()
     };
     let members: Vec<_> = hs.iter().filter(|h| h.is_group_member()).collect();

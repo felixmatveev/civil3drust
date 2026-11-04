@@ -7,6 +7,14 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- The reader prefers the JSON when a group's pieces are stored too (as
+  Civil 3D does, S216 → S217): the stored pieces are set aside
+  (`DecodedElements::set_aside`, `LayoutGroup::stored_pieces`) and the
+  group is solved from the JSON. `decode_elements_with` with
+  `DecodeOptions { stored_group_pieces: true }` reads the stored pieces
+  instead (damaged-file recovery); `set_constraint_editing` uses it.
+  `stored_records()` lists the records actually stored (record count and
+  bit range include set-aside pieces).
 - MIST9: curve parameters with criteria-based design on are the design
   speed, the minimum radius and a third criteria value (S219–S222, test
   `curve_criteria_values_s219_s222`).

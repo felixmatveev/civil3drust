@@ -2801,6 +2801,9 @@ pub struct DecodedElements {
     /// the end. A group that cannot be solved keeps the elements after it
     /// in its `following` (stations unknown) and `elements` ends there.
     pub layout_groups: Vec<LayoutGroup>,
+    /// Piece records stored for JSON groups and set aside for the
+    /// solution from the JSON (D-061); they are still in the record.
+    pub set_aside: Vec<Element>,
 }
 
 /// A group of the JSON layout whose pieces are not stored (D-059, D-061).
@@ -2818,6 +2821,9 @@ pub struct LayoutGroup {
     pub params: Vec<(String, f64)>,
     /// True when civil3drust solved it (its pieces are in `elements`).
     pub solved: bool,
+    /// IDs of the piece records stored for it, set aside in favour of the
+    /// JSON (empty when none were stored).
+    pub stored_pieces: Vec<i32>,
     /// When not solved: the chain after the group, in path order.
     pub following: Vec<ResolvedElement>,
 }
@@ -2840,28 +2846,62 @@ impl DecodedElements {
     pub fn is_complete(&self) -> bool {
         self.layout_groups.iter().all(|g| g.solved)
     }
+    /// The element records stored in the record, in storage order: those
+    /// in use and the pieces set aside for a JSON group's solution, not
+    /// the solved pieces (which have no record).
+    pub fn stored_records(&self) -> Vec<&Element> {
+        let mut v: Vec<&Element> = self
+            .all()
+            .map(|e| &e.record)
+            .filter(|r| !matches!(r, Element::Group(g) if matches!(g.def, GroupDef::Layout { .. })))
+            .chain(self.set_aside.iter())
+            .collect();
+        v.sort_by_key(|r| r.header_bit());
+        v.dedup_by_key(|r| r.header_bit());
+        v
+    }
     /// Number of element records stored (the element count).
     pub fn record_count(&self) -> usize {
-        self.all().filter(|e| e.part == 0).count()
+        self.stored_records().len()
     }
     /// True if a record holds several parts (spiral groups), which the
     /// editing functions don't handle yet.
     pub fn has_groups(&self) -> bool {
-        self.all().any(|e| e.part > 0)
+        self.all().any(|e| e.part > 0) || !self.set_aside.is_empty()
     }
     /// Bit offset of the first record's header in storage order.
     pub fn first_record_bit(&self) -> Option<usize> {
-        self.all().map(|e| e.record.header_bit()).min()
+        self.stored_records().first().map(|r| r.header_bit())
     }
     /// Bit offset just after the last record in storage order.
     pub fn records_end_bit(&self) -> Option<usize> {
-        self.all().map(|e| e.record.end_bit()).max()
+        self.stored_records().iter().map(|r| r.end_bit()).max()
     }
 }
 
 /// Decode an alignment of tangents and arcs (read-only).
 pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> {
-    let mut records = element_records(&rec.data);
+    decode_elements_with(rec, DecodeOptions::default())
+}
+
+/// How [`decode_elements_with`] reads an alignment.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct DecodeOptions {
+    /// Read the pieces stored for a JSON group instead of solving the
+    /// group from the JSON (by default the JSON wins, as in Civil 3D,
+    /// S216 → S217). For recovering damaged files.
+    pub stored_group_pieces: bool,
+}
+
+/// [`decode_elements`] with options.
+pub fn decode_elements_with(
+    rec: &RawRecord,
+    options: DecodeOptions,
+) -> Result<DecodedElements, DecodeError> {
+    let records = element_records(&rec.data);
+    // The station precedes the first record in storage order, which is
+    // not the first in the chain once element 1 is deleted (S94).
+    let first_stored = records.iter().map(Element::header_bit).min().unwrap_or(0);
     // The path's first element ID ends section 2 (BL right before the
     // element count, S94); it names the alignment's chain when there are
     // detached pieces (S100).
@@ -2872,9 +2912,14 @@ pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> 
         .and_then(|b| b.checked_sub(31))
         .filter(|&b| raw::get_bit(&rec.data, b) == 0 && raw::get_bit(&rec.data, b + 1) == 1)
         .map(|b| raw::get_byte(&rec.data, b + 2) as i32);
-    // Groups of the JSON layout without pieces: the chain is cut at them
-    // (D-059).
-    let mut unsolved = layout_groups(rec, &records);
+    // Groups of the JSON layout: the chain is cut at them and their stored
+    // pieces, if any, are set aside for the solution from the JSON (D-059,
+    // D-061).
+    let mut unsolved = layout_groups(rec, &records, options.stored_group_pieces);
+    let (set_aside, kept): (Vec<Element>, Vec<Element>) = records
+        .into_iter()
+        .partition(|e| unsolved.iter().any(|g| g.stored_pieces.contains(&e.id())));
+    let mut records = kept;
     for g in &unsolved {
         for e in records.iter_mut() {
             if e.id() == g.previous {
@@ -2922,9 +2967,6 @@ pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> 
             .for_each(fix);
         detached.iter_mut().flatten().for_each(fix);
     }
-    // The station precedes the first record in storage order, which is
-    // not the first in the chain once element 1 is deleted (S94).
-    let first_stored = records.iter().map(Element::header_bit).min().unwrap_or(0);
     let stored_start_station = aecc_alignment::start_station(&rec.data, first_stored);
     Ok(DecodedElements {
         handle: rec.handle,
@@ -2933,6 +2975,7 @@ pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> 
         elements,
         detached,
         layout_groups: unsolved,
+        set_aside,
     })
 }
 
@@ -2999,7 +3042,7 @@ fn solve_layout_group(elements: &mut Vec<ResolvedElement>, g: &mut LayoutGroup) 
 /// The JSON layout's groups whose pieces are not stored: the fixed
 /// element before the group links straight to the one after it, or to the
 /// group's own ID, which no record has (S216).
-fn layout_groups(rec: &RawRecord, records: &[Element]) -> Vec<LayoutGroup> {
+fn layout_groups(rec: &RawRecord, records: &[Element], keep_stored: bool) -> Vec<LayoutGroup> {
     use crate::aecc_layout::Json;
     let Some(text) = crate::string_stream::layout_json(&rec.data, rec.handle_bits) else {
         return Vec::new();
@@ -3028,8 +3071,22 @@ fn layout_groups(rec: &RawRecord, records: &[Element]) -> Vec<LayoutGroup> {
                     .find(|e| e.id() == next)
                     .is_some_and(|n| n.before() == 0 || n.before() == id),
             };
+            // Stored pieces: the chain from the element before up to the
+            // one after.
+            let mut stored_pieces = Vec::new();
             if !gap {
-                return None;
+                if keep_stored {
+                    return None;
+                }
+                let mut cur = prev?.after();
+                while cur != next && cur != 0 && stored_pieces.len() < 16 {
+                    let e = records.iter().find(|e| e.id() == cur)?;
+                    stored_pieces.push(cur);
+                    cur = e.after();
+                }
+                if cur != next || stored_pieces.is_empty() {
+                    return None;
+                }
             }
             let params = match o.get("ConstraintParameters") {
                 Some(Json::Obj(kv)) => kv
@@ -3048,6 +3105,7 @@ fn layout_groups(rec: &RawRecord, records: &[Element]) -> Vec<LayoutGroup> {
                 next,
                 params,
                 solved: false,
+                stored_pieces,
                 following: Vec::new(),
             })
         })

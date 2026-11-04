@@ -695,7 +695,7 @@ pub fn add_free_curve(
             a.id, b.id
         )));
     }
-    let new_id = d.all().map(|e| e.record.id()).max().unwrap_or(0) + 1;
+    let new_id = d.stored_records().iter().map(|r| r.id()).max().unwrap_or(0) + 1;
     let plan: Vec<Planned> = stored(&d)
         .into_iter()
         .map(|e| {

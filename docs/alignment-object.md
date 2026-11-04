@@ -2763,10 +2763,15 @@ elements after it in `following`.
 
 On writing, `replace_elements` drops the `Layout` group: the record keeps
 the fixed elements and the JSON object only (test
-`solved_json_group_is_written_back_as_json`). Not covered: groups at an
-end of the alignment, other methods, and groups whose pieces are stored
-while the JSON disagrees (S216 1214/1217: civil3drust reads the stored
-pieces, Civil 3D re-solves from the JSON).
+`solved_json_group_is_written_back_as_json`). When the pieces are
+stored as well, the JSON wins too (owner's decision; Civil 3D does the
+same, S216 1214/1217 → S217): the stored pieces are set aside
+(`DecodedElements::set_aside`) and the group is solved from the JSON;
+for S177 and S178 the solution matches Civil 3D's stored pieces within
+1e-4 (test `curve_methods`). `DecodeOptions::stored_group_pieces` reads
+the stored pieces instead (recovering damaged files). Owner: these three
+are the only methods kept apart with a JSON. Not covered yet: a group at
+an end of the alignment.
 
 ## Open questions
 

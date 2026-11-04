@@ -147,9 +147,11 @@ fn json_group_is_solved_like_civil3d() {
             assert!(x.segment.start().distance_to(y.segment.start()) < 1e-6);
             assert!(x.segment.end().distance_to(y.segment.end()) < 1e-6);
         }
-        if !a.layout_groups.is_empty() {
-            assert_eq!(a.layout_groups.len(), 1);
-            assert!(a.layout_groups[0].solved);
+        // All seven alignments have a JSON group; S178's own three store
+        // pieces (set aside for the JSON solution), the four new ones not.
+        assert_eq!(a.layout_groups.len(), 1);
+        assert!(a.layout_groups[0].solved);
+        if a.layout_groups[0].stored_pieces.is_empty() {
             n += 1;
         }
     }
@@ -187,4 +189,33 @@ fn solved_json_group_is_written_back_as_json() {
     let after = decode_elements(&w).unwrap();
     assert!(after.is_complete());
     assert!((after.length() - before.length()).abs() < 1e-9);
+}
+
+#[test]
+fn json_wins_over_stored_pieces_like_civil3d() {
+    // S216 1214/1217 store pieces with Spiral1 as typed but the JSON says
+    // + 20; Civil 3D re-solved from the JSON (S217). So does the reader by
+    // default; the option reads the stored pieces.
+    use civil3drust::aecc_elements::{decode_elements, decode_elements_with, DecodeOptions};
+    let ours = civil3drust::raw::open("samples/S216_S178_group_from_parameters.dwg").unwrap();
+    let c3d = civil3drust::raw::open("samples/S217_S216_civ3d_resaved.dwg").unwrap();
+    let theirs = civil3drust::raw::records(&c3d.doc, "AECC_ALIGNMENT");
+    for h in [0x1214u64, 0x1217] {
+        let r = civil3drust::raw::records(&ours.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap();
+        let a = decode_elements(&r).unwrap();
+        let b = decode_elements(theirs.iter().find(|q| q.handle == h).unwrap()).unwrap();
+        assert!((a.length() - b.length()).abs() < 1e-6, "{h:X}");
+        assert!(!a.layout_groups[0].stored_pieces.is_empty());
+        let stored = decode_elements_with(
+            &r,
+            DecodeOptions {
+                stored_group_pieces: true,
+            },
+        )
+        .unwrap();
+        assert!((stored.length() - a.length()).abs() > 1.0, "{h:X}");
+    }
 }

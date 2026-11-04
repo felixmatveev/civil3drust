@@ -138,7 +138,14 @@ pub fn set_constraint_editing(
 ) -> Result<(Vec<u8>, usize), CriteriaError> {
     use crate::aecc_alignment::{read_header, ELEMENT_LOCKED};
     use crate::aecc_build::{encode_header, Bits};
-    let d = decode_elements(rec).map_err(|e| CriteriaError(e.to_string()))?;
+    // The stored records as they are (headers are rewritten in place).
+    let d = crate::aecc_elements::decode_elements_with(
+        rec,
+        crate::aecc_elements::DecodeOptions {
+            stored_group_pieces: true,
+        },
+    )
+    .map_err(|e| CriteriaError(e.to_string()))?;
     if d.has_groups() {
         return Err(CriteriaError("spiral groups not handled yet".into()));
     }
@@ -153,7 +160,7 @@ pub fn set_constraint_editing(
             data[byte] &= !m;
         }
     }
-    let mut headers: Vec<usize> = d.all().map(|x| x.record.header_bit()).collect();
+    let mut headers: Vec<usize> = d.stored_records().iter().map(|r| r.header_bit()).collect();
     headers.sort_unstable();
     let total = raw::bit_len(&data);
     let data_end = total - rec.handle_bits;

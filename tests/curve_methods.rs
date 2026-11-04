@@ -2,7 +2,9 @@
 //! Expected geometry is what Civil 3D drew (the record's proxy graphics)
 //! and what the owner typed (alignment descriptions).
 
-use civil3drust::aecc_elements::{decode_elements, ArcDef, Element, Segment};
+use civil3drust::aecc_elements::{
+    decode_elements, decode_elements_with, ArcDef, DecodeOptions, Element, Segment,
+};
 use civil3drust::alignment::Point2;
 use civil3drust::raw;
 
@@ -644,9 +646,17 @@ fn s177_long_spiral_groups() {
             .into_iter()
             .find(|r| r.handle == h)
             .unwrap();
-        let d = decode_elements(&r).unwrap();
+        // The stored pieces, as written by Civil 3D (D-061 option).
+        let d = decode_elements_with(
+            &r,
+            DecodeOptions {
+                stored_group_pieces: true,
+            },
+        )
+        .unwrap();
         assert_eq!(d.name.as_deref(), Some(name), "{h:X}");
         assert_eq!(d.record_count(), records, "{h:X}");
+        same_as_json_solution(&r, &d);
         let joints: Vec<Point2> = d.elements.iter().map(|e| e.segment.end()).collect();
         for w in want {
             assert!(
@@ -657,6 +667,31 @@ fn s177_long_spiral_groups() {
         let json = string_stream::layout_json(&r.data, r.handle_bits);
         assert_eq!(json.is_some(), records > 3, "{h:X}");
     }
+}
+
+/// By default the JSON group is solved (D-061); Civil 3D's stored pieces
+/// are its own solution of the same JSON, so both readings agree.
+fn same_as_json_solution(r: &raw::RawRecord, stored: &civil3drust::aecc_elements::DecodedElements) {
+    let solved = decode_elements(r).unwrap();
+    if solved.layout_groups.is_empty() {
+        return;
+    }
+    assert!(solved.is_complete(), "{:X}", r.handle);
+    assert_eq!(
+        solved.elements.len(),
+        stored.elements.len(),
+        "{:X}",
+        r.handle
+    );
+    for (a, b) in solved.elements.iter().zip(&stored.elements) {
+        let d = a.segment.end().distance_to(b.segment.end());
+        assert!(d < 1e-4, "{:X}: {d}", r.handle);
+    }
+    assert!(
+        (solved.length() - stored.length()).abs() < 1e-4,
+        "{:X}",
+        r.handle
+    );
 }
 
 /// S178: the three long reverse methods made again without copy and paste.
@@ -677,8 +712,15 @@ fn s178_long_reverse_groups_are_stored_apart() {
             .into_iter()
             .find(|r| r.handle == h)
             .unwrap();
-        let d = decode_elements(&r).unwrap();
+        let d = decode_elements_with(
+            &r,
+            DecodeOptions {
+                stored_group_pieces: true,
+            },
+        )
+        .unwrap();
         assert_eq!(d.record_count(), records, "{h:X}");
+        same_as_json_solution(&r, &d);
         let lengths: Vec<f64> = d
             .elements
             .iter()
