@@ -22,6 +22,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   codes), `civil3d-rebuilds.md`, `acadrust-0.6.7.md` brought up to date.
 
 ### Added
+- MIST11 solved: S89's odd curve interval is stale (the curve's earlier
+  length); samples S235–S237 follow the rule and show Civil 3D refreshing
+  intervals on a grip edit (test `speed_interval_third_distance_s89_s235_s237`).
 - MIST13 solved from existing samples: Civil 3D's extra block in S57 X5
   is a duplicate design-speed interval with a new GUID beside the
   zero-GUID one (test `zero_guid_interval_duplicated_s57_x5`).

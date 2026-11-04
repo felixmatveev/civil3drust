@@ -281,7 +281,23 @@ writes 0 for new curves and keeps the stored value on rewritten ones
   shape.
 - **Only clothoids sampled** in groups, free spirals and JSON groups.
 
-## MIST11 — S89's curve speed-interval distance — **open**
+## MIST11 — S89's curve speed-interval distance — **SOLVED (S235–S237): a stale interval**
+
+- **Answer (2026-11-04):** the rule holds everywhere: the third distance
+  is the element length minus the distance from its start, the length
+  being measured to the end point stored in the interval. S89's stored
+  end point is 169.264 along the arc (clockwise from the start; the
+  earlier "84.628 further on" was measured the wrong way round), and
+  84.6364 + 84.628 = 169.264: the curve was 169.264 long when the speed
+  was set and is 120.355 now, so the interval kept the old curve. The
+  owner's samples follow the rule: S235 (speed mid-curve), S236 (speed
+  at the alignment's end: 0.0007 left, no clamping) and S237 (curve
+  lengthened by its grip: Civil 3D rewrote both intervals, and moved
+  the curve speed's station 113 → 117.143). So Civil 3D refreshes
+  intervals on a grip edit, but some earlier edit in S89 left its
+  interval stale. civil3drust computes intervals from the current
+  geometry (test `speed_interval_third_distance_s89_s235_s237`).
+
 
 - **Where:** S89's design-speed interval on a curve, third distance.
 - **Seen:** 84.63 stored where "length to the element's end" (35.72) is

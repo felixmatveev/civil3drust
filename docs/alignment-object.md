@@ -2029,8 +2029,9 @@ tangent intervals had `1, 0` turned out to be element IDs, see S115): station 11
 **the length to the element end 15.548** (= 29.650 − 14.102, the same
 rule as on tangents), the next element's ID, and the curve's start, end
 and the point at the station on the arc. S89's curve interval stores
-84.63 instead of the 35.72 this rule gives; that one stays unexplained
-(MIST11).
+an end point 169.264 along the arc, the curve's length when the speed was
+set; the curve was shortened later and the interval is stale (MIST11,
+solved by S235–S237).
 `set_design_speeds` now writes curve intervals; for S113 its intervals
 equal Civil 3D's to the last digit (test
 `speed_interval_on_a_curve_s113`). Civil 3D itself wrote **no** intervals

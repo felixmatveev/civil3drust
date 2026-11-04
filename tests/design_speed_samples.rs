@@ -264,3 +264,79 @@ fn zero_guid_interval_duplicated_s57_x5() {
     };
     assert_eq!(body(0), body(1));
 }
+
+/// One design-speed interval as stored: station, distance from the element
+/// start, length to the element end, element IDs and the six RDs.
+fn intervals(r: &raw::RawRecord) -> Vec<(f64, f64, f64, i32, [f64; 6])> {
+    use civil3drust::aecc_elements::decode_elements;
+    let d = &r.data;
+    let mut q = decode_elements(r).unwrap().records_end_bit().unwrap();
+    for _ in 0..3 {
+        q = raw::read_bl(d, q).unwrap().1;
+    }
+    let (n, mut q) = raw::read_bl(d, q).unwrap();
+    (0..n)
+        .map(|_| {
+            q += 128 + 13;
+            let mut bd = [0.0; 3];
+            for v in &mut bd {
+                let (x, m) = raw::read_bd(d, q).unwrap();
+                *v = x;
+                q = m;
+            }
+            let (id, m) = raw::read_bl(d, q).unwrap();
+            q = raw::read_bl(d, raw::read_bl(d, m).unwrap().1).unwrap().1;
+            let rd = std::array::from_fn(|k| raw::get_f64(d, q + 64 * k));
+            q += 384;
+            (bd[0], bd[1], bd[2], id, rd)
+        })
+        .collect()
+}
+
+/// MIST11: the third distance is always the element length (start to the
+/// stored end point) minus the distance from the start. S89's curve
+/// interval stores an end point 169.264 along the arc, the curve's
+/// length when the speed was set; the curve is 120.355 long now, so that
+/// interval is stale. Civil 3D rewrites intervals when it edits a curve by
+/// its grip (S237).
+#[test]
+fn speed_interval_third_distance_s89_s235_s237() {
+    let r = |p: &str, h| rec(p, h);
+    // S89: end point 169.264 along the arc (clockwise from the start).
+    let s89 = r("samples/S89_O5_layout_tangents_curves.dwg", 0x8C43);
+    let (sta, dist, third, id, rd) = intervals(&s89)[0];
+    assert_eq!((sta, id), (285.63, 2));
+    let c = (2433.8791, 7416.7853);
+    let ang = |x: f64, y: f64| (y - c.1).atan2(x - c.0);
+    let along = (ang(rd[0], rd[1]) - ang(rd[2], rd[3])).rem_euclid(std::f64::consts::TAU) * 67.175;
+    assert!((along - 169.264).abs() < 1e-2, "{along}");
+    assert!((dist + third - along).abs() < 1e-2);
+    // S235–S237: the rule holds on curves and at an element's end.
+    for (p, want) in [
+        (
+            "samples/S235_S24_layout_speeds.dwg",
+            vec![(113.0, 13.0, 12.3436)],
+        ),
+        (
+            "samples/S236_S235_speed_at_end.dwg",
+            vec![(154.15, 28.8064, 0.0007), (113.0, 13.0, 12.3436)],
+        ),
+        (
+            "samples/S237_S236_curve_lengthened.dwg",
+            vec![(161.9675, 28.8064, 0.0007), (117.143, 17.143, 16.0181)],
+        ),
+    ] {
+        let got: Vec<(f64, f64, f64)> = intervals(&r(p, 0xFD7))
+            .into_iter()
+            .filter(|i| i.0 > 0.0)
+            .map(|i| (i.0, i.1, i.2))
+            .collect();
+        assert_eq!(got.len(), want.len(), "{p}");
+        for (g, w) in got.iter().zip(&want) {
+            assert!(
+                (g.0 - w.0).abs() < 1e-3 && (g.1 - w.1).abs() < 1e-3 && (g.2 - w.2).abs() < 1e-3,
+                "{p}: {g:?} vs {w:?}"
+            );
+        }
+    }
+}
