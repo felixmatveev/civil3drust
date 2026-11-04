@@ -614,20 +614,6 @@ pub fn create_alignment(
     })
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn id_strings_are_hex_and_distinct() {
-        let a = new_id_string(1, &[]);
-        assert_eq!(a.len(), 32);
-        assert!(a.chars().all(|c| c.is_ascii_hexdigit()));
-        let b = new_id_string(1, std::slice::from_ref(&a));
-        assert_ne!(a, b);
-    }
-}
-
 /// Empty both description copies (strings 1 and 2) of an alignment record.
 fn clear_description(data: Vec<u8>, hb: usize) -> (Vec<u8>, usize) {
     let Ok(ss) = string_stream::parse(&data, hb) else {
@@ -640,4 +626,18 @@ fn clear_description(data: Vec<u8>, hb: usize) -> (Vec<u8>, usize) {
         return (data, hb);
     };
     string_stream::replace(&d, h, 2, "").unwrap_or((data, hb))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn id_strings_are_hex_and_distinct() {
+        let a = new_id_string(1, &[]);
+        assert_eq!(a.len(), 32);
+        assert!(a.chars().all(|c| c.is_ascii_hexdigit()));
+        let b = new_id_string(1, std::slice::from_ref(&a));
+        assert_ne!(a, b);
+    }
 }
