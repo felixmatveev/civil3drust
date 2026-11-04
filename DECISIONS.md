@@ -744,7 +744,7 @@ alignment around. Map check sets across drawings by name: no sample of
 two drawings with different check sets yet.
 
 ## D-040: Companions are rewritten in the uniform form of S49
-Date: 2026-10-28 · Status: accepted; transitional under D-049 (edge flags and tail still copied from the template)
+Date: 2026-10-28 · Status: accepted; edge flags superseded by D-064 (the tail is still copied from the template)
 
 **Context.** A siteless alignment's companion holds its topology: nodes
 at the element end points and one edge through them (polyline with
@@ -1242,3 +1242,30 @@ length is not L are taken proportional to the arc length.
 **Alternatives.** Keeping every spiral a clothoid (wrong spiral points
 and ends wherever the type is not a clothoid); refusing unknown types
 (drawings with them would stop decoding).
+
+## D-064: Companions are written in Civil 3D's rebuilt form
+
+**Date:** 2026-11-04. **Status:** accepted.
+
+**Context.** A companion's edge flags (`0x10`, `0x20`, `0x800`) and
+vertex flags (2, 10, 50, 178; a/b 0 or 1) depend on what happened in the
+session that saved it: a graph built in that session has vertex flags
+10, one loaded from the file 2 with `0x800` added, one made from a
+polyline `0x20` and (2 or 50, 1, 1) (MIST12 survey of 805 companions).
+D-040 kept the template's edge flags and rebuilt only companions whose
+vertices were already (10, 0, 0), so other templates left their
+companions stale. Under D-049 history is not copied.
+
+**Decision.** `rebuild_companion` writes every siteless companion in the
+form Civil 3D writes after rebuilding a graph: edge flags `0x10`,
+vertices (10, 0, 0), whatever form it had. The tail after the edge is
+still kept (its entry count goes with the handle references, S109).
+Verified: S238 (from S28: loaded `0x810` and from-object `0x830`) and
+S239 (from S161: from-polyline `0x030` with a longer tail, layout
+`0x810`) open cleanly with a clean AUDIT, and the re-saves S240, S241
+keep the form.
+
+**Alternatives.** Keep the template's flags (D-040): copies another
+alignment's history and leaves non-uniform templates stale. Reproduce
+each form from how the alignment was made: history civil3drust does not
+have.

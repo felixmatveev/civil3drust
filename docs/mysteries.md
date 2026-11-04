@@ -318,7 +318,17 @@ writes 0 for new curves and keeps the stored value on rewritten ones
   curve's end station (PT from the grid); save. A3 A2 with the curve
   lengthened by its pass-through grip; save.
 
-## MIST12 — companion topology flags — **open (uniform form accepted)**
+## MIST12 — companion topology flags — **handled (D-064, S238–S241)**
+
+- **Status:** the flags record the session's history (built in the
+  saving session, loaded from the file, made from an object), not model
+  data. Companions written in one form, edge `0x10` and vertices
+  (10, 0, 0), whatever they were before, open cleanly with a clean AUDIT
+  (S238, S239, owner) and Civil 3D's re-saves keep that form (S240,
+  S241). civil3drust writes only that form (D-064). The individual bits
+  (`0x20`, `0x800`, vertex 2/50/178, a/b = 1 for siteless alignments)
+  are not decoded further.
+
 
 - **Where:** companion `AECC_FEATURE_STYLE` edges: vertex flags
   (2, 10, 50, 178 seen) and the a/b face IDs; the face-like tail entry.
@@ -358,6 +368,7 @@ writes 0 for new curves and keeps the stored value on rewritten ones
   Civil 3D opens both without RECOVER and AUDIT is clean, civil3drust
   can write that one form for every companion instead of copying the
   template's flags (D-040).
+- **Result:** both clean (owner); re-saves S240, S241 keep the form.
 
 ## MIST13 — Civil 3D's extra block for a zero GUID — **SOLVED (S56/S57): a duplicate speed interval**
 

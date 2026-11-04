@@ -48,9 +48,9 @@
 //! read.
 //!
 //! [`rebuild_companion`] rewrites a siteless companion's nodes and edge
-//! from an alignment's geometry, for companions in the uniform form of
-//! S48/S49/S98 (vertex flags 10, a = b = 0), keeping their edge flags and
-//! tail (D-040).
+//! from an alignment's geometry in the rebuilt form (edge flags `0x10`,
+//! vertex flags 10, a = b = 0), keeping its tail (D-040, D-064). The other
+//! flag values record the session's history (MIST12).
 
 use crate::alignment::Point2;
 use crate::raw;
@@ -263,7 +263,13 @@ pub fn graph(data: &[u8]) -> Option<Graph> {
 /// Decode a companion's graph: node list, then a one-edge edge list.
 /// `edges_end` is the bit after the edge's vertices (before `BL 0 ×4`).
 pub fn companion_graph(data: &[u8]) -> Option<Graph> {
-    let nodes = node_list(data)?;
+    // The first plausible node list can be a chance match in the constant
+    // run before it (S240's F9D); take the first one an edge list follows.
+    let n = raw::bit_len(data);
+    (66..n.saturating_sub(40)).find_map(|b| companion_graph_at(data, node_list_at(data, b)?))
+}
+
+fn companion_graph_at(data: &[u8], nodes: NodeList) -> Option<Graph> {
     let p = nodes.end_bit;
     let (next_free, p) = raw::read_bl(data, p)?;
     let (count, p) = raw::read_bl(data, p)?;
@@ -302,17 +308,18 @@ pub const VERTEX_PLAIN: i32 = 10;
 /// Rewrite the graph of a siteless companion record (data + handle-stream
 /// size) for an alignment made of `elements` (in path order): nodes at
 /// the element end points (IDs 1… in path order), one edge through them
-/// with a bulge per arc. The object header, key and constant run before
-/// the nodes, the edge flags, the tail after the edge, the strings and
-/// the handle stream are kept. Only companions in the uniform form
-/// (vertex flags 10, a = b = 0) are rewritten; `None` otherwise. Returns
-/// the new bytes and handle-stream size.
+/// with a bulge per arc, in the form Civil 3D writes after rebuilding a
+/// graph: edge flags `0x10`, vertex flags 10, a = b = 0, whatever form the
+/// companion had (D-064; S238, S239 accepted). The object header, key and
+/// constant run before the nodes, the tail after the edge, the strings and
+/// the handle stream are kept. Returns the new bytes and handle-stream
+/// size.
 pub fn rebuild_companion(
     data: &[u8],
     handle_bits: usize,
     elements: &[crate::aecc_elements::ResolvedElement],
 ) -> Option<(Vec<u8>, usize)> {
-    rebuild_companion_with(data, handle_bits, elements, None)
+    rebuild_companion_with(data, handle_bits, elements, Some(EDGE_REBUILT))
 }
 
 /// Edge flags Civil 3D writes when it rebuilds a companion's graph in a
@@ -320,8 +327,9 @@ pub fn rebuild_companion(
 pub const EDGE_REBUILT: i32 = 0x10;
 
 /// [`rebuild_companion`] with the edge flags set to `edge_flags` when
-/// given; then companions in any vertex form are rewritten (their vertex
-/// flags become 10, a = b = 0). Experiment for MIST12 (`exp_companion`).
+/// given (companions in any vertex form are then rewritten, their vertex
+/// flags becoming 10, a = b = 0), or kept from the old companion when
+/// `None` (only the uniform vertex form is rewritten then).
 pub fn rebuild_companion_with(
     data: &[u8],
     handle_bits: usize,
@@ -371,8 +379,6 @@ pub fn rebuild_companion_with(
     for v in [2, 1, 0, 1] {
         w.bl(v);
     }
-    // Edge flags as before: S98's companion has an arc with flags 0x10, so
-    // 0x800 is not simply "has arcs".
     w.bl(edge_flags.unwrap_or(old_edge.flags));
     w.bl(n);
     w.bl(0);

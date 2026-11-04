@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- Companions are always written in the rebuilt form (edge `0x10`,
+  vertices (10, 0, 0)), for templates in any form (D-064, MIST12
+  handled; S238–S241, test `rebuilt_form_accepted_s238_s241`).
+  `companion_graph` skips a chance node-list match before the real one
+  (S240).
 - `raw::object_name`'s doc comment describes the current name rule
   (JSON slot, user string, `<DATADIR>` anchor, section-2 form).
 - Documentation revised against the current state: readings that later

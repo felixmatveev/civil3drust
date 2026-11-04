@@ -17,6 +17,7 @@ template and does not add them. The opposite list — what Civil 3D refuses
 | Element-ID list after the speed table | absent (`BL 0`) | adds it after some edits | S50 (accepted); S12, S48, S51 (added) | cleared (`clear_element_id_list`) |
 | Station-equation label group | absent | accepted; not added back | S27 → S29 | optional (`--no-label-group`) |
 | Companion points | stale (another alignment's) | AUDIT clean; regenerated from the alignment | S34 → S35 | rebuilt from the geometry (D-040) |
+| Companion edge and vertex flags (MIST12: `0x20`, `0x800`, vertex 2/50/178, a/b) | the rebuilt form for every companion: edge `0x10`, vertices (10, 0, 0) | kept on save; Civil 3D rebuilds the graph itself when it needs to | S238–S241 | written in that form (D-064) |
 | First interval's length to the element end (the station at the end of element 0) | stale (donor's value) | AUDIT clean | S26 | written from the geometry since S33 |
 | Design check set reference | null with check set off | sets a reference on save | S80 → S81 | copied when the target has it, else null (D-039) |
 | Speed interval of a speed on the first element | absent, with a zero GUID in the table | accepted; this is how Civil 3D itself stores a layout-tool alignment's default speed | S161 8C56, S123/S124 (2027) | intervals written; omitting them is a candidate |

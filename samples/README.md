@@ -249,6 +249,10 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S235 | `S235_S24_layout_speeds.dwg` | Civil 3D 2024 | MIST11 A1 (owner): S24 plus `test` (FD7) by layout tools: tangent (0, 200) → (100, 200), fixed curve by three points, tangent; speeds 60 at 0+00 and 30 at 1+13 (on the curve). | 475560 | `1e1e28141c7da79c` |
 | S236 | `S236_S235_speed_at_end.dwg` | Civil 3D 2024 | MIST11 A2 (owner): S235 plus a speed 40 at 1+54.15, the alignment's end (on the last tangent, 0.0007 before its end). | 475246 | `188a484ea22edd31` |
 | S237 | `S237_S236_curve_lengthened.dwg` | Civil 3D 2024 | MIST11 A3 (owner): S236 with the curve lengthened by its pass-through grip (25.34 → 33.16); both intervals rewritten, the curve speed's station 1+13 → 1+17.143. | 475309 | `a4bbf877218d9e03` |
+| S238 | `S238_S28_companions_rebuilt_form.dwg` | civil3drust | MIST12 test: S28 with the companions of F9E (`0x810`, loaded) and FB3 (`0x830`, from an object) written as edge `0x10`, vertices (10, 0, 0) (`exp_companion`). Civil 3D 2024: clean open and AUDIT (owner). | 450976 | `55eeae4d5d9faba8` |
+| S239 | `S239_S161_companions_rebuilt_form.dwg` | civil3drust | MIST12 test: S161 with the companions of 8C49 (`0x030`, from a polyline) and 8C56 (`0x810`, layout tools) in the same form. Clean open and AUDIT (owner). | 946171 | `bd7f77b693f5b3b9` |
+| S240 | `S240_S238_civ3d_resaved.dwg` | Civil 3D 2024 | S238 re-saved (owner): both companions still `0x10`/(10, 0, 0); F9D rebuilt with new node IDs. | 474370 | `ae79fae688ac3e70` |
+| S241 | `S241_S239_civ3d_resaved.dwg` | Civil 3D 2024 | S239 re-saved (owner): both companions still in the rebuilt form. | 970902 | `c5e5848bf32b96ac` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

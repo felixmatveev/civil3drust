@@ -63,7 +63,7 @@ fn nodes_are_the_element_end_points() {
     }
 }
 
-use civil3drust::aecc_topology::{companion_graph, edge_points, rebuild_companion};
+use civil3drust::aecc_topology::{companion_graph, edge_points, rebuild_companion, EDGE_REBUILT};
 
 fn companion_and_alignment(p: &str, comp: u64, align: u64) -> (raw::RawRecord, raw::RawRecord) {
     let o = raw::open(p).unwrap();
@@ -119,17 +119,19 @@ fn companion_edges_follow_the_path() {
 }
 
 /// Rebuilding S49's companion from C's geometry gives Civil 3D's graph
-/// (other node IDs) and the same record size and tail.
+/// (other node IDs) and the same tail, in the rebuilt form: edge flags
+/// `0x10` where Civil 3D had `0x810` (D-064), so the record is 3 bytes
+/// shorter.
 #[test]
 fn rebuilt_companion_matches_civil3d_s49() {
     let (c, a) = companion_and_alignment("samples/S49_S48_C_with_curves.dwg", 0x102A, 0x102B);
     let d = decode_elements(&a).unwrap();
     let (bytes, hb) = rebuild_companion(&c.data, c.handle_bits, &d.elements).unwrap();
-    assert_eq!(bytes.len(), c.data.len());
     assert_eq!(hb, c.handle_bits);
     let ours = companion_graph(&bytes).unwrap();
     let theirs = companion_graph(&c.data).unwrap();
-    assert_eq!(ours.edges[0].flags, theirs.edges[0].flags);
+    assert_eq!(theirs.edges[0].flags, 0x810);
+    assert_eq!(ours.edges[0].flags, EDGE_REBUILT);
     let (po, pt) = (
         edge_points(&ours, &ours.edges[0]),
         edge_points(&theirs, &theirs.edges[0]),
@@ -209,7 +211,7 @@ fn rebuilt_companion_keeps_the_template_tail() {
         bits(&bytes, new.edges_end, new_ss),
         bits(&c.data, old.edges_end, old_ss)
     );
-    assert_eq!(new.edges[0].flags, old.edges[0].flags);
+    assert_eq!(new.edges[0].flags, EDGE_REBUILT);
     let refs = |d: &[u8], hb: usize| {
         civil3drust::handle_refs::of_record(&raw::RawRecord {
             data: d.to_vec(),
@@ -343,5 +345,47 @@ fn site_containers_parse_s102_s104() {
             .find(|r| r.handle == 0x100E)
             .unwrap();
         assert_eq!(graph(&c.data).unwrap().edges.len(), n, "{p}");
+    }
+}
+
+/// MIST12 (D-064): companions written in the rebuilt form whatever they
+/// were (S238 from S28, S239 from S161) open cleanly with a clean AUDIT;
+/// Civil 3D's re-saves (S240, S241) keep that form. S240's F9D also needs
+/// the reader to skip a chance node-list match before the real one.
+#[test]
+fn rebuilt_form_accepted_s238_s241() {
+    use civil3drust::aecc_alignment_refs::alignment_refs;
+    for (p, handles) in [
+        (
+            "samples/S238_S28_companions_rebuilt_form.dwg",
+            [0xF9E, 0xFB3],
+        ),
+        ("samples/S240_S238_civ3d_resaved.dwg", [0xF9E, 0xFB3]),
+        (
+            "samples/S239_S161_companions_rebuilt_form.dwg",
+            [0x8C49, 0x8C56],
+        ),
+        ("samples/S241_S239_civ3d_resaved.dwg", [0x8C49, 0x8C56]),
+    ] {
+        let o = raw::open(p).unwrap();
+        for h in handles {
+            let a = raw::records(&o.doc, "AECC_ALIGNMENT")
+                .into_iter()
+                .find(|r| r.handle == h)
+                .unwrap();
+            let c = alignment_refs(&a).unwrap().companion.handle;
+            let comp = raw::records(&o.doc, "AECC_FEATURE_STYLE")
+                .into_iter()
+                .find(|r| r.handle == c)
+                .unwrap();
+            let g = companion_graph(&comp.data).unwrap_or_else(|| panic!("{p} {c:X}"));
+            assert_eq!(g.edges[0].flags, EDGE_REBUILT, "{p} {h:X}");
+            assert!(g.edges[0]
+                .vertices
+                .iter()
+                .all(|v| (v.flags, v.a, v.b) == (10, 0, 0)));
+            let d = decode_elements(&a).unwrap();
+            assert_eq!(g.edges[0].vertices.len(), d.elements.len() + 1, "{p} {h:X}");
+        }
     }
 }
