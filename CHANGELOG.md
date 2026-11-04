@@ -7,6 +7,13 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `aecc_layout_solve`: solves the sampled reverse-spiral JSON groups
+  (SSCSS, SSCS, SCSS) between two fixed lines or curves. `decode_elements`
+  solves JSON groups without stored pieces (D-061): pieces as parts of a
+  `GroupDef::Layout` group, neighbours trimmed, stations to the end;
+  matches Civil 3D's solutions (S217) within 4e-7. `DecodedElements::
+  unsolved`/`UnsolvedGroup` renamed `layout_groups`/`LayoutGroup` (with
+  `solved`). `replace_elements` writes `Layout` groups as JSON only.
 - `decode_elements` reads a JSON group without pieces in place of the
   gap: `DecodedElements::unsolved` (`UnsolvedGroup`: ID, constraint type,
   neighbours, typed parameters, the elements after it),

@@ -30,8 +30,8 @@ use crate::aecc_build::{
 };
 use crate::aecc_design_speed::{design_speeds, set_design_speeds};
 use crate::aecc_elements::{
-    decode_elements, element_records, ArcDef, ArcParams, DecodedElements, Element, ResolvedElement,
-    Segment, ARC_FLOATING_END, ARC_FLOATING_START, ARC_FREE,
+    decode_elements, element_records, ArcDef, ArcParams, DecodedElements, Element, GroupDef,
+    ResolvedElement, Segment, ARC_FLOATING_END, ARC_FLOATING_START, ARC_FREE,
 };
 use crate::alignment::Point2;
 use crate::raw::{self, RawRecord};
@@ -744,6 +744,14 @@ pub fn replace_elements(
     if !d.detached.is_empty() {
         return Err(err("the alignment has detached pieces"));
     }
+    // Groups held by the JSON layout are written as the JSON object only
+    // (D-061): their solved pieces have no record.
+    let els: Vec<Element> = els
+        .iter()
+        .filter(|e| !matches!(e, Element::Group(g) if matches!(g.def, GroupDef::Layout { .. })))
+        .cloned()
+        .collect();
+    let els = &els[..];
     // Group-member spirals are only valid with a JSON layout string
     // (S189: eWrongObjectType without it; MIST17).
     let members = els

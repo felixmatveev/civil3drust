@@ -127,34 +127,64 @@ fn layout_from_typed_parameters_matches_civil3d_group() {
 }
 
 #[test]
-fn json_group_reads_in_place_of_the_gap() {
-    // S216: four alignments hold only the fixed elements and the JSON
-    // group (D-059); the reader keeps the group as unsolved.
+fn json_group_is_solved_like_civil3d() {
+    // S218: four alignments hold only the fixed elements and the JSON
+    // group (D-059). civil3drust solves the groups (D-061); Civil 3D's own
+    // solution of the same file (S217, from S216) agrees within 1e-6.
     use civil3drust::aecc_elements::decode_elements;
-    let d = civil3drust::raw::open("samples/S216_S178_group_from_parameters.dwg").unwrap();
+    let ours = civil3drust::raw::open("samples/S218_S178_group_parameters_written.dwg").unwrap();
+    let c3d = civil3drust::raw::open("samples/S217_S216_civ3d_resaved.dwg").unwrap();
+    let theirs = civil3drust::raw::records(&c3d.doc, "AECC_ALIGNMENT");
     let mut n = 0;
-    for r in civil3drust::raw::records(&d.doc, "AECC_ALIGNMENT") {
-        let de = decode_elements(&r).unwrap();
-        if [0x1208, 0x120B, 0x120E, 0x1211].contains(&r.handle) {
-            assert_eq!(de.elements.len(), 1, "{:X}", r.handle);
-            assert_eq!(de.unsolved.len(), 1, "{:X}", r.handle);
-            let g = &de.unsolved[0];
-            assert_eq!((g.id, g.previous, g.next), (3, 1, 2), "{:X}", r.handle);
-            assert_eq!(g.following.len(), 1, "{:X}", r.handle);
-            assert!(!de.is_complete());
-            n += 1;
-        } else {
-            assert!(de.is_complete(), "{:X}", r.handle);
+    for r in civil3drust::raw::records(&ours.doc, "AECC_ALIGNMENT") {
+        let a = decode_elements(&r).unwrap();
+        assert!(a.is_complete(), "{:X}", r.handle);
+        let q = theirs.iter().find(|q| q.handle == r.handle).unwrap();
+        let b = decode_elements(q).unwrap();
+        assert_eq!(a.elements.len(), b.elements.len(), "{:X}", r.handle);
+        assert!((a.length() - b.length()).abs() < 1e-6, "{:X}", r.handle);
+        for (x, y) in a.elements.iter().zip(&b.elements) {
+            assert!(x.segment.start().distance_to(y.segment.start()) < 1e-6);
+            assert!(x.segment.end().distance_to(y.segment.end()) < 1e-6);
         }
-        if r.handle == 0x120E {
-            let p: Vec<f64> = de.unsolved[0].params.iter().map(|x| x.1).collect();
-            assert_eq!(p, [150.0, 170.0, 500.0, 190.0]);
+        if !a.layout_groups.is_empty() {
+            assert_eq!(a.layout_groups.len(), 1);
+            assert!(a.layout_groups[0].solved);
+            n += 1;
         }
     }
     assert_eq!(n, 4);
-    // Civil 3D's re-save S217 has every group solved.
-    let d = civil3drust::raw::open("samples/S217_S216_civ3d_resaved.dwg").unwrap();
-    for r in civil3drust::raw::records(&d.doc, "AECC_ALIGNMENT") {
-        assert!(decode_elements(&r).unwrap().is_complete(), "{:X}", r.handle);
-    }
+}
+
+#[test]
+fn solved_json_group_is_written_back_as_json() {
+    // Decode → write the records back: the solved pieces are dropped, the
+    // record keeps the two fixed elements and the same JSON (D-061).
+    use civil3drust::aecc_element_edit::replace_elements;
+    use civil3drust::aecc_elements::decode_elements;
+    let d = civil3drust::raw::open("samples/S218_S178_group_parameters_written.dwg").unwrap();
+    let r = civil3drust::raw::records(&d.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0x120E)
+        .unwrap();
+    let before = decode_elements(&r).unwrap();
+    let els: Vec<Element> = before
+        .all()
+        .filter(|e| e.part <= 1)
+        .map(|e| e.record.clone())
+        .collect();
+    let (b, hb, _) = replace_elements(&r, &els, 1).unwrap();
+    let w = civil3drust::raw::RawRecord {
+        data: b,
+        handle_bits: hb,
+        ..r.clone()
+    };
+    assert_eq!(element_records(&w.data).len(), 2);
+    assert_eq!(
+        string_stream::layout_json(&w.data, w.handle_bits),
+        string_stream::layout_json(&r.data, r.handle_bits)
+    );
+    let after = decode_elements(&w).unwrap();
+    assert!(after.is_complete());
+    assert!((after.length() - before.length()).abs() < 1e-9);
 }

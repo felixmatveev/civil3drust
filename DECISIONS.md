@@ -1164,6 +1164,8 @@ discarded by Civil 3D on opening.
 
 ## D-060: A JSON group without pieces is read as an unsolved group
 
+*Superseded by D-061.*
+
 **Context.** Groups written as JSON only (D-059) leave a gap in the
 element chain that civil3drust's reader refused, so civil3drust could not
 read what it wrote. Civil 3D solves the group on opening; civil3drust has
@@ -1178,4 +1180,24 @@ Nothing is invented for the missing part.
 **Alternatives.** A straight placeholder segment across the gap: wrong
 length and stations presented as real. Solving the methods in
 civil3drust: duplicates what Civil 3D does on opening (D-059).
+
+## D-061: JSON groups are solved when read and written back as JSON
+
+**Context.** The owner's decision: civil3drust must read alignments with
+and without the gap, and a program working with such an alignment needs
+the group's geometry for continuity and stationing. Civil 3D itself
+solves the group from the JSON on opening (S216 → S217).
+
+**Decision.** When a JSON group has no stored pieces, `decode_elements`
+solves it (`aecc_layout_solve`), trims the fixed elements around it and
+passes the pieces on as parts of one `GroupDef::Layout` group, so the
+alignment is continuous and stationed to its end. The pieces are
+temporary: `replace_elements` writes such a group as the JSON object only
+(with the fixed elements and their proxy graphics), as in S218. The
+solver is checked against Civil 3D's solutions (S217). A group the solver
+cannot place stays unsolved (D-060's form) instead of failing the read.
+
+**Alternatives.** D-060 (leave the group unsolved): no stations past the
+gap. Writing the solved pieces: Civil 3D re-solves from the JSON anyway
+and the MIST1 mismatch is reported either way.
 

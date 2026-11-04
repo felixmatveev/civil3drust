@@ -10,7 +10,7 @@
 //! question is whether it also builds them when there are none.
 //!
 //! The records are written with `replace_elements`; the reader takes the
-//! JSON group in place of the gap (`DecodedElements::unsolved`).
+//! JSON group in place of the gap (`DecodedElements::layout_groups`).
 //!
 //! Each spec: `source.dwg:HANDLE:direct|group[:p1,p2,…]`
 //! - `direct`: the two fixed elements linked to each other;
@@ -188,10 +188,11 @@ fn main() {
             .find(|x| x.handle == nh)
             .map(|x| match decode_elements(&x) {
                 Ok(d) => format!(
-                    "{} elements, {} unsolved group(s), {} after",
+                    "{} elements, {} JSON group(s), complete {}, length {:.4}",
                     d.elements.len(),
-                    d.unsolved.len(),
-                    d.unsolved.iter().map(|g| g.following.len()).sum::<usize>()
+                    d.layout_groups.len(),
+                    d.is_complete(),
+                    d.length()
                 ),
                 Err(e) => format!("does not decode: {e}"),
             })

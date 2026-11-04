@@ -833,6 +833,10 @@ pub const PREFIX_LINE_GROUP: u16 = 10;
 /// position comes from the neighbouring elements.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum GroupDef {
+    /// A group held only by the JSON layout (no record; D-061): its
+    /// pieces are solved by civil3drust when read, and it is written back
+    /// as the JSON object only. `constraint_type` as in the JSON.
+    Layout { constraint_type: i32 },
     /// Code 0 (prefix 8): spiral, curve, spiral between two lines meeting
     /// at a PI. Free Spiral-Curve-Spiral (between two entities).
     SpiralCurveSpiral { l1: f64, radius: f64, l2: f64 },
@@ -1138,6 +1142,8 @@ fn place_group(
     next_curve: Option<&ArcGeometry>,
 ) -> Option<Vec<Segment>> {
     match def {
+        // Never stored as a record (solved in `solve_layout_group`).
+        GroupDef::Layout { .. } => None,
         GroupDef::SpiralSpiralLines { l1, l2 } => {
             let (a, b) = (prev_line?, next_line?);
             let u1 = unit((a.end.x - a.start.x, a.end.y - a.start.y))?;
@@ -2788,16 +2794,18 @@ pub struct DecodedElements {
     /// Civil 3D draws them but ignores them otherwise: no stations, not
     /// part of the alignment until joined again (owner, S100).
     pub detached: Vec<Vec<ResolvedElement>>,
-    /// Spiral groups held only by the JSON layout, without pieces (S216):
-    /// Civil 3D solves them when it opens the drawing (S217), civil3drust
-    /// does not. `elements` ends at the first one; the elements after each
-    /// are in its `following` (their stations are not known).
-    pub unsolved: Vec<UnsolvedGroup>,
+    /// Spiral groups held only by the JSON layout, without stored pieces
+    /// (S216; D-059). civil3drust solves them when reading (D-061): their
+    /// pieces are in `elements` as parts of a [`GroupDef::Layout`] group,
+    /// and the fixed elements around them are trimmed, so stations run to
+    /// the end. A group that cannot be solved keeps the elements after it
+    /// in its `following` (stations unknown) and `elements` ends there.
+    pub layout_groups: Vec<LayoutGroup>,
 }
 
-/// A group of the JSON layout whose pieces are not stored (D-059).
+/// A group of the JSON layout whose pieces are not stored (D-059, D-061).
 #[derive(Debug, Clone, PartialEq)]
-pub struct UnsolvedGroup {
+pub struct LayoutGroup {
     /// The group's ID in the JSON.
     pub id: i32,
     /// Its JSON `ConstraintType` (2569, 2561, 2565 for the sampled
@@ -2808,7 +2816,9 @@ pub struct UnsolvedGroup {
     pub next: i32,
     /// Typed parameters, as named in the JSON.
     pub params: Vec<(String, f64)>,
-    /// The chain after the group, in path order.
+    /// True when civil3drust solved it (its pieces are in `elements`).
+    pub solved: bool,
+    /// When not solved: the chain after the group, in path order.
     pub following: Vec<ResolvedElement>,
 }
 
@@ -2822,13 +2832,13 @@ impl DecodedElements {
     pub fn all(&self) -> impl Iterator<Item = &ResolvedElement> {
         self.elements
             .iter()
-            .chain(self.unsolved.iter().flat_map(|g| g.following.iter()))
+            .chain(self.layout_groups.iter().flat_map(|g| g.following.iter()))
             .chain(self.detached.iter().flatten())
     }
-    /// True when every part of the alignment is solved (no group left for
-    /// Civil 3D to solve), so stations and length are known.
+    /// True when every part of the alignment is resolved (no JSON group
+    /// left unsolved), so stations and length are known.
     pub fn is_complete(&self) -> bool {
-        self.unsolved.is_empty()
+        self.layout_groups.iter().all(|g| g.solved)
     }
     /// Number of element records stored (the element count).
     pub fn record_count(&self) -> usize {
@@ -2864,7 +2874,7 @@ pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> 
         .map(|b| raw::get_byte(&rec.data, b + 2) as i32);
     // Groups of the JSON layout without pieces: the chain is cut at them
     // (D-059).
-    let mut unsolved = unsolved_groups(rec, &records);
+    let mut unsolved = layout_groups(rec, &records);
     for g in &unsolved {
         for e in records.iter_mut() {
             if e.id() == g.previous {
@@ -2887,6 +2897,16 @@ pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> 
         .into_iter()
         .map(resolve_piece)
         .collect::<Result<Vec<_>, _>>()?;
+    // Solve the JSON groups along the chain (D-061).
+    while let Some(g) = unsolved.iter_mut().find(|g| {
+        !g.solved
+            && !g.following.is_empty()
+            && elements.last().map(|e| e.record.id()) == Some(g.previous)
+    }) {
+        if !solve_layout_group(&mut elements, g) {
+            break;
+        }
+    }
     // The records keep their stored links (cut only for chaining).
     if !unsolved.is_empty() {
         let stored = element_records(&rec.data);
@@ -2912,14 +2932,74 @@ pub fn decode_elements(rec: &RawRecord) -> Result<DecodedElements, DecodeError> 
         stored_start_station,
         elements,
         detached,
-        unsolved,
+        layout_groups: unsolved,
     })
+}
+
+/// Solve `g` between the last element of `elements` (A) and the first of
+/// its `following` chain (B): trim A, add the pieces as parts of a
+/// [`GroupDef::Layout`] group, trim B and move the chain into `elements`.
+fn solve_layout_group(elements: &mut Vec<ResolvedElement>, g: &mut LayoutGroup) -> bool {
+    use crate::aecc_layout_solve::{solve_group, trim_after, trim_before, Carrier};
+    let method = match g.constraint_type {
+        2569 => "SSCSS",
+        2561 => "SSCS",
+        2565 => "SCSS",
+        _ => return false,
+    };
+    let (Some(a), Some(b)) = (elements.last(), g.following.first()) else {
+        return false;
+    };
+    let (Some(ca), Some(cb)) = (Carrier::of(&a.segment), Carrier::of(&b.segment)) else {
+        return false;
+    };
+    let params: Vec<f64> = g.params.iter().map(|p| p.1).collect();
+    let Some(sol) = solve_group(
+        method,
+        &params,
+        &ca,
+        a.segment.start(),
+        a.segment.end(),
+        &cb,
+    ) else {
+        return false;
+    };
+    let a_seg = trim_before(&ca, &a.segment, sol.leave_a);
+    let b_seg = trim_after(&cb, &b.segment, sol.meet_b);
+    elements.last_mut().unwrap().segment = a_seg;
+    let record = Element::Group(GroupRecord {
+        header_bit: usize::MAX,
+        end_bit: 0,
+        id: g.id,
+        before: g.previous,
+        after: g.next,
+        flag: false,
+        code: 0,
+        mode: 256,
+        def: GroupDef::Layout {
+            constraint_type: g.constraint_type,
+        },
+        params: ParamBlock::unsolved(),
+        long_fields: None,
+    });
+    for (i, seg) in sol.pieces.into_iter().enumerate() {
+        elements.push(ResolvedElement {
+            record: record.clone(),
+            segment: seg,
+            part: i + 1,
+        });
+    }
+    let mut following = std::mem::take(&mut g.following);
+    following[0].segment = b_seg;
+    elements.extend(following);
+    g.solved = true;
+    true
 }
 
 /// The JSON layout's groups whose pieces are not stored: the fixed
 /// element before the group links straight to the one after it, or to the
 /// group's own ID, which no record has (S216).
-fn unsolved_groups(rec: &RawRecord, records: &[Element]) -> Vec<UnsolvedGroup> {
+fn layout_groups(rec: &RawRecord, records: &[Element]) -> Vec<LayoutGroup> {
     use crate::aecc_layout::Json;
     let Some(text) = crate::string_stream::layout_json(&rec.data, rec.handle_bits) else {
         return Vec::new();
@@ -2961,12 +3041,13 @@ fn unsolved_groups(rec: &RawRecord, records: &[Element]) -> Vec<UnsolvedGroup> {
                     .collect(),
                 _ => Vec::new(),
             };
-            Some(UnsolvedGroup {
+            Some(LayoutGroup {
                 id,
                 constraint_type: num(o, "ConstraintType")? as i32,
                 previous,
                 next,
                 params,
+                solved: false,
                 following: Vec::new(),
             })
         })

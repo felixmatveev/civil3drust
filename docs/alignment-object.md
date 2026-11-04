@@ -2744,6 +2744,30 @@ way — the same JSON and strings, smaller records because the proxy
 graphics now hold only the fixed elements, not the stale pieces. Owner: clean opening, no visual issues, AUDIT clean (the usual
 "modified unexpectedly" warning).
 
+**civil3drust solves JSON groups when reading (D-061, owner's decision).**
+A JSON group whose pieces are not stored is solved on reading, as Civil 3D
+does on opening: `aecc_layout_solve::solve_group` places the pieces of the
+method (SSCSS 2569, SSCS 2561, SCSS 2565) from the typed lengths and
+radius, the two unknowns — where the group leaves A and the middle
+curve's length — fixed by the conditions that the last piece ends on B's
+line or circle heading along it (Newton from a grid of starts; of several
+solutions the one leaving A nearest to A's stored end). The middle curve
+turns against A (reverse from a curve) or against B (from a line). A and
+B are trimmed to the solved points, the pieces go into `elements` as
+parts of a `GroupDef::Layout` group, and stations run to the end of the
+alignment. Against Civil 3D's solutions of the same groups (S217, from
+S216; including 120E with new parameters) every element matches within
+4e-7 and the lengths within 1e-6 (test `layout_json`). A group that
+cannot be solved is still reported (`LayoutGroup::solved` false) with the
+elements after it in `following`.
+
+On writing, `replace_elements` drops the `Layout` group: the record keeps
+the fixed elements and the JSON object only (test
+`solved_json_group_is_written_back_as_json`). Not covered: groups at an
+end of the alignment, other methods, and groups whose pieces are stored
+while the JSON disagrees (S216 1214/1217: civil3drust reads the stored
+pieces, Civil 3D re-solves from the JSON).
+
 ## Open questions
 
 Tracked as MIST1 … MIST15 in [`mysteries.md`](mysteries.md), each with

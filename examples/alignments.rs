@@ -117,10 +117,15 @@ fn main() {
             );
             sta += len;
         }
-        for g in &d.unsolved {
+        for g in &d.layout_groups {
             println!(
-                "  group {} (JSON only, solved by Civil 3D on opening; type {}, between {} and {}): {}",
+                "  JSON group {} ({}; type {}, between {} and {}): {}",
                 g.id,
+                if g.solved {
+                    "solved by civil3drust, its pieces are listed above"
+                } else {
+                    "not solved, stations stop before it"
+                },
                 g.constraint_type,
                 g.previous,
                 g.next,

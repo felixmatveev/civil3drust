@@ -48,6 +48,8 @@ fn group_prefix(def: &GroupDef) -> u16 {
         | GroupDef::SpiralLineSpiralLine { .. } => PREFIX_LINE_GROUP,
         GroupDef::ReverseThrough { .. } | GroupDef::ReverseTwoPoints { .. } => PREFIX_REVERSE_GROUP,
         GroupDef::Scscs { .. } => PREFIX_SCSCS,
+        // Written as the JSON object only; `replace_elements` drops it.
+        GroupDef::Layout { .. } => PREFIX_GROUP,
         GroupDef::Scsscs { .. } => PREFIX_SCSSCS,
     }
 }
@@ -252,6 +254,7 @@ fn group(w: &mut Bits, g: &GroupRecord) {
     w.bl(g.mode);
     let (count, second) = g.long_fields.unwrap_or((0, false));
     match g.def {
+        GroupDef::Layout { .. } => {}
         GroupDef::SpiralCurveSpiral { l1, radius, l2 } => {
             [l1, radius, l2].iter().for_each(|v| w.bd(*v))
         }
