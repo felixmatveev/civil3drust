@@ -101,5 +101,9 @@ fn s232_codes_and_shapes() {
         assert!(last < 1e-3, "{name}: end off by {last}");
     }
     seen.sort_by_key(|t| t.code());
-    assert_eq!(seen, SpiralType::ALL.to_vec());
+    let sampled: Vec<SpiralType> = SpiralType::ALL
+        .into_iter()
+        .filter(|t| *t != SpiralType::NswCubicParabola)
+        .collect();
+    assert_eq!(seen, sampled);
 }

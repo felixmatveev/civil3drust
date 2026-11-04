@@ -566,6 +566,10 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **S233 crashed Civil 3D on open** (access violation reading 0x0008,
   owner). Owner: drop 263. S234: S232 with the same three spirals set to
   264 and nothing else changed (FC5, FC2 back to their own codes).
+- **S234 (owner):** opens clean; the properties panel shows NSW Cubic
+  Parabola for the three spirals, but Civil 3D 2024 draws no curve for
+  them (possibly a 2024 bug). So **264 = NSW Cubic Parabola**, and 263
+  is what crashed S233. Shape left for later: FUTURE.md, FRT-1.
 
 ## MIST11 — S89's curve speed-interval distance
 

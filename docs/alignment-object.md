@@ -2983,6 +2983,7 @@ the records differ in nothing else.
 | 260 | Cubic Parabola | y = x³/6RL, arc length to X equal to L |
 | 261 | Sinusoidal Curves | k(s) = k0 + (k1 − k0)(t − sin(2πt)/2π) |
 | 262 | Bi-Quadratic | k(s) = k0 + (k1 − k0)·2t² (t ≤ ½), 1 − 2(1 − t)² |
+| 264 | NSW Cubic Parabola | not known: S234 opens and lists the type, but Civil 3D 2024 draws no curve (FUTURE.md, FRT-1) |
 
 x and y are measured from the straight end along and across the tangent
 (X the spiral's extent along it); an outward spiral is the same curve
@@ -3010,6 +3011,8 @@ still to be sampled; Bi-Quadratic is two second-degree parabolas, with
 its own formulas for the compound case (civil3drust's compound
 Bi-Quadratic, the same rise between two curvatures, is unchecked);
 Sinusoidal Curves cover deflections from 0 to 90°.
+
+Code 263 crashes Civil 3D on open (S233).
 
 The copied "NSW Cubic Parabola" alignment kept 262 and the Bi-Quadratic
 shape (MIST10): changing the type in the settings does not change an

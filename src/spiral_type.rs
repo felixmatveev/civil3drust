@@ -28,7 +28,9 @@
 //! proportional to the true arc length (only the ends are proven).
 //! S232's "NSW Cubic Parabola" alignment is a copy of the Bi-Quadratic one
 //! whose type was changed in the settings afterwards: it kept code 262 and
-//! its shape, so its own code is not known yet.
+//! its shape. NSW Cubic Parabola is code 264 (S234: Civil 3D lists the
+//! type, but draws no curve); it has no shape here yet and is drawn as a
+//! clothoid (FUTURE.md, FRT-1). Code 263 crashes Civil 3D (S233).
 
 use std::f64::consts::PI;
 
@@ -41,10 +43,13 @@ pub enum SpiralType {
     CubicParabola,
     Sinusoidal,
     Biquadratic,
+    /// Code 264 (S234): Civil 3D 2024 lists it but draws no curve; no
+    /// shape here yet, drawn as a clothoid (FUTURE.md, FRT-1).
+    NswCubicParabola,
 }
 
 impl SpiralType {
-    pub const ALL: [SpiralType; 7] = [
+    pub const ALL: [SpiralType; 8] = [
         Self::Clothoid,
         Self::SineHalfWave,
         Self::JapaneseCubic,
@@ -52,6 +57,7 @@ impl SpiralType {
         Self::CubicParabola,
         Self::Sinusoidal,
         Self::Biquadratic,
+        Self::NswCubicParabola,
     ];
 
     /// The type stored as `code` (S232); `None` for codes not sampled.
@@ -68,6 +74,7 @@ impl SpiralType {
             Self::CubicParabola => 260,
             Self::Sinusoidal => 261,
             Self::Biquadratic => 262,
+            Self::NswCubicParabola => 264,
         }
     }
 
@@ -81,6 +88,7 @@ impl SpiralType {
             Self::CubicParabola => "Cubic Parabola",
             Self::Sinusoidal => "Sinusoidal Curves",
             Self::Biquadratic => "Bi-Quadratic",
+            Self::NswCubicParabola => "NSW Cubic Parabola",
         }
     }
 

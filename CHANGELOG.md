@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `FUTURE.md`, a record of deferred work; FRT-1: NSW Cubic Parabola
+  spirals. `SpiralType::NswCubicParabola` names code 264 (S234: Civil 3D
+  lists the type but draws no curve); drawn as a clothoid until sampled.
+  Code 263 is what crashed S233.
 - `examples/exp_spiral_code` and sample S233: spiral-type codes 263 and
   264 written into S232's spirals, for Civil 3D to judge. S233 crashes
   Civil 3D on open (owner); S234 has code 264 only.
