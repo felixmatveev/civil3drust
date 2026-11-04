@@ -96,13 +96,15 @@ raw records so they are saved byte for byte (D-033,
 | `aecc_registry`, `aecc_topology`, `aecc_site` | Companion registry, topology graph, sites (read-only). |
 | `proxy_graphics` | The display cache embedded in AECC entity records. |
 | `alignment`, `inventory` | Format-independent alignment geometry; AECC class inventory. |
+| `dump` | Plain-text RON view of a drawing: compact entities, decoded alignments, raw records (D-065). |
 
-The command-line examples (`alignments`, `create_alignment`,
+The command-line examples (`alignments`, `dump`, `create_alignment`,
 `edit_elements`, `set_pis`, `set_speeds`, `set_style`, …) are listed with
 their arguments in [`CLAUDE.md`](CLAUDE.md). For example:
 
 ```
 cargo run --release --example alignments -- drawing.dwg
+cargo run --release --example dump -- drawing.dwg drawing.ron
 cargo run --release --example create_alignment -- donor.dwg target.dwg out.dwg "New" "0,0 100,0,50 100,100"
 cargo run --release --example edit_elements -- in.dwg out.dwg "New" remove 1
 ```

@@ -35,3 +35,24 @@ named and kept as read, but has no shape: it is drawn as a clothoid
   the other types were (test `spiral_types`).
 - How Civil 3D lays it out (stored length vs Xc) and whether it has the
   Cubic Parabola's deflection limit.
+
+## FRT-2: RON → DWG (building a drawing from a dump)
+
+**Status:** open (2026-11-04).
+
+**What civil3drust does now.** `examples/dump` writes DWG → RON
+(D-065); `dump::from_ron` reads it back into `dump::Drawing`. Nothing
+writes a DWG from it.
+
+**Needed.**
+- Decide the base: edit an existing drawing from the dump (apply changed
+  entities and alignments by handle, keep everything else) or rebuild a
+  whole document (acadrust's own `serde` form for tables and objects,
+  plus the `--raw` records).
+- Alignments from the dump through the existing writers (`set_pis`,
+  `aecc_create`), not raw bytes, so edits in the RON become model edits.
+- Acceptance as D-049: DWG → RON → DWG → RON gives the same RON, and
+  Civil 3D opens the rebuilt drawing with a clean AUDIT.
+- Model-space entities only so far; blocks, paper space, layers and
+  other tables are not in the dump.
+

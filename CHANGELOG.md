@@ -6,6 +6,16 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- `dump` module and `examples/dump` (D-065): a plain-text RON view of a
+  DWG — model-space entities in compact form (`Line(h: "2A1", layer:
+  "0", start: (…), end: (…))`), decoded alignments (elements, style,
+  start station, detached pieces, JSON groups), and a count of raw
+  records by class; `--raw` lists every raw record with its bytes in hex.
+  `dump::from_ron` reads a dump back. Tests `dump_samples` (S24 in
+  detail; every sample's dump reads back to the same value).
+- Dependencies `serde`, `ron`, and acadrust's `serde` feature.
+
 ### Changed
 - Companions are always written in the rebuilt form (edge `0x10`,
   vertices (10, 0, 0)), for templates in any form (D-064, MIST12

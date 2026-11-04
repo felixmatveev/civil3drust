@@ -1269,3 +1269,31 @@ keep the form.
 alignment's history and leaves non-uniform templates stale. Reproduce
 each form from how the alignment was made: history civil3drust does not
 have.
+
+## D-065: A RON dump is the plain-text view of a drawing
+
+**Date:** 2026-11-04. **Status:** accepted.
+
+**Context.** The owner wants a plain-text file of what civil3drust and
+acadrust decode from a DWG (`Line(0,0;0,100)`, alignments with their
+parameters), readable and diffable, and later convertible back
+(RON → DWG). acadrust 0.6.7's `serde` feature serializes the whole
+`CadDocument`, but skips every raw record's bytes (`raw_dwg_data`) and
+spells out every `EntityCommon` field: S24 (473 KB) gives 2.3 MB of RON
+that does not read back equal.
+
+**Decision.** civil3drust has its own dump schema (`src/dump.rs`),
+written as RON through serde. Model-space entities are one line each in
+a compact form (`Other` / `Aecc` for types without one); alignments are
+civil3drust's decoded model; raw records are counted by class, and with
+`--raw` listed with their bytes in hex and handle-stream size (the part
+a RON → DWG writer needs). Handles are hex strings; floats use serde's
+shortest exact form, so a dump reads back bit for bit. `FORMAT` (1) is
+bumped when a field changes meaning.
+
+**Alternatives.** XML: LandXML already covers interchange, and serde
+over XML handles enums poorly. JSON: no comments, enums are noisy. A
+hand-written format: a parser to maintain. acadrust's full document
+serialization: complete for acadrust's types but loses the AECC bytes
+and is too verbose to read; kept in mind for a full round trip (FRT-2).
+
