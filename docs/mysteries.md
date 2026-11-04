@@ -287,6 +287,20 @@ writes 0 for new curves and keeps the stored value on rewritten ones
 - **Seen:** 84.63 stored where "length to the element's end" (35.72) is
   expected; every other interval, on lines and curves (S113–S115), fits
   the rule.
+- **Closer look (2026-11-04):** S89's interval stores station 285.63,
+  distance from the curve start 84.6364 and 84.628, and its "element
+  end" point lies 84.628 along the arc, not at the curve's real end
+  (120.355 along). So when the interval was written the curve probably
+  ended at about 2+85.62, the speed sat at (or just past) its end, and
+  the curve was lengthened afterwards without the interval being
+  rewritten. Two readings to separate: the value is the element length
+  when the speed lies at or past the element end; and intervals are not
+  rewritten when the element changes later.
+- **Plan (owner, from S24):** A1 a layout-tool alignment: tangent
+  (0, 0) → (100, 0), fixed curve by three points, tangent; speeds 60 at
+  0+00 and 30 mid-curve; save. A2 A1 plus a speed 40 exactly at the
+  curve's end station (PT from the grid); save. A3 A2 with the curve
+  lengthened by its pass-through grip; save.
 
 ## MIST12 — companion topology flags — **open (uniform form accepted)**
 
