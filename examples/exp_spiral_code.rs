@@ -1,7 +1,8 @@
-//! Experiment (S233): change the spiral-type code (MIST10) of fixed
+//! Experiment (S233, S234): change the spiral-type code (MIST10) of fixed
 //! spiral records, nothing else (the proxy graphics are left as they
 //! were). Codes 263 and 264 were never seen in a sample; 264 is the
-//! owner's guess for NSW Cubic Parabola.
+//! owner's guess for NSW Cubic Parabola. S233 (263 and 264) crashes Civil
+//! 3D on open; S234 has 264 only.
 //!
 //! Usage: exp_spiral_code in.dwg out.dwg <alignment hex>:<code> ...
 

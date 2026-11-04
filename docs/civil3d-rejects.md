@@ -26,6 +26,7 @@ How to read a row: **condition** in the file → **Civil 3D's response** →
 | Group-member spiral in an alignment without the JSON flag (section-2 flags `0x02` + `BL 0x01010034`) | **not rejected** once the header is right (S206: `08 00 02 09` members accepted); S189/S197–S200 were rejected for the bad header below | S206 → S213 | — |
 | Group-member header `08 00 0D` (locked type byte without the `02` byte; Civil 3D writes `08 00 02 0D` locked, `08 00 02 09` unlocked) | RECOVER, "Error 34 (eWrongObjectType)", alignment discarded | S185, S189, S197–S200 (all generated groups had it); fixed in S205/S206, which open | guarded: `aecc_alignment::header_bytes` |
 | Companion tail entry count does not match its handle references (no face-like entry ↔ 3 references; one entry ↔ 5) | companion discarded, eWrongObjectType ("6 errors fixed, 3 objects erased"); the alignments keep dangling companion references | S108 → S109 | guarded: the rebuild keeps the template's edge flags and tail (D-040, test `tail_entry_matches_reference_count`) |
+| Spiral-type codes 263 and 264 in fixed spiral records (S233: two spirals 263, three 264; nothing else changed) | **Civil 3D crashes on open**: "FATAL ERROR: Unhandled Access Violation Reading 0x0008 Exception at BBB04855h" (owner). Which code causes it is open: S234 has 264 only | S233 | guarded: civil3drust writes back only codes it read; `exp_spiral_code` is an experiment |
 
 ## 2. Opens, then misbehaves
 

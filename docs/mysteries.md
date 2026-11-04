@@ -563,6 +563,9 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   264 and unseen. S233 (generated): five spirals of S232 set to 263 or
   264, nothing else changed — what Civil 3D draws, lists and repairs is
   the test.
+- **S233 crashed Civil 3D on open** (access violation reading 0x0008,
+  owner). Owner: drop 263. S234: S232 with the same three spirals set to
+  264 and nothing else changed (FC5, FC2 back to their own codes).
 
 ## MIST11 — S89's curve speed-interval distance
 
