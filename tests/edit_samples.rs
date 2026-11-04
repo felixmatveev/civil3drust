@@ -725,6 +725,24 @@ fn group_member_header_unlocked_s177_s202() {
         ..s177.clone()
     };
     assert_eq!(span(&ours), span(&s202));
+    // The JSON layout follows: `ConstraintLocked` 0 everywhere, the
+    // string identical to Civil 3D's.
+    use civil3drust::string_stream::layout_json;
+    let json = |r: &raw::RawRecord| layout_json(&r.data, r.handle_bits).unwrap();
+    assert_eq!(json(&ours), json(&s202));
+    // And back: locking again gives S177's string.
+    let on = ConstraintEditing {
+        lock_parameters: true,
+        ..off
+    };
+    let (data, handle_bits) = set_constraint_editing(&ours, on).unwrap();
+    let back = raw::RawRecord {
+        data,
+        handle_bits,
+        ..s177.clone()
+    };
+    assert_eq!(json(&back), json(&s177));
+    assert_eq!(span(&back), span(&s177));
 }
 
 /// Tangency constraint is not in the header (MIST7): S201 is S172 with

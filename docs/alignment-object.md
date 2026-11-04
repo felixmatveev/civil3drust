@@ -2820,6 +2820,16 @@ Decoded this way, every joint of the five alignments lies on Civil 3D's
 proxy graphics (test `s225_group_pieces_after_end_entity_deleted`), and
 the records re-encode bit for bit (`encode_roundtrip`).
 
+**Parameter lock and the JSON (S177 → S202).** Turning "Lock all
+parameter constraints" off changes, besides the element headers
+(`02 0D` → `02 09` on the group member, `02` dropped elsewhere), only
+`ConstraintLocked` 2 → 0 on every object of the JSON. 
+`aecc_criteria::set_constraint_editing` now rewrites both; for S177 FCE
+its result has Civil 3D's S202 JSON byte for byte, and locking again
+gives S177's (test `group_member_header_unlocked_s177_s202`). Not
+sampled: an alignment with single elements locked and a JSON layout
+(whether `ConstraintLocked` is then per object).
+
 ## Open questions
 
 Tracked as MIST1 … MIST15 in [`mysteries.md`](mysteries.md), each with

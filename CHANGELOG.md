@@ -167,6 +167,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   `s162_spirals_match_civil3d_drawing`; MIST16.
 
 ### Fixed
+- `set_constraint_editing` also sets the JSON layout's `ConstraintLocked`
+  (2 locked, 0 unlocked) on every object; S177 → S202 reproduced byte
+  for byte, and back.
 - Object names of alignments whose JSON string Civil 3D emptied: the
   slot announced by the section-2 JSON flag is skipped by position
   (`raw::layout_json_flag`); the user string was read as the name

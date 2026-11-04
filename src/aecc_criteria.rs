@@ -131,7 +131,8 @@ pub fn constraint_editing(rec: &RawRecord) -> Result<ConstraintEditing, Criteria
 /// header is rewritten: `0x02` added when locking, removed when unlocking
 /// (other flag bits are kept). Returns the new bytes and handle-stream
 /// size. Alignments with spiral groups are refused (their inner headers
-/// are not enumerated yet).
+/// are not enumerated yet). A JSON layout's `ConstraintLocked` values are
+/// set to match (2 locked, 0 unlocked; S177 → S202).
 pub fn set_constraint_editing(
     rec: &RawRecord,
     c: ConstraintEditing,
@@ -189,5 +190,36 @@ pub fn set_constraint_editing(
     w.copy(&data, at, total);
     let bytes = w.into_bytes();
     let hb = bytes.len() * 8 - new_data_end;
-    Ok((bytes, hb))
+    // The JSON layout holds the lock too: every object's
+    // `ConstraintLocked` is 2 when locked, 0 when not (S177 → S202).
+    set_layout_lock(rec, bytes, hb, c.lock_parameters)
+}
+
+/// Set `ConstraintLocked` of every object of the record's JSON layout, if
+/// it has one, to 2 (locked) or 0. Returns the bytes and handle-stream
+/// size (unchanged without a JSON layout).
+fn set_layout_lock(
+    rec: &RawRecord,
+    bytes: Vec<u8>,
+    hb: usize,
+    locked: bool,
+) -> Result<(Vec<u8>, usize), CriteriaError> {
+    use crate::aecc_layout::{set_layout, Json};
+    let Some(text) = crate::string_stream::layout_json(&bytes, hb) else {
+        return Ok((bytes, hb));
+    };
+    let mut j = Json::parse(&text).map_err(|e| CriteriaError(e.to_string()))?;
+    if let Some(Json::Arr(objs)) = j.get_mut("RGObjects") {
+        for o in objs {
+            if let Some(Json::Num(v)) = o.get_mut("ConstraintLocked") {
+                *v = if locked { 2.0 } else { 0.0 };
+            }
+        }
+    }
+    let r = RawRecord {
+        data: bytes,
+        handle_bits: hb,
+        ..rec.clone()
+    };
+    set_layout(&r, &j).map_err(|e| CriteriaError(e.to_string()))
 }
