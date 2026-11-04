@@ -431,14 +431,15 @@ pub fn strings_after_impl(data: &[u8]) -> Vec<String> {
 
 /// Object name from the string stream.
 ///
-/// First tries the structure seen in every alignment record (S1–S38,
-/// `string_stream`): the implementation class string `AeccImp…`, the
-/// description twice (empty unless set, S38 description file), an optional
-/// user name (present in S9 and S22, after edits in Civil 3D), then the
-/// name, then (usually empty) further strings; each is a bit-coded length +
-/// UTF-16 code units. When the fifth string is non-empty the fourth is the
-/// user name and the fifth the object name. Falls back to the last plain
-/// string after the class name.
+/// For alignment records the strings are: the implementation class
+/// `AeccImp…`, the description twice, then — in the Alignment Properties
+/// form — the JSON layout string when section-2 flag 0x02 announces it
+/// (S177, S206) and the editing user's name (S144, S227), then the name and
+/// further (mostly empty) strings. The JSON slot is dropped by position;
+/// the name is the string before the `<DATADIR>` criteria path when there
+/// is one (S79), otherwise string 3 in the plain section-2 form and 4 in
+/// the Properties form, as Civil 3D reads them (`section2_form`). Records
+/// that don't fit fall back to the last plain string after the class name.
 pub fn object_name(data: &[u8]) -> Option<String> {
     structured_name(data).or_else(|| strings_after_impl(data).pop())
 }

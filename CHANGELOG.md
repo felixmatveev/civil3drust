@@ -7,6 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- `raw::object_name`'s doc comment describes the current name rule
+  (JSON slot, user string, `<DATADIR>` anchor, section-2 form).
 - Documentation revised against the current state: readings that later
   samples corrected are replaced or marked **Later:** in
   `docs/alignment-object.md` (the "identity GUID" and "station cache" are

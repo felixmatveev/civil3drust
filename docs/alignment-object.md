@@ -1293,8 +1293,10 @@ section-2 bits of ON vs OFF, handle streams, string streams.
   `mixed speed` form, +2 strings), so that block is derived from the
   speed table after all. Civil 3D accepted S77's records without it and
   rebuilt it when the alignment was edited.
-- The criteria strings come after the name, so the name's position is
-  unchanged (string 3, or 4 in the Properties form; `raw::section2_form`).
+- The criteria strings come after the name: the criteria path's
+  `<DATADIR>` form marks the name's position (`raw::object_name` uses it
+  first, then the section-2 form: string 3 in the plain form, 4 in the
+  Properties form).
 - `aecc_build::alignment_type` failed on records with several design
   speeds (it read after the GUID copy 2 entry); it now reads after the
   whole table.
