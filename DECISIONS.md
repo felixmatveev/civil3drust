@@ -1127,6 +1127,9 @@ S59 and S177–S183 are left alone until sampled.
 **Alternatives.** Keep the template's stamp (a false history), or write
 the current time (a cache Civil 3D does not need).
 
+
+*Amended (S227): the Properties form's user string (after the
+descriptions) is removed too; left in place it becomes the name.*
 ## D-058: The layout JSON is composed from the element records
 
 **Context.** Groups kept apart (S177, S178) need a JSON layout string

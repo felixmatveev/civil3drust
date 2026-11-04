@@ -171,6 +171,13 @@ versions follow [Semantic Versioning](https://semver.org/).
   `s162_spirals_match_civil3d_drawing`; MIST16.
 
 ### Fixed
+- New alignments made from a template in the Alignment Properties form
+  were named "felix" in Civil 3D: `to_plain_form` kept the form's user
+  string, which the plain form reads as the name (S193, S227). It is now
+  removed; `create_alignment` also clears the template's descriptions.
+  The name reader follows the section-2 form (`raw::section2_form`) as
+  Civil 3D does, so it shows these names as Civil 3D shows them. Sample
+  S228 (the spiral-type template again).
 - `set_constraint_editing` also sets the JSON layout's `ConstraintLocked`
   (2 locked, 0 unlocked) on every object; S177 → S202 reproduced byte
   for byte, and back.

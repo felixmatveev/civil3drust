@@ -1058,7 +1058,17 @@ fn date_modified_block_dropped_plain_form() {
     let s194 = rec("samples/S194_S193_civ3d_resaved.dwg");
     assert!(has_stamp(&s144));
     let (d, hb) = to_plain_form(&s144.data, s144.handle_bits).unwrap();
-    assert_eq!((&d, hb), (&s193.data, s193.handle_bits));
+    // S193 kept the Properties form's user string ("felix"), which the
+    // plain form reads as the name (S227); civil3drust now drops it.
+    let (want, want_hb) =
+        civil3drust::string_stream::remove(&s193.data, s193.handle_bits, 3).unwrap();
+    assert_eq!((&d, hb), (&want, want_hb));
+    assert_eq!(
+        raw::object_name(&d).as_deref(),
+        raw::object_name(&s144.data).as_deref()
+    );
+    // S193 itself reads as Civil 3D reads it: the user string as the name.
+    assert_eq!(raw::object_name(&s193.data).as_deref(), Some("felix"));
     assert!(!has_stamp(&s193) && !has_stamp(&s194));
     assert!(to_plain_form(&s194.data, s194.handle_bits).is_none());
     let (a, b) = (
@@ -1067,10 +1077,8 @@ fn date_modified_block_dropped_plain_form() {
     );
     assert_eq!(a.record_count(), b.record_count());
     assert!((a.length() - b.length()).abs() < 1e-9);
-    assert_eq!(
-        raw::object_name(&s194.data).as_deref(),
-        Some("Alignment - (RENAMED)")
-    );
+    // Civil 3D's re-save keeps the stray user string as the name.
+    assert_eq!(raw::object_name(&s194.data).as_deref(), Some("felix"));
 
     // A new alignment from a Properties-form donor comes out plain.
     let donor = raw::open("samples/S144_S143_renamed.dwg").unwrap();
@@ -1092,4 +1100,7 @@ fn date_modified_block_dropped_plain_form() {
         .unwrap();
     assert!(!has_stamp(&r));
     assert!(to_plain_form(&r.data, r.handle_bits).is_none());
+    // The donor's user string is gone, so the name is read as written
+    // (S227: every new alignment showed "felix").
+    assert_eq!(raw::object_name(&r.data).as_deref(), Some("P"));
 }

@@ -449,6 +449,26 @@ pub fn is_layout_json(s: &str) -> bool {
     s.trim_start().starts_with('{') && s.contains("\"JsonVersion\"")
 }
 
+/// The two section-2 forms seen at bit 115 (MIST2–MIST4, D-057).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Section2Form {
+    /// `BL 0x1148` / `0x1188`: never edited in Alignment Properties.
+    Plain,
+    /// `BL` flags with bit 0x01 (1, 3, 0x41, 0x43): the Alignment
+    /// Properties form, with a user string after the descriptions.
+    Properties,
+}
+
+/// The section-2 form of an alignment record, if recognised.
+pub fn section2_form(data: &[u8]) -> Option<Section2Form> {
+    let c = crate::aecc_entity::entity_common(data)?;
+    match read_bl(data, c.start_bit + 115)? {
+        (0x1148 | 0x1188, _) => Some(Section2Form::Plain),
+        (v, _) if (0..0x100).contains(&v) && v & 0x01 != 0 => Some(Section2Form::Properties),
+        _ => None,
+    }
+}
+
 /// True when section 2 announces a JSON layout string: the Alignment
 /// Properties form's flags (first BL at section-2 bit 115, small values)
 /// have bit 0x02 (S177, S178: 3 or 0x43; without JSON 1 or 0x41).
@@ -516,14 +536,23 @@ fn structured_name(data: &[u8]) -> Option<String> {
     // its `<DATADIR>` form comes next (S79, S80): that fixes the name's
     // position whether or not a user-name string precedes it.
     let datadir = |i: usize| strings.get(i).is_some_and(|s| s.starts_with("<DATADIR>"));
+    // Otherwise the section-2 form says where the name is, as Civil 3D
+    // reads it: string 3 in the plain form, 4 after the user string of the
+    // Alignment Properties form (S144, S177). A plain record that still
+    // holds a user string shows that string as its name in Civil 3D
+    // (S193, S227), so it is read that way here too.
     let name = if datadir(5) {
         &strings[3]
     } else if datadir(6) {
         &strings[4]
     } else {
-        match strings.get(4) {
-            Some(s) if !s.is_empty() => s,
-            _ => &strings[3],
+        match section2_form(data) {
+            Some(Section2Form::Plain) => &strings[3],
+            Some(Section2Form::Properties) => strings.get(4).unwrap_or(&strings[3]),
+            None => match strings.get(4) {
+                Some(s) if !s.is_empty() => s,
+                _ => &strings[3],
+            },
         }
     };
     (!name.is_empty()).then(|| name.clone())

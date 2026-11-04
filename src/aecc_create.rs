@@ -495,6 +495,9 @@ pub fn create_alignment(
     }
     let (align, align_hb) = string_stream::set_name(&align, rec.handle_bits, &old_name, name)
         .map_err(|e| lay(e.to_string()))?;
+    // The template's description is not the new alignment's (S227: every
+    // new alignment carried "Spiral E, …").
+    let (align, align_hb) = clear_description(align, align_hb);
     // Each rewrite step keeps the previous padding; trim it so no stray
     // zero byte follows the last reference (S56).
     let (mut align, mut align_hb) = handle_refs::trim_padding(&align, align_hb, align_h);
@@ -623,4 +626,18 @@ mod tests {
         let b = new_id_string(1, std::slice::from_ref(&a));
         assert_ne!(a, b);
     }
+}
+
+/// Empty both description copies (strings 1 and 2) of an alignment record.
+fn clear_description(data: Vec<u8>, hb: usize) -> (Vec<u8>, usize) {
+    let Ok(ss) = string_stream::parse(&data, hb) else {
+        return (data, hb);
+    };
+    if ss.strings.len() < 4 || !ss.strings[0].text.starts_with("AeccImp") {
+        return (data, hb);
+    }
+    let Ok((d, h)) = string_stream::replace(&data, hb, 1, "") else {
+        return (data, hb);
+    };
+    string_stream::replace(&d, h, 2, "").unwrap_or((data, hb))
 }

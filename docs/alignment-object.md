@@ -2909,6 +2909,20 @@ alignment gets zeros (D-046, `aecc_build::geometry_key_bit`). Details and
 the full table: `mysteries.md`, MIST1.
 
 
+## The user string of the Alignment Properties form (S227)
+
+The Alignment Properties form has one more string after the two
+descriptions: the user who edited it ("felix" in S144, S177, S178). The
+plain form has none and reads string 3 as the name. `to_plain_form`
+(D-057) kept the string, so S193 and every alignment created from a
+Properties-form template (S227) showed "felix" as its name in Civil 3D
+(owner, S227 screenshot); S194, Civil 3D's re-save of S193, keeps it as
+the name. `to_plain_form` now removes it, and `create_alignment` also
+clears the template's descriptions. The name reader follows the
+section-2 form as Civil 3D does (`raw::section2_form`: string 3 in the
+plain form, 4 in the Properties form), so it now reads S193, S194 and
+S227 the way Civil 3D shows them. S228 is the template made again.
+
 ## MIST2: re-save field (partially solved, S151–S157)
 
 `BL 0x0D00D773, BL n` (44 bits) right after MIST1, or 98 bits after it in

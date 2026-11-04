@@ -941,7 +941,8 @@ pub const DATE_MODIFIED_TAG: u32 = 0x1600_101F;
 /// Turn an Alignment Properties form record into the plain form Civil 3D
 /// writes for an alignment never edited in Alignment Properties (D-057):
 /// section-2 bits 115 up to the MIST1 anchor become `BL 0x1148, BL 0`,
-/// and the date-modified block (MIST3) and MIST2 after MIST1 are removed.
+/// and the date-modified block (MIST3), MIST2 after MIST1 and the user
+/// string after the descriptions are removed.
 /// Civil 3D accepts it and keeps the plain form on save (S193 → S194);
 /// removing the block alone is rejected (S191, S192).
 ///
@@ -982,8 +983,15 @@ pub fn to_plain_form(data: &[u8], handle_bits: usize) -> Option<(Vec<u8>, usize)
     w.copy(data, data_end, total);
     let bytes = w.into_bytes();
     let hb = bytes.len() * 8 - new_data_end;
-    Some((bytes, hb))
+    // The Properties form has one more string, the user who edited the
+    // alignment, after the descriptions (S144, S177: "felix"). The plain
+    // form has none, and its name is string 3: left in place, the user
+    // string was read as the name (S193, S227).
+    crate::string_stream::remove(&bytes, hb, PROPERTIES_USER_STRING).ok()
 }
+
+/// Index of the user string of the Alignment Properties form.
+const PROPERTIES_USER_STRING: usize = 3;
 
 /// Drop the caches and history from a record civil3drust writes: the
 /// Properties form becomes the plain form without the date-modified block
