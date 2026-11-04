@@ -1208,3 +1208,18 @@ records in place read them with that option.
 gap. Writing the solved pieces: Civil 3D re-solves from the JSON anyway
 and the MIST1 mismatch is reported either way.
 
+## D-062: Deleting an alignment follows Civil 3D: the companion is emptied, not removed
+
+**Context.** Civil 3D deletes an alignment by removing it and its label
+groups, while its companion and registry entry stay, the companion
+emptied (S228 → S229).
+
+**Decision.** `aecc_delete::delete_alignment` does exactly that, on the
+loaded document, for siteless alignments; site members are refused until
+sites are written. The same function serves the command line
+(`examples/delete_alignment`) and programs that edit the model and write
+it back.
+
+**Alternatives.** Removing the companion and its registry entry too:
+cleaner, but not what Civil 3D writes and not tested.
+

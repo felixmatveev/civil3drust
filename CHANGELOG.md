@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `aecc_delete::delete_alignment` (and `empty_companion`): deletes a
+  siteless alignment as Civil 3D does (S229) — alignment and label groups
+  removed, companion emptied, registry entry kept. `examples/
+  delete_alignment`; test `delete_alignment`; sample S230.
 - Sample S229 (owner: an alignment deleted in Civil 3D) and its analysis.
 - Sample S227: template for the spiral-type sample (MIST10, MIST16).
 - A group's own lock: `aecc_layout::Group::locked` and

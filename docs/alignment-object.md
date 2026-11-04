@@ -2947,6 +2947,23 @@ entity pointing at it, and empty its companion. A site member (not in
 this sample) would also have to leave the site's collection
 (`AECC_PARCEL_NODE`, S101–S112).
 
+**The emptied companion.** The node list keeps its first BL (next free
+ID, 10 in F9D) and gets no nodes; the edge list, the edge, the `BL 0 ×4`
+and the tail entry `2, 1, 1, 1, 7` are replaced by `BL 0, 0, 2, 1, 2,
+2`; the run before the strings and the strings stay; the handle stream
+keeps only its first reference (the registry, owner).
+
+**civil3drust (D-062).** `aecc_delete::delete_alignment(doc, handle)`
+does the same on a loaded drawing: removes the alignment and every
+`…_LABEL_GROUP` entity that refers to it, and empties its companion
+(`empty_companion`); the registry entry stays. Alignments in a site are
+refused (postponed to the site work, owner). On S228 it gives S229's
+records: the same alignments left, the companion identical to Civil 3D's
+apart from object-header bits a save rewrites and handle-stream padding
+(test `delete_alignment`). `examples/delete_alignment` is the command
+line form; a program that edits the model calls the same function.
+S230: S228 with `Alignment - (1)` deleted this way.
+
 ## MIST2: re-save field (partially solved, S151–S157)
 
 `BL 0x0D00D773, BL n` (44 bits) right after MIST1, or 98 bits after it in

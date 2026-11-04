@@ -61,6 +61,7 @@ samples and steps that produced it.
 - `cargo run --release --example set_style -- in.dwg [out.dwg <alignment> <style>]`
 - `cargo run --release --example style_components -- in.dwg [out.dwg <style> <component> on|off]`
 - `cargo run --release --example create_alignment -- donor.dwg target.dwg out.dwg <name> "x,y x,y,r ..." [--style <name|hex>] [--template <hex>] [--type <centerline|misc|n>] [--no-label-group] [--no-parcel-entry] [--no-graphics]`
+- `cargo run --release --example delete_alignment -- in.dwg out.dwg <name|handle> ...` (siteless alignments, as Civil 3D deletes them; D-062)
 - `cargo run --release --example set_name -- in.dwg out.dwg <alignment> <new name|-> [--description "text"]`
 - `cargo run --release --example set_speeds -- in.dwg [out.dwg <alignment> "station:speed ..."]`
 - `cargo run --release --example set_start -- in.dwg out.dwg <alignment> <station> [--clear-speeds]`
