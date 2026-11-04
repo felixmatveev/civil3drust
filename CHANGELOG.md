@@ -7,6 +7,7 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Sample S224 (Civil 3D drops a JSON group at an alignment end).
 - `exp_group_params` modes `end` / `start` (group at an end of the
   alignment); sample S223.
 - The reader prefers the JSON when a group's pieces are stored too (as
@@ -158,6 +159,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   `s162_spirals_match_civil3d_drawing`; MIST16.
 
 ### Fixed
+- Object names of alignments whose JSON string Civil 3D emptied: the
+  slot announced by the section-2 JSON flag is skipped by position
+  (`raw::layout_json_flag`); the user string was read as the name
+  (S224).
 - `aecc_layout::compose` writes `ConstraintLocked` 0 for unlocked
   alignments (S202), 2 for locked; generated group members now get
   Civil 3D's unlocked header `08 00 02 09` (`header_bytes`), not

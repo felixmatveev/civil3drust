@@ -2784,7 +2784,18 @@ position. civil3drust reads them with the group unsolved (stations end
 at the remaining element). Question: what does Civil 3D do — reject, keep
 the group unsolved, drop it, or place it somehow?
 
-Civil 3D results: pending.
+**Result (owner; re-save S224).** Clean opening; the group does not
+appear anywhere. In S224 Civil 3D has **emptied the JSON string** of all
+six (slot and section-2 JSON flag kept; flags `0x43` after the save) and
+kept only the remaining fixed element: the group is dropped silently.
+S178's own three are unchanged. So a group of these methods at an end of
+the alignment, with nothing on that side, is not valid; whether Civil 3D
+can make one at all needs a Civil 3D-made sample.
+
+**Reader fix.** With the JSON string empty, the name reader took the
+user string ("felix") as the name. `raw::structured_name` now drops the
+string slot announced by the section-2 JSON flag
+(`raw::layout_json_flag`) by position, empty or not.
 
 ## Open questions
 

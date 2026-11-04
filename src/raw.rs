@@ -449,6 +449,16 @@ pub fn is_layout_json(s: &str) -> bool {
     s.trim_start().starts_with('{') && s.contains("\"JsonVersion\"")
 }
 
+/// True when section 2 announces a JSON layout string: the Alignment
+/// Properties form's flags (first BL at section-2 bit 115, small values)
+/// have bit 0x02 (S177, S178: 3 or 0x43; without JSON 1 or 0x41).
+pub fn layout_json_flag(data: &[u8]) -> bool {
+    let Some(c) = crate::aecc_entity::entity_common(data) else {
+        return false;
+    };
+    matches!(read_bl(data, c.start_bit + 115), Some((v, _)) if (0..0x100).contains(&v) && v & 0x01 != 0 && v & 0x02 != 0)
+}
+
 fn structured_name(data: &[u8]) -> Option<String> {
     let (b, _) = utf16_strings(data, 7)
         .into_iter()
@@ -487,6 +497,13 @@ fn structured_name(data: &[u8]) -> Option<String> {
     }
     // Civil 3D inserts a JSON layout string after the description when the
     // alignment has spiral groups it stores as separate elements (S177).
+    // The slot is announced by the section-2 JSON flag (0x02 of the
+    // Properties-form flags), and Civil 3D empties it when it drops the
+    // group (S223 → S224), so the slot is removed by position when the
+    // flag says so.
+    if layout_json_flag(data) && strings.len() > 3 {
+        strings.remove(3);
+    }
     strings.retain(|s| !is_layout_json(s));
     // In those records the first description copy can be empty (S177 FD4).
     if strings.len() < 4
