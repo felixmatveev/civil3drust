@@ -2994,6 +2994,23 @@ sampling, 0.005). For 257 and 258 the true arc length is not L (199.57,
 199.86 here); civil3drust takes stations along them proportional to the
 true arc length, which only the ends confirm.
 
+**Autodesk's help, "About Spiral Definitions"** (public user docs, read
+for names and meanings; its equations are images and were not used):
+the types are Clothoid, Bloss, Sinusoidal Curves, Sine Half-Wavelength
+Diminishing Tangent Curve, Cubic Parabola, Cubic (JP), NSW Cubic
+Parabola and Bi-Quadratic (Schramm). Meanings that bear on the shapes
+above: Sine Half-Wave and Cubic (JP) are written in x along the initial
+tangent and X, the total x at the transition's end (as fitted); Cubic
+(JP) is an approximation of the clothoid for small deflections; the
+Cubic Parabola's radius reaches a minimum near 24°05′41″, so it is not
+usable past about 24° of deflection; NSW Cubic Parabola is a modified
+cubic parabola defined by Φ (between the final radial line and the
+perpendicular to the initial tangent), R, Xc and Yc (total X and Y) —
+still to be sampled; Bi-Quadratic is two second-degree parabolas, with
+its own formulas for the compound case (civil3drust's compound
+Bi-Quadratic, the same rise between two curvatures, is unchecked);
+Sinusoidal Curves cover deflections from 0 to 90°.
+
 The copied "NSW Cubic Parabola" alignment kept 262 and the Bi-Quadratic
 shape (MIST10): changing the type in the settings does not change an
 existing spiral.

@@ -12,7 +12,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   and `SpiralGeometry::spiral_type` draws fixed spirals in their own
   shape (Bloss, Sinusoidal, Bi-Quadratic, Sine Half-Wave, Cubic (JP),
   Cubic Parabola), matching Civil 3D's graphics. Sample S232, test
-  `spiral_types`.
+  `spiral_types`. Meanings from Autodesk's "About Spiral Definitions"
+  noted in `docs/alignment-object.md` (limits, NSW parameters).
 - Sample S231: Civil 3D accepts civil3drust's deletion (S230 re-saved).
 - `aecc_delete::delete_alignment` (and `empty_companion`): deletes a
   siteless alignment as Civil 3D does (S229) — alignment and label groups
