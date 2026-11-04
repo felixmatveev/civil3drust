@@ -305,7 +305,28 @@ writes 0 for new curves and keeps the stored value on rewritten ones
   S28; cleared by a layout-tool edit, S5 → S11). `0x800` has no simple
   rule yet (S11 `0x810` → S12 `0x010`).
 
-## MIST13 — Civil 3D's extra block for a zero GUID — **open (lead)**
+## MIST13 — Civil 3D's extra block for a zero GUID — **SOLVED (S56/S57): a duplicate speed interval**
+
+- **Answer (2026-11-04, from existing samples):** the 617-bit block is a
+  second design-speed interval, and the 2 strings are its two strings.
+  In S56, X3 and X5 each had one interval and one table entry, both with
+  a zero GUID. On re-save (S57):
+  - X3 (graphics, MIST1 and label group present): the interval and the
+    table entry got the same new GUID; still one interval.
+  - X5 (none of those): the table entry got a new GUID and a new
+    interval with that GUID was written after the old one, which kept
+    its zero GUID. The two intervals are identical apart from the GUID
+    (station 0, element 1, same points). So the zero-GUID interval is
+    left as an orphan.
+  Which of X5's three differences sends Civil 3D down that path is not
+  known (X2, without graphics only, had a random GUID). The "exactly 617
+  bits" match with S161 was partly chance: an interval's size depends
+  on its BD values (8C49's is 609 bits). civil3drust never writes a
+  zero-GUID interval (D-045), so it cannot produce the orphan. Its
+  reader finds the speed table through the first interval's GUID and so
+  cannot read X5's speeds in S57 (test
+  `zero_guid_interval_duplicated_s57_x5`).
+
 
 - **Where:** after the cache in S57's X5 alignment.
 - **Seen:** a record with a zero speed-interval GUID made Civil 3D add a

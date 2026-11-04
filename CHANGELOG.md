@@ -22,6 +22,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   codes), `civil3d-rebuilds.md`, `acadrust-0.6.7.md` brought up to date.
 
 ### Added
+- MIST13 solved from existing samples: Civil 3D's extra block in S57 X5
+  is a duplicate design-speed interval with a new GUID beside the
+  zero-GUID one (test `zero_guid_interval_duplicated_s57_x5`).
 - `FUTURE.md`, a record of deferred work; FRT-1: NSW Cubic Parabola
   spirals. `SpiralType::NswCubicParabola` names code 264 (S234: Civil 3D
   lists the type but draws no curve); drawn as a clothoid until sampled.

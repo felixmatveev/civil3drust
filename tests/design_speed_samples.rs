@@ -223,3 +223,44 @@ fn add_speeds_to_empty() {
     // Outside the alignment: refused.
     assert!(set_design_speeds(&r, &[(-200.0, 40.0)], 3).is_err());
 }
+
+/// MIST13: the 617-bit block Civil 3D added to S56's X5 is a second speed
+/// interval. X3 and X5 both had a zero GUID in their one interval and
+/// table entry. In X3 Civil 3D gave both a new GUID; in X5 (also without
+/// graphics, MIST1 or label group) it gave the table entry a new GUID,
+/// wrote a new interval for it, and left the zero-GUID interval in place.
+#[test]
+fn zero_guid_interval_duplicated_s57_x5() {
+    use civil3drust::aecc_design_speed::{interval_count, ZERO_GUID};
+    use civil3drust::aecc_elements::decode_elements;
+    let guid = |r: &raw::RawRecord, i: usize| -> [u8; 16] {
+        // Interval i: after the elements, BL 0 ×3 and BL n (2 + 2 + 2 + 10
+        // bits), then 617 bits per interval for these alignments.
+        let end = decode_elements(r).unwrap().records_end_bit().unwrap();
+        let at = end + 16 + 617 * i;
+        std::array::from_fn(|k| raw::get_byte(&r.data, at + 8 * k))
+    };
+    let s56 = "samples/S56_S24_minimal_experiments.dwg";
+    let s57 = "samples/S57_S56_civ3d_resaved.dwg";
+    for h in [0xFBC, 0xFC2] {
+        let r = rec(s56, h);
+        assert_eq!(interval_count(&r).unwrap(), 1);
+        assert_eq!(guid(&r, 0), ZERO_GUID);
+    }
+    let x3 = rec(s57, 0xFBC);
+    assert_eq!(interval_count(&x3).unwrap(), 1);
+    assert_ne!(guid(&x3, 0), ZERO_GUID);
+    assert_eq!(design_speeds(&x3).unwrap()[0].id, guid(&x3, 0));
+    let x5 = rec(s57, 0xFC2);
+    assert_eq!(interval_count(&x5).unwrap(), 2);
+    assert_eq!(guid(&x5, 0), ZERO_GUID);
+    assert_ne!(guid(&x5, 1), ZERO_GUID);
+    // The two intervals are the same apart from the GUID.
+    let d = &x5.data;
+    let end = decode_elements(&x5).unwrap().records_end_bit().unwrap();
+    let body = |i: usize| -> Vec<u8> {
+        let at = end + 16 + 617 * i + 128;
+        (at..at + 617 - 128).map(|b| raw::get_bit(d, b)).collect()
+    };
+    assert_eq!(body(0), body(1));
+}
