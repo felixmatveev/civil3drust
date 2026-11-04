@@ -7,6 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `examples/exp_spiral_code` and sample S233: spiral-type codes 263 and
+  264 written into S232's spirals, for Civil 3D to judge.
 - Spiral types (S232, MIST10 solved): `spiral_type::SpiralType` names
   the code after a spiral record's IDs (256 Clothoid … 262 Bi-Quadratic),
   and `SpiralGeometry::spiral_type` draws fixed spirals in their own

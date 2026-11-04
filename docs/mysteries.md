@@ -557,6 +557,12 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   Bi-Quadratic shape, so the settings change did not touch the existing
   spiral, and NSW's code is still to be sampled (a spiral created with
   that type).
+- **Owner (2026-11-04):** NSW Cubic Parabola is likely 264; Civil 3D
+  2024 does not let him create it, and the public API's `SpiralType`
+  has no NSW member (Autodesk forum). 263 is between Bi-Quadratic and
+  264 and unseen. S233 (generated): five spirals of S232 set to 263 or
+  264, nothing else changed — what Civil 3D draws, lists and repairs is
+  the test.
 
 ## MIST11 — S89's curve speed-interval distance
 
