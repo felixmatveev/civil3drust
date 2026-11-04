@@ -7,6 +7,7 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Sample S227: template for the spiral-type sample (MIST10, MIST16).
 - A group's own lock: `aecc_layout::Group::locked` and
   `LayoutGroup::locked` (`ConstraintLocked` per object; the element
   headers don't show it, S226). Sample S226.

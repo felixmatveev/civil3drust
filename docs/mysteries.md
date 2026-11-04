@@ -544,6 +544,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   Sinusoidal, Biquadratic …), each named after its type: a line
   (x0, 0) → (x0 + 100, 0) and a fixed inward spiral L 200 to R 200,
   like `SPIRAL A`. Compare the 256 and the three trailing BDs per type.
+  Template sent to the owner: S227 (one 100' tangent per type, named).
 
 ## MIST11 — S89's curve speed-interval distance
 
