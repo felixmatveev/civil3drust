@@ -2923,6 +2923,30 @@ section-2 form as Civil 3D does (`raw::section2_form`: string 3 in the
 plain form, 4 in the Properties form), so it now reads S193, S194 and
 S227 the way Civil 3D shows them. S228 is the template made again.
 
+## Deleting an alignment (S228 → S229)
+
+The owner deleted `Alignment - (1)` (F9E) from S228 in Civil 3D and
+saved (S229). Record by record (`hexview --diff`), besides the usual
+re-save changes (styles, settings, MIST2 added, XRECORDs and class
+nodes renumbered):
+
+- **removed:** the alignment F9E, its station-equation label group FA3
+  and its design-speed label group FA4 (both point at F9E with a soft
+  pointer; the design-speed group is one Civil 3D made itself, F9E being
+  S24's own alignment);
+- **companion F9D kept but emptied:** 231 → 117 bytes, its points and its
+  soft pointer to F9E (with three null references) removed, key, ID and
+  owner (registry) kept;
+- **registry entry kept:** the registry's list still holds F9D (order
+  changed, as on any save, S54/S55);
+- nothing else refers to F9E (the alignment style keeps no back
+  reference).
+
+So a deletion is: drop the alignment entity and every label-group
+entity pointing at it, and empty its companion. A site member (not in
+this sample) would also have to leave the site's collection
+(`AECC_PARCEL_NODE`, S101–S112).
+
 ## MIST2: re-save field (partially solved, S151–S157)
 
 `BL 0x0D00D773, BL n` (44 bits) right after MIST1, or 98 bits after it in
