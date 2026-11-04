@@ -7,6 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `exp_group_params` modes `end` / `start` (group at an end of the
+  alignment); sample S223.
 - The reader prefers the JSON when a group's pieces are stored too (as
   Civil 3D does, S216 → S217): the stored pieces are set aside
   (`DecodedElements::set_aside`, `LayoutGroup::stored_pieces`) and the

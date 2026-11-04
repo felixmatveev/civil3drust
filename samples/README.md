@@ -234,6 +234,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S220 | `S220_S219_speed_change_attempt.dwg` | Civil 3D 2024 | MIST9 C2 (owner): S219 with the design speed meant to be 30; the file still stores 40 everywhere (only the element-ID list differs). | 474180 | `de2f433e85fe440c` |
 | S221 | `S221_S219_criteria_curve_added.dwg` | Civil 3D 2024 | MIST9 C3 (owner): S219 with a second free curve (ID 5) at R 533 (the criteria's minimum). Both curves store 40, 533, 83. | 474176 | `cd8078cc376a9046` |
 | S222 | `S222_S221_radius_179.dwg` | Civil 3D 2024 | MIST9 C4 (owner): S221 with curve 5's radius changed to 179.037 (fails the check, warning in the grid). Still 40, 533, 83. | 473920 | `875b784c444f195c` |
+| S223 | `S223_S178_group_at_alignment_end.dwg` | civil3drust | Edge case (`exp_group_params end|start`): S178 plus groups at an end of the alignment, JSON only: 1208/120E/1214 (11F8, 11DE, 11D4) without the fixed element after the group (`NextId` 0, element before linked to the group ID); 120B/1211/1217 without the element before it (`PreviousId` 0, `FirstId` = group, the remaining element first in the records). Typed parameters as in S178. | 489156 | `55532107c3d41461` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

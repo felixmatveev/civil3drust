@@ -15,6 +15,9 @@
 //! Each spec: `source.dwg:HANDLE:direct|group[:p1,p2,…]`
 //! - `direct`: the two fixed elements linked to each other;
 //! - `group`: linked to the group's ID, as in the JSON (no record has it);
+//! - `end` / `start`: the fixed element after / before the group left
+//!   out, the group at that end of the alignment (`NextId` / `PreviousId`
+//!   0), the remaining element linked to the group's ID (S219);
 //! - parameters: replace the source's typed ones (method order).
 //!
 //! Usage: exp_group_params target.dwg out.dwg <template hex> spec ...
@@ -58,7 +61,7 @@ fn set_links(e: &mut Element, before: i32, after: i32) {
 fn main() {
     let a: Vec<String> = std::env::args().collect();
     if a.len() < 5 {
-        fail("usage: exp_group_params target.dwg out.dwg <template hex> source.dwg:H:direct|group[:p,…] ...");
+        fail("usage: exp_group_params target.dwg out.dwg <template hex> source.dwg:H:direct|group|end|start[:p,…] ...");
     }
     let template = u64::from_str_radix(&a[3], 16).unwrap_or_else(|_| fail("template"));
     let mut target = raw::open(&a[1]).unwrap_or_else(|e| fail(e));
@@ -134,6 +137,33 @@ fn main() {
             let (nb, nn) = (link(b), link(n));
             set_links(e, nb, nn);
         }
+        // Edge cases: the group at an end of the alignment (S219).
+        let (gprev, gnext) = match mode {
+            "end" => {
+                fixed.retain(|e| e.id() != next);
+                (prev, 0)
+            }
+            "start" => {
+                // The remaining element is the first record (before 0);
+                // the JSON's FirstId names the group.
+                fixed.retain(|e| e.id() != prev);
+                for e in &mut fixed {
+                    if e.before() == gid {
+                        let a = e.after();
+                        set_links(e, 0, a);
+                    }
+                }
+                (0, next)
+            }
+            _ => (prev, next),
+        };
+        // `layout` numbers the group after the highest fixed ID.
+        let new_gid = fixed.iter().map(|e| e.id()).max().unwrap_or(0) + 1;
+        for e in &mut fixed {
+            let r = |x: i32| if x == gid { new_gid } else { x };
+            let (b, n) = (r(e.before()), r(e.after()));
+            set_links(e, b, n);
+        }
         let name = format!(
             "G {mode} {} {h:X} {}",
             file.rsplit('/').next().unwrap().split('_').next().unwrap(),
@@ -164,8 +194,8 @@ fn main() {
             &fixed,
             &[Group {
                 method,
-                previous: prev,
-                next,
+                previous: gprev,
+                next: gnext,
                 params,
             }],
             locked,

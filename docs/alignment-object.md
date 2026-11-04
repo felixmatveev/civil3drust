@@ -2773,6 +2773,19 @@ the stored pieces instead (recovering damaged files). Owner: these three
 are the only methods kept apart with a JSON. Not covered yet: a group at
 an end of the alignment.
 
+**Edge case: a group at an end (S223).** S178 plus six JSON-only groups
+(`exp_group_params end|start`): for each of 11F8 (SCSS), 11DE (SSCS) and
+11D4 (SSCSS) once without the fixed element after the group (`NextId` 0;
+the element before links to the group's ID) and once without the one
+before it (`PreviousId` 0, `FirstId` the group; the remaining element is
+first in the records, before 0). These methods are defined "between" or
+"from … to" two entities, so with one missing nothing fixes the group's
+position. civil3drust reads them with the group unsolved (stations end
+at the remaining element). Question: what does Civil 3D do — reject, keep
+the group unsolved, drop it, or place it somehow?
+
+Civil 3D results: pending.
+
 ## Open questions
 
 Tracked as MIST1 … MIST15 in [`mysteries.md`](mysteries.md), each with
