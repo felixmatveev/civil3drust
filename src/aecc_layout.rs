@@ -431,6 +431,14 @@ pub fn layout(fixed: &[Element], groups: &[Group], locked: bool) -> Result<Json,
         ));
     }
     for (g, group) in groups.iter().enumerate() {
+        // Civil 3D needs an entity on both sides (owner; S223 → S224: a
+        // group at an end is dropped).
+        if group.previous == 0 || group.next == 0 {
+            return Err(err(format!(
+                "group {} at an end of the alignment: Civil 3D needs an element on both sides",
+                group.method
+            )));
+        }
         let (_, ct, names) = GROUP_METHODS
             .iter()
             .find(|(p, _, _)| *p == group.method)

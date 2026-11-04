@@ -17,7 +17,8 @@
 //! - `group`: linked to the group's ID, as in the JSON (no record has it);
 //! - `end` / `start`: the fixed element after / before the group left
 //!   out, the group at that end of the alignment (`NextId` / `PreviousId`
-//!   0), the remaining element linked to the group's ID (S219);
+//!   0), the remaining element linked to the group's ID (S223; `layout`
+//!   now refuses these, so they can no longer be generated);
 //! - parameters: replace the source's typed ones (method order).
 //!
 //! Usage: exp_group_params target.dwg out.dwg <template hex> spec ...

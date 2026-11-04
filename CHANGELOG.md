@@ -7,6 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `aecc_layout::layout` refuses a group at an end of the alignment
+  (Civil 3D drops it, S224, and cannot create one).
 - Spiral records placed from the element before: kinds 6 (after a line)
   and 8 (after a curve or spiral), end radius and length
   (`SPIRAL_AFTER_LINE`, `SPIRAL_AFTER_CURVE`), decoded and encoded; a
