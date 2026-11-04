@@ -312,6 +312,22 @@ pub fn rebuild_companion(
     handle_bits: usize,
     elements: &[crate::aecc_elements::ResolvedElement],
 ) -> Option<(Vec<u8>, usize)> {
+    rebuild_companion_with(data, handle_bits, elements, None)
+}
+
+/// Edge flags Civil 3D writes when it rebuilds a companion's graph in a
+/// session (S8, S12, S57, S131 …): `0x10` alone (MIST12).
+pub const EDGE_REBUILT: i32 = 0x10;
+
+/// [`rebuild_companion`] with the edge flags set to `edge_flags` when
+/// given; then companions in any vertex form are rewritten (their vertex
+/// flags become 10, a = b = 0). Experiment for MIST12 (`exp_companion`).
+pub fn rebuild_companion_with(
+    data: &[u8],
+    handle_bits: usize,
+    elements: &[crate::aecc_elements::ResolvedElement],
+    edge_flags: Option<i32>,
+) -> Option<(Vec<u8>, usize)> {
     use crate::aecc_build::Bits;
     use crate::aecc_elements::Segment;
     if elements.is_empty() {
@@ -323,10 +339,11 @@ pub fn rebuild_companion(
     // Civil 3D discard it, S108 → S109).
     let old = companion_graph(data)?;
     let old_edge = old.edges.first()?;
-    if old_edge
-        .vertices
-        .iter()
-        .any(|v| (v.flags, v.a, v.b) != (VERTEX_PLAIN, 0, 0))
+    if edge_flags.is_none()
+        && old_edge
+            .vertices
+            .iter()
+            .any(|v| (v.flags, v.a, v.b) != (VERTEX_PLAIN, 0, 0))
     {
         return None; // other vertex forms: meaning unknown
     }
@@ -356,7 +373,7 @@ pub fn rebuild_companion(
     }
     // Edge flags as before: S98's companion has an arc with flags 0x10, so
     // 0x800 is not simply "has arcs".
-    w.bl(old_edge.flags);
+    w.bl(edge_flags.unwrap_or(old_edge.flags));
     w.bl(n);
     w.bl(0);
     for i in 0..n as usize {

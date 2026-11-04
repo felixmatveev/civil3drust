@@ -77,6 +77,7 @@ samples and steps that produced it.
 - `cargo run --release --example exp_json_bisect -- in.dwg out.dwg json|reencode|reencode-mist1|zero-mist1|json-radius:H ...` (JSON-layout alignments edited in place; experiments S204, S214)
 - `cargo run --release --example exp_group_params -- target.dwg out.dwg <template hex> source.dwg:H:direct|group|end|start[:p1,p2,…] ...` (spiral group as typed parameters, no pieces; experiments S216, S223)
 - `cargo run --release --example exp_spiral_code -- in.dwg out.dwg <alignment hex>:<code> ...` (change only the spiral-type code, MIST10; experiments S233, S234)
+- `cargo run --release --example exp_companion -- in.dwg out.dwg <alignment hex> ...` (companions in the rebuilt form, edge 0x10, MIST12; experiments S238, S239)
 - `cd hexview && cargo run --release -- file.dwg [--goto <hex offset|#handle>] [--compare other.dwg]` (hex view with record overlay; `--dump file.dwg` for text)
 - `cd hexview && cargo run --release -- --diff a.dwg b.dwg [--show civil,opaque,unmapped,acad|all] [--filter text]` (record-by-record bit diff of two drawings)
 - `cargo run --release --example fingerprint -- file.dwg [roundtrip.dwg]` (raw-record hashes, for comparing acadrust versions; **writes** a round trip of file.dwg to roundtrip.dwg, overwriting it)

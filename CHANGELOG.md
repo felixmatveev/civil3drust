@@ -22,6 +22,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   codes), `civil3d-rebuilds.md`, `acadrust-0.6.7.md` brought up to date.
 
 ### Added
+- MIST12: companion flags surveyed (session history: built in the
+  session, loaded, from an object). `aecc_topology::rebuild_companion_with`
+  and `exp_companion` write the rebuilt form (edge `0x10`, vertices
+  (10, 0, 0)) for experiments S238, S239.
 - MIST11 solved: S89's odd curve interval is stale (the curve's earlier
   length); samples S235–S237 follow the rule and show Civil 3D refreshing
   intervals on a grip edit (test `speed_interval_third_distance_s89_s235_s237`).

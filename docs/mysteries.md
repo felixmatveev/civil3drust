@@ -334,6 +334,30 @@ writes 0 for new curves and keeps the stored value on rewritten ones
   from an object" (S25 FB8, S161 8C49; kept by a plain re-save, S26 →
   S28; cleared by a layout-tool edit, S5 → S11). `0x800` has no simple
   rule yet (S11 `0x810` → S12 `0x010`).
+- **Survey (2026-11-04, 805 companions in `samples/`):** `0x010` 215,
+  `0x030` 60, `0x810` 511, `0x830` 19. Along the save chains the flags
+  follow what happened in the session, not the geometry:
+  - **built or rebuilt in the session that saves it:** vertex flags 10.
+    After a parameter edit or a full rebuild (S6, S8, S12, S14, S57, S93,
+    S131, S207, S208) the edge is `0x010`; after creation or adding
+    elements with the layout tools (S11, S24, S161 8C56, S209, S96 FB3)
+    it is `0x810`; from an object (polyline, S2, S5, S25 FB8, S161 8C49)
+    `0x030` with the first vertex (2 or 50, 1, 1).
+  - **loaded and saved without a rebuild:** vertex flags 10 → 2 and
+    `0x800` added (S209 → S210, S26 → S28, S2 → S4, S137 → S139). Like
+    the curve flag (MIST8), 2 means "read from the file".
+  - The same input can come out either way (S137 → S139 `0x810`/2,
+    S137 → S142 `0x010`/10), so the rebuild depends on what was done in
+    the session, not only on the file.
+  Reading: all of these bits are session history, not model data.
+- **Test (S238, S239, `exp_companion`):** companions written in the
+  rebuilt form whatever they were (edge `0x010`, vertices (10, 0, 0)):
+  S238 = S28 with F9E (`0x810`, loaded) and FB3 (`0x830`, from an
+  object); S239 = S161 with 8C49 (`0x030`, from a polyline, a companion
+  with 2 more handle references) and 8C56 (`0x810`, layout tools). If
+  Civil 3D opens both without RECOVER and AUDIT is clean, civil3drust
+  can write that one form for every companion instead of copying the
+  template's flags (D-040).
 
 ## MIST13 — Civil 3D's extra block for a zero GUID — **SOLVED (S56/S57): a duplicate speed interval**
 
