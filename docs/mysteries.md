@@ -501,6 +501,8 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   criteria all three are −1, which Civil 3D accepts (every earlier
   sample), so civil3drust keeps writing −1 (test
   `curve_criteria_values_s219_s222`).
+- **Parked (owner, 2026-11-03):** design criteria are not a priority;
+  the two open points below wait.
 - **Still open:** what 83 is (minimum transition length or
   superelevation runoff at 40 mi/h are candidates: compare with those
   columns in the grid); S220 was meant to have design speed 30 but
