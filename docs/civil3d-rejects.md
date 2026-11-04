@@ -53,7 +53,7 @@ How to read a row: **condition** in the file → **Civil 3D's response** →
 | Design-criteria flags set without the criteria file strings or a check set | flags cleared when the alignment is viewed (bits `111 0111` → `100 0101`, tangency check cleared too) | S80 `C1 flags` → S81 | to check: write the flags only with their strings and check set (`aecc_criteria`) |
 | Element tag third byte with bit 0x04 (`0x04060008`) | accepted, AUDIT clean; written back as `0x04020008` | S137 → S139 | — (never written) |
 | Element tag third byte with bit 0x01 (`0x04030008`) | accepted and kept on save | S127 → S132 | — (never written) |
-| Zero identity GUID together with no graphics, zero MIST1 and no label group (X5) | accepted; the GUID stays zero and Civil 3D adds a 617-bit block and 2 strings (MIST13; probably a speed interval) | S56 X5 → S57 | guarded: `create_alignment` writes a random GUID; zero speed GUIDs are replaced (D-045) |
+| Zero speed-interval GUID together with no graphics, zero MIST1 and no label group (X5) | accepted; the GUID stays zero and Civil 3D adds a 617-bit block and 2 strings (MIST13; probably a speed interval) | S56 X5 → S57 | guarded: `create_alignment` writes a random GUID; zero speed GUIDs are replaced (D-045) |
 
 ## 5. Outside Civil 3D
 
@@ -70,15 +70,20 @@ What a file civil3drust writes must satisfy, from the rows above:
    spiral or group record, D-056).
 2. Alignment type is 1 or 4 unless the data for other types is written.
 3. Every element starts with `0x0008`, then `0x02` if that element's
-   parameters are locked (none if not), then `0x04`.
-4. MIST2 is absent and the format marker says "absent" (or both present,
+   parameters are locked (none if not), then `0x04`; the first spiral of
+   a group kept apart with a JSON layout is `08 00 02 0D` (locked) or
+   `08 00 02 09` (unlocked), never `08 00 0D`.
+4. Spiral-type codes are only ones Civil 3D wrote (256–262, 264; 263
+   crashes Civil 3D).
+5. MIST2 is absent and the format marker says "absent" (or both present,
    untouched, as Civil 3D wrote them).
-5. Each companion's tail matches its handle references.
-6. The style reference is non-null and points at an alignment style the
+6. Each companion's tail matches its handle references.
+7. The style reference is non-null and points at an alignment style the
    target already has (one in Civil 3D's own style collection).
-7. Companion references are non-null (or the AUDIT warnings are accepted).
-8. Design-criteria flags are set only with their strings and check set.
+8. Companion references are non-null (or the AUDIT warnings are accepted).
+9. Design-criteria flags are set only with their strings and check set.
 
-Checks 1–6 are enforced by the writer's construction today; 7 is the
-default; 8 is not enforced yet. A single validation pass that runs before
+Checks 1–7 are enforced by the writer's construction today (4: codes
+are kept as read, new spirals are clothoids); 8 is the default; 9 is not
+enforced yet. A single validation pass that runs before
 every write and also checks drawings read from elsewhere is the next step.

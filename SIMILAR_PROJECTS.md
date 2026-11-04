@@ -52,5 +52,5 @@ problem therefore remains ours to solve.
 
 ### First step when LandXML work starts
 
-LandXML is currently low priority (alignment creation in DWG comes first). When it starts: port the alignment and profile parts of `landxml.js` (this matches the tangent-only alignment milestone) and add the
+LandXML is currently low priority (alignment creation in DWG comes first). When it starts: port the alignment and profile parts of `landxml.js` (lines and curves; spirals come from civil3drust's own geometry) and add the
 Node oracle test.

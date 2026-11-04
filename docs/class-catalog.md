@@ -44,7 +44,7 @@ This is a working model, inferred from the samples, not confirmed.
 | API class | DXF class | C++ class (class table) | role | civil3drust |
 |---|---|---|---|---|
 | `Alignment` (← `Feature` ← Civil `Entity`) | `AECC_ALIGNMENT` | `AeccDbAlignment` | the alignment entity | read, edit, create (`aecc_alignment`, `aecc_elements`, `aecc_build`, `aecc_create`, …) |
-| `AlignmentEntity` and subclasses (`AlignmentLine`, `AlignmentArc`, `AlignmentSpiral`, `AlignmentSCS` …) | — (sub-objects inside the record) | — | elements | lines, arcs, line-spiral groups read; lines and free arcs written |
+| `AlignmentEntity` and subclasses (`AlignmentLine`, `AlignmentArc`, `AlignmentSpiral`, `AlignmentSCS` …) | — (sub-objects inside the record) | — | elements | every line, curve and spiral layout read and written (`aecc_elements`, `aecc_encode`) |
 | `DesignSpeed` (`CivilWrapper<AeccDbAlignment>`) | — (sub-objects inside the record) | — | design speeds | read, written (`aecc_design_speed`) |
 | `StationEquation` (via `Alignment.StationEquations`) | — | — | station equations | not decoded (S9) |
 | `AlignmentStyle` | `AECC_ALIGNMENT_STYLE` | `AeccDbAlignmentStyle` | display style | component visibility (`aecc_style`) |
@@ -78,14 +78,15 @@ hierarchy the field most likely belongs to (inferred from its position).
 | `BL 80, 0, 80, 80, 0` | — | plumbing | class header, same in every record |
 | format marker at bit 115: `0x1148` / `0x1188` (plain form), `0011000001` / `0100000001` (Properties form) | — | plumbing | says whether the MIST2 block is present (MIST5; S154, S158) |
 | Alignment Properties header (bits 115 to the MIST1 anchor: `BL 1`, `BL 0x08010004`, 26 bits; plain form `BL 0x1148/0x1188, BL 0`) | — | plumbing | MIST4: announces the date-modified block; replaced by the plain form (D-057) |
-| 64 bits after the 14-bit anchor (MIST1) | `Entity.FingerPrint` (UInt64), probably | cache | Civil 3D recomputes it from shape and placement; zeroed (D-046) |
+| 64 bits after the 14-bit anchor (MIST1) | `Entity.FingerPrint` (UInt64), probably | cache | Civil 3D recomputes it from shape and placement; zeroed (D-046); on alignments with a JSON layout a mismatch makes Civil 3D warn and re-solve the groups (S214) |
 | `BL 0x1600101F` + FILETIME (Properties form only) | — (a "date modified" stamp; no public property found) | history | MIST3; the same block is in 82 classes (styles, label sets, check sets …), e.g. S24's styles are stamped when the drawing was made (2026-10-22 19:56:44 UTC); dropped with the Properties header (D-057, S193) |
 | `BL 0x0D00D773, BL n` (MIST2) | — | cache | added on re-save; removed (D-047); n = 2 centerline, 1 utility |
 | design criteria flags (bits 19, 18, 17, 14 before the section-2 end) | `UseDesignSpeed` (probable), `UseDesignCriteriaFile`, `UseDesignCheckSet`; tangency check (no public property found) | model | `aecc_criteria` |
 | flags 16 and 15 before the section-2 end | Constraint Editing options "Always perform implied tangency constraint swapping" and "Lock all parameter constraints" (no public property found) | model | `aecc_criteria::constraint_editing` / `set_constraint_editing`; new alignments both off (D-052); MIST15 solved (S163, S164) |
 | start station (a BD ending 20 bits before the section-2 end) | `StartingStation` / `ReferencePointStation` | model | `aecc_station` |
 | first-element ID (twice) | — | derived | `aecc_station::set_first_element` |
-| name, description (string stream) | `Name`, `Description` | model | `string_stream` |
+| name, description (string stream) | `Name`, `Description` | model | `string_stream`; the Properties form adds the editing user's name after the descriptions (history; dropped with the plain form) |
+| JSON layout string (string 3 when section-2 flag 0x02 is set) | — (no public property found) | model | long spiral groups (SSCSS, SSCS, SCSS) as typed parameters; `aecc_layout` (D-059, D-061) |
 | style (handle ref 5) | `StyleId` | model | `set_style` |
 
 ### `Alignment`
@@ -111,14 +112,15 @@ hierarchy the field most likely belongs to (inferred from its position).
 
 | field | API | category | notes |
 |---|---|---|---|
-| 11-bit kind prefix: tangent `…010`, arc `…100`, group `…1010` | `EntityType` (`AlignmentEntityType`: Line, Arc, … LineSpiral …) | plumbing | our prefixes are not the API's enum values |
-| `BL 0x04020008` | — | plumbing + model | element header (MIST7): `0x0008` must be 8; the third byte is the element's own parameter lock (`0x02`; absent when unlocked, S164, S172); then the type byte (`0x04`; `0x0D` for S177's first-of-group spirals) |
+| 11-bit kind prefix: line 2, curve 4, spiral 6, groups and free spirals 8, 10, 20, 24, 26 | `EntityType` (`AlignmentEntityType`: Line, Arc, Spiral, … LineSpiral …) | plumbing | our prefixes are not the API's enum values |
+| element header `08 00 [02] 04` (`BL 0x04020008` when locked) | — | plumbing + model | MIST7: `0x0008` must be 8; the `02` byte is the element's own parameter lock (absent when unlocked, S164, S172); then the type byte (`04`; `0D` / `09` for the first spiral of a JSON group, locked / unlocked, followed by the group's start point, MIST17) |
 | id, before, after | `EntityId`, `EntityBefore`, `EntityAfter` | model | |
 | line kind 0 / 4 / 5 / 9 | `Constraint1` Fixed/Float/Free + `Constraint2` (`AlignmentLineConstraintType`): TwoPoints / ThroughPoint / Length / NoConstraint | model | element-methods.md |
 | line start/end points, floating length | `StartPoint`, `EndPoint`, `PassThroughPoint1/2`, `Length` | model | |
-| arc parameter block `B flag, BD p1, BD p2, BL n1, n1 BD, BL n2, B closed` | `Constraint2` (`AlignmentArcConstraintType`) by `n2`, see below | model | p1 = design speed at the curve (−1 until solved) |
-| curve flag bit | — | open | MIST8 |
-| group code 162 (line + spiral) | `AlignmentEntityType.LineSpiral` | model (read) | D-042 |
+| arc parameter block `B flag, BD p1, BD p2, BL n1, n1 BD, BL n2, B closed` | `Constraint2` (`AlignmentArcConstraintType`) by `n2`, see below | model / derived | p1 design speed, p2 and the n1 BDs criteria values (minimum radius …), −1 without criteria (MIST9) |
+| curve flag bit | — | cache | MIST8: set by Civil 3D on curves read from the file; 0 for new curves |
+| spiral type (the BL after a spiral's IDs) | `SpiralType` (Clothoid, Bloss, …) | model | MIST10: 256–262, 264 NSW Cubic Parabola (not in the API enum); `spiral_type` |
+| spiral groups (codes 0, 1, 2, 4, 6, 8, 161, 162; kinds 20, 24, 26) | `AlignmentSCS`, `AlignmentSTS`, `AlignmentSSCSS` …, `LineSpiral` | model | read and written (D-042, D-054); element-methods.md |
 | curve group index | `CurveGroupIndex`, `CurveGroupSubEntityIndex` | open | not located |
 
 Arc `n2` codes and the closest `AlignmentArcConstraintType` names (by
@@ -155,9 +157,10 @@ entered here once a test or a decoded block confirms it.
 
 ## Open items, in API terms
 
-- **FingerPrint (MIST1):** the API reads and writes it; zero is accepted.
-  If data shortcuts or Civil Worksharing compare fingerprints, a zeroed
-  value may matter there (untested).
+- **FingerPrint (MIST1):** the API reads and writes it; zero is accepted,
+  except that alignments with a JSON layout warn once and have their
+  groups re-solved (S214). If data shortcuts or Civil Worksharing compare
+  fingerprints, a zeroed value may matter there (untested).
 - **Date-modified block (MIST3):** dropped by writing the plain form; the
   Properties header announces it (S191, S192 rejected, S193 accepted).
 - **CreationMode, CurveGroupIndex, StationEquations, superelevation and

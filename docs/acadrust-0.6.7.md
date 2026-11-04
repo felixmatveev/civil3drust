@@ -51,7 +51,7 @@ the outputs were diffed. `examples/alignments` was compared the same way.
 | Raw records after save + read back, all 91 samples | identical |
 | `alignments` output, all 91 samples | identical (apart from the failsafe note below) |
 | `set_length S11 … 8C5C 3 200` output | identical records; same length change verified |
-| `create_alignment S25 S24 …` output | identical except the random ID string (registry, companion) and the alignment's two identity-GUID copies (two 128-bit runs); two 0.6.5 runs differ in the same places |
+| `create_alignment S25 S24 …` output | identical except the random ID string (registry, companion) and the speed GUID stored twice (interval and table entry, two 128-bit runs); two 0.6.5 runs differ in the same places |
 | `cargo test` | same results as under 0.6.5 |
 
 ## Side effect: the 3DSOLID is kept
@@ -61,10 +61,10 @@ mode because of the `3DSOLID` in `PRESSUREPARTERRORBLOCK` (handle 7F72), and
 the solid was dropped on save. 0.6.7 reads all seven normally: 3 `3DSOLID`
 entities instead of 2, still 3 after a save and read back.
 
-Confidence: the AECC bytes are shown to be unchanged by the tools above. No
-0.6.7-written drawing has been opened in Civil 3D yet; the non-AECC parts of
-a saved drawing come from acadrust's 0.6.7 writer, and a drawing that keeps
-the solid is new territory (not yet checked in Civil 3D).
+Confidence: the AECC bytes are shown to be unchanged by the tools above;
+the non-AECC parts of a saved drawing come from acadrust's 0.6.7 writer.
+Civil 3D accepts 0.6.7-written drawings (below, and every generated sample
+since S125).
 
 ## Opened in Civil 3D
 

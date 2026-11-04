@@ -2,21 +2,22 @@
 
 A region-by-region map of everything Civil 3D stores for an alignment,
 with how well each part is understood and whether a new alignment needs
-it. Built from all Civil 3D–written alignment records in S2–S55 (two
-templates, 1–6 elements, tangents and free curves), compared region by
-region. Details and evidence for each finding are in
-[`alignment-object.md`](alignment-object.md).
+it. First built from the Civil 3D–written alignment records of S2–S55
+(two templates, 1–6 elements, tangents and free curves), compared region
+by region, and corrected with the later samples. Details and evidence for
+each finding are in [`alignment-object.md`](alignment-object.md); the
+open fields are in [`mysteries.md`](mysteries.md).
 
-Design direction (D-026): an alignment is modelled by its meaningful
-parameters only (name, description, style, start station, PIs, curves);
-the regions marked *derived* below are caches computed when writing, and
-are candidates for omission (S56).
+Design direction (D-026, D-049): an alignment is modelled by its
+meaningful parameters only (name, description, style, start station,
+elements, speeds, options); the regions marked *derived* are computed
+when writing or left for Civil 3D to rebuild.
 
 Status legend:
 
 - **decoded** — meaning known; civil3drust computes it.
-- **constant** — identical in every Civil 3D record in the samples (both
-  templates); can be written as a documented constant.
+- **constant** — identical in every Civil 3D record in the samples; written
+  as a documented constant.
 - **varies (unknown)** — differs per alignment; meaning unknown.
 - **optional** — present only in some records; a new alignment can omit it
   (tested) or is expected to (untested).
@@ -34,16 +35,16 @@ other records shift by the sizes of the variable parts.
 | 44 | has-graphics flag | decoded | yes (0 = no graphics, accepted: S57) |
 | 45–55 | graphics size (BLL, bytes) | decoded | only with graphics |
 | 56–1783 | **proxy graphics** (display cache): 7 attribute chunks, one polyline per tangent, an attribute triple after each arc; with PROXYGRAPHICS 0 Civil 3D writes its placeholder instead (S141) | decoded; derived from geometry | **no** — Civil 3D regenerates it (S57); kept by default for programs without Civil 3D |
-| 1784–2196 | **section 2** (413 bits), see 1.1 | mostly constant | yes |
+| 1784–2196 | **section 2** (413 bits in the plain form), see 1.1 | decoded except MIST1–MIST4 contents | yes |
 | 2197–2206 | element count (BL) | decoded | yes |
-| 2207–2856 | **element records**, each with an 11-bit kind prefix (tangent `…010`, arc `…100`) | decoded | yes — the geometry |
-| 2857–2872 | 16 bits `1010100100000001` | constant | yes (constant) |
-| 2873–3000 | **identity GUID** (v4), copy 1 | decoded (random) | yes — write a random v4 GUID (a zero GUID is accepted but changes how Civil 3D saves the record, S57 X5) |
-| 3001–3017 | 17 bits `10100000010101010` | constant | yes (constant) |
-| 3018–3083 | station at the end of element 0 (BD) | decoded; derived | yes |
-| 3084–3489 | rest of the **first design-speed interval**: BL 1, BL 0, BL next element; element start, element end, point (6 RD) — see alignment-object.md "The interval block" | decoded; derived from speeds + geometry | written by `set_design_speeds` |
-| 3490–3858 | **post-cache block** (369 bits), see 1.2 | constant except GUID copy 2 | yes |
-| 3859–4394 | **string stream**: class name, description ×2, name, empty strings (8 + 3 per arc) | decoded | yes |
+| 2207–2856 | **element records**, each with an 11-bit kind prefix (2 line, 4 curve, 6 spiral, 8 / 10 / 20 / 24 / 26 spiral groups and free spirals) | decoded (`aecc_elements`, `aecc_encode`; every kind re-encodes bit for bit) | yes — the geometry |
+| 2857–2872 | interval block head: `BL 0, BL 0, BL 0, BL n` (n speed intervals) | decoded | yes |
+| 2873–3000 | first **speed interval**'s GUID (= its design-speed entry's GUID; not an alignment identity, S82) | decoded (random v4) | with speeds — a fresh GUID (a zero GUID changes how Civil 3D saves, S57 X5, MIST13) |
+| 3001–3017 | 13 constant bits, BD station (0), BD distance from the element start (0) | decoded | with speeds |
+| 3018–3083 | BD length to the element's end (here: the station at the end of element 0) | decoded; derived | with speeds |
+| 3084–3489 | rest of the interval: containing element's ID, before and after IDs (S115); element start, end, point at the station (6 RD) — alignment-object.md "The interval block" | decoded; derived from speeds + geometry | written by `set_design_speeds` |
+| 3490–3858 | **post-cache block**, see 1.2 | decoded (speed table, type, PI display) | yes |
+| 3859–4394 | **string stream**: class name, description ×2, [user, Properties form], [JSON layout], name, empty strings: 9 + 3 per speed with an interval + 1 per speed without + 3 per non-line element record + 1 with a JSON layout (D-056) | decoded | yes |
 | 4395–4411 | string-stream size (16 bits) + flag | decoded | yes |
 | 4412–4527 | **handle stream**: layer, null, companion ×2, null, style, null | decoded | layer and **style required** (null style: invisible, crash on select, S67–S69); companion refs may be null (§2) |
 
@@ -51,28 +52,22 @@ other records shift by the sizes of the variable parts.
 
 | bits (relative) | content | status |
 |---|---|---|
-| 0–164 | | constant (all 13 records compared) |
-| 165–230 | 66-bit field (MIST1; at 199 in the Properties-edited form, 241 in S59) | **geometry key**: computed by Civil 3D from shape and placement (S142–S150); zeros accepted (S56 X1); civil3drust writes zeros (D-046) |
+| 0–114 | class header `BL 80, 0, 80, 80, 0` and common entity data (layer colour, linetype …; `aecc_entity`) | decoded |
+| 115–164 | form BL: plain `BL 0x1148` (`0x1188` with MIST2), `BL 0`; Alignment Properties form: flag BL (0x01 Properties header, 0x02 JSON layout + `BL 0x01010034`, 0x40 MIST2), `BL 0x08010004`, 26 bits (MIST4) | decoded / handled (D-057) |
+| 165–230 | MIST1, 66 bits (at 199 in the Properties form, 241 in S59) | **geometry fingerprint**, computed by Civil 3D; civil3drust writes zeros (D-046); checked for JSON-layout alignments (warning, groups re-solved) |
+| (Properties form) | date-modified block `BL 0x1600101F` + FILETIME (MIST3) | dropped with the plain form (D-057) |
+| +44 bits | MIST2 `BL 0x0D00D773, BL n` | **optional**, added by Civil 3D re-saves; must match the form BL; civil3drust removes it (D-047) |
 | 231–396 | almost all zero bits | constant |
-| 397 | flag | 1 in S5–S12, 0 in S2 and S24–S55 (per template / session); untested |
-| 398–412 | (includes the start station BD at −22 from the end) | constant at start station 0 |
-| +44 bits | MIST2 `BL 0x0D00D773, BL n` after MIST1 (98 bits later in the Properties form) | **optional**, added by Civil 3D re-saves; must match the format marker at bit 115 (`0x1148` none, `0x1188` present); civil3drust removes it (D-047) |
-
-The 2-bit flag Civil 3D changes on re-save (open question 9) lies in this
-section in records that carry the extra field.
+| last 22 bits | from the end: 13 unknown, 14 check for tangency, 15 lock all parameter constraints, 16 implied tangency swapping, 17 check set, 18 criteria file, 19 criteria-based design; the start station BD ends 20 bits before the end | decoded (`aecc_criteria`, `aecc_station`) |
 
 ### 1.2 Post-cache block
 
 | content | status |
 |---|---|
-| design-speed table: BL 0, BL 1, BL n, n × {BL 1, BD station, BD speed, GUID} (one entry, 60 at 0, is the template default) | decoded (O2, S74) |
-| 369 bits, including a BD 60 and other fixed fields | constant (9 records) — the default design-speed entry |
-| after GUID copy 2: BD 100, BL 0, BL n, n BDs, **BL alignment type** (1 Centerline, 4 Miscellaneous), BL 2, 2, 2, 0, **BL implied-PI display** (1 by direction, 2 by curves, 3 none) | decoded (O1, S58/S59; S122) |
-| GUID copy 2 at ~bit 100 of the block | decoded (same value as copy 1) |
-| 1 bit (block bit 340) | 0 in all samples (in S59 the block differs only in the type BL) |
-| +208 bits with +8 empty strings (S12, S48) | **optional** — absent in S45/S50 |
-| element-ID list (BL n + BDs 1…n before the type, S12, S48, S51) | **optional** — Civil 3D adds it on save |
-| station-equation data (S9: +196 bits in section 2, more after the cache) | **optional** — only with station equations |
+| design-speed table: BL 0, BL 1, BL n, n × {BL 1, BD station, BD speed, GUID} (the GUID shared with the speed's interval) | decoded (O2, S74) |
+| BD 100, BL 0, BL n, n BDs (element-ID list, optional: Civil 3D adds it after geometry edits, S12, S51), **BL alignment type** (1 Centerline, 4 Miscellaneous), BL 2, 2, 2, 0, **BL implied-PI display** (1 by direction, 2 by curves, 3 none) | decoded (O1, S58/S59; S122) |
+| 1 bit (block bit 340) | 0 in all samples |
+| station-equation data (S9: +196 bits in section 2, more after the cache) | **optional**, not decoded — only with station equations |
 
 ## 2. Other records created with an alignment
 
@@ -84,28 +79,19 @@ section in records that carry the extra field.
 | design-speed label group | — | — | no (never created for new alignments) |
 | name-template counter, command settings | — | — | no (bookkeeping; untouched in S26–S55) |
 
-## 3. What a new alignment needs, as of S55
+## 3. What a new alignment needs
 
-From our own computations: own handle, graphics (or none — X2), element
-count, element records, end-of-element-0 station, element-0 cache, GUID,
-string stream (name, description, 8 + 3 × arcs empty strings), handle
-stream (layer, companion, style), companion key / ID / refs, registry
-entry.
+Computed by civil3drust: own handle, graphics (optional — X2), section 2
+in the plain form with MIST1 zeroed and no MIST2 / MIST3, element count
+and records, speed intervals and table, strings by D-056's rule, the
+handle stream (layer, companion twice, style), the companion (key, ID
+string, refs, topology rebuilt in the uniform form, D-040) and the
+registry entry.
 
-From documented constants (observed identically in every sample): the
-section-2 bits, the 16- and 17-bit fields around GUID copy 1, the
-post-cache block, the object-type and EED bits — about 800 bits, plus the
-companion body.
-
-Varying but probably irrelevant: the 66-bit section-2 field (X1), the
-section-2 flag bit.
-
-Not needed: label group, all optional blocks above.
-
-So the donor drawing reduces to a source of constants. Once X1–X5 are
-confirmed, `create_alignment` can write records from constants and
-computed values only (and the docs keep the constants with the samples
-they came from).
+Taken from a template alignment (any Civil 3D alignment, D-039): the
+constant bits listed above and the companion's body. Not needed: label
+groups, the element-ID list, MIST1's value, MIST2, the date-modified
+block (all rebuilt or ignored by Civil 3D; `civil3d-rebuilds.md`).
 
 ## 4. Experiments (S56)
 
@@ -145,48 +131,25 @@ writers now trim it (`handle_refs::trim_padding`).
 Civil 3D saving to DXF writes no AECC entities at all (the DXF saved with
 S57 has an empty ENTITIES section), so DXF cannot carry alignments.
 
-## 5. Hypothesis: the constant blocks are default options
+## 5. The "constant" blocks were default options
 
-The "constant" regions are probably not opaque data but alignment settings
-and element constraints at their default values, identical only because
-every sample alignment was created the same way (from a polyline, as a
-centerline, no design criteria). Evidence so far:
-
-- **Element constraints vary already**: free arcs (fillets) store
-  parameters −1, −1, 1, −1, 29, three-point arcs 60, …, 2 (S10, D-012);
-  the element header `0x04020008` and the BL 0 after it may encode the
-  constraint type (fixed / floating / free) and how the element was made.
-- **Creation method changes the layout**: S1 (imported from LandXML) has
-  a 22-bit instead of 161-bit gap after its element records.
-- **Station equations add data** in section 2 and after the cache (S9).
-- **Optional blocks appear with edits** (S12's radius edit, S48 fresh,
-  S51 re-save), so some regions are option-dependent.
-
-### Sample plan (each S24 + one alignment, one option changed)
-
-| sample | option | expected region |
-|---|---|---|
-| O1 | alignment type *Offset* or *Miscellaneous* instead of Centerline | section 2 constants |
-| O2 | design speed set (e.g. 30 mph at station 0) | optional block / design-speed group |
-| O3 | design criteria on (criteria-based design) | section 2 / post-cache |
-| O4 | reference point / start station changed (e.g. 1+00) | start station BD, section 2 |
-| O5 | alignment created with layout tools: fixed tangent + fixed curve | element headers / parameters |
-| O6 | floating curve (attached to one tangent) | arc parameters |
-| O7 | alignment in a site instead of siteless | handle stream, companion |
-| O8 | superelevation calculated | optional blocks |
-
-Each sample is compared with the plain S24-style alignment of the same
-geometry; the bits that change name the option.
-
-### Results
+Most regions that looked constant in S2–S55 turned out to be alignment
+settings and element constraints at their default values, identical
+because every early alignment was made the same way (from a polyline, a
+centerline, no criteria). Each option below was sampled from S24 with one
+change (O1–O8); the element kinds and constraints are in
+[`element-methods.md`](element-methods.md). Not sampled yet: O8
+superelevation, station equations (S9 shows their data), offset
+alignments.
 
 | option | result |
 |---|---|
+| O6 floating curves, and every other layout method | **decoded** (S113, S117–S121, S162–S178): every line, curve and spiral method; adding and removing elements (S92–S100); `element-methods.md`. |
 | O7 site | **partly decoded** (S101–S103): a site is an `AECC_PARCEL` face owning a container; an alignment in a site points both companion references at that container, which takes the companion's body; the old companion is emptied. One container per site holds all its alignments as a topology graph (S104–S106, not decoded); moving out creates a new companion. Read-only in civil3drust (`aecc_site`); new alignments are siteless (D-038). |
-| O5 layout tools | **partly decoded** (S89): floating tangent = kind 4 with end point only; the BL after the element header is the element kind. Speed intervals on curves: layout seen, third distance not decoded — civil3drust writes no interval for curve speeds; accepted by Civil 3D, including a table with no intervals at all (S90 → S91). |
+| O5 layout tools | **decoded** (S89, S113–S115): floating tangent = kind 4 with end point only; the BL after the element header is the line kind. Speed intervals on curves have the tangent form (S113); civil3drust writes them and Civil 3D keeps them (S114 → S115). S89's one curve interval is unexplained (MIST11). A table with no intervals at all is accepted (S90 → S91). |
 | O4 start station | **decoded** (S82, S9): BD ending 20 bits before the section-2 end. With a nonzero start the alignments had no design speeds: interval count 0, empty speed table, 3 strings fewer — so "GUID copy 1/2" are the first speed interval's GUIDs, not an alignment identity. Interval fields: GUID, 13 bits, BD station, BD distance, BD length to element end. civil3drust shifts speeds with the start (D-031, S85). Verified: shifted speeds (S86) and speeds added to speedless alignments (S87 → S88) accepted. |
 | O3 design criteria | **decoded** (S79, S81): three flags at the end of section 2, five strings (criteria file, superelevation table, lanes, attainment method), check-set reference (set on save regardless). Verified: flags + strings + check set reproduce criteria-on (S80 C3 → S81). Bits (from the section-2 end): 19 criteria-based design, 18 criteria file, 17 check set, 14 tangency check (default on); confirmed by C1's dialog. |
-| O2 design speed | **decoded** (S74): the table at the start of the post-cache block; the "BD 60" constant was the default entry. Two speeds also split the interval cache after the elements (not decoded). Verified: generated one-, two- and three-speed tables (S77) and an edited Civil 3D table (S78) work in Civil 3D; each entry needs a comment string (S76). |
+| O2 design speed | **decoded** (S74): the table at the start of the post-cache block; the "BD 60" constant was the default entry. Each speed has an interval after the elements (decoded since, S84, S113–S115). Verified: generated one-, two- and three-speed tables (S77) and an edited Civil 3D table (S78) work in Civil 3D; each entry needs a comment string (S76). |
 | O1 alignment type | **decoded** (S58 Centerline, S59 Miscellaneous): one BL in the post-cache block, 1 = Centerline, 4 = Miscellaneous; the "constant" block was this option at its default. Verified: generated types 1 and 4 accepted and kept (S60 → S62); values 2, 3, 5 on a plain alignment are rejected and removed by RECOVER (S61 → S63), so they need a parent or other data. |
 
 ## 6. Minimal drawings (S64–S73, postponed)

@@ -4,9 +4,9 @@ Civil 3D's Alignment Layout Tools offer the methods below (owner's
 screenshots of the toolbar menus, Civil 3D 2024). Each method is expected
 to store its own constraint: the BL after the element header for lines
 (`kind`), the BL `n2` in the parameter block for curves. This table maps
-methods to what the samples show; the empty rows are the sample plan.
+methods to what the samples show.
 
-Status: **known** = decoded from a sample; **probable** = fits a sample but the method used isn't recorded; **planned** = sample requested.
+Status: **known** = decoded from a sample; **probable** = fits a sample but the method used isn't recorded; **later** = not sampled (Best Fit methods).
 
 ## Lines
 
@@ -44,6 +44,7 @@ Status: **known** = decoded from a sample; **probable** = fits a sample but the 
 | Free Curve – Best Fit | | later | |
 | (made by Civil 3D when the tangent before a free curve is deleted) | n2 = 15: radius + start point | known | S94 |
 | (made by Civil 3D when the tangent after a free curve is deleted) | n2 = 13: radius + end point | known | S99, S100 |
+| (made by Civil 3D from a long spiral group's curve when the group's end entity is deleted) | n2 = 21: radius, length, clockwise (floating from the element before) | known | S225 |
 
 `p1` in the curve parameter block is the design speed at the curve (−1
 until Civil 3D solves it, S94). The parameter block is
@@ -77,7 +78,8 @@ the arcs and lines in each record's proxy graphics.
 
 | method | status | samples |
 |---|---|---|
-| Fixed Spiral | record kind 6: type 0 inward (L, end R), 1 outward (start R, L), 2 compound (start R, L, end R); start point, unit direction, clockwise bit. Through-point variants store the computed L and R | known, S121, S162, S165 |
+| Fixed Spiral | record kind 6: code 0 inward (L, end R), 1 outward (start R, L), 2 compound (start R, L, end R); start point, unit direction, clockwise bit. Through-point variants store the computed L and R | known, S121, S162, S165 |
+| (made by Civil 3D from a long spiral group's spirals when the group's end entity is deleted) | record kind 6: code 6 after a line, 8 after a curve or spiral: end R, L, placed from the element before; the first keeps the group's start point | known, S225 |
 | Free Spiral (between two entities) | record kind 8: code 0xA000A incurve / 0xA000C outcurve, BD length only; placed between two lines, radius L / 2Δ | known (between lines), S165 |
 | Free Compound Spiral-Spiral (between two curves) | group kind 10 code 4: BD A1/A2; start on the first curve and A solved | known, S175 |
 | Free Reverse Spiral-Spiral (between two curves) | group kind 10 code 4 (as compound; the curves turn opposite ways) | known, S175 |
@@ -102,12 +104,13 @@ the 14 curve methods (owner's highlighted list, which adds Fixed Curve
 (Three point) and Free Curve Fillet (radius) as controls). The owner lays
 out one curve with its method in each and saves the result as S117 (decoded: see the tables above and
 `docs/alignment-object.md`, "Curve methods (S117)"). S120 is prepared the same way for the 21 spiral methods (owner's three
-menus); the owner's filled copy will be S121.
+menus); S121, S162 and S173–S178 are the owner's filled copies.
 
 Each drawing is a copy of S24 with one alignment per method, named after
 the method (e.g. `FL length`, `FC 2pt dir1`, `SCS free`). Where a method
 needs something to attach to, the alignment starts with the simplest
 fixed element (a two-point line or a three-point curve), so the new
-element is the only unknown in the record. Spiral type (clothoid) and
-default lengths as Civil 3D proposes them; the values typed are noted in
-the sample's README row.
+element is the only unknown in the record. Spirals are clothoids with
+the lengths Civil 3D proposes, unless the sample's README row says
+otherwise; the other spiral types (the code after a spiral's IDs) are
+in `docs/alignment-object.md`, "Spiral types (S232)".

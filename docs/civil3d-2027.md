@@ -31,7 +31,7 @@ Compared with the Civil 3D 2024 samples (S5–S122).
    design speed (0:60 in S123, 0:100 in S124) with no interval block and
    an all-zero GUID in the table entry. 2024 drawings always had an
    interval with a random GUID for a speed at the start. Rewriting the
-   speeds copied the zero GUID into the new interval, and the identity
+   speeds copied the zero GUID into the new interval, and the GUID
    update then searched for the second copy by value and overwrote an
    unrelated run of zero bits. Fixed: the second copy is found through
    the table (`aecc_design_speed::entry_guid_bits`), and zero GUIDs are

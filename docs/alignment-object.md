@@ -1,11 +1,17 @@
 # AECC_ALIGNMENT record
 
-Status: **partly decoded; first milestone reached.** Tangent-only geometry
-decodes from its own element records (`aecc_alignment::decode`),
-independent of the display cache. A segment-length edit written by
-civil3drust (S7) opened in Civil 3D 2024 with zero AUDIT errors, showed the
-change, and was re-saved by Civil 3D with civil3drust's geometry unchanged
-(S8, below).
+Status: **decoded for everything sampled.** Every line, curve and
+spiral layout, design speeds, start station, criteria and constraint
+options, type, style, names, companion and registry are read and written,
+and Civil 3D accepts civil3drust's alignments (D-049 acceptance from S188
+on). The current record map is [`alignment-map.md`](alignment-map.md);
+open fields are [`mysteries.md`](mysteries.md).
+
+This file is the lab notebook behind those summaries, in the order the
+samples were made. Where a later sample corrected an earlier reading, the
+earlier text now says so (**Later:** …) or has been replaced; names used
+early on ("volatile field", "identity GUID", "station-reference cache",
+"open question n") are mapped to their current names where they occur.
 
 All offsets are **bit offsets into the record bytes as acadrust 0.6.5 stores
 them** (the same bytes under 0.6.7 after `raw::open`, D-033) (`raw::RawRecord::data`: the merged data/string/handle streams,
@@ -77,6 +83,9 @@ owner for this study, or generated from them. All are in
 | S56 | `S24_minimal_experiments.dwg` (generated) | Experiments X0–X5: which parts can be empty ([alignment-map.md](alignment-map.md)). |
 | S57 | `S56_civ3d_resaved.dwg` | S56 opened in Civil 3D (AUDIT 0 errors), saved; results in [alignment-map.md](alignment-map.md) §4. |
 
+Later samples (S58 on) are listed only in
+[`samples/README.md`](../samples/README.md).
+
 Tools: `examples/inventory.rs`, `examples/rawdiff.rs`,
 `examples/dumprec.rs`, `examples/alignments.rs`.
 
@@ -93,6 +102,11 @@ Observed order of sections (S1, S2, S4, S5):
 | 4 | Station-reference cache | per record: 4 raw doubles (tangent start/end) + 2 raw doubles (a point) | **6229**: tangent (100,0)→(0,0), point (100,0) | none | **4215**: tangent 1, point (0,0) |
 | 5 | String stream | UTF-16LE | `AeccImpAlignment`, name `Alignment - (1)` | `AeccImpAlignment`, `TEST LINE` | `AeccImpAlignment`, `Alignment - (2)` |
 | 6 | Handle stream | not studied | | | |
+
+**Later:** sections 0, 2 and 6 are decoded (see "Handle stream",
+"Section 2 revisited" and `alignment-map.md`); what this table calls the
+station-reference cache is the design-speed interval block ("The interval
+block", S82–S84).
 
 ### 1. Proxy graphics
 
@@ -151,8 +165,9 @@ RD start X  RD start Y  RD end X  RD end Y
 The before/after chain matches the `EntityBefore` / `EntityAfter`
 properties that Autodesk's public Civil 3D API documentation describes for
 alignment entities. In S5 the records follow each other, separated by the
-same 11 bits (`00000000010`, not decoded). What follows the last record
-differs between samples and is not decoded.
+same 11 bits (`00000000010`): the kind prefix of the next record (2 =
+line, 4 = curve, …; "Element list, cache and graphics"). After the last
+record comes the speed-interval block ("The interval block").
 
 In S2 the alignment runs (100,0)→(0,0), i.e. opposite to the drawn polyline;
 Civil 3D chose the direction when the alignment was created.
@@ -163,18 +178,22 @@ including ones with 3, 7, 11, 12 and 262 tangents, with the same geometry as
 an independent extraction from the display cache. Alignments containing arcs
 fail cleanly (a tangent's `after` points to an element with no tangent
 record, i.e. the arc uses a different record type), and an offset alignment
-has no tangent element records at all.
+has no tangent element records at all. (At the time; curves and spirals
+are decoded since, offset alignments are still not sampled.)
 
 ### 4. Station-reference cache
 
 In S2 one record: the tangent again, followed by the point (100,0) — the
 alignment start. In S5 one record: tangent 1, followed by (0,0) — again the
-alignment start. S1 (nothing referencing the alignment) has none. Cache
-records have no element header, so the decoder never mistakes them for
-tangents. A
-production drawing (not shared) showed hundreds of records on alignments
-used by corridors, profiles and labels, all with points on the tangent, which
-suggests one record per referencing object or station. Not confirmed.
+alignment start. S1 has none. These records have no element header, so the
+decoder never mistakes them for tangents.
+
+**Later (S74, S82, S84):** these are not a station cache but the
+**design-speed intervals**, one per design speed: the element the speed
+starts on, its start and end, and the point at the speed's station
+("The interval block"). S1 (and S9) have no design speed, hence none.
+The hundreds of records on some production alignments are their many
+design-speed entries' intervals or another block; not checked.
 
 ## Round trip: S2 → S3 → S4
 
@@ -217,10 +236,10 @@ the old and new total length (311.80/321.80), segment-2 length
 
 **Volatile field (bits 2730–2789 in S5/S6, section 2).** About 60 bits that
 differ between every pair of samples compared (S1, S5, S6) with no visible
-structure. Not a double, not a bit-coded long long, not any length or
-coordinate. Probably an ID, hash or modification stamp. The 44-bit growth
-Civil 3D wrote into S4 (bit 5463) is likely the same field. S3 opened in
-Civil 3D with this field left stale, so it is not checked on load.
+structure. S3 opened in Civil 3D with this field left stale, so it is not
+checked on load. **Later:** this is MIST1, Civil 3D's geometry fingerprint
+(checked only for alignments with a JSON layout, S214), and the 44-bit
+growth in S4 is MIST2, the field Civil 3D adds on re-save (`mysteries.md`).
 
 ## Generated vs Civil 3D: S7 vs S6
 
@@ -247,11 +266,11 @@ showed the new length. Saved as S8.
 - `alignments S8`: same three tangents, coordinates bit-identical to S6
   (Civil 3D's own B) and S7.
 - `rawdiff S7 S8 AECC_ALIGNMENT`: Civil 3D changed only two things in the
-  record: 2 bits at bit 2677 (a flag; meaning unknown) and the volatile
-  field, which grew from 62 to 106 bits (record 706 → 711 bytes). That is
-  the same +44-bit growth seen when S3 was re-saved as S4, so the volatile
-  field is variable-length. Everything after it is unchanged apart from the
-  shift.
+  record: 2 bits at bit 2677 and the volatile field, which grew from 62 to
+  106 bits (record 706 → 711 bytes), the same +44-bit growth as S3 → S4.
+  Everything after it is unchanged apart from the shift. (**Later:** the
+  2 bits are the MIST2 format marker, `0x1148` → `0x1188`, and the 44 bits
+  are MIST2 appended after MIST1; MIST5.)
 - `rawdiff S8 S6`: tangent geometry identical; many style and settings
   records differ because S6 was saved in a different Civil 3D session (save
   noise, see D-006).
@@ -266,10 +285,10 @@ showed the new length. Saved as S8.
 
 | Change | S8 | S9 |
 |--------|----|----|
-| Flag area near bit 2676 | 5 bits | 39 bits |
-| Volatile field | 65 bits | 163 bits |
+| Flag area near bit 2676 (the section-2 form BL: Alignment Properties form, MIST4) | 5 bits | 39 bits |
+| Volatile field (MIST1, then the date-modified block MIST3 and MIST2) | 65 bits | 163 bits |
 | **Start station** (bit-coded double, BD) | bit 2995: code `10` = 0.0 (2 bits) | bit 3127: code `00` + raw double **100.0** (66 bits) |
-| Station-reference cache and the label values after it (100, 100, 2.25, 60) | present (one record, tangent 1, point (0,0)) | **gone** |
+| Speed interval and the speed table after it (100, 100, 2.25, 60) | present (one interval, tangent 1, point (0,0)) | **gone** (a start-station change wipes the design speeds, S82) |
 | String stream | `AeccImpAlignment`, `Alignment - (2)` | `AeccImpAlignment`, **`felix`**, `Alignment - (2)` |
 
 Tangent element records are unchanged apart from the shift.
@@ -282,24 +301,18 @@ first 17 of the 41 bits (`0000?111000100000`, `?` varies) are identical in
 all of them, so `aecc_alignment::start_station` checks them before trusting
 the value. The exception is an alignment made from a feature line with 262
 tangents, where the gap differs; there the station is reported as unknown.
-The rest of the 41 bits is not decoded; a few bits vary between samples
-(possibly counts or flags).
+The rest of the 41 bits holds the design-criteria and constraint-editing
+flags (the last 20 bits of section 2; "Design criteria"), then the
+element count BL (10 bits) and the first record's 11-bit kind prefix.
 
-**Cache is derived.** Civil 3D dropped the station-reference cache record
-when the stationing changed, confirming it is rebuilt data rather than part
-of the design.
+**Speeds wiped.** Civil 3D dropped the interval record when the stationing
+changed: changing the start station removes the design speeds (S82).
 
-**Optional user string.** After the edit, the user's login name appears in
-the string stream between the class name and the alignment name. A
-production drawing has another user's name in the same position. Probably a
-"last modified by" field. Names are therefore read as the *last* plain
-string after `AeccImpAlignment` (`raw::object_name`), not the first.
-
-**Arc elements (lead for later).** In alignments with curves, the arc
-elements also start with the `0x04020008` header, but the fields after it
-are laid out differently (the BL that is 0 for tangents is not 0), so the
-tangent decoder rejects them and reports a broken chain. A sample with one
-curve is needed.
+**User string.** After the edit, the user's login name appears in the
+string stream after the descriptions, before the alignment name. It
+belongs to the Alignment Properties form, which Civil 3D writes after any
+edit in that dialog ("The user string of the Alignment Properties form",
+S227); the name reader follows the section-2 form (`raw::section2_form`).
 
 ## Arc element records: S10
 
@@ -324,14 +337,15 @@ RD end X,   RD end Y        (100, 100)
 The middle point is the arc's midpoint: the circle through the three points
 has centre (0, 100), radius 100, turns left (counter-clockwise), sweeps 90°,
 and is 157.0796 long, matching how the arc was drawn. Centre and radius are
-not stored as such. (157.0796 does appear later in the record, outside the
-element record; not decoded.)
+not stored as such. (157.0796 appears later in the record as the speed
+interval's length to the element's end.)
 
-**Unknown parameters.** The five values between the header and the IDs were
+**Parameters.** The five values between the header and the IDs were
 identical (60, −1, 1, −1, 2) in S10 and in all six arcs of a production
-drawing (radii 25–40 ft, single arcs and arcs between tangents). Not
-geometry; perhaps defaults such as a design speed. Kept as read
-(`ArcParams`).
+drawing. **Later:** p1 is the design speed at the curve (60, the
+template's default; −1 until solved), p2 and the n1 BDs are criteria
+values (−1 without criteria, MIST9), and the last BL (2) is the curve's
+constraint code n2 (three points; `element-methods.md`).
 
 **Check against a production drawing** (local only): `examples/alignments`
 decoded all four alignments with curves — three tangent–arc–tangent curb
@@ -341,10 +355,9 @@ match the earlier extraction from the display cache. One offset alignment
 still has no element records.
 
 **Tangents vs arcs.** Both start with the same header. After it, a tangent
-has `10` (read as BL 0) followed directly by its IDs; an arc has the bit `1`
-and the parameter block. No separate type field has been found; the decoder
-tries both layouts and validates each (link IDs in range, finite
-coordinates, three non-collinear points for an arc).
+has its kind BL (0 here) followed directly by its IDs; an arc has the
+parameter block. The 11-bit kind prefix before the header (2 line, 4 arc)
+tells them apart ("Element list, cache and graphics").
 
 ## Free arcs (fillets): S5 → S11
 
@@ -358,7 +371,7 @@ Adding a 50 ft curve at PI (100,0) in Civil 3D:
 
   | Field | Arc by 3 points (S10) | Free arc (S11) |
   |-------|----------------------|----------------|
-  | B after header | 1 | 0 (but 1 after a Civil 3D re-save, S14 — not the kind) |
+  | B after header | 1 | 0 (1 after a Civil 3D re-save, S14: MIST8, set on load) |
   | p1 | 60.0 | **−1.0** |
   | p2, n1, p3 | −1, 1, −1 | −1, 1, −1 |
   | n2 | 2 | **29** |
@@ -375,8 +388,9 @@ Adding a 50 ft curve at PI (100,0) in Civil 3D:
 So "fixed" curves (made from polyline arcs, or drawn by points) store their
 points, while "free" curves (fillets between tangents) store only a radius
 and depend on their neighbours, matching the fixed/free entity kinds
-described in Autodesk's public Civil 3D documentation. The meaning of the
-flag and of n2 (2 vs 29) is inferred from these two samples only.
+described in Autodesk's public Civil 3D documentation. n2 is the curve's
+constraint code (2 three points, 29 free fillet by radius; all codes in
+`element-methods.md`); the flag is MIST8.
 
 ## Changing a free arc's radius: S11 → S12, and S13
 
@@ -395,8 +409,8 @@ that a free arc depends only on its radius and its neighbours. The decoded
 S12 geometry: T = 17.7051, PC (82.2949, 0), PT (115.8359, 7.9180), length
 34.7736, alignment length 311.1668, all as computed by hand.
 
-The 2.0 / 3.0 / 4.0 block looks like element IDs (the arc and its
-neighbours, or the elements whose stations changed); not decoded.
+The 2.0 / 3.0 / 4.0 block is the element-ID list Civil 3D adds after
+geometry edits (S51: the IDs after the first); optional.
 
 **Generated edit (S13).** `examples/set_radius S11 S13 8C5C 4 75` patched
 the radius and both PC-station copies. `rawdiff S13 S12 AECC_ALIGNMENT`
@@ -412,13 +426,13 @@ after the arc's header (bit 4055). Everything else, including the volatile
 header field, the 2/3/4 block and the PC station (now Civil 3D's own
 82.29490168751575), is identical to Civil 3D's own edit (S12). So on load
 and save Civil 3D recomputed the station, wrote the 2/3/4 block, and set the
-volatile field to the same value as in S12 — which suggests that field is
-derived from the content rather than random.
+volatile field to the same value as in S12 — derived from the content
+(MIST1, the geometry fingerprint).
 
 **The bit after the arc header is not the arc kind.** It is 1 in S10 (arc by
 three points) and in S14 (still a free arc: p1 = −1, n2 = 29, radius only),
-and 0 in S11–S13. Its meaning is unknown; the decoder now picks the layout
-from p1/n2 (D-012).
+and 0 in S11–S13. It is set by Civil 3D on curves it read from the file
+(MIST8, S207–S210); the layout comes from n2 (D-012, D-035).
 
 ## Tangent edit past a fillet: S11 → S15, LandXML check, and S16
 
@@ -436,8 +450,7 @@ curve start (88.196601125011, 0), centre (88.196601125011, 50), end
 26.565051177078°, length 23.18238045004, rotation ccw; tangents 2 and 3
 lengths 100 and 200. (LandXML lists coordinates as northing, easting.)
 LandXML also carries `<Feature name="SpeedStation">` with speed 60 at
-station 0; whether p1 = 60 in arcs by points is a design speed is not
-established (free arcs have p1 = −1 in the same drawing).
+station 0; p1 = 60 in arcs by points is that design speed (MIST9).
 
 **Generated edit (S16).** `examples/set_length S11 S16 8C5C 3 200` now
 handles alignments with free arcs: the tangent records form a PI-to-PI
@@ -449,10 +462,10 @@ the new code reproduces S7 byte for byte.
 
 ## Generating an alignment from a template: S17
 
-civil3drust cannot create an `AECC_ALIGNMENT` record from nothing: the
-record prefix, most of section 2 and the handle stream (style, site, label
-links) are not decoded. It can rewrite a record whose *shape* matches: the
-same number of tangents with free curves in the same places.
+At this point civil3drust could not create an `AECC_ALIGNMENT` record
+(creation came with S26, any element list with S45 and S92 on). It could
+rewrite a record whose *shape* matches: the same number of tangents with
+free curves in the same places.
 `aecc_alignment_edit::set_pis` moves every PI, lets free curves follow,
 updates their cached PC stations and the placeholder box, and refuses
 geometry where a curve doesn't fit.
@@ -474,9 +487,9 @@ radius 50, ccw, delta 90, start (50,0), centre (50,50), end (100,50), PI
 178.539816339745. The zero-deflection PI was kept as two separate lines,
 so Civil 3D accepts it.
 
-An exact three-PI version needs a template with two tangents and one free
-curve, or support for removing elements (which changes the record size and
-probably element counts in section 2).
+An exact three-PI version needed a template with two tangents and one
+free curve, or element removal; both exist since (`set_geometry`, S45;
+"Adding and removing elements").
 
 ## Handle stream: S1–S19
 
@@ -517,9 +530,8 @@ the old one, so the record size stays the same (decision D-019).
 **Companion object.** The `AECC_FEATURE_STYLE` object at alignment − 1
 (8C5B in S5–S19) soft-points back to the alignment (its second reference)
 and to object 12F9, which soft-owns (code 2) every such companion in the
-drawing (8C5B, and 37FD in S11/S18). Creating an alignment will likely mean
-creating a companion and adding it to that list; to be confirmed by
-creation sample A.
+drawing (8C5B, and 37FD in S11/S18). Creating an alignment means creating
+a companion and adding it to that list (confirmed by S25).
 
 **Alignment style records.** All styles, and a collection record of the
 same class (9B3) that soft-owns each of them, are `AECC_ALIGNMENT_STYLE`.
@@ -536,8 +548,9 @@ The data streams of `NO STYLE` and `TEST STYLE` differ from bit 29 on: the
 object's own handle is stored early (8DE7 vs 8DFE), and the varying
 encoding lengths after it shift everything, so a plain bit diff doesn't
 show which bits are component visibility. Decoding needs either field-by-field
-parsing or style pairs that share a handle length *and* name length (see
-Next samples).
+parsing or style pairs that share a handle length *and* name length.
+(Solved differently: display components are found by a marker run, next
+section, D-020.)
 
 ## Alignment style: display components (S21 → S22, S23)
 
@@ -666,10 +679,9 @@ Other differences, all save noise or "last used" settings:
   first alignment's design-speed group (a −2.0 double lost its rounding
   error), and the network-part catalog (changes on every save).
 
-So creating an alignment needs at minimum: the alignment record, its
-companion, the registry entry, and (probably) the station-equation label
-group. Whether Civil 3D accepts a file without the label group, and with
-the name counter and settings untouched, is the next experiment.
+So creating an alignment needs the alignment record, its companion and
+the registry entry; the label group turned out to be optional and the
+name counter and settings can stay untouched (S26–S29).
 
 ## First generated alignment: S26, S27
 
@@ -703,9 +715,9 @@ Civil 3D shows its "Non Autodesk DWG" notice on open (see D-022). Re-saved:
 - **The label group is optional**: S29 has none, and Civil 3D did not add
   one.
 - In the generated alignment Civil 3D changed only what it changes in its
-  own alignments on every re-save — the 2-bit flag (open question 9) and
-  the +44-bit volatile field (open question 1) — plus regenerated display
-  graphics. `Alignment - (1)` got the identical treatment.
+  own alignments on every re-save — the MIST2 format marker and MIST2
+  itself (the "2-bit flag" and "+44-bit volatile field") — plus
+  regenerated display graphics. `Alignment - (1)` got the identical treatment.
 - Many style records were re-encoded (as in the S19 → S21 re-save); not
   caused by the generated objects.
 
@@ -752,8 +764,9 @@ alignment's entry in the parcel/site topology.
 **S28:** after Civil 3D opened and re-saved S26, the generated
 alignment's companion FB2 still holds the donor's points (100,100) /
 (0,100), not (0,−100) / (200,−100); it changed size (174 → 177 bytes) but
-those values were not refreshed, and AUDIT was clean. `create_alignment`
-should write the new geometry there too once the layout is pinned down.
+those values were not refreshed, and AUDIT was clean. (civil3drust now
+rebuilds the companion from the alignment's geometry, D-040,
+`aecc_topology::refresh_companion`.)
 
 ## Without the parcel entry: S30
 
@@ -841,10 +854,11 @@ the end of the data stream (public ODA layout, confirmed in every sample):
   **UTF-16LE code units**.
 
 Alignment strings, in order: `AeccImpAlignment`, the **description
-twice** (empty unless set), the **name**, then 5–11 empty strings (count
-varies by record). In S9 and S22, after edits made in Civil 3D, an extra
-string — the user name `felix` — sits before the name (`raw::object_name`
-takes the fifth string when it is non-empty).
+twice** (empty unless set), the **name**, then empty strings (their count
+follows D-056's rule). In S9 and S22, after edits made in Civil 3D, an
+extra string — the user name `felix` — sits before the name: the
+Alignment Properties form's user string (S227); with a JSON layout the
+JSON comes before the name too.
 
 **Description (S41 → S42).** Typing a description in Civil 3D changes only
 strings 1 and 2 (identical copies; line breaks stored as `\r\n`) and the
@@ -878,18 +892,20 @@ Comparing the one-tangent `Alignment - (2)` (FB8) with the two-tangent
   `00000000010` for a tangent, `00000000100` for an arc (S10, S11).
   Records are stored in ID order; tangents get IDs 1…n, arcs the next IDs
   (S11: T1 T2 T3 A4, path T1 A4 T2 T3).
-- **After the last record:** 16 bits, the alignment's **identity value**
-  — a version-4 GUID in little-endian GUID layout (version nibble 4 in
-  byte 7, variant `10` in byte 8 in every Civil 3D value); the same value
-  is stored again ~717 bits later; distinct per alignment, found nowhere
-  else; stable through edits and most re-saves (S5/S6/S8/S11/S12,
-  S24→S44), but in S47 Civil 3D gave **both** alignments new GUIDs (S45's
-  generated value had version nibble 5 — fixed since) — then bits up to
-  161 after the records, the BD station at the end of element 0, and the **element-0
-  cache**: BL 1, BL 0, BL id of the element after element 0, then six raw
-  doubles — element 0's start, its end (the PC when a curve follows), and
-  the start again. Nothing else in the record depends on the element
-  count; the rest is copied unchanged.
+- **After the last record:** 16 bits, then a version-4 GUID in
+  little-endian GUID layout (version nibble 4 in byte 7, variant `10` in
+  byte 8 in every Civil 3D value); the same value is stored again ~717
+  bits later; stable through edits and most re-saves, but in S47 Civil 3D
+  gave **both** alignments new GUIDs (S45's generated value had version
+  nibble 5 — fixed since) — then bits up to 161 after the records, the BD
+  station at the end of element 0, and the **element-0 cache**: BL 1,
+  BL 0, BL id of the element after element 0, then six raw doubles —
+  element 0's start, its end (the PC when a curve follows), and the start
+  again. **Later (S82, S84, S115):** this is the first design-speed
+  interval, not an identity: the GUID is the speed's (shared with its
+  table entry), the "station at the end of element 0" is the interval's
+  length to the element's end, and the BLs are the containing element's
+  ID, before and after IDs ("The interval block").
 
 `aecc_build::set_geometry` rebuilds the graphics (donor's attribute
 chunks + one polyline per tangent), the count, the element records and the
@@ -913,29 +929,29 @@ did not open; RECOVER deleted the alignment.
 - **each free arc reads three empty strings** from the string stream:
   tangent-only records have 12 strings (S2, S5, S25), one arc 15 (S10,
   S11), two arcs 18 (S49). S46 had 12, so Civil 3D ran off the end of the
-  stream. (S12 and S48 carry 8 more, together with other extra data —
-  optional, not needed.)
+  stream. (The full rule, from S184–S186, is D-056: 9 + 3 per speed with
+  an interval + 1 per speed without + 3 per non-line element record + 1
+  for a JSON layout.)
 - in the graphics, after each arc Civil 3D repeats the attribute triple
   (opcodes 16, 18, 14 — copies of leading chunks 4–6) even though the
   lines-only style draws no arc (also in S24's `Alignment - (1)`).
 
-`set_geometry` now sets the string count to `donor − 3·donor arcs + 3·new
-arcs` (`string_stream::set_string_count`) and writes the triple after each
+`set_geometry` then set the string count to `donor − 3·donor arcs + 3·new
+arcs` (since replaced by D-056's rule) and writes the triple after each
 arc. S50 (S46 regenerated) equals S49's record in elements, strings and
-graphics, except the identity GUID, the 62-bit section-2 field (copied
-from the donor; it differs in every record and isn't a timestamp) and the
+graphics, except the speed GUID, MIST1 (then copied from the donor; zeroed
+since, D-046) and the
 last bit of the PC station (Civil 3D 88.1966011250105, us
 88.19660112501052 — S24's own alignment, saved by Civil 3D, holds the
 latter, so it isn't validated). Test `curves_match_civil3d_s49`.
 
 **Result (S51).** S50 opens with AUDIT 0 errors; re-saved, `C` keeps its
-six elements, radii, stationing and its generated identity GUID. Civil 3D
-changed the usual re-save fields (2-bit flag, +44-bit volatile field, the
-arc flag bit — open questions 9, 1, 11) and **added a block of BDs 2, 3,
-4, 5, 6 — the element IDs after the first**. This is the "2.0, 3.0, 4.0"
-block of S12 (IDs 2–4 of a four-element alignment), answering open
-question 10: an ID list Civil 3D adds after geometry edits; optional, as
-S50 shows.
+six elements, radii, stationing and its generated speed GUID. Civil 3D
+changed the usual re-save fields (the MIST2 marker, MIST2, the curve flag
+bit MIST8) and **added a block of BDs 2, 3, 4, 5, 6 — the element IDs
+after the first**. This is the "2.0, 3.0, 4.0" block of S12 (IDs 2–4 of a
+four-element alignment): an ID list Civil 3D adds after geometry edits;
+optional, as S50 shows.
 
 ## The companion registry (S24, S25, S44, S48, S11)
 
@@ -1010,7 +1026,7 @@ post-cache block from GUID copy 2.
 | BD | 100.0 | 100.0 | 100.0 in all |
 | BL | 0 | 0 | 0 in all |
 | BL n | 0 | 0 | 4 or 6 in S12, S14, S48 `C`, S51 `C` |
-| n × BD | — | — | 1.0, 2.0, …, n (element IDs; open question 10) |
+| n × BD | — | — | 1.0, 2.0, …, n (the element-ID list, S51) |
 | **BL type** | **1** | **4** | 1 in every other record |
 | BL, BL, BL | 2, 2, 2 | 2, 2, 2 | 2, 2, 2 |
 | BL, BL | 0, 1 | 0, 3 | 0, 1 (S2–S15) or 0, 3 (S24 template) |
@@ -1022,14 +1038,12 @@ type can be changed in place (`aecc_build::set_alignment_type`;
 types Civil 3D offers (Offset, Curb Return, Rail), but no sample confirms
 them yet (S61).
 
-**Other S58 → S59 differences** (not yet attributed; probably side effects
-of the type change being saved by Civil 3D, cf. S57):
+**Other S58 → S59 differences** (side effects of editing in Alignment
+Properties):
 
-- section 2 grew 413 → 631 bits; 44 of them are the optional +44-bit field
-  Civil 3D adds on every save; the rest resembles the property data S9
-  inserted with a start station.
-- the user-name string ("felix") appears before the name, as after other
-  Civil 3D edits.
+- section 2 grew 413 → 631 bits: MIST2 (44) and the Alignment Properties
+  form with its date-modified block (MIST3, MIST4).
+- the Properties form's user string ("felix") appears before the name.
 - the companion 1088 grew 3 bytes (a field at bit 336 grew from 10 to 34
   bits); companions are regenerated by Civil 3D (S35).
 
@@ -1176,30 +1190,6 @@ infrastructure. Civil 3D adds its full infrastructure (~440 KB) on the
 first save anyway, so for now new alignments go into drawings Civil 3D has
 saved (S65/S66 approach).
 
-**Results.**
-
-- S66 (and S65): opened with no issues.
-- S67: opens without a RECOVER prompt. The alignment is listed in
-  Prospector but not drawn in the viewport. **Selecting it crashes Civil 3D**
-  (unhandled access violation reading 0x0098), so a null style reference is
-  not safe.
-- AUDIT on S67 reports 3 errors and fixes 3; the one it names is
-  `Alignment (Alignment Style) eNullObjectId → Standard`: it assigns a style
-  called Standard, which means Civil 3D built its default settings and
-  styles when it opened the plain drawing. After the fix the alignment shows
-  as a dot until it is moved (and moved back); then it draws normally. So
-  Civil 3D does not draw from the record's proxy graphics. It recomputes the
-  display when the alignment changes, and the AUDIT fix alone does not
-  trigger that.
-- AutoCAD (without Civil 3D) and OpenCADStudio open S67 and draw the
-  alignment from its proxy graphics.
-
-Conclusions: the style reference is required (the only reference AUDIT
-had to repair). The companion/registry entry and the rest of Civil 3D's
-infrastructure are not required to open the file: Civil 3D creates the
-infrastructure itself. The other two AUDIT errors are not named in its
-output; the resaved files (with and without AUDIT) will show them.
-
 ## Design speeds (O2: S74, S75)
 
 **Sample.** S74 (owner, Civil 3D 2024): three one-tangent alignments with
@@ -1223,23 +1213,19 @@ BD 100, BL 0, BL m, m × BD (element IDs), BL alignment type, …
   S58's record outside the geometry, caches and GUID: **60 at station 0 is
   Civil 3D's default in this template**, which is why the "BD 60" looked
   constant in S24–S73. The S1–S19 template's default is 100 (S2–S4).
-- One entry carries the alignment's identity GUID: that's "GUID copy 2". In
-  `mixed speed` it is the entry at 2+00, so it is probably the entry that
-  existed first; the new entry at 0+00 got its own random v4 GUID.
+- Each entry has its own GUID, shared with its interval after the
+  elements (S82; the "GUID copy 1/2" of earlier sections).
 - With two speeds, Civil 3D also changed the region right after the
-  element records: the 16-bit field before GUID copy 1 ends `…0010`
-  instead of `…0001` (probably BL 2 vs 1), and the fields up to the cache
-  hold 200 and the remaining length 311.76, so the station cache is split
-  at the speed change. This looks derived (interval cache) and is not
-  decoded. The cache parser of `exp_minimal`/`create_alignment` does not
-  read this form.
-- S1 (LandXML import), S9 (station equation) and S57 X5 (zero GUID) have a
-  different layout here; the reader does not find their table.
+  element records: the interval count is 2 (`…0010` instead of `…0001`),
+  and the second interval holds 200 and the remaining length 311.76 —
+  one interval per speed ("The interval block", decoded with S84).
+- S1 (LandXML import) and S9 (start station 1+00) have no speeds and so
+  the empty form (S82); S57 X5 has the zero-GUID form (MIST13).
 
 **Code.** `aecc_design_speed::{design_speeds, set_design_speeds}`
-(rewrites the table, keeping the identity GUID on the first entry; the
-record grows or shrinks), `examples/set_speeds`. Rewriting the same
-speeds reproduces Civil 3D's bits exactly (test).
+(rewrites the table and, since S84, the intervals; the record grows or
+shrinks), `examples/set_speeds`. Rewriting the same speeds reproduces
+Civil 3D's bits exactly (test).
 
 **Test.** S75 = S24 + `Speed 30` (one entry, 30) and `Speeds 60-30`
 ((0, 60), (200, 30)), created by `create_alignment` and edited by
@@ -1252,12 +1238,10 @@ grid, and the re-saved record has 13 strings, the last one that text.
 **Each design-speed entry has a comment string** in the string stream.
 Our record still had the one-entry count (12), so Civil 3D read the
 missing comment from the bits before the stream. `set_design_speeds` now
-adds or removes one empty string per entry. That works because all the
-strings around them are empty; where the comments sit among the empty
-strings is not known yet. Civil 3D left the interval field after the
-elements at the one-interval value. So that field (BL 2 and 2 extra
-strings in S74 `mixed speed`) is not caused by the speeds; it came from
-some other edit in S74 and is still open.
+adds or removes one empty string per entry. The comments are the last
+strings of the stream (S79). Civil 3D left the interval block at one
+interval; it rebuilds the block when the alignment is edited (S79), and
+civil3drust writes it since S84.
 
 S77 = S75 regenerated with the fix, plus `Speeds 50-40-30` ((0, 50),
 (150, 40), (300, 30)).
@@ -1266,10 +1250,10 @@ Owner: S77 looks correct in Civil 3D.
 **S78** = S74 with Civil 3D's own `mixed speed` (two entries) rewritten to
 (0, 50), (150, 40), (300, 30). The first attempt failed to read back:
 `mixed speed`'s entry GUIDs also occur in the interval block after the
-elements, so finding the identity GUID by value picked the wrong entry.
-`set_design_speeds` now reads the identity from copy 1 (16 bits after the
-elements), gives it to the first entry, and reuses the other old GUIDs in
-order before generating new ones. Owner: S78 works in Civil 3D.
+elements, so finding a GUID by value picked the wrong entry.
+`set_design_speeds` then read the first interval's GUID (16 bits after
+the elements), gave it to the first entry, and reused the other old GUIDs
+in order before generating new ones. Owner: S78 works in Civil 3D.
 
 ## Design criteria (O3: S79, S80)
 
@@ -1287,9 +1271,9 @@ section-2 bits of ON vs OFF, handle streams, string streams.
 - **Three flag bits** 19, 18 and 17 bits before the end of section 2:
   `111` in `DESIGN ON`, `000` in `DESING OFF` and every other sample (the
   bits after the start station BD: S9 has its own flag in the next bit).
-  The rest of section 2 differs only in the 66-bit cache field and a
-  31-bit field (bits 300–330 of the 589-bit form), both probably caches.
-  Which bit is which check box is not separated (one sample with all on).
+  The rest of section 2 differs only in MIST1 and the date-modified
+  stamp of the Properties form (MIST3). Which bit is which check box was
+  separated by S81 (below).
 - **Strings**: with criteria on, five of the eight empty strings after the
   name are filled: the criteria file path, the same path as
   `<DATADIR>…`, and the three default criteria shown in the Design
@@ -1309,9 +1293,8 @@ section-2 bits of ON vs OFF, handle streams, string streams.
   `mixed speed` form, +2 strings), so that block is derived from the
   speed table after all. Civil 3D accepted S77's records without it and
   rebuilt it when the alignment was edited.
-- With criteria strings present, the name is no longer always string 3 or
-  4 by the earlier rule; `raw::object_name` now uses the `<DATADIR>`
-  string as an anchor.
+- The criteria strings come after the name, so the name's position is
+  unchanged (string 3, or 4 in the Properties form; `raw::section2_form`).
 - `aecc_build::alignment_type` failed on records with several design
   speeds (it read after the GUID copy 2 entry); it now reads after the
   whole table.
@@ -1335,21 +1318,18 @@ Alignment Properties, which adds the user-name string).**
 - `C1 flags` (opened): Civil 3D changed its bits from `111 0111` to
   `100 0101` (19…13 bits before the section-2 end): flag 1 kept, flags 2
   and 3 cleared, and the bit 14 before the end cleared too. C1 had no
-  criteria file strings and no check set, so the likely mapping is:
+  criteria file strings and no check set. The owner's screenshot of C1's
+  Design Criteria tab (criteria-based design checked; design criteria
+  file, design check set and check for tangency unchecked) gives:
 
-  | bits before section-2 end | probable meaning | default |
+  | bits before section-2 end | meaning | default |
   |---|---|---|
   | 19 | use criteria-based design | 0 |
   | 18 | use design criteria file | 0 |
   | 17 | use design check set | 0 |
   | 14 | check for tangency between elements | 1 |
 
-  ("probable" → confirmed, see below.)
-
-  **Confirmed** by the owner's screenshot of C1's Design Criteria tab:
-  criteria-based design checked; design criteria file, design check set
-  and check for tangency unchecked. `aecc_criteria::Criteria` names the
-  four bits.
+  `aecc_criteria::Criteria` names the four bits.
 
   Two Constraint Editing options sit between them (MIST15, solved):
 
@@ -1436,13 +1416,14 @@ BL 0, BL 0, BL 0, BL n,
 n × { 16-byte GUID (the matching design-speed entry's),
       13 bits 1010000001010,
       BD station, BD distance from the element's start, BD length to the element end,
-      BL 1, BL 0, BL ID of the next element (after-link),
+      BL ID of the containing element, BL its before-ID, BL its after-ID,
       RD element start x, y, element end x, y, point x, y },
 ```
 
-then the design-speed table. Every interval in the samples starts on a
-tangent; `BL 1, BL 0` may encode the element kind, so curves need a
-sample. Civil 3D orders the intervals by creation (S74: 2+00 first).
+then the design-speed table. (The three BLs were first read as `1, 0,
+next`, true for speeds on element 1; S115 showed they are the containing
+element's ID and links.) Curves have the same form (S113). Civil 3D
+orders the intervals by creation (S74: 2+00 first).
 Each speed with an interval has three strings (comment + two), a speed
 without an interval one.
 
@@ -1450,8 +1431,8 @@ without an interval one.
 interval per speed, table order), so it also adds speeds to alignments
 that have none. It reproduces Civil 3D's records bit for bit for S79
 `DESING OFF` (two intervals) and S84; S24 differs only by Civil 3D's
-last-digit rounding at a fillet tangent point. Speeds on curves and
-outside the alignment are refused.
+last-digit rounding at a fillet tangent point. Speeds outside the
+alignment are refused; speeds on curves are written since S113.
 
 S87 = S82 with speeds added: `ZERO START` 0:60 100:50 250:40 400:30
 (had one), `100 PLUS` −100:40 150:25 and `100 MINUS` 100:55 (had none).
@@ -1483,11 +1464,12 @@ elements: 1 fixed tangent (two points), 2 fixed curve (three points),
   84.628, BL 2, BL 1, BL 3 (next element)`, then 6 RD: the curve's start,
   a point on the circle 84.628 further on, and the point at the station.
   The third distance on a curve does not follow the tangent rule (length
-  to the element's end would be 35.72); not decoded.
-- civil3drust therefore writes intervals only for speeds on tangents;
-  speeds on curves get a table entry and one string. A speed table
-  without any interval (only curve speeds) is written as interval
-  count 0 followed by the entries.
+  to the element's end would be 35.72); still unexplained (MIST11; every
+  later curve interval follows the rule, S113).
+- civil3drust at first wrote intervals only for speeds on tangents
+  (speeds on curves got a table entry and one string; a table without any
+  interval is interval count 0 followed by the entries). Curve intervals
+  are written since S113.
 
 S90 = S24 + three alignments with a 90° curve of radius 80 (curve
 2+20–3+45.66): `Curve speed` 0:60 260:30 (the second on the curve, no
@@ -1504,7 +1486,7 @@ two free curves R 80) opened in Civil 3D, AUDIT, saved unchanged.
 ten differing regions, all explained:
 
 - **Element records unchanged** apart from the arc flag bit (34 bits
-  after each arc header): 0 → 1 for both arcs (open question 11). Our
+  after each arc header): 0 → 1 for both arcs (MIST8). Our
   exact coordinates (220, 0), (300, −80), … are kept in the records.
 - **Derived points recomputed in floating point.** Civil 3D recomputes
   the tangent end points from the fillets and writes its own rounding
@@ -1514,8 +1496,7 @@ ten differing regions, all explained:
   at the end of element 0 (220 → 220.00000000000003) and in the element-0
   cache (its end point, same two values). These are ulp differences and
   confirm the copies are derived.
-- **Section 2**: the 66-bit cache field rewritten and the 44-bit extra
-  field added (open question 1, as in S8, S51, S57).
+- **Section 2**: MIST1 rewritten and MIST2 added (as in S8, S51, S57).
 - **Handle stream**: same references; Civil 3D pads the last byte with
   1-bits (we pad with 0).
 - **Unchanged**: the interval GUID, the speed table, the string stream;
@@ -1553,16 +1534,16 @@ S93 plus the diff's regions (711 bytes, as Civil 3D wrote it) and decoded.
 - **Stationing is kept.** The start station becomes 220.00000000000003
   (`00` + raw double, 20 bits before the end of section 2), so the
   remaining elements keep their stations (the new start is 2+20). Five
-  bits before that BD differ as well (`00110` → `10010`; not decoded).
+  bits before that BD differ as well (`00110` → `10010`: the first-element
+  ID, below).
 - **Interval block**: both GUID copies (interval and speed entry) get new
   values, but the interval itself is left stale — station 0, length to
   the element end 220, next element 4, points (0, 0) → (220, 0): it still
   describes the deleted tangent.
-- The 16 bits `1010100100000001` before GUID copy 1 are the interval
-  block's own header: `BL 0, BL 0, BL 0, BL n` with n = 1 (open issue 6
-  answered; already listed as the block's first fields).
+- The 16 bits `1010100100000001` before the interval GUID are the
+  interval block's own header: `BL 0, BL 0, BL 0, BL n` with n = 1.
 - Graphics: T1's polyline and one attribute triple removed (348 → 252
-  bytes); section-2 cache field rewritten; no element-ID list added.
+  bytes); MIST1 rewritten; no element-ID list added.
 
 **In Civil 3D (owner, S94).** Alignment Properties shows the start
 station 2+20 and the 60 mph design speed still at 0+00, before the start.
@@ -1596,8 +1577,8 @@ the graphics are incomplete), 711 → 730 bytes:
 - The string stream loses the arc's three empty strings (18 → 15).
 - A4 (floating) is untouched, `p1` stays 60; the interval block and the
   speed table are unchanged (still the stale 0+00 interval).
-- Section-2 cache rewritten; graphics regenerated (252 → 316 bytes,
-  12 → 10 chunks; not decoded, derived).
+- MIST1 rewritten; graphics regenerated (252 → 316 bytes, 12 → 10
+  chunks; derived).
 - Decodes as A4 T2 T3, length 645.66 (= 125.66 + 220 + 300).
 
 So removing an element is: drop its record and its strings, relink the
@@ -1619,9 +1600,9 @@ PI (300, −300). The record is S94's again apart from:
   made from a polyline (S11): flag and design speed are filled in only
   when Civil 3D re-solves the curve (S93, S94).
 - graphics regenerated (416 bytes, 11 chunks; derived).
-- **the section-2 66-bit field equals S94's** bit for bit, although it
-  changed in S94 → S95: it is computed from the geometry, not a random or
-  per-save value (consistent with open question 12, S12 = S14).
+- **MIST1 equals S94's** bit for bit, although it changed in S94 → S95:
+  it is computed from the geometry, not a random or per-save value (as
+  S12 = S14 suggested).
 
 **Rules for element edits** (S94–S96): keep every other record and its
 ID; the storage order is creation order (new records go last); a new
@@ -1630,15 +1611,14 @@ element count and string count (3 per arc) follow; a free curve that
 loses a tangent becomes a floating curve (code 15) with its old PC as
 start point; deleting the first element keeps stationing (start station
 = old station of the new start). Civil 3D leaves the design-speed
-interval stale; civil3drust should rebuild it.
+interval stale; civil3drust rebuilds it (below).
 
 **First-element ID in section 2.** Comparing the 60 bits around the
 start station in every sample: the ID of the path's first element is
 stored **twice** in section 2 — as a one-byte BL followed by `10` right
 before the start-station BD, and as the BL that **ends** section 2
 (the last 10 bits). Both are 1 in every sample (tangent 1 first) except
-S94–S96, where both are 4 after T1 was deleted. (The "bit 4 after the
-start-station field" of open issue 5 is the low bit of this BL.)
+S94–S96, where both are 4 after T1 was deleted.
 Test `first_element_fields_name_the_chain_head`.
 
 **civil3drust: `aecc_element_edit` (D-036).** `remove_element` and
@@ -1793,8 +1773,8 @@ container, not a companion of its own).
   S104 (a re-save; not decoded).
 
 **Conclusion for writing.** Putting an alignment into a site means
-writing the site's topology graph, which is not decoded (only the
-geometry points in it are). civil3drust therefore creates **siteless**
+writing the site's topology graph (nodes and edges decoded since, faces
+only partly: "Topology nodes", "Site containers with crossings"). civil3drust therefore creates **siteless**
 alignments only, also in drawings that have sites (S107, D-038); moving
 an alignment into a site stays a Civil 3D operation for now. Reading
 sites and membership works for every sample (tests `site_samples`).
@@ -1823,8 +1803,8 @@ parcels**. Searching the containers for the exported coordinates:
 - **S107's companion is stale:** `create_alignment` copied the donor's
   (TEST's) nodes, so 107C holds TEST's five points instead of `SITELESS
   NEW`'s. Civil 3D accepts it (AUDIT clean, as S28) and the alignment
-  itself is right. Writing the companion's nodes from the geometry is the
-  first step toward writing site graphs.
+  itself is right. civil3drust now writes the companion's nodes from the
+  geometry (next section, D-040).
 
 ## Topology nodes (S25–S49, S102–S106)
 
@@ -1866,9 +1846,11 @@ n × { BD x, BD y, BD z, 3 bits 010, BL ID of the next node (0 = last) }
   | 1 | an arc starts here; bulge = tan(Δ/4), + left (S49: +0.11643 for the 26.57° left curve, −0.19891 for the 45° right one) |
   | 2 | last vertex |
 
-  Edge flags: 0x10, + 0x800 when the edge has arcs (S49, S106), + 0x20 in
-  S25/S44. Vertex flags 10 with a = b = 0 in S48/S49; 2, 50 or 178 with
-  a = b = 1 in S25, S44, S106 and S104 (meaning unknown).
+  Edge flags: 0x10, + 0x800 in S49 and S106 (not "has arcs": S98 F9D has
+  an arc with 0x10, below), + 0x20 in S25/S44 (geometry taken from an
+  object, MIST12). Vertex flags 10 with a = b = 0 in S48/S49; 2, 50 or 178
+  with a = b = 1 in S25, S44, S106 and S104 (a, b are face IDs, S112;
+  the flags are MIST12).
 - The companion ends with `BL 0 ×4, BL 2`, a face-like entry count
   (1 with `BL 1, 1, 7` + two BLs that follow the vertex a/b; 0 in S48,
   whose handle stream then lacks two null references), `BL 0 ×2`, six
@@ -1998,9 +1980,9 @@ diffing each against S24's (413 bits):
   S22's alignment (style), S59 (type), S74/S78 (design speeds), S79–S88
   (criteria, start station), S89 (layout tools), S98–S100 `Remove first`
   (its S80 check set). Plain re-saves, polyline-created and generated
-  alignments don't have it. Its content (`0000000100000000000000000100`
-  in all of them) is not decoded; records without it are accepted (all
-  generated samples).
+  alignments don't have it. **Later:** it is part of the Alignment
+  Properties header (MIST4), which announces the date-modified block
+  (MIST3); civil3drust writes the plain form instead (D-057).
 - The 66-bit cache field varies per record and is computed from the
   geometry (S94 = S96); the algorithm was not found.
 - **Post-type block** `BL 2, 2, 2, 0, x`: x is the implied PI display
@@ -2010,10 +1992,9 @@ diffing each against S24's (413 bits):
   Settled by S122 (three copies set to 1, 2, 3); the drawing scale does
   not affect it. Read/set with `aecc_build::pi_display` (MIST6).
 
-No further structure of the 31-bit field, the +44 field or the
-post-type value could be tied to a property with the existing samples;
-they stay as copied constants until new sample types (curves, spirals,
-other alignment types) show them changing.
+The other variable fields were identified later: the 31-bit field is
+inside the date-modified stamp (MIST3), the +44 field is MIST2, and the
+post-type value is the implied PI display (above).
 
 ## Line methods and speeds on curves (S113)
 
@@ -2034,19 +2015,20 @@ layout method, plus an alignment with no elements.
   3+89.12; test `line_methods_s113`).
 - The curves before the length lines are n2 = 13 (radius + end point,
   tangent to the line before), the code S99 showed after a deletion —
-  probably Floating Curve (from entity, radius, through point).
+  Floating Curve (from entity, radius, through point), confirmed by S117.
 - `EMPTY`: element count 0, no records, both first-element IDs 0, no
   speed intervals, one table entry (60 at 0+00). civil3drust reports it
   as "no element records".
 
-**Speed interval on a curve (open question 1).** `fixed line by length`
+**Speed interval on a curve.** `fixed line by length`
 has 60 at 0+00 and 30 at 1+18, inside the curve (1+03.90 – 1+33.55). The
 curve's interval has the same form as a tangent's (the `2, 1` where
 tangent intervals had `1, 0` turned out to be element IDs, see S115): station 118, distance from the element start 14.102, then
 **the length to the element end 15.548** (= 29.650 − 14.102, the same
 rule as on tangents), the next element's ID, and the curve's start, end
 and the point at the station on the arc. S89's curve interval stores
-84.63 instead of the 35.72 this rule gives; that one stays unexplained.
+84.63 instead of the 35.72 this rule gives; that one stays unexplained
+(MIST11).
 `set_design_speeds` now writes curve intervals; for S113 its intervals
 equal Civil 3D's to the last digit (test
 `speed_interval_on_a_curve_s113`). Civil 3D itself wrote **no** intervals
@@ -2127,7 +2109,7 @@ a new kind prefix (`…01010`, value 10; tangents 2, arcs 4):
 ```text
 BL 0x04020008, B flag 0, BD −1, BD −1, BL n1 1, BD −1,
 BL code 162, BL id 7, BL before 0, BL after 2,     (no bit before the IDs)
-BL 256 (meaning unknown), RD start 438, 2124, BD spiral length 21.5058
+BL 256 (spiral type: clothoid, MIST10), RD start 438, 2124, BD spiral length 21.5058
 ```
 
 Geometry: the clothoid (A² = R·L) has length 21.5058 and ends at the
@@ -2149,8 +2131,8 @@ line-spiral groups 10):
 
 ```text
 BL 0x04020008, B flag, BD −1, BD −1, BL n1 1, BD −1,
-BL type (0 inward, 1 outward, 2 compound), BL id, BL before, BL after,
-BL 256 (MIST10), B clockwise,
+BL kind (0 inward, 1 outward, 2 compound; "type" in the table below),
+BL id, BL before, BL after, BL spiral type (256 clothoid, MIST10), B clockwise,
 inward:   RD start X, Y, RD unit direction, BD length, BD end radius
 outward:  BD start radius, BD length, RD start X, Y, RD unit direction
 compound: RD start X, Y, RD unit direction, BD start radius, BD length,
@@ -2336,8 +2318,8 @@ records. Civil 3D stores their pieces as ordinary spirals (kind 6) and
 three-point curves with fresh IDs (4, 5, …), so they resolve with no
 solving (all joints equal the drawing), and:
 
-- the first spiral has the element header `0x0D020008` (MIST7 top byte
-  13) and 128 more bits after the flag bit (MIST17);
+- the first spiral has the element header `0x0D020008` (MIST7 type byte
+  `0D`) and 128 more bits: the group's start point (MIST17, below);
 - the string stream has an extra string after the description: a JSON
   description of the layout, e.g. for FCE
 
@@ -2410,12 +2392,12 @@ Results:
 **Conclusion.** For these three group types the JSON string is the live
 definition: Civil 3D reads it to build the group, keeps it current on
 every edit, and treats an empty one as "no groups". The binary spirals
-and curves are the solved snapshot. To write such a group civil3drust
-would have to write both the JSON and the solved pieces; to edit an
-alignment that has one, it must keep the JSON consistent (or empty it on
-purpose, which makes the pieces fixed). Open: what marks the record as
-having the JSON slot (alignments without these groups have no such
-string), and MIST17.
+and curves are the solved snapshot. To edit an alignment that has one,
+civil3drust must keep the JSON consistent (or empty it on purpose, which
+makes the pieces fixed). **Later:** the JSON slot is announced by
+section-2 flag 0x02 (S206), MIST17 is the group's start point (below),
+and Civil 3D solves a group from the JSON alone, so civil3drust writes
+only the JSON object (S216 → S217, D-059, D-061).
 
 **Format of the JSON string (S177, S178, S181).** Tab indentation, CRLF
 line ends, no trailing newline, `"key": value`, arrays of numbers on one
@@ -2482,8 +2464,8 @@ source (D-055), and the companion rebuilt.
   record; Civil 3D set its parameter flag to 1 (solved), as on the other
   groups. The SCSCS group (102E) was one of the discarded.
 - S185: all six discarded with "Error 34 (eWrongObjectType)". They were
-  also two strings short, so this does not yet tell whether the member
-  header or the missing JSON string caused it.
+  also two strings short. (**Later:** the cause was a member header
+  Civil 3D never writes, `08 00 0D`; S205/S206.)
 
 **Second round (S188–S190).** The same alignments with the string count
 from the rule (`write_elements` now adds 3 per non-line record):
@@ -2514,10 +2496,11 @@ from the rule (`write_elements` now adds 3 per non-line record):
 
 **Conclusion.** civil3drust writes every element kind it reads, and Civil
 3D accepts them (the owner changed the style to show arcs and spirals for
-the check). A group-member spiral (`0x0D` header and its 128 bits) is
-only valid with the alignment's JSON layout string: the owner's
-hypothesis holds (MIST17). Written as ordinary spirals (`0x04`) the same
-pieces are accepted as fixed elements.
+the check). Written as ordinary spirals (`0x04`) the group pieces are
+accepted as fixed elements. (S189's rejection was first read as "a member
+spiral needs the JSON"; **later** it turned out to be the member header
+civil3drust wrote, `08 00 0D`, which Civil 3D never writes — S206 accepts
+correct member headers without a JSON.)
 
 
 **JSON composition test (S197, S198).** The six JSON-type alignments of
@@ -2534,8 +2517,8 @@ and a layout JSON composed by civil3drust from the element records
   3D re-solves from the JSON on opening, on a nudge, or not at all.
 
 **Result (owner).** Both RECOVER, all six alignments discarded,
-"Error 34 (eWrongObjectType)" — as S189 without the JSON. So the string
-alone is not what Civil 3D looks for.
+"Error 34 (eWrongObjectType)" — as S189 without the JSON (the bad member
+header again, found with S205).
 
 **The JSON flag in section 2.** Every Civil 3D record with a JSON string
 is in the Alignment Properties form, and its section-2 BLs from bit 115
@@ -2553,10 +2536,9 @@ Alignment Properties header (`0x08010004` …), `0x02` the JSON layout
 (announced by `BL 0x01010034`), `0x40` MIST2 — and each set flag adds its
 tagged block. The JSON slot in the string stream follows the `0x02` flag:
 with the flag and no string the strings shift (S183); with the string and
-no flag the member spiral is not accepted (S189, S197). The Properties
-form also has one more string after the JSON (the user who edited it,
-"felix"). How the plain form (`0x1148`) announces a JSON string, if it
-can, is unknown.
+no flag the JSON is read as the name (S206). The Properties form also has
+one more string after the JSON (the user who edited it, "felix"). The
+plain form cannot announce a JSON string (S206).
 
 **Next test (S199, S200).**
 
@@ -2577,7 +2559,7 @@ with eWrongObjectType, in all variants. In S199 (re-save after RECOVER:
 **S203**) S178's three own alignments survive; nudging rebuilds their
 curves and the group sub-entities are there. So the Properties form and
 the JSON flag are not enough either: something else in the generated
-records is wrong.
+records is wrong (the member header, below).
 
 **What differs (S178 11DE compared with itself after `replace_elements`
 with its own elements).** Besides the zeroed MIST1, the removed
@@ -2588,7 +2570,8 @@ with an interval block. Every Civil 3D record with a JSON string has its
 speed without an interval (S177, S178), and every rejected one had an
 interval (S189, S197–S200: from S24's template or written by `finish`).
 `finish` now keeps interval-less speeds as they are when they don't
-change.
+change. (S206 later opened with an interval, so this was not the cause
+either.)
 
 **Next test (S204, S205).**
 
@@ -2693,9 +2676,9 @@ template 11F8, `exp_group_params` and `exp_chains --json-tweak`):
 | 1211 `G direct … 11D4` | the two fixed curves | as typed |
 | 1214, 1217 `S178 11DE/11F8 …` | all pieces (as S205) | `Spiral1Length` + 20 in the JSON only |
 
-civil3drust's reader refuses the first four (the chain has a gap or a
-missing ID), so they were written by cutting the pieces out of a full
-record. Questions: does Civil 3D build the pieces from the JSON when
+civil3drust's reader then refused the first four (the chain has a gap or
+a missing ID), so they were written by cutting the pieces out of a full
+record (reading them came with D-060 and D-061, below). Questions: does Civil 3D build the pieces from the JSON when
 there are none (1208–1211), does it use the JSON's parameters over the
 pieces' (120E, 1214, 1217), and does it accept either linking.
 
@@ -2719,12 +2702,12 @@ every group is solved **from the JSON**:
 its JSON object (method and typed parameters) between two fixed
 elements; Civil 3D solves the pieces on opening. The fixed elements may
 be linked to each other or to the group ID. The element records need
-not contain the pieces. What civil3drust still lacks: its own reader
-refuses such a record (a gap in the chain), so it cannot yet read back
-what it writes; and a writer that creates such an alignment directly
-(not by cutting pieces out).
+not contain the pieces. (civil3drust then lacked a reader for such
+records and a direct writer; both follow.)
 
-**Reading a JSON group in place of the gap (D-060).** `decode_elements`
+**Reading a JSON group in place of the gap (D-060, superseded by D-061:
+such groups are now solved, next paragraph; the type is `LayoutGroup` in
+`DecodedElements::layout_groups`).** `decode_elements`
 now looks for JSON groups whose pieces are not stored: the fixed element
 before the group links straight to the one after it, or to the group's
 own ID, which no record has. The chain is cut there; the group becomes
@@ -2770,8 +2753,8 @@ same, S216 1214/1217 → S217): the stored pieces are set aside
 for S177 and S178 the solution matches Civil 3D's stored pieces within
 1e-4 (test `curve_methods`). `DecodeOptions::stored_group_pieces` reads
 the stored pieces instead (recovering damaged files). Owner: these three
-are the only methods kept apart with a JSON. Not covered yet: a group at
-an end of the alignment.
+are the only methods kept apart with a JSON. A group at an end of the
+alignment: next.
 
 **Edge case: a group at an end (S223).** S178 plus six JSON-only groups
 (`exp_group_params end|start`): for each of 11F8 (SCSS), 11DE (SSCS) and
@@ -2789,8 +2772,8 @@ appear anywhere. In S224 Civil 3D has **emptied the JSON string** of all
 six (slot and section-2 JSON flag kept; flags `0x43` after the save) and
 kept only the remaining fixed element: the group is dropped silently.
 S178's own three are unchanged. So a group of these methods at an end of
-the alignment, with nothing on that side, is not valid; whether Civil 3D
-can make one at all needs a Civil 3D-made sample.
+the alignment, with nothing on that side, is not valid, and Civil 3D
+cannot make one (owner, S225 below); `aecc_layout::layout` refuses it.
 
 **Reader fix.** With the JSON string empty, the name reader took the
 user string ("felix") as the name. `raw::structured_name` now drops the
@@ -2838,34 +2821,20 @@ re-solved the group on that edit: pieces renumbered 4–8.) The reader
 reports it as `LayoutGroup::locked`; `aecc_layout::Group::locked` sets it
 when writing (test `group_lock_is_its_own`).
 
-## Open questions
+## Open questions and next samples
 
-Tracked as MIST1 … MIST15 in [`mysteries.md`](mysteries.md), each with
-its location, the samples that show it and a test to settle it.
-
-Answered since the first list: the start station (S9), multi-element
-layout (S5), the element kind prefixes (tangent 2, arc 4, group 10),
-the element kinds and curve constraint codes (S89, S113, S117–S119), the
-element-ID list block (S51) and the BD block in S12.
-
-## Next samples
-
-**S121** — the owner's filled copy of S120: one element per spiral layout
-method, inputs in each alignment's description. Plan and progress per
-method: [`element-methods.md`](element-methods.md).
+Open fields are tracked as MIST1 … in [`mysteries.md`](mysteries.md),
+each with its location, the samples that show it and a test to settle
+it; its last section lists what has not been sampled. Deferred work is in
+[`FUTURE.md`](../FUTURE.md).
 
 ## Template note
 
-S1 and S5 contain a `3DSOLID` in Civil 3D's internal block
-`PRESSUREPARTERRORBLOCK` (handle 7F72 in both) that acadrust 0.6.5 cannot
-parse. Reading falls back to failsafe mode and the solid is dropped, so a
-copy written by acadrust would lose it. S2 (a different, smaller drawing)
-does not have it. A lossless round trip of drawings from this template needs
-that acadrust issue fixed first.
-
-Update: acadrust 0.6.7 reads this solid; all seven affected samples (S1, S5,
-S6, S11, S12, S15, S89) now load without failsafe mode and keep it after a
-save (docs/acadrust-0.6.7.md).
+S1 and S5 (and S6, S11, S12, S15, S89) contain a `3DSOLID` in Civil 3D's
+internal block `PRESSUREPARTERRORBLOCK` (handle 7F72) that acadrust 0.6.5
+could not parse (failsafe mode, solid dropped on save). acadrust 0.6.7
+reads it, and those samples now load normally and keep it after a save
+(`docs/acadrust-0.6.7.md`).
 
 ## Provenance
 
@@ -2903,7 +2872,9 @@ Alignment Properties form, 241 in S59) is computed by Civil 3D from the
 alignment's geometry: unchanged by saves, renaming and the proxy-graphics
 setting; a length or radius change rewrites most of it, a move or rotation
 changes 28 of its bits and keeps 38 (bytes 1–4 and the low 6 bits of byte
-5). Civil 3D accepts zero bits and recomputes it on save. civil3drust
+5). Civil 3D accepts zero bits and recomputes it on save (on alignments
+with a JSON layout after a warning and a re-solve of the groups, S214 →
+S215). civil3drust
 treats it as a cache: it is not decoded, and every created or edited
 alignment gets zeros (D-046, `aecc_build::geometry_key_bit`). Details and
 the full table: `mysteries.md`, MIST1.

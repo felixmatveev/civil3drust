@@ -1,13 +1,16 @@
 # Mysteries (MIST1 … MISTn)
 
-Fields and behaviours of Civil 3D alignment records that are not yet
-explained. None of them stops Civil 3D from opening civil3drust's output:
-today they are copied from a template record, left out, or recomputed by
-Civil 3D on save. Each entry is self-contained so it can be worked on
-separately. When one is solved, mark it **SOLVED** with the sample that
-settled it, move the finding into `alignment-object.md`, and keep the
-number (numbers are never reused). **PARTIALLY SOLVED** means the field's
-role and handling are settled but its content is not decoded.
+Fields and behaviours of Civil 3D alignment records that are, or were,
+not explained. None of the open ones stops Civil 3D from opening
+civil3drust's output: they are left out, written as zero, kept as read,
+or recomputed by Civil 3D on save. Each entry is self-contained so it can
+be worked on separately. Numbers are never reused.
+
+Status words: **SOLVED** — meaning known (the sample that settled it is
+named; the finding is in `alignment-object.md`); **PARTIALLY SOLVED** or
+**handled** — role and handling settled, content not decoded; **open** —
+neither. Hypotheses and plans that later samples settled have been
+removed; what remains is the evidence and the current reading.
 
 Bit positions are given for S24-based records unless stated. Sections:
 1 = object header + proxy graphics, 2 = from the end of the graphics to
@@ -16,51 +19,56 @@ records, the speed-interval block and the post-cache block (§1.2).
 Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 `scan_elements`.
 
-## MIST1 — the 66-bit section-2 field — **PARTIALLY SOLVED (S142–S150)**
+| ID | subject | status |
+|---|---|---|
+| MIST1 | 66-bit section-2 field: geometry fingerprint | partially solved |
+| MIST2 | optional field after MIST1 (`BL 0x0D00D773, BL n`) | partially solved |
+| MIST3 | date-modified stamp of the Properties form | partially solved |
+| MIST4 | Alignment Properties header | handled |
+| MIST5 | 2-bit flag changed on re-save | solved: MIST2 marker |
+| MIST6 | `BL 2, 2, 2, 0, x` after the type | solved: implied PI display |
+| MIST7 | element header `08 00 [02] 04` | structure mapped; bits open |
+| MIST8 | curve flag bit | solved: set on load |
+| MIST9 | `−1` parameters of curves and groups | mostly solved: criteria values |
+| MIST10 | the `256` after a spiral's IDs | solved: spiral type |
+| MIST11 | S89's curve speed-interval distance | open |
+| MIST12 | companion topology flags | open (uniform form accepted) |
+| MIST13 | extra block for a zero speed GUID | open (lead) |
+| MIST14 | half-circle rule | one sample |
+| MIST15 | flag 16 bits before the section-2 end | solved: tangency swapping |
+| MIST16 | three BDs after a spiral's geometry | open |
+| MIST17 | 128 bits after a `0x0D` element header | solved: group start point |
 
-- **Status:** a geometry cache. Civil 3D computes it from the alignment's
-  shape and placement and recomputes it on save; zeros are accepted.
-  civil3drust ignores its content and writes zeros (D-046). The encoding
-  is not decoded; reopen only if a reason appears to keep or compute it.
+## MIST1 — the 66-bit section-2 field — **PARTIALLY SOLVED (S142–S150, S214)**
 
+- **Status:** a geometry fingerprint. Civil 3D computes it from the
+  alignment's shape and placement (and, for alignments with a JSON
+  layout, the JSON's geometry) and keeps it while the geometry is
+  unchanged. civil3drust cannot compute it and writes zeros (D-046).
+  Zeros are accepted silently on alignments without a JSON layout; on
+  an alignment with one, a mismatch makes Civil 3D log "contains new
+  constraint curve group modified unexpectedly in old version" and
+  re-solve the group's pieces from the JSON (S214 → S215), so every
+  generated or edited JSON-group alignment warns once. The algorithm is
+  not known.
 - **Where:** section 2, bits 165–230 of the plain 413-bit form (after the
-  `BL 80, 0, 80, 80, 0` class header and the 37-bit common entity data).
-- **Seen:** differs per alignment; Civil 3D writes a new value on every
-  save (S57), the same value for the same geometry (S94 = S96 after an
-  element was deleted and re-added). All zeros is accepted (S56 X1).
-- **Deterministic across drawings and releases:** S161's `from polyline`
-  ((0,0) → (100,0), company template, Civil 3D 2024) has exactly the
-  value of S123's tangent (same geometry, Civil 3D 2027):
-  `35 5C BE 8C E9 03 C0 A6`.
+  `BL 80, 0, 80, 80, 0` class header and the 37-bit common entity data);
+  199 in the Alignment Properties form, 241 in S59.
+  `aecc_build::geometry_key_bit` finds it by the 14 bits that always
+  precede it.
+- **Deterministic:** the same geometry gives the same value across
+  drawings and releases: S161's `from polyline` ((0,0) → (100,0),
+  Civil 3D 2024) and S123's tangent (Civil 3D 2027) both store
+  `35 5C BE 8C E9 03 C0 A6`. Unchanged by re-saves (S142, S143 = S24),
+  renaming (S144) and the proxy-graphics setting (S140 = S141); S57's
+  "new value on every save" was Civil 3D recomputing records
+  civil3drust had generated.
 - **Public name (probable):** `Entity.FingerPrint`, a read/write UInt64
-  on Civil 3D's base entity class (API reference): 64 bits, stored before
-  any alignment-specific field (`docs/class-catalog.md`).
-- **civil3drust:** zeroes it (D-046) whenever it creates an alignment or
-  writes its geometry; `aecc_build::geometry_key_bit` finds it by the
-  14 bits that always precede it (section-2 bit 165, 199 or 241 in all
-  407 sample records).
-- **Ruled out: proxy graphics.** S140 (PROXYGRAPHICS 1) and S141
-  (PROXYGRAPHICS 0) are the same drawing saved both ways: in all 21
-  alignments everything after the graphics, MIST1 included, is
-  bit-identical, and so are the handle streams. The field is not derived
-  from, or stored because of, the proxy graphics.
+  on Civil 3D's base entity class (API reference,
+  `docs/class-catalog.md`).
 - **Not a reported quantity:** none of the values in Civil 3D's Entities
-  and PIs listing of S24 F9E (lengths, stations, coordinates, radius,
-  directions and delta in degrees or radians, chord, tangent, external,
-  mid-ordinate, mid/centre points, degree of curvature) occurs in
-  section 2 as a 64-bit or 32-bit float at any bit offset. They occur
-  only later (element records, station cache, speed table). Two 100-ft
-  single tangents in different drawings (S44 FB8, S123 8F01) share most
-  of the field's bytes, so a hash or checksum of the geometry is likely.
-- **Content-derived, not time:** S142 and S143, the same drawing saved
-  minutes apart, have byte-identical F9E records, and MIST1 is the same
-  as in S24, S131 and S139: Civil 3D keeps it across re-saves while the
-  geometry is unchanged. S57's "new value on every save" was Civil 3D
-  recomputing records civil3drust had generated. So it is a deterministic
-  value computed from the alignment — most likely a hash or checksum —
-  and not a timestamp or random ID.
-- **Not the name:** S144 (S143 renamed) keeps the same value, moved 34
-  bits later by the fields the rename added in front of it.
+  and PIs listing of S24 F9E occurs in section 2 as a 64- or 32-bit
+  float.
 - **Shape and position** (bytes of the 64-bit part, in file order):
 
   | sample | change | MIST1 |
@@ -73,626 +81,282 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   | S149 | S148 with radius 50 → 218.0166 | `6B 9E A5 24 C1 6D 78 5C` |
   | S150 | S144 rotated 90° about (0, 0) | `E2 1E 81 38 E6 21 2E 83` |
 
-  A length change rewrites every byte; a pure move keeps bytes 1–4 and
-  changes 0 and 5–7. The two 100-ft single tangents in different
-  drawings and directions (S44 FB8, S123 8F01) also share exactly bytes
-  1–4 (`5C BE 8C E9`).
-- **Split:** across S144–S148, 38 bits never change under moves or
-  rotation: bytes 1–4 and the low 6 bits of byte 5 (the 100-ft tangents
-  agree on these too, `0x43`/`0x03`). The other 28 bits — the 2 leading
-  bits, byte 0, the top 2 bits of byte 5 and bytes 6–7 — change with any
-  move or rotation. So MIST1 looks like a 38-bit shape value (invariant
-  under rigid motion) combined with a 28-bit placement value, not one
-  hash. The shape part is not the total length as a float.
-- **Inputs:** the radius feeds the shape bits (S149), like the lengths
-  (S145). Rotating in place (S150) keeps the 2 leading bits and byte 5
-  and changes the low half of byte 0 and bytes 6–7; moving north changes
-  byte 5's top bits and rotating there (S148) changes them back, so
-  position and direction are mixed in the placement bits (perhaps a
-  value from the extents or the end points). The formula is still
-  unknown.
+  38 bits (bytes 1–4 and the low 6 bits of byte 5) never change under
+  moves or rotation; the other 28 do. Lengths and radii change all of
+  them. So it looks like a 38-bit shape value combined with a 28-bit
+  placement value. Two 100-ft single tangents in different drawings and
+  directions (S44 FB8, S123 8F01) share the shape bits.
+- **JSON layouts (S204, S214 → S215):** zeroing MIST1 alone triggers the
+  warning and a rebuild (piece IDs renumbered, the same MIST1 written
+  back); a change in the last digits of the JSON's `ArcRadius` does not;
+  S204's composed JSON (other pass-through points) did. So it covers
+  the JSON's geometry, probably rounded.
 
-
-- **Checked for JSON-layout alignments (S214 → S215):** with MIST1
-  zeroed, Civil 3D logs "contains new constraint curve group modified
-  unexpectedly in old version. The modification won't be kept in new
-  release." and rebuilds the group's pieces from the JSON (piece IDs
-  renumbered), then writes the same MIST1 value as before. A last-digits
-  change of `ArcRadius` in the JSON did not change it; S204's composed
-  JSON (other pass-through points) did, so it covers the JSON's geometry
-  too, probably rounded.
 ## MIST2 — the optional +44-bit field after MIST1 — **PARTIALLY SOLVED (S151–S160)**
 
 - **Status:** a field Civil 3D adds when it re-saves an alignment and
-  restores on save when missing. civil3drust never copies or adds it: it
-  removes it together with the format marker (`0x1188` → `0x1148`) when
-  creating an alignment or writing its geometry (D-047), in both forms.
-  In the Alignment Properties form plain removal is rejected (S158,
-  eWrongObjectType); that form has its own marker at section-2 bits
-  115–124: `0100000001` with MIST2 (108 records), `0011000001` without
-  (44 records, e.g. S113, S74, S116/S117). Removing MIST2 and setting the
-  "absent" pattern is accepted (S159), and Civil 3D restores both on save
-  (S160 = S144). The meaning of `0x0D00D773` and of the second value is
-  not decoded.
-
-- **Where:** right after MIST1 when present (section 2 grows 413 → 457).
-- **Seen:** added by Civil 3D re-saves (S4, S8, S11, S12, S48, S51) and to
-  every alignment of S57; absent in generated records (S45, S50 — accepted).
-- **Content:** two BLs, `BL 0x0D00D773` (34 bits, full form) and
-  `BL 2` (10 bits) — `00 11100111 11010111 00000000 00001101` +
-  `01 00000010`. The first is the same in all 251 sample records that
-  have the field; the second is 2 in every centerline and 1 in the two
-  Miscellaneous alignments (S59 1089, S62 FB6), so it follows the
-  alignment type (1 → 2, 4 → 1).
-- **Position:** directly after MIST1 in the 457/465/521/529-bit forms;
-  98 bits after MIST1 in the Alignment Properties forms (589/653 bits),
-  behind a block that starts with `BL 0x1600101F`. Not found at either
-  place in a 2020 drawing (`AeccLand110` classes, checked locally).
-- **Hypothesis:** a cache tied to MIST1. Not tied to proxy graphics
-  (S140 = S141 after the graphics).
-- **Experiment** (owner, Civil 3D 2024), S151–S154 from S131 with
-  `exp_mist2`:
+  restores on save when missing. civil3drust never copies or adds it:
+  it removes it together with its format marker when creating an
+  alignment or writing its geometry (D-047). The meaning of
+  `0x0D00D773` and of the second value is not decoded.
+- **Content:** `BL 0x0D00D773` (same in all 251 records that have it) and
+  `BL n`: 2 for every centerline, 1 for the two Miscellaneous alignments
+  (S59 1089, S62 FB6). Civil 3D keeps a stored n (S152 → S156 kept 0).
+- **Where:** directly after MIST1 in the plain forms; 98 bits after
+  MIST1 in the Alignment Properties form, behind the date-modified block
+  (MIST3). Absent in a 2020 drawing (`AeccLand110` classes, checked
+  locally).
+- **Format marker:** the full BL at section-2 bit 115 is `0x1148` without
+  MIST2 and `0x1188` with it in the plain form (MIST5); in the Properties
+  form bits 115–124 are `0011000001` without and `0100000001` with it.
+  The field must match the marker.
+- **Experiments** (S151–S160, from S131 with `exp_mist2`):
 
   | sample | change | result |
   |---|---|---|
-  | S151 | first value `0x0D00D773` → 0 | RECOVER: F9E eWrongObjectType, discarded |
-  | S152 | second value 2 → 0 | opens; re-saved as S156 with 0 kept (as a 2-bit BL) |
-  | S153 | both 0 | RECOVER: eWrongObjectType, discarded |
-  | S154 | field removed | RECOVER: eWrongObjectType, discarded |
+  | S151 | first value → 0 | RECOVER: eWrongObjectType, discarded |
+  | S152 | second value 2 → 0 | opens; re-save S156 keeps 0 |
+  | S153 | both 0 | RECOVER: eWrongObjectType |
+  | S154 | field removed, marker kept | RECOVER: eWrongObjectType |
+  | S155 | field removed, marker `0x1148` | opens, AUDIT clean; re-save S157 restores both (= S131) |
+  | S158 | Properties form, field removed, marker kept | RECOVER: eWrongObjectType |
+  | S159 | Properties form, field removed, marker "absent" | accepted; re-save S160 = S144 |
 
-  The first value is a checked tag (like MIST7); the second is stored
-  data that Civil 3D keeps, not recomputed from the type.
-- **Format marker:** the full BL at section-2 bit 115 is `0x1148` in all
-  112 records without MIST2 and `0x1188` in all 143 plain-form records
-  with it (Properties-form records have `BL 1` there instead). It is what
-  MIST5 saw change on the first re-save. S154 failed because it kept
-  `0x1188` without the field. S155 (MIST2 removed, marker back to
-  `0x1148`) opens with a clean AUDIT, and Civil 3D's re-save (S157)
-  restores `0x1188` and `0x0D00D773, 2` — identical to S131.
-- **Summary:** MIST2 is optional and must match the marker (`0x1148`
-  none, `0x1188` present). When it is missing Civil 3D adds it on save
-  with the type-based value; when present it keeps the stored value
-  (S156). The meaning of `0x0D00D773` and of the second value is still
-  unknown.
+  The first value is a checked tag (compare MIST7); the second is stored
+  data.
 
-## MIST3 — the 31-bit section-2 field — **PARTIALLY SOLVED (S191–S194)**
+## MIST3 — the date-modified stamp — **PARTIALLY SOLVED (S191–S194)**
 
-- **Status:** a date-modified stamp (FILETIME) that only the Alignment
-  Properties form carries. civil3drust drops it by writing the plain
-  form (D-057); Civil 3D accepts that and does not add the stamp back on
-  save (S193 → S194). Removing the block while keeping the Properties
-  form is rejected (S191, S192). What in the Properties header announces
-  the block is not decoded.
+- **Status:** `BL 0x1600101F` + a 64-bit Windows FILETIME, the time of
+  the last Alignment Properties edit, carried only by the Alignment
+  Properties form (after MIST1, before MIST2). civil3drust drops it by
+  writing the plain form (D-057); Civil 3D accepts that and does not add
+  it back (S193 → S194). Removing the block while keeping the Properties
+  header is rejected (S191, S192: very slow open, RECOVER,
+  eWrongObjectType). How the header announces the block is not decoded.
+- **Evidence:** all 36 distinct values in the 154 records that have it
+  fall on the days the samples were made, 1 ms resolution (S144's rename
+  stamped 22:03:55 UTC, the minute the owner sent it). Grip edits keep
+  the stamp (S145–S150).
+- **Shared block:** the same `BL 0x1600101F` + FILETIME occurs in 82
+  classes (styles, label sets, check sets …): a base-class "date
+  modified" block (`docs/class-catalog.md`).
+- **Section-2 bits 115 to the MIST1 anchor:** plain form `BL 0x1148`
+  (`0x1188` with MIST2), `BL 0`; Properties form `BL 1` (or the flag
+  BL, below), `BL 0x08010004`, then 26 bits. The Properties form is 176
+  bits longer than the plain one: 34 here, 98 for this block, 44 for
+  MIST2. Its first BL holds flags: 0x01 Properties header, 0x02 JSON
+  layout (`BL 0x01010034` follows), 0x40 MIST2 (`docs/alignment-object.md`,
+  "Generation test").
 
+## MIST4 — the Alignment Properties header — **handled (D-057)**
 
-- **Where:** bits 300–330 of the 589-bit section-2 form (criteria
-  samples, S79–S81).
-- **Seen:** varies between records with otherwise identical section 2;
-  probably a cache. The 589-bit form is not specific to design criteria:
-  renaming an alignment (S144) also produced it.
-- **Identified: a timestamp.** In the Alignment Properties form, MIST1 is
-  followed by `BL 0x1600101F` (34 bits) and a raw 64-bit little-endian
-  integer; bits 300–330 lie inside that integer. Read as a Windows
-  FILETIME (100-ns ticks since 1601-01-01, UTC) all 36 distinct values in
-  the 154 records that have it fall on 21–29 Oct 2026, the days the
-  samples were made, with 1 ms resolution (low 4 bits always 0):
-  S144's rename is stamped 22:03:55 UTC (15:03:55 Pacific; the owner sent
-  the file at 15:04), S122's three alignments 15:33:31, :42 and :48 UTC,
-  seconds apart. Geometry edits by grips keep it (S145–S150 all carry
-  S144's stamp), so it is the time of the last Alignment Properties
-  edit. The 98 alignments made by `create_alignment` from S113's `EMPTY`
-  template (S116, S120 …) all carry that template's stamp: civil3drust
-  copies it today.
-- **Layout of the Properties form after MIST1:** `BL 0x1600101F`, the
-  FILETIME, then MIST2 (`BL 0x0D00D773, BL n`).
-- **Shared block:** `BL 0x1600101F` + FILETIME occurs in 82 classes
-  (styles, label sets, check sets …); S24's styles are stamped when that
-  drawing was made, 2026-10-22 19:56:44 UTC. It is a base-class "date
-  modified" block, not an alignment field (`docs/class-catalog.md`).
-- **Plan (owner):** drop the block (`BL 0x1600101F` + FILETIME) rather
-  than keep or rewrite the stamp; versioning will be handled another way.
-  Next: test whether Civil 3D accepts the Properties form without it (and
-  which marker, if any, announces it — compare MIST4 and S158).
-- **Section-2 bits 115 to the MIST1 anchor, read as BLs:** plain form
-  `BL 0x1148` (`0x1188` with MIST2), `BL 0` (36 bits); Properties form
-  `BL 1`, `BL 0x08010004`, then 26 bits that do not end on a BL boundary
-  (70 bits). The Properties form is 176 bits longer than the plain one:
-  34 here, 98 for the date-modified block, 44 for MIST2.
-- **Experiment (S191–S193, from S144 `F9E`, `exp_mist3`):** S191 block
-  removed only; S192 block and MIST2 removed, marker "MIST2 absent" (as
-  S159); S193 turned into the plain form (bits 115…anchor → `BL 0x1148,
-  BL 0`, block and MIST2 removed). S193's section 2 is then identical
-  to S155's (the plain form of the same alignment).
-- **Results (owner, Civil 3D 2024):** S191 and S192: very slow to open,
-  RECOVER "Reading handle F9E object type AeccDbAlignment Error 34
-  (eWrongObjectType), Object discarded". S193: opens, no issues;
-  re-saved as S194, still the plain form (`BL 0x1188, BL 0` with MIST2
-  added back as on any re-save), no date-modified block, name and
-  elements unchanged. So the Properties header announces the block, and
-  the plain form is the way to drop it.
-
-## MIST4 — the +28-bit field after the class header — **handled (D-057)**
-
-- **Status:** part of the Alignment Properties header (section-2 bits
-  115 up to the MIST1 anchor: `BL 1`, `BL 0x08010004`, 26 bits), which
-  announces the date-modified block (MIST3, S191/S192 rejected without
-  it). civil3drust replaces the header with the plain form's
-  `BL 0x1148, BL 0` (S193 accepted). Longer forms (S59: 112 bits; S177–
-  S183: 104 bits) are left as they are. Its fields are not decoded.
-
-
-- **Where:** section-2 bit 119, after `BL 1` instead of the plain form's
-  32-bit value. Content `0000000100000000000000000100` in every case.
+- **Status:** section-2 bits 115 up to the MIST1 anchor in the Properties
+  form (`BL 1`, `BL 0x08010004`, 26 bits; longer forms in S59 and
+  S177–S183), which announces the date-modified block (MIST3).
+  civil3drust replaces it with the plain form's `BL 0x1148, BL 0` when it
+  creates an alignment (S193 accepted); the longer forms (S59, and the
+  JSON-layout forms of S177–S183, which need it, S206) are left as they
+  are. Its fields are not decoded.
 - **Seen:** exactly in alignments edited in the Alignment Properties
-  dialog or made with the layout tools (S9, S22, S59, S74/S78, S79–S88,
-  S89, S98–S100, and a rename in S144). Records without it are accepted.
-- **Question:** what the two set bits mean (a "modified by UI" marker, a
-  version of a sub-object?).
-- **Not the creation method:** an alignment created from a polyline and
-  one created with the layout tools (S161) both have the plain form
-  without it; the API's `CreationMode` is not stored here. It appears
-  only after a later edit in Alignment Properties or with the layout
-  tools.
+  dialog or with the layout tools (S9, S22, S59, S74/S78, S79–S89,
+  S98–S100, S144); not set by the creation method (S161: polyline and
+  layout-tool alignments both plain).
 
 ## MIST5 — the 2-bit flag at S7 bit 2677 — **SOLVED (S154, S155): MIST2 marker**
 
-- **Where:** section 2 (S5–S8 numbering: bit 2677).
-- **Seen:** Civil 3D changed it when re-saving the generated S7 as S8.
-- **Hypothesis:** part of MIST2's appearance (re-save marker). Seen again
-  in S24 → S131: the first Civil 3D re-save changes this flag and adds
-  MIST2 in the same save; later re-saves keep both (S139, S142, S143).
-- **Found:** these bits belong to the full BL at section-2 bit 115,
-  `0x1148` without MIST2 and `0x1188` with it, in every sample (see
-  MIST2). Removing MIST2 but keeping `0x1188` is rejected (S154);
-  removing both is accepted (S155) and Civil 3D restores them on save
-  (S157).
+These bits belong to the full BL at section-2 bit 115, `0x1148` without
+MIST2 and `0x1188` with it (MIST2). That is why the first Civil 3D
+re-save (S7 → S8, S24 → S131) changed them together with adding MIST2.
 
 ## MIST6 — the post-type value `BL 2, 2, 2, 0, x` — **SOLVED (S122)**
 
-- **Where:** post-cache block, right after the alignment type BL.
-- **Answer:** x is the implied point-of-intersection display option on
-  the Alignment Properties "Point of Intersection" tab: 1 = by change in
-  alignment direction, 2 = by individual curves and curve group, 3 = do
-  not display. It is stored per alignment; a new alignment takes the
-  drawing's default, which is why it looked per-drawing (S5–S23 default
-  1, S24 default 3).
-- **Settled by:** S122, three identical alignments in S24 set to 1, 2
-  and 3 by the owner. The drawing scale was ruled out first (S24 with
-  1" = 40' still has 3).
-- **civil3drust:** `aecc_build::pi_display` / `set_pi_display`; finding
-  moved to `alignment-object.md`.
+x is the implied point-of-intersection display (Alignment Properties →
+Point of Intersection): 1 by change in alignment direction, 2 by
+individual curves and curve group, 3 do not display. Stored per
+alignment; a new alignment takes the drawing's default (S5–S23 default
+1, S24 default 3). `aecc_build::pi_display` / `set_pi_display`.
 
-## MIST7 — the element header `0x04020008`
+## MIST7 — the element header — **structure mapped; bits open**
 
-- **Summary (2026-11-03, survey of all samples):**
+```text
+00 + 0x0008   must be 8 (0, 7, 9, 0x0108: eOutOfRange)
+[flag byte]   present exactly when its bit 0x02 is set:
+              0x02 this element's parameters locked (S164, S172)
+              0x01 kept by Civil 3D, no visible effect (S127 → S132)
+              0x04 accepted, dropped on save (S137 → S139)
+type byte     0x04 element; 0x0D first spiral of a group stored as
+              separate elements, locked (S177; 128 bits follow, MIST17);
+              0x09 the same, unlocked (S202); 0x03, 0x05: eWrongObjectType
+```
 
-  ```text
-  00 + 0x0008   must be 8 (0, 7, 9, 0x0108: eOutOfRange)
-  [flag byte]   present exactly when its bit 0x02 is set:
-                0x02 this element's parameters locked (S164, S172)
-                0x01 kept by Civil 3D, meaning unknown (S127 → S132)
-                0x04 accepted, dropped on save (S137 → S139)
-  type byte     0x04 element; 0x0D first spiral of a group stored as
-                separate elements, 128 more bits after its flag bit
-                (S177, MIST17); 0x09 the same, unlocked (S202);
-                0x03, 0x05: eWrongObjectType
-  ```
+- **Read as one BL** in the locked form this is `0x04020008`, the value
+  first seen in every element record. Civil 3D tells the flag byte from
+  the type byte by bit 0x02; a "flag byte" without it (0x00, 0x01) is
+  read as a wrong type (S126, S136).
+- **Survey** (about 1,200 element headers in `samples/`): `08 00 02 04`
+  almost everywhere (all element kinds, all releases, a 2020 production
+  drawing checked locally); `08 00 04` in unlocked elements (S164,
+  S166–S172); `08 00 02 0D` in Civil 3D's locked group members (S177,
+  S178), `08 00 02 09` unlocked (S202). `08 00 0D` (no `02` byte) is
+  never written by Civil 3D and is rejected (S185, S189, S197–S200).
+- **Experiments** (owner, S125–S138 with `exp_header`, all four elements
+  of S24 F9E):
 
-  Civil 3D tells the flag byte from the type byte by bit 0x02: the type
-  codes seen (0x04, 0x0D) lack it, and a "flag byte" without it (0x00,
-  0x01) is read as a wrong type (S126, S136). This fits every accepted
-  and rejected value of both experiment rounds.
-- **Survey** (every decoded element header in `samples/`, about 1,200):
-  `08 00 02 04` almost everywhere (lines, arcs, spirals, spiral groups
-  and their parts, all releases); `08 00 04` in unlocked elements
-  (S164, S166–S172); `08 00 02 0D` only in S177's three first-of-group
-  spirals; `08 00 03 04` and `08 00 06 04` only in the experiments.
-  Other matches of the pattern are chance: those after the elements lie
-  in the string stream (UTF-16 text), those inside records in numeric
-  data.
-- **A possible family:** the MIST2 tag `0x0D00D773` and the MIST3 tag
-  `0x1600101F` have the same shape (type byte on top, a 16-bit value
-  below), and changing MIST2's tag also gave eWrongObjectType. Possibly
-  one sub-object header scheme with other 16-bit values; not relied on.
-- **civil3drust:** `aecc_alignment::read_header` returns flags, type
-  byte and the next bit for both type bytes, with or without the flag
-  byte; `set_constraint_editing` keeps the type byte (test
-  `group_member_header_unlocked_s177`: S177 unlocked still decodes).
-- **Owner tests (2026-11-03, Civil 3D 2024):**
-  1. **Flag bit 0x01:** S131 and S132 open cleanly with clean AUDIT, and
-     their Alignment Entities grids are identical (types, tangency and
-     parameter constraints, locks, lengths, stations). The bit has no
-     visible effect there.
-  2. **Tangency constraint (S201):** tangent 1 of S172's `UNLOCKED` set
-     to "Constrained by Next (Floating)". The header is unchanged; the
-     tangent's kind becomes **3** (a new kind: start point only, 128
-     bits instead of 256), and Civil 3D turned the free curve after it
-     into "floating, start point and radius" (code 29 → 15). Geometry
-     unchanged. So the tangency constraint is the kind field, not the
-     header (test `constrained_by_next_is_the_kind_field_s201`).
-  3. **Unlocked group member (S202):** S177 `Reverse S-S-C-S-S` with
-     "Lock all parameter constraints" off. Ordinary elements lose the
-     `02` byte as in S164, but the group member keeps it and its type
-     byte changes `0D` → `09` (bit 0x04 cleared): `08 00 02 09`. So for
-     a group member the lock is type bit 0x04. civil3drust's
-     `set_constraint_editing` on S177 now gives S202's element records
-     bit for bit (test `group_member_header_unlocked_s177_s202`).
-  4. Not needed: S178 was made without copy and paste and has the
-     `0x0D` header too.
-- **Reading after S202:** the byte after `0x0008` with bit 0x02 is
-  followed by another byte; the last byte has no bit 0x02. Bit 0x08 of
-  the last byte marks a group member (128 bits follow). The lock is the
-  `02` byte for ordinary elements and bit 0x04 of the last byte for
-  group members, so the bytes are not one consistent "flags + type"
-  pair; a bit-level reading that explains both is still open.
+  | header (as BL) | result |
+  |---|---|
+  | `0x04020008` (S125) | control; re-save S131 |
+  | `0x04030008` (S127) | opens; kept on save (S132) |
+  | `0x04060008` (S137) | opens; saved as `0x04020008` (S139) |
+  | `0x04010008`, `0x04000008`, `0x05020008`, `0x03020008` | RECOVER: eWrongObjectType |
+  | `0x04020009`, `…0007`, `…0000`, `…0108`, `0x08000204` | RECOVER: eOutOfRange |
 
-- **Where:** first BL of every element record (lines, curves, groups).
-- **Seen:** identical in every record of every sample. The BL after it is
-  the line kind (0, 4, 5, 9) in line records.
-- **Question:** version / class tag of the element sub-object?
-- **Ruled out:** drawing units and Civil 3D release. S123 (feet) and
-  S124 (meters), both new drawings from Civil 3D 2027, have the same
-  header as every Civil 3D 2024 sample. The owner's imperial-vs-metric
-  hypothesis (with `0x02` as the feet unit code) does not hold.
-- **Not text:** the owner read the bytes as control characters (EOT STX
-  NUL BS). The value is a BL in the data stream, stored low byte first
-  (`08 00 02 04`); strings live in the separate string stream.
-- **Not alignment-specific:** in S119 the same 32-bit value (as a full BL)
-  also occurs in `AECC_PROFILE_STYLE`, the profile-view band styles,
-  `AECC_SVFIGURE_STYLE`, `AECC_TURNOUT_STYLE`, `AECC_TREE_NODE`,
-  `AECC_LABEL_NODE` and `AECC_LABEL_COLLECTOR_STYLE`; neighbours
-  `0x04010008` (label styles) and `0x05020008` (surface and table styles)
-  occur too. A chance match of 34 bits is very unlikely at these counts,
-  so it looks like a generic Civil 3D sub-object tag, possibly a version
-  pair (4.2, 4.1, 5.2) with a type code 8.
-- **Experiment, round 1** (owner, Civil 3D 2024): S125–S130 made with
-  `exp_header` from S24 (F9E: three tangents and a free curve), the
-  header of all four elements changed:
-
-  | sample | header | result |
-  |---|---|---|
-  | S125 | `0x04020008` (control) | opens; re-saved as S131 |
-  | S126 | `0x04010008` | RECOVER: F9E "Error 34 (eWrongObjectType)", discarded |
-  | S127 | `0x04030008` | opens; re-saved as S132 with `0x04030008` kept |
-  | S128 | `0x05020008` | RECOVER: eWrongObjectType, discarded |
-  | S129 | `0x04020009` | RECOVER: "Error 151 (eOutOfRange)", discarded |
-  | S130 | `0x08000204` | RECOVER: eOutOfRange, discarded; very slow, display glitches |
-
-  So the value is read and checked, not ignored: the top byte must be 4,
-  the third byte 2 or 3 (1 is a wrong type; perhaps bit 0x02 must be set
-  and bit 0x01 is free), and the low word 8 is accepted while 9 is out of
-  range. Civil 3D writes back what it read (S132 = S131 apart from the
-  four header bits), so this is stored data, not a version it stamps.
-  A likely reading: the high word identifies the sub-object type and the
-  low word is its schema version, 8 being the newest Civil 3D knows.
-- **Experiment, round 2** (owner, Civil 3D 2024):
-
-  | sample | header | result |
-  |---|---|---|
-  | S133 | `0x04020007` | RECOVER: eOutOfRange, discarded |
-  | S134 | `0x04020000` | RECOVER: eOutOfRange, discarded |
-  | S135 | `0x04020108` | RECOVER: eOutOfRange, discarded |
-  | S136 | `0x04000008` | RECOVER: eWrongObjectType, discarded |
-  | S137 | `0x04060008` | opens, AUDIT clean; re-saved as S139 with `0x04020008` |
-  | S138 | `0x03020008` | RECOVER: eWrongObjectType, discarded |
-
-- **What Civil 3D 2024 accepts** (rounds 1 and 2):
-  - **Low word** (bytes 0–1): exactly 8. 0, 7, 9 and `0x0108` are
-    "out of range", so it is not a maximum version but a fixed value of
-    the whole 16-bit field.
-  - **Top byte:** exactly 4; 3 and 5 are "wrong object type".
-  - **Third byte:** bit 0x02 must be set (0 and 1 are "wrong object
-    type"; 2, 3 and 6 are accepted). Bit 0x01 is stored and written back
-    (S127 → S132); bit 0x04 is accepted but dropped on save (S137 →
-    S139).
-  - So the high word works as a type tag with flag bits, and the low word
-    as a fixed size or version that must match. The meaning of the flag
-    bits is unknown.
-- **A family of such headers** (S119 against an older Civil 3D drawing,
-  AC1027 with `AeccLand110` classes, checked locally and not committed):
-  values `0xTT0M0008` occur as full BLs in many classes in both files.
-  The low word is always `0x0008`, the third byte mostly 2 or 3, the top
-  byte depends on the class: `0x0C030008` in about 25 style classes
-  (label, band and view styles), `0x04020008` in alignment elements,
-  profile and survey-figure styles, `0x05020008` in surface and table
-  styles, `0x06020008` in label-collector styles, `0x0A020008` in
-  section-view band and profile/section entity styles. Classes present in
-  both files carry the same value in both, so the values did not change
-  between the 11.0 and 13.0 class schemas. Reading: the top byte names
-  the kind of sub-object (Civil 3D answers "wrong object type" when it
-  changes) and `0x0008` is a fixed field that must match; neither is a
-  release version. (Scanning bit by bit also finds the same bytes one bit
-  off, e.g. `0x02010004` and `0x08040010` around `0x04020008`; those are
-  artifacts and were removed. Values seen in a single class, mostly in
-  surface records full of binary data, may be chance matches.)
-- **Unchanged in a 2020 drawing** (AC1027, `AeccLand110` classes; a
-  production drawing checked locally, not committed): every element
-  record of its 10 alignments starts with `0x04020008`, one per element.
-- **"Lock all parameter constraints" (S164):** with the option off (Alignment
-  Properties → Constraint Editing), every element record is 8 bits
-  shorter: the byte `0x02` after `0x0008` is gone, and the next byte
-  (`0x04`) follows directly. S163 (option on) with those four bytes
-  removed is identical to S164 except for the edit timestamp (MIST3) and
-  the MIST15 flag. So the "header" is not one fixed 32-bit value: `0x0008`
-  (code `00` + 16 bits, the part that must equal 8), an optional byte
-  present when parameters are locked (`0x02`; MIST7's "third byte"), then
-  `0x04`. The earlier tests fit: values with bit 0x02 were accepted, 0 and
-  1 were not.
-- **The same option is also an alignment flag:** bit 15 before the
-  section-2 end is 1 in S24 and S163 and 0 in S164 (MIST15 entry).
-- **civil3drust:** `aecc_alignment::read_element_header` reads both forms
-  (flag byte or none) for tangents, arcs and spirals; S164 decodes like
-  S163. Writers follow the alignment: a rewritten element keeps its own
-  header, a new one takes the form of the alignment's first element
-  (locked when it has none) (D-051; test `edits_keep_the_unlocked_form_s164`).
-  Civil 3D 2024 accepted civil3drust's unlocked edits (S166 element
-  removed, S167 curve added: no RECOVER, AUDIT clean, options still off)
-  and its re-saves (S168, S169) read back to the same elements, still
-  unlocked.
-- **The lock is per element (S172):** in S171 (the re-save of a created,
-  unlocked alignment S170) the owner locked one element only; Civil 3D
-  wrote `0x02` in tangent 2's header and nowhere else, and left the
-  "Lock all parameter constraints" bit at 0. So the flag byte is each
-  element's own parameter lock and bit 15 is the "lock all" option
-  (turning it off unlocked every element, S164). New elements take the
-  option's value; existing ones keep their byte (D-051, test
-  `lock_is_per_element_s170_s172`). Locking every element one by one
-  leaves bit 15 off (owner, observed in Civil 3D 2024): the bit is an
-  independent setting, the lock given to new elements, not a summary of
-  the elements' locks.
-- **Next lead (deferred until spiral geometry is done):** the Alignment
-  Entities grid shows per element a Tangency Constraint ("Not Constrained
-  (Fixed)", "Constrained on Both Sides (Free)"), the Parameter Constraint
-  lock (the `0x02` byte) and a Parameter Constraint ("Two points",
-  "Radius"). The owner's guess: flag bit `0x01` and/or the closing `0x04`
-  carry the front and back (before/after) constraints. Test: elements
-  with each tangency constraint (fixed, floating front, floating back,
-  free) and their header bytes.
-  The grid's Tangency Constraint drop-down for a line offers "Not
-  Constrained (Fixed)" and "Constrained by Next (Floating)" (owner's
-  screenshot); these are already the tangent's kind BL after the header
-  (0 fixed, 4 floating, 5 floating by length, 9 free), so the header
-  bytes are probably not the tangency constraint. Switch tangent 1 of
-  S172 to floating and compare the header too.
-- **Status:** structure mapped (S125–S139, S164, S172, S177; summary at
-  the top). Still open: flag bit 0x01, what 0x0008 stands for, and when
-  Civil 3D writes type 0x0D (tests listed above).
+- **Locks:** "Lock all parameter constraints" (Alignment Properties →
+  Constraint Editing) is section-2 bit 15 before the end (MIST15) and
+  the lock given to new elements; each element's own lock is its `02`
+  byte (S172: one element locked in Civil 3D, only its header changed).
+  For group members the lock is bit 0x04 of the type byte instead
+  (`0D` locked, `09` unlocked, S202). civil3drust: D-051,
+  `aecc_alignment::header_bytes`, `read_header`.
+- **Not the tangency constraint:** "Constrained by Next (Floating)" on a
+  line changes its kind BL (0 → 3), not the header (S201).
+- **Ruled out:** drawing units and release (S123 feet, S124 meters,
+  Civil 3D 2027: same header); text (it is a BL in the data stream).
+- **A family of such values:** `0xTT0M0008` occurs as a full BL in many
+  Civil 3D classes (S119 and an older drawing checked locally):
+  `0x0C030008` label, band and view styles; `0x04020008` alignment
+  elements, profile and survey-figure styles; `0x05020008` surface and
+  table styles; `0x06020008` label-collector styles; `0x0A020008`
+  section-view bands and profile/section styles. The MIST2 and MIST3
+  tags have the same shape. Possibly one sub-object header scheme; not
+  relied on.
+- **Still open:** flag bit 0x01; what `0x0008` stands for; a bit-level
+  reading that covers both the `02` byte and the group-member type bits.
 
 ## MIST8 — the curve flag bit — **SOLVED (S207–S210)**
 
-- **Answer:** Civil 3D sets the flag on every curve it read from the
-  file when it opens the drawing; a curve created in the session that
-  saves it keeps 0 until the drawing is opened again. Edits don't
-  change it (S207: S24's 0 → 1 with a radius edit; S208: S131's 1 stays
-  1 with a radius edit; S209: a new curve 0 beside the old 1; S210:
-  S209 reopened and saved, the new curve 1). S12's 0 was most likely
-  edited in the same session as S11. It is load-time state, not model
-  data: civil3drust writes 0 for new curves (as Civil 3D does) and keeps
-  the stored value on rewritten ones (test `curve_flag_set_on_load_s207_s210`).
-
-
-- **Where:** the bit right after the header in curve and group records.
-- **Seen:** 1 in S10, S14, S15; 0 in S11–S13. Civil 3D sets it after
-  geometry edits it saved (S14, S15) and when re-saving our generated free
-  curves unchanged (S92 → S93), but not after its own radius edit (S12).
-- **Survey (2026-11-03, every curve record in `samples/`):** 0 in every
-  curve civil3drust generated and in every curve Civil 3D created in the
-  session that saved it (S11, S24, S96 FB3/5, S113 10F4); 1 in curves
-  that already existed when Civil 3D opened the drawing it saved (S14,
-  S15, S28, S93, S131 …), including plain re-saves without edits
-  (S125 → S131, S92 → S93). The only exception is S12 (S11's radius
-  changed, still 0), possibly edited in the same session as S11.
-- **Hypothesis:** the flag means "solved since load": Civil 3D sets it
-  for curves it read from the file and solved, and new curves keep 0
-  until the drawing is opened again. Tests (owner): T1 S24 radius 50 →
-  75, save; T2 S131 (flag 1) radius 50 → 75, save; T3 S131 with a new
-  R 30 curve at PI (200, 50), save; T3b T3's file closed, reopened and
-  saved with no change.
+Civil 3D sets the bit right after a curve's or group's header on every
+curve it read from the file when it opens the drawing; a curve created
+in the session that saves it keeps 0 until the drawing is opened again.
+Edits don't change it (S207: S24's 0 → 1 with a radius edit; S208: S131's
+1 stays 1; S209: a new curve 0 beside the old 1; S210: S209 reopened and
+saved, the new curve 1). Load-time state, not model data: civil3drust
+writes 0 for new curves and keeps the stored value on rewritten ones
+(test `curve_flag_set_on_load_s207_s210`).
 
 ## MIST9 — the `−1` parameters of curve and group records — **mostly solved (S219–S222)**
 
-- **Found (2026-11-03, owner's C1–C4 = S219–S222, criteria-based design
-  on, design speed 40 mi/h):** every curve stores `p1 = 40` (design
-  speed), `p2 = 533` (the criteria's minimum radius, the grid's "Minimum
-  Radius" column) and `p3 = 83` (a third criteria value, not yet
-  identified). The values follow the criteria, not the curve: the R 50
-  curve, the new R 533 curve (S221) and the same curve at R 179 (S222)
-  all store 40, 533, 83, whether they pass the check or not. Without
-  criteria all three are −1, which Civil 3D accepts (every earlier
-  sample), so civil3drust keeps writing −1 (test
-  `curve_criteria_values_s219_s222`).
-- **Parked (owner, 2026-11-03):** design criteria are not a priority;
-  the two open points below wait.
-- **Still open:** what 83 is (minimum transition length or
-  superelevation runoff at 40 mi/h are candidates: compare with those
-  columns in the grid); S220 was meant to have design speed 30 but
-  still stores 40 everywhere (the change did not reach the file), so
-  how the values follow a speed change is untested.
+- **Where:** the parameter block `B flag, BD p1, BD p2, BL n1, n1 × BD`
+  after the header of curves, spirals and groups.
+- **Found** (owner's S219–S222, criteria-based design on, design speed
+  40 mi/h): every curve stores `p1 = 40` (design speed), `p2 = 533` (the
+  criteria's minimum radius) and `p3 = 83` (a third criteria value). The
+  values follow the criteria, not the curve (an R 50, an R 533 and an
+  R 179 curve all store 40, 533, 83). Without criteria all three are −1,
+  which Civil 3D accepts, so civil3drust writes −1 (test
+  `curve_criteria_values_s219_s222`). `n1` is 1, except 2 on S117's
+  centre-and-radius circle (FC2, p1 0.0).
+- **Parked (owner):** design criteria are not a priority. Still open:
+  what 83 is (minimum transition length or superelevation runoff at
+  40 mi/h are candidates) and how the values follow a speed change (S220
+  meant to change the speed to 30 but still stores 40).
 
-- **Where:** `BD p2` and the `n1` BDs of the parameter block
-  (`B flag, BD p1, BD p2, BL n1, n1 × BD, BL code`). p1 is the design
-  speed at the curve (−1 until solved).
-- **Seen:** always −1; `n1` is 1, except 2 for S117's centre-and-radius
-  circle (FC2), whose p1 is also 0.0 instead of −1.
-- **Hypothesis:** criteria values (minimum radius, superelevation …) left
-  unset; a criteria-based alignment with curves would show them.
-- **Plan (2026-11-03), all from S24 `Alignment - (1)` (free curve R 50):**
-  C1 criteria-based design on (default criteria file, design speed 40 at
-  station 0), saved; C2 C1 with the design speed changed to 30, saved;
-  C3 C1 with a second free curve added at PI (200, 50) using the radius
-  the criteria suggest, saved; C4 C1 with the curve's radius changed to
-  one that passes the minimum-radius check, saved. Compare p1, p2 and
-  the n1 values of every curve; the criteria strings and check set are
-  known from S79–S81.
+## MIST10 — the `256` after a spiral's IDs — **SOLVED (S232, S234): spiral type**
 
-## MIST10 — the `256` in the line-spiral group — **SOLVED (S232): spiral type**
+- **Where:** the BL after the IDs in every spiral record (fixed spirals,
+  free spirals, line-spiral groups, spiral groups) and `"SpiralType"` in
+  the JSON layout (S177, S178).
+- **Codes** (S232: one outward spiral R 200 → ∞, L 200 per type, laid
+  out by the owner): 256 Clothoid, 257 Sine Half-Wave Diminishing
+  Tangent, 258 Cubic (JP), 259 Bloss, 260 Cubic Parabola, 261 Sinusoidal
+  Curves, 262 Bi-Quadratic; 264 NSW Cubic Parabola (S234: S232 with
+  three spirals set to 264 opens clean and lists the type, but Civil 3D
+  2024 draws no curve). 263 crashes Civil 3D on open (S233). Nothing else
+  in the record changes with the type. Shapes:
+  `docs/alignment-object.md`, "Spiral types (S232)"; NSW: `FUTURE.md`,
+  FRT-1.
+- **Settings vs existing spirals:** S232's "NSW Cubic Parabola"
+  alignment, copied from the Bi-Quadratic one with the type changed in
+  the settings afterwards, still stores 262 and draws the Bi-Quadratic
+  shape.
+- **Only clothoids sampled** in groups, free spirals and JSON groups.
 
-- **Where:** S119 element 7, the BL after the IDs (before the start
-  point); also in every fixed spiral record (S121, S162) at the same
-  place, whatever the spiral type, and in the free spirals of S165
-  (kind 8).; and in the spiral groups of S173 (codes 0, 2, 6, 161).
-- **Hypothesis:** spiral definition or type flags (clothoid, by length vs
-  A). S121 (spiral methods) should vary it.
+## MIST11 — S89's curve speed-interval distance — **open**
 
-- **S177, S178:** the JSON layout string Civil 3D writes for some spiral
-  groups calls it `"SpiralType": 256`
-  for the same groups. What other spiral types (cubic, sinusoidal …)
-  store is still to be sampled.
-- **Plan (2026-11-03, with MIST16):** one drawing from S162 with one new
-  alignment per spiral type in Layout Tools → Curve and Spiral Settings
-  (Clothoid, Sine Half-Wave, Japanese Cubic, Bloss, Cubic Parabola,
-  Sinusoidal, Biquadratic …), each named after its type: a line
-  (x0, 0) → (x0 + 100, 0) and a fixed inward spiral L 200 to R 200,
-  like `SPIRAL A`. Compare the 256 and the three trailing BDs per type.
-  Template sent to the owner: S227 (one 100' tangent per type, named).
-- **S232 (owner, from S228):** one outward spiral (R 200 → ∞, L 200)
-  per type. The BL is the type: 256 Clothoid, 257 Sine Half-Wave
-  Diminishing Tangent, 258 Cubic (JP), 259 Bloss, 260 Cubic Parabola,
-  261 Sinusoidal Curves, 262 Bi-Quadratic. Nothing else in the record
-  changes with the type (kind, lengths, radii, the three tail BDs 0, 0,
-  1 — MIST16 unchanged). Each type's shape matches its proxy graphics
-  (see `docs/alignment-object.md`, "Spiral types"). The "NSW Cubic
-  Parabola" alignment was copied from the Bi-Quadratic one and its type
-  changed in the settings afterwards: it still stores 262 and draws the
-  Bi-Quadratic shape, so the settings change did not touch the existing
-  spiral, and NSW's code is still to be sampled (a spiral created with
-  that type).
-- **Owner (2026-11-04):** NSW Cubic Parabola is likely 264; Civil 3D
-  2024 does not let him create it, and the public API's `SpiralType`
-  has no NSW member (Autodesk forum). 263 is between Bi-Quadratic and
-  264 and unseen. S233 (generated): five spirals of S232 set to 263 or
-  264, nothing else changed — what Civil 3D draws, lists and repairs is
-  the test.
-- **S233 crashed Civil 3D on open** (access violation reading 0x0008,
-  owner). Owner: drop 263. S234: S232 with the same three spirals set to
-  264 and nothing else changed (FC5, FC2 back to their own codes).
-- **S234 (owner):** opens clean; the properties panel shows NSW Cubic
-  Parabola for the three spirals, but Civil 3D 2024 draws no curve for
-  them (possibly a 2024 bug). So **264 = NSW Cubic Parabola**, and 263
-  is what crashed S233. Shape left for later: FUTURE.md, FRT-1.
-
-## MIST11 — S89's curve speed-interval distance
-
-- **Where:** S89's interval on a curve, third distance.
+- **Where:** S89's design-speed interval on a curve, third distance.
 - **Seen:** 84.63 stored where "length to the element's end" (35.72) is
   expected; every other interval, on lines and curves (S113–S115), fits
   the rule.
 
-## MIST12 — companion topology flags
+## MIST12 — companion topology flags — **open (uniform form accepted)**
 
 - **Where:** companion `AECC_FEATURE_STYLE` edges: vertex flags
   (2, 10, 50, 178 seen) and the a/b face IDs; the face-like tail entry.
-- **Seen:** civil3drust writes the uniform form (flags 10, a = b = 0,
-  D-040) and Civil 3D accepts it (S111). Site containers (S104–S112) are
-  not written.
-- **Edge flags and creation (S161):** the alignment made from a polyline
+- **civil3drust** writes the uniform form (flags 10, a = b = 0, D-040)
+  and Civil 3D accepts it (S111). Site containers (S104–S112) are not
+  written.
+- **Edge flags and creation (S161):** an alignment made from a polyline
   (8C49) has edge flags `0x030` and first vertex (flags, a, b) = (2, 1,
-  1); the one made with the layout tools (8C55) has `0x810` and (10, 0,
-  0), and a companion 76 data bits shorter with 2 handle references fewer.
-  Across all samples (300 decoded companions) the values seen are `0x010`,
-  `0x030`, `0x810` and `0x830`. The `0x20` bit with (2 or 50, 1, 1)
-  follows "geometry taken from an object": S25 FB8 and S161 8C49 have it
-  when created, a plain re-save keeps it (S26 `0x030` → S28 `0x830`), and
-  a layout-tool edit clears it (S5 `0x030` → S11 `0x810`, a curve added).
-  `0x800` has no simple rule yet (S11 `0x810` → S12 `0x010`).
+  1); one made with the layout tools (8C55) has `0x810` and (10, 0, 0),
+  and a companion 76 data bits shorter with 2 handle references fewer.
+  Values seen in 300 decoded companions: `0x010`, `0x030`, `0x810`,
+  `0x830`. The `0x20` bit with (2 or 50, 1, 1) follows "geometry taken
+  from an object" (S25 FB8, S161 8C49; kept by a plain re-save, S26 →
+  S28; cleared by a layout-tool edit, S5 → S11). `0x800` has no simple
+  rule yet (S11 `0x810` → S12 `0x010`).
 
-## MIST13 — Civil 3D's extra block for a zero GUID
+## MIST13 — Civil 3D's extra block for a zero GUID — **open (lead)**
 
 - **Where:** after the cache in S57's X5 alignment.
 - **Seen:** a record with a zero speed-interval GUID made Civil 3D add a
-  617-bit block and 2 strings that no other record has.
-- **Also seen:** Civil 3D 2027 itself writes a zero GUID: S123 and S124
-  each have one speed (0:60, 0:100) with no interval block and an all-zero
-  GUID in the table entry. civil3drust gives such entries a fresh GUID
-  when it rewrites the speeds (D-045).
-- **Lead (S161):** Civil 3D 2024 does the same for an alignment made with
-  the layout tools (8C56: no interval, zero GUID), while one made from a
-  polyline (8C49) has its speed with an interval and a random GUID. The
-  difference is exactly 617 bits and 2 strings — the size of MIST13's
-  block. So the block is probably a speed interval (with its two
-  strings) that Civil 3D added for the zero-GUID entry. To confirm by
-  comparing S57 X5's block with S161 8C49's interval.
+  617-bit block and 2 strings that no other record has. Civil 3D 2027
+  itself writes zero GUIDs (S123, S124: one speed, no interval block);
+  civil3drust gives such entries a fresh GUID when it rewrites speeds
+  (D-045).
+- **Lead (S161):** Civil 3D 2024 also writes no interval and a zero GUID
+  for an alignment made with the layout tools (8C56), while one made from
+  a polyline (8C49) has an interval and a random GUID; the difference is
+  exactly 617 bits and 2 strings. So the block is probably the speed
+  interval Civil 3D adds for the zero-GUID entry. To confirm by comparing
+  S57 X5's block with S161 8C49's interval.
 
-## MIST14 — the half-circle rule
+## MIST14 — the half-circle rule — **one sample**
 
 - **Seen:** an open curve defined by its centre, with nothing before it,
   is drawn as exactly 180° ending where the next line leaves it (S118);
-  its start is not stored. One sample only.
-- **Test:** a second such curve drawn with a different sweep.
+  its start is not stored.
+- **Test:** a second such curve with a different sweep.
 
 ## MIST15 — the flag 16 bits before the section-2 end — **SOLVED (S163)**
 
-- **Answer:** Alignment Properties → Constraint Editing → "Always perform
-  implied tangency constraint swapping" (1 = on). The neighbouring bit 15
-  is "Lock all parameter constraints" (S164). Both are read by
-  `aecc_criteria::constraint_editing`; moved to `alignment-object.md`
-  ("Design criteria"). Bit 13 before the end is still unexplained.
+Alignment Properties → Constraint Editing → "Always perform implied
+tangency constraint swapping" (1 = on; S163 turned it on, nothing else
+changed). The bit before it (15 before the end) is "Lock all parameter
+constraints" (S164). Both are read by `aecc_criteria::constraint_editing`
+(`alignment-object.md`, "Design criteria"). The neighbouring design
+criteria flags are 19 criteria-based design, 18 criteria file, 17 check
+set, 14 check for tangency. Bit 13 before the end is still unexplained.
 
-- **Where:** section 2, the bit 16 before its end, between the
-  design-criteria flags (19 criteria-based design, 18 criteria file,
-  17 check set, 14 check for tangency; `aecc_criteria`).
-- **Seen:** 1 in the S5–S23 drawings, S10, S89 and the Civil 3D 2027
-  drawings S123/S124; 0 in every S24-based drawing (247 records). Exactly
-  the drawings whose implied PI display (MIST6) is 1, so it is probably
-  another per-alignment option taken from the drawing's defaults.
-- **Test:** compare the Alignment Properties tabs (Design Criteria, Point
-  of Intersection, Constraint Editing) of S11's and S24's alignments for a
-  setting that differs; then change it on one alignment and save.
-- **civil3drust today:** copies the template's value.
-- **Hypothesis (S11 vs S24 Alignment Properties, owner's screenshots):**
-  the only new difference is Constraint Editing → "Always perform implied
-  tangency constraint swapping": on in S11 `Alignment - (2)` (flag 1),
-  off in S24 `Alignment - (1)` (flag 0). "Lock all parameter constraints"
-  is on in both, as are the bits 15 and 13 before the section-2 end —
-  one of them is probably that option. Test: S24 with the swapping option
-  turned on (and a copy with "Lock all parameter constraints" off).
-- **Confirmed (S163):** turning "Always perform implied tangency
-  constraint swapping" on sets the flag (0 → 1); nothing else in that
-  region changes.
-- **"Lock all parameter constraints" is bit 15 (S164):** turning it off
-  clears the bit 15 before the section-2 end (1 in S24 and S163) and
-  removes the flag byte from every element header (MIST7). (An earlier
-  note said S164 left bits 13–22 alone; that comparison was made before
-  civil3drust could read S164's elements and was wrong.) Bit 13 remains
-  unexplained.
+## MIST16 — the three BDs after a spiral's geometry — **open**
 
-## MIST16 — the three BDs after a spiral's geometry
+- **Where:** the end of every fixed spiral record, after the lengths and
+  radii: `BD 0, BD 0, BD 1`. Spirals Civil 3D places from the element
+  before (codes 6 and 8, S225) have two: `BD 0, BD 1`.
+- **Seen:** identical in every fixed spiral sampled (inward, outward,
+  compound, through-point, S162) and for every spiral type (S232).
 
-- **Where:** the end of every fixed spiral record (kind 6), after the
-  lengths and radii: `BD 0, BD 0, BD 1` (a fourth `BD 0` first counted
-  here belongs to the block after the records, S173).
-- **Seen:** identical in all six spirals of S162 (inward, outward,
-  compound, through-point).
-- **Hypothesis:** a 2D vector pair or spiral-definition parameters at
-  their defaults (spiral type other than clothoid, e.g. the cubic or
-  sinusoidal spirals Civil 3D offers, might change them).
-- **Not the spiral type (S232):** all seven types store `0, 0, 1`.
+## MIST17 — the 128 bits after a `0x0D` element header — **SOLVED (S177–S182, S206)**
 
-## MIST17 — the 128 bits after a `0x0D020008` element header (solved)
-
-- **Where:** the first spiral of a group Civil 3D stores as separate
-  elements (S177 FCE, FD1, FD4): header `0x0D020008`, flag bit, then 128
-  bits, then the usual spiral record.
-- **Seen:** FCE `48b8c75c6ea0e480 413540b99f969780`, FD1 `f46e1fbc70a0e481
-  c1d9c831a7969780`, FD4 `d9582ecdf07f1e80 0000000000000000` (not doubles;
-  FCE and FD1 share their last bytes).
-- **Hypothesis:** an identifier tying the elements to the JSON group (ID
-  3), or the group's anchor. S178 (made without copy and paste) has the
-  same header and 128 bits.
-- **Owner's hypothesis:** the element type is what marks the record: the
-  long spiral assemblies come with their own type (the `0x0D` header), and
-  that type is what gives the alignment its JSON string slot (S183:
-  removing the slot breaks the alignment).
-- **Confirmed (S189, S190):** the same six alignments written without a
-  JSON string: with the `0x0D` member spirals Civil 3D discards them all
-  (eWrongObjectType, S189); with the members written as ordinary `0x04`
-  spirals (no 128 bits) they open cleanly and re-save unchanged (S190 →
-  S196). A member header requires the JSON string.
-- **Solved:** the 128 bits start one bit earlier than first read (at the
-  "flag"): two RDs, the group's start point, equal to the member spiral's
-  start in all 15 cases (S177, S178, S180–S182); the parameter flag
-  follows them. Still open: the converse (a JSON string with no member
-  spiral).
+- **Answer:** two RDs, the group's start point, stored before the
+  parameter flag of the first spiral of a group Civil 3D keeps as
+  separate elements with a JSON layout (header type byte `0D` locked,
+  `09` unlocked, MIST7). Equal to the member spiral's start in all 15
+  cases (S177, S178, S180–S182). `SpiralRecord::member`.
+- **Member vs JSON:** a member spiral without the JSON flag is accepted
+  (S206); the earlier rejections (S185, S189, S197–S200) came from the
+  bad `08 00 0D` header, not from a missing JSON. A JSON group without
+  any pieces is accepted too: Civil 3D solves the pieces from it (S216 →
+  S217).
 
 ## Not sampled yet (not mysteries, just gaps)
 
@@ -701,7 +365,6 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   meet at a PI"), and the alignment type / implied PI display are found
   in only 1 of 10 — the block after the design-speed table has another
   layout there. Needs purpose-made samples to reproduce.
-
 - Offset and other alignment types (S1-style imports have no element
   records and a 22-bit gap after the elements instead of 161 bits).
 - Widening: offset alignments with widening regions (start and end
@@ -711,11 +374,13 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   removed, each step saved separately.
 - Station equations (data seen in S9, not decoded).
 - Alignment groups (owner): Civil 3D's own grouping of alignments in the
-  Toolspace (Prospector), both for siteless alignments and separately
-  inside each site. Where a group is stored (its own record, the
-  registry or the site's collection) and how an alignment points to it.
-  Sample plan, each step saved separately from S24:
-  1. two siteless alignments; 2. a group created with both;
-  3. a second group, one alignment moved to it; 4. one alignment taken
-  out of all groups; 5. a site with two alignments and its own group
-  (compare with step 2, and with the sites decoded in S101–S112).
+  Toolspace (Prospector), for siteless alignments and inside each site.
+  Sample plan, each step saved separately from S24: 1. two siteless
+  alignments; 2. a group created with both; 3. a second group, one
+  alignment moved to it; 4. one alignment taken out of all groups; 5. a
+  site with two alignments and its own group.
+- Site members: deleting them and writing sites (postponed to the site
+  work).
+- Non-clothoid spirals in groups, free spirals and JSON groups; a second
+  length/radius pair and inward spirals for the spiral types
+  (`alignment-object.md`, "Spiral types").

@@ -6,6 +6,19 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- Documentation revised against the current state: readings that later
+  samples corrected are replaced or marked **Later:** in
+  `docs/alignment-object.md` (the "identity GUID" and "station cache" are
+  the design-speed interval, the "volatile field" is MIST1/MIST2, S189's
+  "member needs the JSON" was the bad header, …); `docs/mysteries.md`
+  rewritten with a status table and without settled hypotheses and plans
+  (MIST17 corrected); `docs/alignment-map.md` updated (section 2, interval
+  block, string rule, what a new alignment needs); README status, module
+  list and capabilities; `element-methods.md`, `class-catalog.md`,
+  `civil3d-rejects.md` (pre-write checks for group members and spiral
+  codes), `civil3d-rebuilds.md`, `acadrust-0.6.7.md` brought up to date.
+
 ### Added
 - `FUTURE.md`, a record of deferred work; FRT-1: NSW Cubic Parabola
   spirals. `SpiralType::NswCubicParabola` names code 264 (S234: Civil 3D

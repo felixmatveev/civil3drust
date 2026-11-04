@@ -3,8 +3,9 @@
 Cleanroom implementation of Civil 3D (AECC) DWG objects in Rust, built on
 [acadrust](https://github.com/hakanaktt/acadrust).
 
-> **Status:** horizontal alignments — read, edit and create in existing
-> Civil 3D drawings; spirals being decoded. Not affiliated with or endorsed
+> **Status:** horizontal alignments — read, edit, create and delete in
+> existing Civil 3D drawings, every line, curve and spiral layout
+> included. Not affiliated with or endorsed
 > by Autodesk. "Civil 3D" and "AutoCAD" are trademarks of Autodesk, Inc.,
 > used here only to describe file compatibility.
 
@@ -21,7 +22,7 @@ drawings.** LandXML export is low priority for now.
 
 Every result below was checked by opening civil3drust's output in Civil
 3D 2024 (AUDIT, re-save, comparison with Civil 3D's own records). The
-sample drawings (S1–S120) and the evidence for each finding are in
+sample drawings (`samples/README.md`) and the evidence for each finding are in
 [`docs/alignment-object.md`](docs/alignment-object.md); the record map is
 [`docs/alignment-map.md`](docs/alignment-map.md).
 
@@ -31,11 +32,15 @@ sample drawings (S1–S120) and the evidence for each finding are in
 |---|---|---|
 | Lines: fixed, floating (end point, length), free (between curves) | ✓ | fixed lines |
 | Curves: every Civil 3D curve method (three point, centre, floating, free fillet by radius or through point), whole circles | ✓ | free curves (fillets) |
-| Spirals: fixed, free, and every spiral group (SCS, curve or line with spiral, reverse curves, spiral-spiral, spiral-line-spiral, SCSCS, SCSSCS) | ✓ | — |
+| Spirals: fixed, free, and every spiral group (SCS, curve or line with spiral, reverse curves, spiral-spiral, spiral-line-spiral, SCSCS, SCSSCS) | ✓ | ✓ (element records re-encoded, S188) |
+| Spiral types: Clothoid, Bloss, Sinusoidal, Bi-Quadratic, Sine Half-Wave, Cubic (JP), Cubic Parabola | ✓ (shapes match Civil 3D, S232) | kept as read |
+| NSW Cubic Parabola spirals | type only (code 264; shape not known, FUTURE.md FRT-1) | kept as read |
+| Long spiral groups held by the JSON layout (SSCSS, SSCS, SCSS between two fixed elements) | ✓ solved from their typed parameters (D-061) | ✓ as JSON (Civil 3D solves the pieces) |
 | Create an alignment (PIs + fillet radii, or empty) | | ✓ — style, label set, site-less, type, registry and companion |
 | Remove elements, add a free curve, change a length / radius / PIs | | ✓ |
+| Delete an alignment | | ✓ siteless alignments (D-062) |
 | Name, description, style, display components | ✓ | ✓ |
-| Start station, design speeds (incl. on curves), design criteria flags | ✓ | ✓ |
+| Start station, design speeds (incl. on curves), design criteria flags, parameter locks | ✓ | ✓ |
 | Alignment type (centerline, miscellaneous) | ✓ | ✓ |
 | Implied PI display option | ✓ | ✓ (`set_pi_display`) |
 | Sites and parcels | ✓ membership | read-only for now (D-038) |
@@ -46,14 +51,14 @@ sample drawings (S1–S120) and the evidence for each finding are in
 
 ### Still unexplained
 
-The open fields and behaviours are tracked as **MIST1 … MIST15** in
-[`docs/mysteries.md`](docs/mysteries.md): section-2 caches (MIST1–MIST5;
-MIST1, a geometry cache, is partially solved and zeroed),
-element header, flag and
-parameter fields (MIST7–MIST10), one speed-interval distance (MIST11),
-topology flags (MIST12), a zero-GUID block (MIST13) and the half-circle
-rule (MIST14). MIST6 (implied PI display) and MIST15 (tangency
-constraint swapping) are solved. None of them stops Civil 3D from opening our files.
+The open fields and behaviours are tracked as **MIST1 …** in
+[`docs/mysteries.md`](docs/mysteries.md), with their status; deferred
+work is in [`FUTURE.md`](FUTURE.md). None of the open ones stops Civil 3D
+from opening our files. The largest: MIST1, a geometry check civil3drust
+writes as zero (Civil 3D re-solves JSON spiral groups once and warns).
+What Civil 3D rejects or repairs is collected in
+[`docs/civil3d-rejects.md`](docs/civil3d-rejects.md) and
+[`docs/civil3d-rebuilds.md`](docs/civil3d-rebuilds.md).
 
 ### Milestones reached
 
@@ -64,8 +69,12 @@ constraint swapping) are solved. None of them stops Civil 3D from opening our fi
   criteria flags, styles and types — each accepted by Civil 3D.
 - Element add/remove matching Civil 3D's own edits (S94–S100), companion
   topology rebuilt and accepted (S111).
-- All 14 curve layout methods decoded (S117, S118); first spiral group
-  (S119).
+- All 14 curve layout methods decoded (S117, S118); every spiral layout
+  decoded and re-encoded bit for bit, generated spirals of every kind
+  accepted (S188).
+- Long spiral groups written as typed parameters only, solved by Civil 3D
+  (S216, S217); alignment deletion accepted (S231); spiral types decoded
+  (S232).
 
 civil3drust uses acadrust 0.6.7, which reads every `AEC*` class (Civil 3D's
 included) into its Architecture types; `raw::open` turns those back into
@@ -78,9 +87,10 @@ raw records so they are saved byte for byte (D-033,
 |---|---|
 | `raw`, `handle_refs`, `string_stream` | Raw AECC records (opened with `raw::open`), bit helpers, handle and string streams. |
 | `aecc_entity` | Common entity data (layer colour, linetype, …) at the start of the record. |
-| `aecc_alignment`, `aecc_elements` | Element records (lines, curves, spiral groups) decoded and resolved into geometry with stationing. |
-| `aecc_build`, `aecc_create` | Writing element lists and graphics; creating alignments from a template alignment. |
-| `aecc_element_edit`, `aecc_arc_edit`, `aecc_alignment_edit` | Adding and removing elements, radius and length edits. |
+| `aecc_alignment`, `aecc_elements`, `spiral_type` | Element records (lines, curves, spirals, groups) decoded and resolved into geometry with stationing; spiral-type shapes. |
+| `aecc_layout`, `aecc_layout_solve` | The JSON layout string of long spiral groups; solving a group from its typed parameters. |
+| `aecc_encode`, `aecc_build`, `aecc_create` | Encoding element records, writing element lists and graphics; creating alignments from a template alignment. |
+| `aecc_element_edit`, `aecc_arc_edit`, `aecc_alignment_edit`, `aecc_delete` | Adding and removing elements, radius and length edits; deleting alignments. |
 | `aecc_station`, `aecc_design_speed`, `aecc_criteria` | Start station, design speeds, design criteria. |
 | `aecc_style`, `aecc_alignment_refs` | Style references and display components; name, description, layer. |
 | `aecc_registry`, `aecc_topology`, `aecc_site` | Companion registry, topology graph, sites (read-only). |
