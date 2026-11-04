@@ -412,6 +412,15 @@ writes 0 for new curves and keeps the stored value on rewritten ones
   is drawn as exactly 180° ending where the next line leaves it (S118);
   its start is not stored.
 - **Test:** a second such curve with a different sweep.
+- **Question (2026-11-04):** is the 180° a rule, or did S118's start
+  happen to lie 180° away (e.g. the radius pick point, which is not
+  stored)? **Plan (owner, from S24):** two alignments, each starting with
+  Fixed Curve (center and radius), center (1000, 0), radius 100,
+  clockwise, followed by Floating Line (from curve, through point) to
+  (1000, 300): `C east` with the radius picked at (1100, 0), `C north`
+  with it picked at (1000, 100). If both are drawn as half circles the
+  rule holds; if their starts follow the pick point, the start comes
+  from somewhere we have not read.
 
 ## MIST15 — the flag 16 bits before the section-2 end — **SOLVED (S163)**
 
