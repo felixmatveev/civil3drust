@@ -2966,6 +2966,48 @@ S230: S228 with `Alignment - (1)` deleted this way. Owner: S230 opens with no is
 its re-save S231 reads back to the same seven alignments, the companion
 still empty (D-049 acceptance).
 
+## Spiral types (S232)
+
+The owner filled S228 (one named 100' tangent per type) with an outward
+spiral after each tangent (R 200 at the tangent end → ∞, L 200,
+clockwise), each laid out with a different type in Curve and Spiral
+Settings (S232). The BL after a spiral record's IDs (MIST10) is the type;
+the records differ in nothing else.
+
+| code | type (Civil 3D's list) | shape fitted to the proxy graphics |
+|------|------|-----------|
+| 256 | Clothoid | curvature k(s) = k0 + (k1 − k0)·t, t = s/L |
+| 257 | Sine Half-Wave Diminishing Tangent | y'' = (1 − cos(πx/X))/2R, X = L − c·L³/R², c = (1/3 − 3/2π²)/8 |
+| 258 | Cubic (JP) | y = x³/6RX, X + X³/40R² = L |
+| 259 | Bloss | k(s) = k0 + (k1 − k0)(3t² − 2t³) |
+| 260 | Cubic Parabola | y = x³/6RL, arc length to X equal to L |
+| 261 | Sinusoidal Curves | k(s) = k0 + (k1 − k0)(t − sin(2πt)/2π) |
+| 262 | Bi-Quadratic | k(s) = k0 + (k1 − k0)·2t² (t ≤ ½), 1 − 2(1 − t)² |
+
+x and y are measured from the straight end along and across the tangent
+(X the spiral's extent along it); an outward spiral is the same curve
+walked from its curved end. The shapes are the textbook definitions of
+these curves; the X rules for 257 and 258 were found by fitting the
+spiral's end (S232) and come from one L/R pair only — the end matches
+within 3e-5, every graphics vertex lies on the curve (the test's
+sampling, 0.005). For 257 and 258 the true arc length is not L (199.57,
+199.86 here); civil3drust takes stations along them proportional to the
+true arc length, which only the ends confirm.
+
+The copied "NSW Cubic Parabola" alignment kept 262 and the Bi-Quadratic
+shape (MIST10): changing the type in the settings does not change an
+existing spiral.
+
+**civil3drust.** `spiral_type::SpiralType` (codes, names);
+`SpiralGeometry::spiral_type`, set from the record, picks the shape in
+`point_at` (`spiral_type::local_point`). Placements civil3drust computes
+itself — spiral groups, free spirals, JSON groups, line-spiral groups —
+stay clothoids (their records also carry the code, but no other type has
+been sampled there); unknown codes are drawn as clothoids. Compound
+spirals (two finite radii) of the arc-length types use the same rise;
+the tangent-defined types have no compound form and fall back to the
+clothoid. Test `spiral_types`.
+
 ## MIST2: re-save field (partially solved, S151–S157)
 
 `BL 0x0D00D773, BL n` (44 bits) right after MIST1, or 98 bits after it in

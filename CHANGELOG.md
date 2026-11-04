@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Spiral types (S232, MIST10 solved): `spiral_type::SpiralType` names
+  the code after a spiral record's IDs (256 Clothoid … 262 Bi-Quadratic),
+  and `SpiralGeometry::spiral_type` draws fixed spirals in their own
+  shape (Bloss, Sinusoidal, Bi-Quadratic, Sine Half-Wave, Cubic (JP),
+  Cubic Parabola), matching Civil 3D's graphics. Sample S232, test
+  `spiral_types`.
 - Sample S231: Civil 3D accepts civil3drust's deletion (S230 re-saved).
 - `aecc_delete::delete_alignment` (and `empty_companion`): deletes a
   siteless alignment as Civil 3D does (S229) — alignment and label groups

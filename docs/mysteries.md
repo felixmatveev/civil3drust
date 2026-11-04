@@ -525,7 +525,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   the n1 values of every curve; the criteria strings and check set are
   known from S79–S81.
 
-## MIST10 — the `256` in the line-spiral group — **NAMED (S177)**
+## MIST10 — the `256` in the line-spiral group — **SOLVED (S232): spiral type**
 
 - **Where:** S119 element 7, the BL after the IDs (before the start
   point); also in every fixed spiral record (S121, S162) at the same
@@ -545,6 +545,18 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   (x0, 0) → (x0 + 100, 0) and a fixed inward spiral L 200 to R 200,
   like `SPIRAL A`. Compare the 256 and the three trailing BDs per type.
   Template sent to the owner: S227 (one 100' tangent per type, named).
+- **S232 (owner, from S228):** one outward spiral (R 200 → ∞, L 200)
+  per type. The BL is the type: 256 Clothoid, 257 Sine Half-Wave
+  Diminishing Tangent, 258 Cubic (JP), 259 Bloss, 260 Cubic Parabola,
+  261 Sinusoidal Curves, 262 Bi-Quadratic. Nothing else in the record
+  changes with the type (kind, lengths, radii, the three tail BDs 0, 0,
+  1 — MIST16 unchanged). Each type's shape matches its proxy graphics
+  (see `docs/alignment-object.md`, "Spiral types"). The "NSW Cubic
+  Parabola" alignment was copied from the Bi-Quadratic one and its type
+  changed in the settings afterwards: it still stores 262 and draws the
+  Bi-Quadratic shape, so the settings change did not touch the existing
+  spiral, and NSW's code is still to be sampled (a spiral created with
+  that type).
 
 ## MIST11 — S89's curve speed-interval distance
 

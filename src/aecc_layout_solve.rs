@@ -13,6 +13,7 @@
 
 use crate::aecc_elements::{ArcGeometry, Segment, SpiralGeometry};
 use crate::alignment::Point2;
+use crate::spiral_type::SpiralType;
 
 /// A fixed element's carrier, travelled in the alignment's direction.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -245,6 +246,7 @@ fn place(pc: &Piece, p: Point2, heading: f64) -> Segment {
         radius: radius(pc.k1),
         start_radius: radius(pc.k0),
         counter_clockwise: k > 0.0,
+        spiral_type: SpiralType::Clothoid,
     };
     let (end, _) = geometry.point_at(pc.length);
     Segment::Spiral {

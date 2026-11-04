@@ -1223,3 +1223,22 @@ it back.
 **Alternatives.** Removing the companion and its registry entry too:
 cleaner, but not what Civil 3D writes and not tested.
 
+## D-063: Spiral types are drawn by their own shape where the record says so
+
+**Context.** The code after a spiral record's IDs is the spiral type
+(S232). Six non-clothoid types draw up to 9 ft away from a clothoid of
+the same length and radii. Two of the shapes (Sine Half-Wave, Cubic
+(JP)) needed a fitted rule for their extent along the tangent, from one
+sample.
+
+**Decision.** Fixed spiral records carry their type into
+`SpiralGeometry` and are drawn in that shape. The record's code is kept
+as read and written back unchanged. Geometry civil3drust places itself
+(groups, free spirals, JSON groups) stays clothoid until a non-clothoid
+group is sampled; unknown codes and compound tangent-defined spirals
+fall back to the clothoid. Stations along the two types whose true arc
+length is not L are taken proportional to the arc length.
+
+**Alternatives.** Keeping every spiral a clothoid (wrong spiral points
+and ends wherever the type is not a clothoid); refusing unknown types
+(drawings with them would stop decoding).

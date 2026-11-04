@@ -36,6 +36,7 @@
 use crate::aecc_alignment::{self, DecodeError, Linked, TangentRecord};
 use crate::alignment::Point2;
 use crate::raw::{self, RawRecord};
+use crate::spiral_type::{self, SpiralType};
 
 /// Parameters stored before an arc's IDs, meaning not yet known.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -624,6 +625,7 @@ impl SpiralRecord {
             radius: self.end_radius,
             start_radius: self.start_radius,
             counter_clockwise: !self.clockwise,
+            spiral_type: SpiralType::from_code(self.mode).unwrap_or(SpiralType::Clothoid),
         }
     }
 }
@@ -838,6 +840,7 @@ pub fn free_spiral_between(
         radius: if incurve { r } else { inf },
         start_radius: if incurve { inf } else { r },
         counter_clockwise: delta > 0.0,
+        spiral_type: SpiralType::Clothoid,
     };
     let (e, _) = g.point_at(l);
     let w = (q.x - p.x - e.x, q.y - p.y - e.y);
@@ -1143,6 +1146,7 @@ fn inward(start: Point2, dir: (f64, f64), l: f64, r: f64, ccw: bool) -> SpiralGe
         radius: r,
         start_radius: f64::INFINITY,
         counter_clockwise: ccw,
+        spiral_type: SpiralType::Clothoid,
     }
 }
 
@@ -1272,6 +1276,7 @@ fn place_group(
                 radius: f64::INFINITY,
                 start_radius: radius,
                 counter_clockwise: ccw,
+                spiral_type: SpiralType::Clothoid,
             };
             Some(vec![
                 spiral_segment(s1),
@@ -1387,6 +1392,7 @@ fn place_group(
                 radius: f64::INFINITY,
                 start_radius: g.radius,
                 counter_clockwise: g.counter_clockwise,
+                spiral_type: SpiralType::Clothoid,
             };
             let (st, d) = s.point_at(spiral);
             Some(vec![
@@ -1428,6 +1434,7 @@ fn reverse_chain(
         radius: f64::INFINITY,
         start_radius: c1.radius,
         counter_clockwise: c1.counter_clockwise,
+        spiral_type: SpiralType::Clothoid,
     };
     let (m, d1) = s1.point_at(l1);
     let s2 = SpiralGeometry {
@@ -1437,6 +1444,7 @@ fn reverse_chain(
         radius: r2,
         start_radius: f64::INFINITY,
         counter_clockwise: !c1.counter_clockwise,
+        spiral_type: SpiralType::Clothoid,
     };
     let (sc, d2) = s2.point_at(l2);
     let side = if s2.counter_clockwise { 1.0 } else { -1.0 };
@@ -1573,6 +1581,7 @@ fn spiral_spiral_chain(
         radius: f64::INFINITY,
         start_radius: c1.radius,
         counter_clockwise: c1.counter_clockwise,
+        spiral_type: SpiralType::Clothoid,
     };
     let (m, d1) = s1.point_at(l1);
     let s2 = SpiralGeometry {
@@ -1582,6 +1591,7 @@ fn spiral_spiral_chain(
         radius: r2,
         start_radius: f64::INFINITY,
         counter_clockwise: ccw2,
+        spiral_type: SpiralType::Clothoid,
     };
     let (sc, d2) = s2.point_at(l2);
     let side = if ccw2 { 1.0 } else { -1.0 };
@@ -1695,6 +1705,7 @@ fn sls_chain(
         radius: f64::INFINITY,
         start_radius: c1.radius,
         counter_clockwise: c1.counter_clockwise,
+        spiral_type: SpiralType::Clothoid,
     };
     let (m, d) = s1.point_at(l1);
     let n = Point2::new(m.x + t * d.0, m.y + t * d.1);
@@ -1705,6 +1716,7 @@ fn sls_chain(
         radius: c2.radius,
         start_radius: f64::INFINITY,
         counter_clockwise: c2.counter_clockwise,
+        spiral_type: SpiralType::Clothoid,
     };
     let (sc, d2) = s2.point_at(l2);
     let side = if c2.counter_clockwise { 1.0 } else { -1.0 };
@@ -1869,6 +1881,7 @@ fn lay_pieces(
                 radius: r(pc.k1),
                 start_radius: r(pc.k0),
                 counter_clockwise: ccw,
+                spiral_type: SpiralType::Clothoid,
             };
             let (end, nd) = g.point_at(pc.len);
             out.push(Segment::Spiral {
@@ -2290,8 +2303,8 @@ impl Segment {
     }
 }
 
-/// A clothoid starting tangent to a line: curvature grows linearly from
-/// 0 at `start` to 1/`radius` after `length`.
+/// A spiral from `start_radius` to `radius` over `length` (a clothoid
+/// unless `spiral_type` says otherwise).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SpiralGeometry {
     pub start: Point2,
@@ -2303,11 +2316,33 @@ pub struct SpiralGeometry {
     /// Radius at the start (`f64::INFINITY` when it starts from a line).
     pub start_radius: f64,
     pub counter_clockwise: bool,
+    /// The transition curve (the record's MIST10 code, S232); placements
+    /// computed by civil3drust (groups, free spirals) are clothoids.
+    pub spiral_type: SpiralType,
 }
 
 impl SpiralGeometry {
     /// Point and unit direction at distance `s` from the start.
     pub fn point_at(&self, s: f64) -> (Point2, (f64, f64)) {
+        if self.spiral_type != SpiralType::Clothoid {
+            let k = |r: f64| if r.is_finite() { 1.0 / r } else { 0.0 };
+            let (k0, k1) = (k(self.start_radius), k(self.radius));
+            if let Some((x, y, a)) =
+                spiral_type::local_point(self.spiral_type, self.length, k0, k1, s)
+            {
+                let side = if self.counter_clockwise { 1.0 } else { -1.0 };
+                let u = self.direction;
+                let n = (-u.1 * side, u.0 * side);
+                let (c, sn) = (a.cos(), a.sin());
+                return (
+                    Point2::new(
+                        self.start.x + x * u.0 + y * n.0,
+                        self.start.y + x * u.1 + y * n.1,
+                    ),
+                    (c * u.0 + sn * n.0, c * u.1 + sn * n.1),
+                );
+            }
+        }
         if self.start_radius.is_finite() || !self.radius.is_finite() {
             return self.point_at_general(s);
         }
@@ -2417,6 +2452,7 @@ pub fn line_spiral_into(
         radius: r,
         start_radius: f64::INFINITY,
         counter_clockwise: c.counter_clockwise,
+        spiral_type: SpiralType::Clothoid,
     };
     let (sc, _) = g.point_at(l);
     Some((ts, sc, g))
