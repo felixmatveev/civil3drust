@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- MIST9: curve parameters with criteria-based design on are the design
+  speed, the minimum radius and a third criteria value (S219–S222, test
+  `curve_criteria_values_s219_s222`).
 - `aecc_layout_solve`: solves the sampled reverse-spiral JSON groups
   (SSCSS, SSCS, SCSS) between two fixed lines or curves. `decode_elements`
   solves JSON groups without stored pieces (D-061): pieces as parts of a

@@ -803,3 +803,45 @@ fn edit_base_f9e(path: &str) -> raw::RawRecord {
         .find(|r| r.handle == 0xF9E)
         .unwrap()
 }
+
+/// MIST9: with criteria-based design on, every curve stores the design
+/// speed (p1 = 40), the criteria's minimum radius (p2 = 533, as the grid
+/// shows) and a third criteria value (83, not identified yet); without
+/// criteria all three are −1 (S219–S222).
+#[test]
+fn curve_criteria_values_s219_s222() {
+    let params = |p: &str| -> Vec<(f64, f64, f64, f64)> {
+        let r = edit_base_f9e(p);
+        decode_elements(&r)
+            .unwrap()
+            .elements
+            .iter()
+            .filter_map(|e| match &e.record {
+                Element::Arc(a) => Some((a.params.p1, a.params.p2, a.params.p3, {
+                    let ArcDef::Free { radius, .. } = a.def else {
+                        unreachable!()
+                    };
+                    radius
+                })),
+                _ => None,
+            })
+            .collect()
+    };
+    assert_eq!(
+        params("samples/S24_ZERO_CIVIL.dwg"),
+        [(-1.0, -1.0, -1.0, 50.0)]
+    );
+    for p in [
+        "samples/S219_S24_criteria_on.dwg",
+        "samples/S220_S219_speed_change_attempt.dwg",
+    ] {
+        assert_eq!(params(p), [(40.0, 533.0, 83.0, 50.0)], "{p}");
+    }
+    assert_eq!(
+        params("samples/S221_S219_criteria_curve_added.dwg"),
+        [(40.0, 533.0, 83.0, 50.0), (40.0, 533.0, 83.0, 533.0)]
+    );
+    let c4 = params("samples/S222_S221_radius_179.dwg");
+    assert_eq!((c4[1].0, c4[1].1, c4[1].2), (40.0, 533.0, 83.0));
+    assert!((c4[1].3 - 179.0367).abs() < 1e-3);
+}

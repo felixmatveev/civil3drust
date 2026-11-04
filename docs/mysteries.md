@@ -489,7 +489,23 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   R 30 curve at PI (200, 50), save; T3b T3's file closed, reopened and
   saved with no change.
 
-## MIST9 — the `−1` parameters of curve and group records
+## MIST9 — the `−1` parameters of curve and group records — **mostly solved (S219–S222)**
+
+- **Found (2026-11-03, owner's C1–C4 = S219–S222, criteria-based design
+  on, design speed 40 mi/h):** every curve stores `p1 = 40` (design
+  speed), `p2 = 533` (the criteria's minimum radius, the grid's "Minimum
+  Radius" column) and `p3 = 83` (a third criteria value, not yet
+  identified). The values follow the criteria, not the curve: the R 50
+  curve, the new R 533 curve (S221) and the same curve at R 179 (S222)
+  all store 40, 533, 83, whether they pass the check or not. Without
+  criteria all three are −1, which Civil 3D accepts (every earlier
+  sample), so civil3drust keeps writing −1 (test
+  `curve_criteria_values_s219_s222`).
+- **Still open:** what 83 is (minimum transition length or
+  superelevation runoff at 40 mi/h are candidates: compare with those
+  columns in the grid); S220 was meant to have design speed 30 but
+  still stores 40 everywhere (the change did not reach the file), so
+  how the values follow a speed change is untested.
 
 - **Where:** `BD p2` and the `n1` BDs of the parameter block
   (`B flag, BD p1, BD p2, BL n1, n1 × BD, BL code`). p1 is the design
