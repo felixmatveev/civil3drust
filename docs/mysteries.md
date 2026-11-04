@@ -234,7 +234,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
   only after a later edit in Alignment Properties or with the layout
   tools.
 
-## MIST5 — the 2-bit flag at S7 bit 2677
+## MIST5 — the 2-bit flag at S7 bit 2677 — **SOLVED (S154, S155): MIST2 marker**
 
 - **Where:** section 2 (S5–S8 numbering: bit 2677).
 - **Seen:** Civil 3D changed it when re-saving the generated S7 as S8.
@@ -666,6 +666,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 - **Hypothesis:** a 2D vector pair or spiral-definition parameters at
   their defaults (spiral type other than clothoid, e.g. the cubic or
   sinusoidal spirals Civil 3D offers, might change them).
+- **Not the spiral type (S232):** all seven types store `0, 0, 1`.
 
 ## MIST17 — the 128 bits after a `0x0D020008` element header (solved)
 
