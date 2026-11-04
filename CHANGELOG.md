@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- A group's own lock: `aecc_layout::Group::locked` and
+  `LayoutGroup::locked` (`ConstraintLocked` per object; the element
+  headers don't show it, S226). Sample S226.
 - `aecc_layout::layout` refuses a group at an end of the alignment
   (Civil 3D drops it, S224, and cannot create one).
 - Spiral records placed from the element before: kinds 6 (after a line)

@@ -2826,9 +2826,17 @@ parameter constraints" off changes, besides the element headers
 `ConstraintLocked` 2 → 0 on every object of the JSON. 
 `aecc_criteria::set_constraint_editing` now rewrites both; for S177 FCE
 its result has Civil 3D's S202 JSON byte for byte, and locking again
-gives S177's (test `group_member_header_unlocked_s177_s202`). Not
-sampled: an alignment with single elements locked and a JSON layout
-(whether `ConstraintLocked` is then per object).
+gives S177's (test `group_member_header_unlocked_s177_s202`).
+
+**The group's own lock (S226, owner).** A group can only be locked or
+unlocked as a whole. S226: S178 11D4 with "Lock all" off, then the group
+locked. The element headers are all unlocked (the member `02 09`, the
+others without `02`); only the JSON's group object says
+`ConstraintLocked` 2, the fixed elements 0. So `ConstraintLocked` is per
+object, and a group's lock lives only in the JSON. (Civil 3D also
+re-solved the group on that edit: pieces renumbered 4–8.) The reader
+reports it as `LayoutGroup::locked`; `aecc_layout::Group::locked` sets it
+when writing (test `group_lock_is_its_own`).
 
 ## Open questions
 

@@ -351,6 +351,10 @@ fn pt(p: crate::alignment::Point2) -> Json {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Group {
     pub method: &'static str,
+    /// The group's own parameter lock (`ConstraintLocked` 2 or 0): with
+    /// "Lock all" off, the group can still be locked as a whole (S226),
+    /// a lock the element records do not show.
+    pub locked: bool,
     pub previous: i32,
     pub next: i32,
     pub params: Vec<f64>,
@@ -369,7 +373,8 @@ pub fn group_parameters(method: &str) -> Option<&'static [&'static str]> {
 /// three-point curves, as records) and the groups between them. The
 /// groups take the IDs after the highest fixed ID, as Civil 3D numbers
 /// them; a fixed element's link to a group's neighbour is written as a
-/// link to the group. `locked`: the alignment's parameter lock.
+/// link to the group. `locked`: the fixed elements' parameter lock (each
+/// group has its own, [`Group::locked`]).
 pub fn layout(fixed: &[Element], groups: &[Group], locked: bool) -> Result<Json, LayoutError> {
     let top = fixed.iter().map(|e| e.id()).max().unwrap_or(0);
     let group_id = |g: usize| top + 1 + g as i32;
@@ -459,7 +464,7 @@ pub fn layout(fixed: &[Element], groups: &[Group], locked: bool) -> Result<Json,
                 ("Id", num(id)),
                 ("PreviousId", num(group.previous)),
                 ("NextId", num(group.next)),
-                ("ConstraintLocked", num(constraint_locked(locked))),
+                ("ConstraintLocked", num(constraint_locked(group.locked))),
                 ("ConstraintType", num(*ct)),
                 ("SpiralType", num(256)),
                 (
@@ -544,6 +549,7 @@ pub fn compose(els: &[Element], locked: bool) -> Result<Json, LayoutError> {
         pieces.extend(run.iter().map(|e| e.id()));
         groups.push(Group {
             method: method.0,
+            locked,
             previous: run[0].before(),
             next: run.last().unwrap().after(),
             params,

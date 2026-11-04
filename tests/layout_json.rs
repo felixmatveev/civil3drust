@@ -110,6 +110,7 @@ fn layout_from_typed_parameters_matches_civil3d_group() {
     let ours = layout(
         &fixed,
         &[Group {
+            locked: true,
             method: "SCSS",
             previous: 1,
             next: 2,
@@ -218,4 +219,55 @@ fn json_wins_over_stored_pieces_like_civil3d() {
         .unwrap();
         assert!((stored.length() - a.length()).abs() > 1.0, "{h:X}");
     }
+}
+
+#[test]
+fn group_lock_is_its_own() {
+    // S226 (owner): S178 11D4 with "Lock all" off, then the group locked.
+    // The headers are all unlocked (member `02 09`); only the JSON's
+    // group object keeps ConstraintLocked 2. The reader reports it, and
+    // `layout` writes the same lock values.
+    use civil3drust::aecc_alignment::Linked;
+    use civil3drust::aecc_elements::decode_elements;
+    use civil3drust::aecc_layout::{layout, Group};
+    let (h, j, els) = layouts("S226_S178_lock_off_group_locked.dwg")
+        .into_iter()
+        .find(|(h, _, _)| *h == 0x11D4)
+        .unwrap();
+    let d = civil3drust::raw::open("samples/S226_S178_lock_off_group_locked.dwg").unwrap();
+    let r = civil3drust::raw::records(&d.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == h)
+        .unwrap();
+    let de = decode_elements(&r).unwrap();
+    assert!(de.layout_groups[0].locked);
+    let fixed: Vec<Element> = els.into_iter().filter(|e| e.id() <= 2).collect();
+    let ours = layout(
+        &fixed,
+        &[Group {
+            method: "SSCSS",
+            locked: true,
+            previous: 1,
+            next: 2,
+            params: vec![120.0, 180.0, 500.0, 140.0, 200.0],
+        }],
+        false,
+    )
+    .unwrap()
+    .to_civil3d();
+    let locks = |s: &str| -> Vec<String> {
+        s.lines()
+            .filter(|l| l.contains("ConstraintLocked"))
+            .map(|l| l.trim().to_string())
+            .collect()
+    };
+    assert_eq!(locks(&ours), locks(&j));
+    assert_eq!(
+        locks(&j),
+        [
+            "\"ConstraintLocked\": 0,",
+            "\"ConstraintLocked\": 0,",
+            "\"ConstraintLocked\": 2,"
+        ]
+    );
 }

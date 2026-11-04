@@ -2842,6 +2842,9 @@ pub struct LayoutGroup {
     pub next: i32,
     /// Typed parameters, as named in the JSON.
     pub params: Vec<(String, f64)>,
+    /// Its own parameter lock (`ConstraintLocked` 2): with "Lock all" off
+    /// a group can still be locked as a whole (S226).
+    pub locked: bool,
     /// True when civil3drust solved it (its pieces are in `elements`).
     pub solved: bool,
     /// IDs of the piece records stored for it, set aside in favour of the
@@ -3127,6 +3130,7 @@ fn layout_groups(rec: &RawRecord, records: &[Element], keep_stored: bool) -> Vec
                 previous,
                 next,
                 params,
+                locked: num(o, "ConstraintLocked").is_some_and(|v| v != 0.0),
                 solved: false,
                 stored_pieces,
                 following: Vec::new(),

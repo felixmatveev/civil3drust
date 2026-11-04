@@ -195,6 +195,7 @@ fn main() {
             &fixed,
             &[Group {
                 method,
+                locked,
                 previous: gprev,
                 next: gnext,
                 params,
