@@ -2797,6 +2797,29 @@ user string ("felix") as the name. `raw::structured_name` now drops the
 string slot announced by the section-2 JSON flag
 (`raw::layout_json_flag`) by position, empty or not.
 
+**Owner (S225): an end entity is required.** Civil 3D does not let these
+methods be created without an end entity. Deleting the entity after a
+long group (S225: S177 with the element after each of its five long
+groups deleted, FC8 and FCB included) silently turns the group into its
+pieces as separate elements, the JSON string emptied (slot and flag
+kept). The pieces are new record forms:
+
+- spirals of kind **6** (after a line) and **8** (after a curve or a
+  spiral): `BL kind, BL id, BL before, BL after, BL 256, B clockwise,
+  BD end radius, BD length, BD 0, BD 1` — no position: they start where
+  the element before ends, kind 8 with its radius
+  (`SPIRAL_AFTER_LINE`, `SPIRAL_AFTER_CURVE`);
+- the curves become floating curves by radius and length (code 21,
+  already decoded);
+- the first piece keeps its group-member header and start point
+  (MIST17); that point, not the stored end of the element before, is
+  where it starts: FC8's fixed tangent still stores (0, 0)–(1000, 0)
+  while the pieces start at 868.5, and the tangent is cut there.
+
+Decoded this way, every joint of the five alignments lies on Civil 3D's
+proxy graphics (test `s225_group_pieces_after_end_entity_deleted`), and
+the records re-encode bit for bit (`encode_roundtrip`).
+
 ## Open questions
 
 Tracked as MIST1 … MIST15 in [`mysteries.md`](mysteries.md), each with

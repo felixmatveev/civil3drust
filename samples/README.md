@@ -236,6 +236,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S222 | `S222_S221_radius_179.dwg` | Civil 3D 2024 | MIST9 C4 (owner): S221 with curve 5's radius changed to 179.037 (fails the check, warning in the grid). Still 40, 533, 83. | 473920 | `875b784c444f195c` |
 | S223 | `S223_S178_group_at_alignment_end.dwg` | civil3drust | Edge case (`exp_group_params end|start`): S178 plus groups at an end of the alignment, JSON only: 1208/120E/1214 (11F8, 11DE, 11D4) without the fixed element after the group (`NextId` 0, element before linked to the group ID); 120B/1211/1217 without the element before it (`PreviousId` 0, `FirstId` = group, the remaining element first in the records). Typed parameters as in S178. | 489156 | `55532107c3d41461` |
 | S224 | `S224_S223_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S223 opened clean; the groups do not appear anywhere; saved. The six new alignments keep only their fixed element; their JSON strings are emptied (slot and flag kept). | 510909 | `0f515564328067cf` |
+| S225 | `S225_S177_end_entities_deleted.dwg` | Civil 3D 2024 | Owner: S177 with the entity after each of the five long groups deleted; Civil 3D allows no long group without an end entity and silently turns the groups into separate pieces (spirals kinds 6/8, floating curves by radius and length), JSON strings emptied; saved. | 502704 | `dd82d93d8fb1cb61` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

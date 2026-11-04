@@ -738,3 +738,41 @@ fn s178_long_reverse_groups_are_stored_apart() {
         assert!(json.contains(&format!("\"ArcRadius\": {radius}")), "{h:X}");
     }
 }
+
+/// S225 (owner): S177 with the entity after each long group deleted.
+/// Civil 3D turns the pieces into spirals placed from the element before
+/// (kinds 6 after a line, 8 after a curve or spiral: end radius and
+/// length) and floating curves by radius and length; the first keeps the
+/// group's start point. Every joint lies on Civil 3D's proxy graphics.
+#[test]
+fn s225_group_pieces_after_end_entity_deleted() {
+    use civil3drust::aecc_elements::{SPIRAL_AFTER_CURVE, SPIRAL_AFTER_LINE};
+    use civil3drust::proxy_graphics as pg;
+    let o = raw::open("samples/S225_S177_end_entities_deleted.dwg").unwrap();
+    let mut n = 0;
+    for r in raw::records(&o.doc, "AECC_ALIGNMENT") {
+        let d = decode_elements(&r).unwrap();
+        assert!(d.layout_groups.is_empty(), "{:X}", r.handle);
+        assert!(d.elements.iter().any(|e| matches!(
+            e.record,
+            Element::Spiral(ref s) if s.kind == SPIRAL_AFTER_LINE || s.kind == SPIRAL_AFTER_CURVE
+        )));
+        let g = pg::find(&r.data, 4096).unwrap();
+        let pts: Vec<[f64; 3]> = g
+            .chunks
+            .iter()
+            .filter(|c| c.opcode == pg::OP_POLYLINE)
+            .flat_map(|c| pg::poly_vertices(&r.data, c).into_iter().map(|v| v.1))
+            .collect();
+        for e in &d.elements {
+            let p = e.segment.end();
+            let best = pts
+                .iter()
+                .map(|q| (p.x - q[0]).hypot(p.y - q[1]))
+                .fold(f64::MAX, f64::min);
+            assert!(best < 1e-3, "{:X}: joint {p:?} off by {best}", r.handle);
+        }
+        n += 1;
+    }
+    assert_eq!(n, 5);
+}

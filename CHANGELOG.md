@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Spiral records placed from the element before: kinds 6 (after a line)
+  and 8 (after a curve or spiral), end radius and length
+  (`SPIRAL_AFTER_LINE`, `SPIRAL_AFTER_CURVE`), decoded and encoded; a
+  stored group start point cuts the element before. What Civil 3D
+  leaves when a long group's end entity is deleted (sample S225); joints
+  match its proxy graphics.
 - Sample S224 (Civil 3D drops a JSON group at an alignment end).
 - `exp_group_params` modes `end` / `start` (group at an end of the
   alignment); sample S223.

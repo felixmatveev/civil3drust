@@ -562,6 +562,13 @@ fn read_params(data: &[u8], flag_bit: usize, bd_bit: usize) -> Option<(ParamBloc
 pub const SPIRAL_INWARD: i32 = 0;
 pub const SPIRAL_OUTWARD: i32 = 1;
 pub const SPIRAL_COMPOUND: i32 = 2;
+/// A spiral placed from the end of a line (S225): `BD end radius, BD
+/// length` and two tail BDs (0, 1); the start and direction come from the
+/// line. What deleting a long group's end entity leaves (owner, S225).
+pub const SPIRAL_AFTER_LINE: i32 = 6;
+/// A spiral placed from the end of a curve or spiral, starting with its
+/// radius (S225); same fields as [`SPIRAL_AFTER_LINE`].
+pub const SPIRAL_AFTER_CURVE: i32 = 8;
 /// The kind prefix (11 bits before the header) of spiral records.
 pub const PREFIX_SPIRAL: u16 = 6;
 
@@ -597,7 +604,9 @@ pub struct SpiralRecord {
     /// `f64::INFINITY` at the straight end of inward and outward spirals.
     pub start_radius: f64,
     pub end_radius: f64,
-    /// The three BDs after the geometry (0, 0, 1 so far).
+    /// The BDs after the geometry: three (0, 0, 1) on fixed spirals, two
+    /// (0, 1, then an unused 0 here) on spirals placed from the element
+    /// before (kinds 6, 8).
     pub tail: [f64; 3],
     pub params: ParamBlock,
     /// The group's start point, stored before the parameter block of the
@@ -685,10 +694,24 @@ fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
             k += 256;
             end_radius = inf;
         }
+        SPIRAL_AFTER_LINE | SPIRAL_AFTER_CURVE => {
+            // Placed from the element before when resolved.
+            end_radius = bd(&mut k)?;
+            length = bd(&mut k)?;
+            start_radius = inf;
+            start = Point2::new(0.0, 0.0);
+            d = Point2::new(1.0, 0.0);
+        }
         _ => return None,
     }
+    // Three tail BDs (0, 0, 1) on fixed spirals, two (0, 1) on placed ones.
     let mut tail = [0.0; 3];
-    for t in &mut tail {
+    let n_tail = if matches!(kind, SPIRAL_AFTER_LINE | SPIRAL_AFTER_CURVE) {
+        2
+    } else {
+        3
+    };
+    for t in tail.iter_mut().take(n_tail) {
         *t = bd(&mut k)?;
     }
     let ok = |v: f64| v.is_finite() && v > 0.0 && v < 1e9;
@@ -3417,6 +3440,48 @@ fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, Deco
         );
     }
     for i in 1..chained.len() {
+        if let Element::Spiral(sp) = &chained[i] {
+            if !matches!(sp.kind, SPIRAL_AFTER_LINE | SPIRAL_AFTER_CURVE) {
+                continue;
+            }
+            let (id, kind) = (sp.id, sp.kind);
+            let unsupported = |why: &str| DecodeError::BrokenChain(format!("spiral {id}: {why}"));
+            let prefix = resolve_with(&chained[..i], &pre[..i], &groups[..i])
+                .map_err(|_| unsupported("elements before it don't resolve"))?;
+            let last = prefix.last().expect("i >= 1");
+            // From the stored start point when there is one (the group's
+            // start, MIST17), else from the end of the element before.
+            let (p, dir) = match (sp.member, last.segment) {
+                (Some(m), Segment::Line { start, end }) => {
+                    let l = start.distance_to(end).max(f64::MIN_POSITIVE);
+                    (m, ((end.x - start.x) / l, (end.y - start.y) / l))
+                }
+                (Some(m), Segment::Arc { geometry: g, .. }) => {
+                    let (rx, ry) = ((m.x - g.center.x) / g.radius, (m.y - g.center.y) / g.radius);
+                    (
+                        m,
+                        if g.counter_clockwise {
+                            (-ry, rx)
+                        } else {
+                            (ry, -rx)
+                        },
+                    )
+                }
+                _ => end_state(&last.segment),
+            };
+            let start_radius = match (kind, last.segment) {
+                (SPIRAL_AFTER_LINE, _) | (_, Segment::Line { .. }) => f64::INFINITY,
+                (_, Segment::Arc { geometry, .. }) => geometry.radius,
+                (_, Segment::Spiral { geometry, .. }) => geometry.radius,
+            };
+            let Element::Spiral(sp) = &mut chained[i] else {
+                unreachable!()
+            };
+            sp.start = p;
+            sp.direction = dir;
+            sp.start_radius = start_radius;
+            continue;
+        }
         if let Element::Arc(a) = &chained[i] {
             let (id, def) = (a.id, a.def);
             if !matches!(
@@ -3531,7 +3596,24 @@ fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, Deco
         t.start = a;
         t.end = b;
     }
-    let elements = resolve_with(&chained, &pre, &groups)?;
+    let mut elements = resolve_with(&chained, &pre, &groups)?;
+    // A placed spiral with a stored start point (the group's start,
+    // MIST17) cuts the element before it there (S225).
+    for i in 1..elements.len() {
+        let Element::Spiral(sp) = &elements[i].record else {
+            continue;
+        };
+        if !matches!(sp.kind, SPIRAL_AFTER_LINE | SPIRAL_AFTER_CURVE) {
+            continue;
+        }
+        let Some(m) = sp.member else {
+            continue;
+        };
+        let prev = &mut elements[i - 1];
+        if let Some(c) = crate::aecc_layout_solve::Carrier::of(&prev.segment) {
+            prev.segment = crate::aecc_layout_solve::trim_before(&c, &prev.segment, m);
+        }
+    }
     for w in elements.windows(2) {
         let (e, s) = (w[0].segment.end(), w[1].segment.start());
         if e.distance_to(s) > 1e-6 * (1.0 + e.x.abs().max(e.y.abs())) {
