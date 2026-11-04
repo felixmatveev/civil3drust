@@ -2962,7 +2962,9 @@ records: the same alignments left, the companion identical to Civil 3D's
 apart from object-header bits a save rewrites and handle-stream padding
 (test `delete_alignment`). `examples/delete_alignment` is the command
 line form; a program that edits the model calls the same function.
-S230: S228 with `Alignment - (1)` deleted this way.
+S230: S228 with `Alignment - (1)` deleted this way. Owner: S230 opens with no issues, AUDIT clean;
+its re-save S231 reads back to the same seven alignments, the companion
+still empty (D-049 acceptance).
 
 ## MIST2: re-save field (partially solved, S151–S157)
 

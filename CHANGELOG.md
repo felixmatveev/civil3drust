@@ -7,6 +7,7 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Sample S231: Civil 3D accepts civil3drust's deletion (S230 re-saved).
 - `aecc_delete::delete_alignment` (and `empty_companion`): deletes a
   siteless alignment as Civil 3D does (S229) — alignment and label groups
   removed, companion emptied, registry entry kept. `examples/

@@ -242,6 +242,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S228 | `S228_S24_spiral_type_template.dwg` | civil3drust | The spiral-type template again, fixed (user string dropped, template description cleared), on S24 (its own `Alignment - (1)` stays: alignments cannot be deleted yet): seven alignments, each a single 100' tangent named after a spiral type, on a 300' grid from (0, −1000). | 454663 | `a7ee1ae51a113799` |
 | S229 | `S229_S228_alignment_deleted.dwg` | Civil 3D 2024 | Owner: S228 with `Alignment - (1)` (F9E) deleted in Civil 3D; saved. Deletion sample. | 473482 | `7253863d6335ad42` |
 | S230 | `S230_S228_alignment_deleted_by_civil3drust.dwg` | civil3drust | S228 with `Alignment - (1)` deleted by civil3drust (`delete_alignment`): F9E and its label groups FA3, FA4 removed, companion F9D emptied as in S229. Only the seven spiral-type alignments remain. | 452209 | `5cfa55044cea3a04` |
+| S231 | `S231_S230_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S230 opened with no issues, AUDIT, saved. The seven alignments read back unchanged; companion F9D stays emptied. | 473612 | `5e1e74d45bbb7bd2` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

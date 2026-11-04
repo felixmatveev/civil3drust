@@ -63,3 +63,22 @@ fn refuses_unknown_alignment() {
     let mut a = raw::open("samples/S228_S24_spiral_type_template.dwg").unwrap();
     assert!(delete_alignment(&mut a.doc, 0x1).is_err());
 }
+
+#[test]
+fn civil3d_accepts_the_deletion() {
+    // S230 (written by civil3drust) opened clean in Civil 3D; its re-save
+    // S231 reads back to the same alignments.
+    use civil3drust::aecc_elements::decode_elements;
+    let a = raw::open("samples/S230_S228_alignment_deleted_by_civil3drust.dwg").unwrap();
+    let b = raw::open("samples/S231_S230_civ3d_resaved.dwg").unwrap();
+    let rb = raw::records(&b.doc, "AECC_ALIGNMENT");
+    let ra = raw::records(&a.doc, "AECC_ALIGNMENT");
+    assert_eq!(ra.len(), 7);
+    assert_eq!(ra.len(), rb.len());
+    for r in ra {
+        let q = rb.iter().find(|q| q.handle == r.handle).unwrap();
+        assert_eq!(raw::object_name(&r.data), raw::object_name(&q.data));
+        let (x, y) = (decode_elements(&r).unwrap(), decode_elements(q).unwrap());
+        assert!((x.length() - y.length()).abs() < 1e-9);
+    }
+}
