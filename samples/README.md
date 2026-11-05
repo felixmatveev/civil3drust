@@ -255,6 +255,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S241 | `S241_S239_civ3d_resaved.dwg` | Civil 3D 2024 | S239 re-saved (owner): both companions still in the rebuilt form. | 970902 | `c5e5848bf32b96ac` |
 | S242 | `S242_S24_open_centre_curves.dwg` | Civil 3D 2024 | MIST14 (owner, from S24; `Alignment - (1)` removed): `C EAST` (FD7) and `C NORTH` (FEA), each a Fixed Curve by center (1000, 0) and radius 100, clockwise, with a Floating Line through (1000, 300); radius picked at (1100, 0) and (1000, 100). `C EAST` is stored line first (kind 3 from (1000, 300)), `C NORTH` curve first. Both curves drawn as 180°. | 478278 | `76e32e45ad0356da` |
 | S243 | `S243_spiral_speed_masking_equation.dwg` | Civil 3D 2024 | Owner, S24-based: `Spline speed change` (FD7: tangent, outward spiral R 300 → ∞ L 200, floating line 100; speeds 60 at 0+00 and 30 at 2+00, on the spiral), `masking` (FDF: the same plus a floating curve R 100; masking region 2+90.30–3+34.11), `station equation` (FE5: as FDF; station equation back 1+90, ahead 3+10). | 481673 | `24ee013bcf06d177` |
+| S244 | `S244_S243_speeds_rewritten.dwg` | civil3drust | S243 with the speeds rewritten by `set_speeds` (D-067): FD7 0:60 150:40 250:30 (two on the spiral), FDF 0:50 320:35 (in the masking region; region and its intervals kept), FE5 0:55 250:45 (raw station; equation and its interval kept). | 460690 | `2304f87996780818` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8
