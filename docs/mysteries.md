@@ -516,8 +516,20 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   stations) and comments typed: its bit is 0, equation 1's stays 1. The
   strings per equation are its **comment then its number**
   (`"First record"`, `"1"`, `"Decreasing start"`, `"2"`).
-- **Still open:** the 18 leading bits (`00 BE 04`, the same in all three
-  equations seen; a constant tag, perhaps).
+- **The 18 leading bits** are `00 10111110 00000100` (`00` + bytes
+  `BE 04`) in every equation seen (S243, S245, S247 ×2, S248 ×2). The
+  owner asked whether they are copied or derived from global settings.
+  Searched bit by bit through every AECC record: the same 18 bits sit at
+  the same header position (data bit 48, or 40 with a one-byte handle)
+  in 2,787 of S24's ~3,000 AECC objects — styles, label sets, nodes,
+  settings — and in S123 (Civil 3D 2027) too, and three times in every
+  alignment label group. So they are not a per-equation value or a copy
+  of one settings object: they look like a common serialization token
+  (the opening of an object's common data, or a sub-object tag, cf.
+  MIST7), and an equation is probably stored as an embedded object that
+  starts with it. Treated as constant plumbing: written back as read.
+  Not decoded further (the object-header fields around bit 48 are not
+  mapped).
 
 ## Not sampled yet (not mysteries, just gaps)
 
