@@ -199,7 +199,7 @@ fn s247_two_station_equations() {
         .iter()
         .map(|x| {
             let q = |v: f64| (v * 1e6).round() / 1e6;
-            (q(x.raw_station), q(x.back), q(x.ahead), x.flag)
+            (q(x.raw_station), q(x.back), q(x.ahead), x.increasing)
         })
         .collect();
     assert_eq!(
@@ -214,4 +214,28 @@ fn s247_two_station_equations() {
     let texts: Vec<&str> = s.strings.iter().map(|x| x.text.as_str()).collect();
     assert!(texts.contains(&"1") && texts.contains(&"2"));
     assert_eq!(required_string_count(&r).unwrap() + 1, s.strings.len());
+}
+
+/// S248 (owner): S247 with equation 2 set to Decreasing and comments
+/// typed for both. The bit after Station Ahead is Increase/Decrease (0 =
+/// Decreasing); each equation's two strings are its comment and number.
+#[test]
+fn s248_decreasing_equation() {
+    let o = raw::open("samples/S248_S247_decreasing_equation.dwg").unwrap();
+    let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0xFE5)
+        .unwrap();
+    let e = station_equations(&r).unwrap();
+    assert_eq!(
+        e.iter().map(|x| x.increasing).collect::<Vec<_>>(),
+        [true, false]
+    );
+    assert_eq!((e[1].back.round(), e[1].ahead), (189.0, 310.0));
+    let s = string_stream::parse(&r.data, r.handle_bits).unwrap();
+    let texts: Vec<&str> = s.strings.iter().map(|x| x.text.as_str()).collect();
+    let pos = |t: &str| texts.iter().position(|x| *x == t).unwrap();
+    assert_eq!(pos("1"), pos("First record") + 1);
+    assert_eq!(pos("2"), pos("Decreasing start") + 1);
+    assert_eq!(pos("Decreasing start"), pos("1") + 1);
 }

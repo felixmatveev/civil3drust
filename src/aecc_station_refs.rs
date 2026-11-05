@@ -9,7 +9,7 @@
 //!
 //! ```text
 //! BL n_eq, n_eq × { 18 bits (BS 1214 in S243, unknown), BD raw station,
-//!                   GUID, BD station back, BD station ahead, B (1 in S243) },
+//!                   GUID, BD station back, BD station ahead, B increasing },
 //! BL 1, BL n, n × { BL 1, BD station, BD speed, GUID }     (design speeds)
 //! BD 100, BL 0, element-ID list, BL type, BL 2, 2, 2,
 //! BL n_mask, n_mask × { BD start station, BD end station, B not masked,
@@ -60,9 +60,9 @@ pub struct StationEquation {
     pub back: f64,
     /// Station Ahead.
     pub ahead: f64,
-    /// The bit after the ahead station: 1 for every equation sampled, all
-    /// Increasing (S243, S247); probably Increase/Decrease (MIST18).
-    pub flag: bool,
+    /// Increase/Decrease: the stations after the equation run up (bit 1)
+    /// or down (bit 0; S248).
+    pub increasing: bool,
     /// The 18 bits before the raw station, read as a BS: 1214 in every
     /// equation sampled (S243, S247; MIST18).
     pub unknown: u16,
@@ -213,7 +213,7 @@ pub fn station_equations_at(data: &[u8], at: usize) -> Option<(Vec<StationEquati
         let g = guid(data, p)?;
         let (back, p) = raw::read_bd(data, p + 128)?;
         let (ahead, p) = raw::read_bd(data, p)?;
-        let flag = raw::get_bit(data, p) == 1;
+        let increasing = raw::get_bit(data, p) == 1;
         q = p + 1;
         if ![raw_station, back, ahead].iter().all(|v| v.is_finite()) {
             return None;
@@ -222,7 +222,7 @@ pub fn station_equations_at(data: &[u8], at: usize) -> Option<(Vec<StationEquati
             raw_station,
             back,
             ahead,
-            flag,
+            increasing,
             unknown,
             guid: g,
         });

@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Station equations: the bit after Station Ahead is Increase/Decrease
+  (`StationEquation::increasing`, was `flag`; S248); each equation's
+  strings are its comment and number. Test `s248_decreasing_equation`.
 - Sample S247 (two station equations): Station Back of later equations is
   derived from the one before; the 18 leading bits are the same in both;
   equation numbers are strings. Test `s247_two_station_equations`.

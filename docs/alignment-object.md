@@ -3044,6 +3044,14 @@ Station Control help describes. The 18 leading bits are the same in both
 after the equation, so a lower ahead station is still Increasing). Test
 `s247_two_station_equations`.
 
+**Decreasing (S248, owner).** Increase/Decrease is a selection list in
+the grid, not derived from the stations. With equation 2 set to
+Decreasing its trailing bit is 0 (equation 1 keeps 1):
+`StationEquation::increasing`. Comments typed for both equations show
+the two strings per equation: the comment, then the number (`"First
+record"`, `"1"`, `"Decreasing start"`, `"2"`). Test
+`s248_decreasing_equation`.
+
 **S244 → S245 (owner).** S244 (S243 with every alignment's speeds
 rewritten by civil3drust: two on FD7's spiral, one in FDF's masking
 region, one after FE5's equation) opens clean, AUDIT clean, "behaviour as

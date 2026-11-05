@@ -38,7 +38,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 | MIST15 | flag 16 bits before the section-2 end | solved: tangency swapping |
 | MIST16 | three BDs after a spiral's geometry | open |
 | MIST17 | 128 bits after a `0x0D` element header | solved: group start point |
-| MIST18 | station equation's 18 bits and flag (masking bit solved: not masked) | open |
+| MIST18 | station equation's 18 leading bits (Increase/Decrease and masking bits solved) | mostly solved |
 
 ## MIST1 — the 66-bit section-2 field — **PARTIALLY SOLVED (S142–S150, S214)**
 
@@ -467,7 +467,7 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   any pieces is accepted too: Civil 3D solves the pieces from it (S216 →
   S217).
 
-## MIST18 — station equation and masking fields — **masking solved (S246); equations open**
+## MIST18 — station equation and masking fields — **mostly solved (S246, S248): the equations' 18 leading bits open**
 
 - **Where:** S243 (owner). The station-equation list after the interval
   block holds, per equation, `18 bits, BD raw station, GUID, BD back,
@@ -511,8 +511,13 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   equation, not the jump at it, so a smaller ahead station is still
   Increasing. The strings `"1"` and `"2"` are the Equation column (one of
   the two strings per equation; the other is probably the comment).
-- **Still open:** a Decreasing equation (Increase/Decrease set to
-  Decreasing in the grid) to see the bit go 0; the 18 bits.
+- **Increase/Decrease solved (S248, owner):** S247 with equation 2 set
+  to Decreasing (a selection list in the grid, not computed from the
+  stations) and comments typed: its bit is 0, equation 1's stays 1. The
+  strings per equation are its **comment then its number**
+  (`"First record"`, `"1"`, `"Decreasing start"`, `"2"`).
+- **Still open:** the 18 leading bits (`00 BE 04`, the same in all three
+  equations seen; a constant tag, perhaps).
 
 ## Not sampled yet (not mysteries, just gaps)
 
