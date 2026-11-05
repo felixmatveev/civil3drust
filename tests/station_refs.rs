@@ -132,3 +132,41 @@ fn s245_resave_reads_back() {
     let e = station_equations(&r(0xFE5)).unwrap();
     assert_eq!((e[0].back, e[0].ahead), (190.0, 310.0));
 }
+
+/// S246 (owner): four masking regions from the Masking tab. The stored bit
+/// is the inverted Mask check box; Lock To Start / End leave no flag (the
+/// locked regions just start at 0 and end at the alignment's end); the
+/// comment is the region's string.
+#[test]
+fn s246_masking_regions() {
+    let o = raw::open("samples/S246_S245_masking_regions.dwg").unwrap();
+    let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0xFDF)
+        .unwrap();
+    let m = masking_regions(&r).unwrap();
+    let got: Vec<(f64, f64, bool)> = m
+        .iter()
+        .map(|x| {
+            (
+                (x.start * 100.0).round() / 100.0,
+                (x.end * 100.0).round() / 100.0,
+                x.masked,
+            )
+        })
+        .collect();
+    assert_eq!(
+        got,
+        [
+            (0.0, 69.2, true),
+            (139.93, 181.09, false),
+            (290.3, 334.11, true),
+            (363.4, 430.86, true)
+        ]
+    );
+    let k = kinds(&r);
+    assert_eq!(k.iter().filter(|x| x.0 == KIND_MASK).count(), 8);
+    let s = string_stream::parse(&r.data, r.handle_bits).unwrap();
+    assert!(s.strings.iter().any(|x| x.text == "R1"));
+    assert_eq!(required_string_count(&r).unwrap() + 1, s.strings.len());
+}

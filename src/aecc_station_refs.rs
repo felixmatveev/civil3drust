@@ -12,7 +12,7 @@
 //!                   GUID, BD station back, BD station ahead, B (1 in S243) },
 //! BL 1, BL n, n × { BL 1, BD station, BD speed, GUID }     (design speeds)
 //! BD 100, BL 0, element-ID list, BL type, BL 2, 2, 2,
-//! BL n_mask, n_mask × { BD start station, BD end station, B (0 in S243),
+//! BL n_mask, n_mask × { BD start station, BD end station, B not masked,
 //!                       GUID start, GUID end },
 //! BL implied-PI display, …
 //! ```
@@ -23,7 +23,12 @@
 //! speed one (its comment), each masking region one and each station
 //! equation two (S243: `9 + 2 per interval + 1 per speed + 1 per region +
 //! 2 per equation + 3 per non-line element`, + 1 user string in the
-//! Properties form).
+//! Properties form). A region's one string is its comment (S246).
+//!
+//! The Masking tab's "Lock To Start" / "Lock To End" (only on the first
+//! and last region, owner) are not stored as flags: a locked region keeps
+//! its stations (0 and the alignment's end) and intervals like any other
+//! (S246).
 
 use crate::aecc_elements::decode_elements;
 use crate::raw::{self, RawRecord};
@@ -54,13 +59,14 @@ pub struct StationEquation {
     pub guid: [u8; 16],
 }
 
-/// A masking region (S243 FDF: 2+90.30 to 3+34.11).
+/// A masking region (S243 FDF: 2+90.30 to 3+34.11; S246: four regions).
 #[derive(Debug, Clone, PartialEq)]
 pub struct MaskRegion {
     pub start: f64,
     pub end: f64,
-    /// The bit after the end station (0 in S243).
-    pub flag: bool,
+    /// The Masking tab's "Mask" check box: the stored bit is 0 when it is
+    /// checked, 1 when not (S246 region 2).
+    pub masked: bool,
     pub start_guid: [u8; 16],
     pub end_guid: [u8; 16],
 }
@@ -194,7 +200,7 @@ pub fn masking_at(data: &[u8], at: usize) -> Option<(Vec<MaskRegion>, usize)> {
     for _ in 0..n {
         let (start, p) = raw::read_bd(data, q)?;
         let (end, p) = raw::read_bd(data, p)?;
-        let flag = raw::get_bit(data, p) == 1;
+        let masked = raw::get_bit(data, p) == 0;
         let start_guid = guid(data, p + 1)?;
         let end_guid = guid(data, p + 129)?;
         q = p + 257;
@@ -204,7 +210,7 @@ pub fn masking_at(data: &[u8], at: usize) -> Option<(Vec<MaskRegion>, usize)> {
         out.push(MaskRegion {
             start,
             end,
-            flag,
+            masked,
             start_guid,
             end_guid,
         });

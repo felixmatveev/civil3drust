@@ -67,7 +67,7 @@ alignment record itself.
 | Spiral types | `spiral_type` | Read-only — 7 shapes drawn; NSW Cubic Parabola (264) drawn as a clothoid (FRT-1) |
 | Start station | `aecc_station::start_station`, `set_start_station`, `move_start_station` | Supported |
 | Station equations | `aecc_station_refs::station_equations` | Read-only (S243; MIST18); kept when speeds are rewritten |
-| Masking regions | `aecc_build::masking_regions` | Read-only (S243); kept when speeds are rewritten |
+| Masking regions | `aecc_build::masking_regions` | Read-only (S243, S246: stations, Mask check box, comment string); kept when speeds are rewritten |
 | Design speeds | `aecc_design_speed::design_speeds`, `set_design_speeds`, `shift_design_speeds`, `clear_design_speeds` | Partial — speeds on fixed spirals written (S243); refused on spiral groups; start-station moves refused with station equations or masking |
 | Design criteria check boxes, constraint editing | `aecc_criteria::criteria`, `set_criteria`, `constraint_editing`, `set_constraint_editing` | Partial — refused on spiral groups |
 | PI display | `aecc_build::pi_display`, `set_pi_display` | Supported |

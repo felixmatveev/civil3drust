@@ -38,7 +38,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 | MIST15 | flag 16 bits before the section-2 end | solved: tangency swapping |
 | MIST16 | three BDs after a spiral's geometry | open |
 | MIST17 | 128 bits after a `0x0D` element header | solved: group start point |
-| MIST18 | station equation's 18 bits and flag; masking region's flag | open |
+| MIST18 | station equation's 18 bits and flag (masking bit solved: not masked) | open |
 
 ## MIST1 — the 66-bit section-2 field — **PARTIALLY SOLVED (S142–S150, S214)**
 
@@ -467,7 +467,7 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   any pieces is accepted too: Civil 3D solves the pieces from it (S216 →
   S217).
 
-## MIST18 — station equation and masking fields — **open**
+## MIST18 — station equation and masking fields — **masking solved (S246); equations open**
 
 - **Where:** S243 (owner). The station-equation list after the interval
   block holds, per equation, `18 bits, BD raw station, GUID, BD back,
@@ -480,14 +480,22 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   yet); ahead 310.
 - **Masking tab (owner's screenshot of FDF):** a region has Mask
   (checked), Lock To Start (off), Start Station 2+90.30', Lock To End
-  (off), End Station 3+34.11', Comment (empty). So three check boxes
-  against one stored bit (0): the locks may live elsewhere (e.g. no
-  interval, or a zero GUID, for a locked end) and the comment is
-  probably the region's one string.
-- **Test:** an alignment with two equations, one increasing and one
-  decreasing (the Station Equations tab's "Increasing/Decreasing"); and
-  masking regions covering the check boxes: Mask off, Lock To Start on,
-  Lock To End on, and one with a comment; compare the bits.
+  (off), End Station 3+34.11', Comment (empty): three check boxes against
+  one stored bit (0).
+- **Solved for masking (S246, owner):** four regions — 1: 0+00 (Lock To
+  Start) to 0+69.20, comment `R1`; 2: 1+39.93 to 1+81.09, **Mask off**;
+  3: as before; 4: 3+63.40 to the end 4+30.86 (Lock To End). The bit is 1
+  only for region 2: it is the **inverted Mask** check box. The locks
+  leave no trace in the region or its intervals (region 1 simply starts
+  at 0, region 4 ends at the alignment's end, both with ordinary kind-4
+  intervals); the owner notes they exist only on the first and last
+  region and act as "from the start" / "to the end". The comment `R1` is
+  in the string stream (one string per region). Whether a lock is only
+  the dialog's reading of a region touching an end is not tested (a
+  region typed to start at 0+00 without the lock would show).
+- **Test (equations):** an alignment with two equations, one increasing
+  and one decreasing (the Station Equations tab's "Increasing/
+  Decreasing"); compare the 18 bits and the last bit.
 
 ## Not sampled yet (not mysteries, just gaps)
 

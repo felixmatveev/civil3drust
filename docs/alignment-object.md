@@ -3017,6 +3017,15 @@ same speeds gives FD7's record back except the last digits of the
 spiral's end and point; FDF and FE5 keep their region and equation
 (test `station_refs`).
 
+**Masking check boxes (S246, owner).** The owner gave FDF four regions
+(Masking tab: 1 locked to the start, 0+00–0+69.20, comment `R1`; 2
+1+39.93–1+81.09 with Mask off; 3 2+90.30–3+34.11; 4 3+63.40–4+30.86
+locked to the end). The region's bit is 1 only for region 2: it is the
+inverted Mask check box (`MaskRegion::masked`). The locks are not stored
+as flags: the locked regions keep stations 0 and 430.859 and ordinary
+kind-4 intervals. All eight region intervals and the comment string fit
+the string rule (42 strings). Test `s246_masking_regions`.
+
 **S244 → S245 (owner).** S244 (S243 with every alignment's speeds
 rewritten by civil3drust: two on FD7's spiral, one in FDF's masking
 region, one after FE5's equation) opens clean, AUDIT clean, "behaviour as
