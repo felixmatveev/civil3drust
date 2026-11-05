@@ -38,7 +38,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 | MIST15 | flag 16 bits before the section-2 end | solved: tangency swapping |
 | MIST16 | three BDs after a spiral's geometry | open |
 | MIST17 | 128 bits after a `0x0D` element header | solved: group start point |
-| MIST18 | station equation's 18 leading bits (Increase/Decrease and masking bits solved) | mostly solved |
+| MIST18 | station equation and masking fields | solved; the equations' 18 leading bits are a fixed marker (owner) |
 
 ## MIST1 — the 66-bit section-2 field — **PARTIALLY SOLVED (S142–S150, S214)**
 
@@ -467,7 +467,7 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   any pieces is accepted too: Civil 3D solves the pieces from it (S216 →
   S217).
 
-## MIST18 — station equation and masking fields — **mostly solved (S246, S248): the equations' 18 leading bits open**
+## MIST18 — station equation and masking fields — **SOLVED (S246, S248); 18 leading bits: fixed marker (owner)**
 
 - **Where:** S243 (owner). The station-equation list after the interval
   block holds, per equation, `18 bits, BD raw station, GUID, BD back,
@@ -527,9 +527,9 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   of one settings object: they look like a common serialization token
   (the opening of an object's common data, or a sub-object tag, cf.
   MIST7), and an equation is probably stored as an embedded object that
-  starts with it. Treated as constant plumbing: written back as read.
-  Not decoded further (the object-header fields around bit 48 are not
-  mapped).
+  starts with it. **Owner's decision (2026-11-05): a fixed marker** —
+  written exactly as `00 BE 04` for every equation, not decoded further
+  (the object-header fields around bit 48 are not mapped).
 
 ## Not sampled yet (not mysteries, just gaps)
 
@@ -545,8 +545,9 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   criteria) and the parent alignment's link to them. Sample plan: one
   alignment, an offset alignment, then one widening added, edited and
   removed, each step saved separately.
-- Station equations: one equation sampled (S243, MIST18); several
-  equations, a decreasing one and their effect on stationing are not.
+- Station equations are read (S243, S247, S248); civil3drust's element
+  stations are still raw stations — applying the equations to the
+  stations it reports is not done yet.
 - Alignment groups (owner): Civil 3D's own grouping of alignments in the
   Toolspace (Prospector), for siteless alignments and inside each site.
   Sample plan, each step saved separately from S24: 1. two siteless

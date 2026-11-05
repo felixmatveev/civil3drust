@@ -64,7 +64,8 @@ pub struct StationEquation {
     /// or down (bit 0; S248).
     pub increasing: bool,
     /// The 18 bits before the raw station, read as a BS: 1214 in every
-    /// equation sampled (S243, S247; MIST18).
+    /// equation sampled (S243, S247, S248). A fixed marker (owner; the
+    /// same bits open most Civil 3D objects, MIST18).
     pub unknown: u16,
     pub guid: [u8; 16],
 }

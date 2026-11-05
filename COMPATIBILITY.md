@@ -66,7 +66,7 @@ alignment record itself.
 | Spiral groups (SCS, SC, SL …) | `aecc_elements`, `aecc_layout_solve`; written as typed parameters (D-059) | Partial — read, re-encoded when copied; not editable |
 | Spiral types | `spiral_type` | Read-only — 7 shapes drawn; NSW Cubic Parabola (264) drawn as a clothoid (FRT-1) |
 | Start station | `aecc_station::start_station`, `set_start_station`, `move_start_station` | Supported |
-| Station equations | `aecc_station_refs::station_equations` | Read-only (S243, S247, S248: raw back, back, ahead, Increase/Decrease, comment and number strings; 18 leading bits open, MIST18); kept when speeds are rewritten |
+| Station equations | `aecc_station_refs::station_equations` | Read-only (S243, S247, S248: raw back, back, ahead, Increase/Decrease, comment and number strings; 18 leading bits a fixed marker, MIST18); kept when speeds are rewritten |
 | Masking regions | `aecc_build::masking_regions` | Read-only (S243, S246: stations, Mask check box, locks derived as Civil 3D does (D-068), comment string); kept when speeds are rewritten |
 | Design speeds | `aecc_design_speed::design_speeds`, `set_design_speeds`, `shift_design_speeds`, `clear_design_speeds` | Partial — speeds on fixed spirals written (S243); refused on spiral groups; start-station moves refused with station equations or masking |
 | Design criteria check boxes, constraint editing | `aecc_criteria::criteria`, `set_criteria`, `constraint_editing`, `set_constraint_editing` | Partial — refused on spiral groups |
