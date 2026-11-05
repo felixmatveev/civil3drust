@@ -1413,3 +1413,25 @@ or with a station on a spiral group (not sampled).
 **Alternatives.** Copying Civil 3D's stored Station Back: it goes stale
 when the start station moves (S249), and it is not model data.
 
+## D-071: Offset spirals are the parent spiral plus a sideways offset
+Date: 2026-11-05 · Status: accepted
+
+**Context.** An offset alignment's spiral record (kind 5, S255) stores the
+parent spiral (end point and direction, radii, length) and the offset;
+the curve drawn is the parent moved sideways, which is not itself a
+spiral.
+
+**Decision.** `SpiralGeometry` gets an `offset` (positive to the left;
+0 for ordinary spirals); `start`, `direction`, `length` and the radii
+stay the parent's, so the record's values are kept as stored.
+`point_at(s)` and `curve_length()` work along the drawn curve (the
+parent distance is found by Newton's method from `s = t − offset ·
+turn(t)`), so stations, lengths and segment ends need no special case.
+The stored point is read as the parent's end (S255 has one outward
+spiral, where the end and the straight end coincide; to be checked with
+an inward and a compound spiral).
+
+**Alternatives.** A separate offset-curve segment kind: every match on
+`Segment` would need a new arm for the same arithmetic. Storing the
+offset curve as a spiral of the offset radii: wrong shape, and the
+record's values would not round-trip.

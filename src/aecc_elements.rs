@@ -570,6 +570,11 @@ pub const SPIRAL_AFTER_LINE: i32 = 6;
 /// A spiral placed from the end of a curve or spiral, starting with its
 /// radius (S225); same fields as [`SPIRAL_AFTER_LINE`].
 pub const SPIRAL_AFTER_CURVE: i32 = 8;
+/// The spiral of an offset alignment (S255): the parent spiral, given by
+/// its end point and direction, `BD start radius, BD length, BD end
+/// radius`, then `BD offset` (negative to the left) and two tail BDs (0, 1).
+/// The element is the parent spiral moved sideways by the offset.
+pub const SPIRAL_OFFSET: i32 = 5;
 /// The kind prefix (11 bits before the header) of spiral records.
 pub const PREFIX_SPIRAL: u16 = 6;
 
@@ -577,13 +582,16 @@ pub const PREFIX_SPIRAL: u16 = 6;
 /// parameter block (`B flag, BD p1, BD p2, BL n1, n1 × BD`):
 ///
 /// ```text
-/// BL type (0 inward, 1 outward, 2 compound), BL id, BL before, BL after,
+/// BL type (0 inward, 1 outward, 2 compound, 5 offset, 6 / 8 placed), BL id,
+/// BL before, BL after,
 /// BL 256 (MIST10), B clockwise,
 /// inward:   RD start X, Y, RD unit direction, BD length, BD end radius
 /// outward:  BD start radius, BD length, RD start X, Y, RD unit direction
 /// compound: RD start X, Y, RD unit direction, BD start radius, BD length,
 ///           BD end radius
 /// then BD × 3 (0, 0, 1 in every sample)
+/// offset (5): RD parent end X, Y, RD unit direction there, BD start
+///           radius, BD length, BD end radius, BD offset, BD × 2 (0, 1)
 /// ```
 ///
 /// Spirals laid out through a point (S162 D, E) store the computed length
@@ -610,6 +618,9 @@ pub struct SpiralRecord {
     /// before (kinds 6, 8).
     pub tail: [f64; 3],
     pub params: ParamBlock,
+    /// The offset of an offset alignment's spiral ([`SPIRAL_OFFSET`], S255),
+    /// as stored: negative to the left of the parent; 0 otherwise.
+    pub offset: f64,
     /// The group's start point, stored before the parameter block of the
     /// first spiral of a group kept apart with a JSON layout (header type
     /// byte 0x0D, S177; MIST17): two RDs, equal to this spiral's start.
@@ -618,6 +629,32 @@ pub struct SpiralRecord {
 
 impl SpiralRecord {
     pub fn geometry(&self) -> SpiralGeometry {
+        let spiral_type = SpiralType::from_code(self.mode).unwrap_or(SpiralType::Clothoid);
+        if self.kind == SPIRAL_OFFSET {
+            // Stored at the parent's end: run the parent backwards from
+            // there to find its start.
+            let back = SpiralGeometry {
+                start: self.start,
+                direction: (-self.direction.0, -self.direction.1),
+                length: self.length,
+                radius: self.start_radius,
+                start_radius: self.end_radius,
+                counter_clockwise: self.clockwise,
+                spiral_type,
+                offset: 0.0,
+            };
+            let (p, d) = back.point_at(self.length);
+            return SpiralGeometry {
+                start: p,
+                direction: (-d.0, -d.1),
+                length: self.length,
+                radius: self.end_radius,
+                start_radius: self.start_radius,
+                counter_clockwise: !self.clockwise,
+                spiral_type,
+                offset: -self.offset,
+            };
+        }
         SpiralGeometry {
             start: self.start,
             direction: self.direction,
@@ -625,7 +662,8 @@ impl SpiralRecord {
             radius: self.end_radius,
             start_radius: self.start_radius,
             counter_clockwise: !self.clockwise,
-            spiral_type: SpiralType::from_code(self.mode).unwrap_or(SpiralType::Clothoid),
+            spiral_type,
+            offset: 0.0,
         }
     }
 }
@@ -696,6 +734,14 @@ fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
             k += 256;
             end_radius = inf;
         }
+        SPIRAL_OFFSET => {
+            start = point(k)?;
+            d = point(k + 128)?;
+            k += 256;
+            start_radius = bd(&mut k)?;
+            length = bd(&mut k)?;
+            end_radius = bd(&mut k)?;
+        }
         SPIRAL_AFTER_LINE | SPIRAL_AFTER_CURVE => {
             // Placed from the element before when resolved.
             end_radius = bd(&mut k)?;
@@ -706,9 +752,15 @@ fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
         }
         _ => return None,
     }
-    // Three tail BDs (0, 0, 1) on fixed spirals, two (0, 1) on placed ones.
+    // Three tail BDs (0, 0, 1) on fixed spirals, two (0, 1) on placed and
+    // offset ones (after the offset).
+    let offset = if kind == SPIRAL_OFFSET {
+        bd(&mut k)?
+    } else {
+        0.0
+    };
     let mut tail = [0.0; 3];
-    let n_tail = if matches!(kind, SPIRAL_AFTER_LINE | SPIRAL_AFTER_CURVE) {
+    let n_tail = if matches!(kind, SPIRAL_AFTER_LINE | SPIRAL_AFTER_CURVE | SPIRAL_OFFSET) {
         2
     } else {
         3
@@ -725,6 +777,7 @@ fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
         || !(ok(start_radius) || start_radius == inf)
         || !(ok(end_radius) || end_radius == inf)
         || !(start.x.is_finite() && start.y.is_finite())
+        || !offset.is_finite()
         || (d.x.hypot(d.y) - 1.0).abs() > 1e-6
     {
         return None;
@@ -746,6 +799,7 @@ fn spiral_at(data: &[u8], bit: usize) -> Option<SpiralRecord> {
         end_radius,
         tail,
         params,
+        offset,
         member,
     })
 }
@@ -841,6 +895,7 @@ pub fn free_spiral_between(
         start_radius: if incurve { inf } else { r },
         counter_clockwise: delta > 0.0,
         spiral_type: SpiralType::Clothoid,
+        offset: 0.0,
     };
     let (e, _) = g.point_at(l);
     let w = (q.x - p.x - e.x, q.y - p.y - e.y);
@@ -1147,6 +1202,7 @@ fn inward(start: Point2, dir: (f64, f64), l: f64, r: f64, ccw: bool) -> SpiralGe
         start_radius: f64::INFINITY,
         counter_clockwise: ccw,
         spiral_type: SpiralType::Clothoid,
+        offset: 0.0,
     }
 }
 
@@ -1277,6 +1333,7 @@ fn place_group(
                 start_radius: radius,
                 counter_clockwise: ccw,
                 spiral_type: SpiralType::Clothoid,
+                offset: 0.0,
             };
             Some(vec![
                 spiral_segment(s1),
@@ -1393,6 +1450,7 @@ fn place_group(
                 start_radius: g.radius,
                 counter_clockwise: g.counter_clockwise,
                 spiral_type: SpiralType::Clothoid,
+                offset: 0.0,
             };
             let (st, d) = s.point_at(spiral);
             Some(vec![
@@ -1435,6 +1493,7 @@ fn reverse_chain(
         start_radius: c1.radius,
         counter_clockwise: c1.counter_clockwise,
         spiral_type: SpiralType::Clothoid,
+        offset: 0.0,
     };
     let (m, d1) = s1.point_at(l1);
     let s2 = SpiralGeometry {
@@ -1445,6 +1504,7 @@ fn reverse_chain(
         start_radius: f64::INFINITY,
         counter_clockwise: !c1.counter_clockwise,
         spiral_type: SpiralType::Clothoid,
+        offset: 0.0,
     };
     let (sc, d2) = s2.point_at(l2);
     let side = if s2.counter_clockwise { 1.0 } else { -1.0 };
@@ -1582,6 +1642,7 @@ fn spiral_spiral_chain(
         start_radius: c1.radius,
         counter_clockwise: c1.counter_clockwise,
         spiral_type: SpiralType::Clothoid,
+        offset: 0.0,
     };
     let (m, d1) = s1.point_at(l1);
     let s2 = SpiralGeometry {
@@ -1592,6 +1653,7 @@ fn spiral_spiral_chain(
         start_radius: f64::INFINITY,
         counter_clockwise: ccw2,
         spiral_type: SpiralType::Clothoid,
+        offset: 0.0,
     };
     let (sc, d2) = s2.point_at(l2);
     let side = if ccw2 { 1.0 } else { -1.0 };
@@ -1706,6 +1768,7 @@ fn sls_chain(
         start_radius: c1.radius,
         counter_clockwise: c1.counter_clockwise,
         spiral_type: SpiralType::Clothoid,
+        offset: 0.0,
     };
     let (m, d) = s1.point_at(l1);
     let n = Point2::new(m.x + t * d.0, m.y + t * d.1);
@@ -1717,6 +1780,7 @@ fn sls_chain(
         start_radius: f64::INFINITY,
         counter_clockwise: c2.counter_clockwise,
         spiral_type: SpiralType::Clothoid,
+        offset: 0.0,
     };
     let (sc, d2) = s2.point_at(l2);
     let side = if c2.counter_clockwise { 1.0 } else { -1.0 };
@@ -1882,6 +1946,7 @@ fn lay_pieces(
                 start_radius: r(pc.k0),
                 counter_clockwise: ccw,
                 spiral_type: SpiralType::Clothoid,
+                offset: 0.0,
             };
             let (end, nd) = g.point_at(pc.len);
             out.push(Segment::Spiral {
@@ -2332,7 +2397,7 @@ impl Segment {
         match self {
             Self::Line { start, end } => start.distance_to(*end),
             Self::Arc { geometry, .. } => geometry.length,
-            Self::Spiral { geometry, .. } => geometry.length,
+            Self::Spiral { geometry, .. } => geometry.curve_length(),
         }
     }
 }
@@ -2353,11 +2418,67 @@ pub struct SpiralGeometry {
     /// The transition curve (the record's MIST10 code, S232); placements
     /// computed by civil3drust (groups, free spirals) are clothoids.
     pub spiral_type: SpiralType,
+    /// Sideways shift of the whole spiral, positive to the left (the
+    /// spiral of an offset alignment, S255); 0 for an ordinary spiral.
+    /// `start`, `direction`, `length` and the radii are the parent's.
+    pub offset: f64,
 }
 
 impl SpiralGeometry {
-    /// Point and unit direction at distance `s` from the start.
+    /// Turn of the parent's heading over its first `t` (positive whatever
+    /// the sense).
+    fn turn(&self, t: f64) -> f64 {
+        let k = |r: f64| if r.is_finite() { 1.0 / r } else { 0.0 };
+        let (k0, k1) = (k(self.start_radius), k(self.radius));
+        k0 * t + (k1 - k0) * t * t / (2.0 * self.length)
+    }
+
+    /// Distance along the offset curve to the parent's distance `t`.
+    fn offset_distance(&self, t: f64) -> f64 {
+        let side = if self.counter_clockwise { 1.0 } else { -1.0 };
+        t - self.offset * side * self.turn(t)
+    }
+
+    /// Length of the curve drawn: the parent's length, shortened on the
+    /// inside of the turn by the offset times the turn, lengthened outside.
+    pub fn curve_length(&self) -> f64 {
+        if self.offset == 0.0 {
+            self.length
+        } else {
+            self.offset_distance(self.length)
+        }
+    }
+
+    /// Point and unit direction at distance `s` from the start, along the
+    /// curve drawn (the offset curve when `offset` is set).
     pub fn point_at(&self, s: f64) -> (Point2, (f64, f64)) {
+        if self.offset == 0.0 {
+            return self.parent_point_at(s);
+        }
+        // The parent distance whose offset point is `s` along: Newton.
+        let side = if self.counter_clockwise { 1.0 } else { -1.0 };
+        let mut t = s;
+        for _ in 0..30 {
+            let f = self.offset_distance(t) - s;
+            let df = 1.0 - self.offset * side * self.curvature(t);
+            if df.abs() < 1e-12 {
+                break;
+            }
+            let step = f / df;
+            t -= step;
+            if step.abs() < 1e-12 {
+                break;
+            }
+        }
+        let (p, d) = self.parent_point_at(t);
+        (
+            Point2::new(p.x - self.offset * d.1, p.y + self.offset * d.0),
+            d,
+        )
+    }
+
+    /// Point and unit direction at distance `s` along the parent.
+    fn parent_point_at(&self, s: f64) -> (Point2, (f64, f64)) {
         if self.spiral_type != SpiralType::Clothoid {
             let k = |r: f64| if r.is_finite() { 1.0 / r } else { 0.0 };
             let (k0, k1) = (k(self.start_radius), k(self.radius));
@@ -2487,6 +2608,7 @@ pub fn line_spiral_into(
         start_radius: f64::INFINITY,
         counter_clockwise: c.counter_clockwise,
         spiral_type: SpiralType::Clothoid,
+        offset: 0.0,
     };
     let (sc, _) = g.point_at(l);
     Some((ts, sc, g))
@@ -2765,8 +2887,8 @@ fn resolve_with(
             Element::Spiral(sp) => {
                 let g = sp.geometry();
                 Segment::Spiral {
-                    start: sp.start,
-                    end: g.point_at(sp.length).0,
+                    start: g.point_at(0.0).0,
+                    end: g.point_at(g.curve_length()).0,
                     geometry: g,
                 }
             }

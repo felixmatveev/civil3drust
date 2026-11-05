@@ -247,6 +247,7 @@ fn place(pc: &Piece, p: Point2, heading: f64) -> Segment {
         start_radius: radius(pc.k0),
         counter_clockwise: k > 0.0,
         spiral_type: SpiralType::Clothoid,
+        offset: 0.0,
     };
     let (end, _) = geometry.point_at(pc.length);
     Segment::Spiral {

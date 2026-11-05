@@ -20,7 +20,7 @@ use crate::aecc_elements::{
     ArcDef, ArcParams, ArcRecord, Element, FreeSpiralRecord, GroupDef, GroupRecord,
     LineSpiralRecord, ParamBlock, SpiralRecord, GROUP_LINE_SPIRAL, PREFIX_GROUP, PREFIX_LINE_GROUP,
     PREFIX_REVERSE_GROUP, PREFIX_SCSCS, PREFIX_SCSSCS, PREFIX_SPIRAL, SPIRAL_AFTER_CURVE,
-    SPIRAL_AFTER_LINE, SPIRAL_COMPOUND, SPIRAL_INWARD, SPIRAL_OUTWARD,
+    SPIRAL_AFTER_LINE, SPIRAL_COMPOUND, SPIRAL_INWARD, SPIRAL_OFFSET, SPIRAL_OUTWARD,
 };
 use crate::alignment::Point2;
 
@@ -230,6 +230,16 @@ fn spiral(w: &mut Bits, s: &SpiralRecord, type_byte: u8) {
             w.bd(s.length);
             point(w, s.start);
             point(w, dir);
+        }
+        SPIRAL_OFFSET => {
+            point(w, s.start);
+            point(w, dir);
+            w.bd(s.start_radius);
+            w.bd(s.length);
+            w.bd(s.end_radius);
+            w.bd(s.offset);
+            s.tail.iter().take(2).for_each(|v| w.bd(*v));
+            return;
         }
         SPIRAL_AFTER_LINE | SPIRAL_AFTER_CURVE => {
             w.bd(s.end_radius);

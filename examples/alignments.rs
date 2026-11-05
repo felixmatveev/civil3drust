@@ -54,6 +54,21 @@ fn main() {
                 ""
             }
         );
+        // Offset alignments (S255): the parameters and the parent.
+        if let Ok(Some(o)) = civil3drust::aecc_offset::offset_info(rec) {
+            let parent = civil3drust::aecc_alignment_refs::offset_parent(&opened.doc, rec)
+                .map(|p| format!("{p:X}"))
+                .unwrap_or_else(|| "?".into());
+            println!(
+                "  offset alignment of [{parent}]: {:.3} {:?}, parent stations {:.2}-{:.2}, own {:.2}-{:.2}",
+                o.offset.abs(),
+                o.side,
+                o.parent_start,
+                o.parent_end,
+                o.start,
+                o.end
+            );
+        }
         // Station equations (S243, S247): stations below are shown as
         // Civil 3D shows them, raw ones in brackets.
         let eqs = civil3drust::aecc_station_refs::station_equations(rec).unwrap_or_default();
@@ -102,6 +117,8 @@ fn main() {
                             0 => "inward",
                             1 => "outward",
                             2 => "compound",
+                            5 => "offset",
+                            6 | 8 => "placed",
                             _ => "?",
                         },
                         Element::FreeSpiral(sp) => {

@@ -98,7 +98,7 @@ hierarchy the field most likely belongs to (inferred from its position).
 | design-speed table: `BL 0, BL 1, BL n`, n × {`BL 1`, station, speed, GUID} | `DesignSpeeds`: `Station`, `Value`; `SpeedNumber` = position; `Comment` = a string in the string stream | model | GUIDs: random per speed with an interval; zero, without an interval, for layout-tool alignments (S161 8C56, S123) — D-045 |
 | `BD 100` after the table | — | open | constant in every sample |
 | element-ID list (`BL n`, n BDs) | — | cache | added after some saves; cleared (`clear_element_id_list`) |
-| alignment type BL | `AlignmentType`: Centerline 1, Offset 2, CurbReturn 3, Utility 4, Rail 5 | model | 1 and 4 seen (S58/S59; the UI calls 4 "Miscellaneous") |
+| alignment type BL | `AlignmentType`: Centerline 1, Offset 2, CurbReturn 3, Utility 4, Rail 5 | model | 1, 4 (S58/S59; the UI calls 4 "Miscellaneous") and 2 (S255) seen |
 | `BL 2, 2, 2, 0` | — | plumbing/open | constant |
 | implied PI display BL | — (no public property found) | model | MIST6: 1 by direction, 2 by curves, 3 none |
 | design criteria file strings | `CriteriaFileName` | model | `aecc_criteria` |

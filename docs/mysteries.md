@@ -39,6 +39,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 | MIST16 | three BDs after a spiral's geometry | open |
 | MIST17 | 128 bits after a `0x0D` element header | solved: group start point |
 | MIST18 | station equation and masking fields | solved; the equations' 18 leading bits are a fixed marker (owner) |
+| MIST19 | offset alignment block after the type | partly read |
 
 ## MIST1 — the 66-bit section-2 field — **PARTIALLY SOLVED (S142–S150, S214)**
 
@@ -531,6 +532,25 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   written exactly as `00 BE 04` for every equation, not decoded further
   (the object-header fields around bit 48 are not mapped).
 
+## MIST19 — the offset alignment block after the type — **open (S255)**
+
+- **Where:** after `BL type` 2 of an offset alignment, in place of a
+  centerline's `BL 2, 2, 2` and masking list (alignment-object.md,
+  "Offset alignments").
+- **Read:** the offset (twice, negative to the left), the side (1 left,
+  2 right), the parent's station range, the alignment's own station
+  range, the first and last element ID.
+- **Open:** the head `BL 1, 2, 1`; `B 1, B 1, BL 1, BL 1` after the side;
+  the `BL 2` before the element IDs; a list after them, one entry per
+  element `{BL 1, BL id, BL k, BL −1}` with k = 2, 3, 2 for tangent,
+  spiral, tangent (the parent's IDs are 1, 2, 3, so not those; perhaps
+  the element's kind), preceded by `BL 0 × 5, BL 3, BL 0, BL 3, BL 1,
+  BL −1`; then `BD 5, GUID, BD 405, GUID` and `BL 0, BL 0, BL 3` (likely
+  an empty masking list and the PI display).
+- **Next samples:** a parent with an arc (k for curves); an offset over
+  part of the parent (which station pair changes); a widening; the
+  offset value edited in its properties; a static offset.
+
 ## Not sampled yet (not mysteries, just gaps)
 
 - Real-world alignments. A 2020 production drawing (checked locally
@@ -542,11 +562,11 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   2) — no PI display or masking found where they follow `2, 2, 2`; and
   three alignments made from feature lines (section-2 form `BL 0x40, BL
   0, …` without the MIST1 anchor; two extra strings per element; one
-  start station not found). Samples of a curb return and an offset
-  alignment would settle the first; the feature-line form needs one
-  alignment created from a feature line.
-- Offset and other alignment types (S1-style imports have no element
-  records and a 22-bit gap after the elements instead of 161 bits).
+  start station not found). The offset form is read since S255 (MIST19);
+  a curb return sample would settle the rest; the feature-line form
+  needs one alignment created from a feature line.
+- Other alignment types (S1-style imports have no element records and a
+  22-bit gap after the elements instead of 161 bits).
 - Widening: offset alignments with widening regions (start and end
   stations, offset, transitions in and out — linear, curved, or by
   criteria) and the parent alignment's link to them. Sample plan: one

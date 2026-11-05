@@ -206,6 +206,10 @@ pub enum AlignmentElement {
         radius: Option<f64>,
         ccw: bool,
         kind: String,
+        /// Sideways shift from the parent, positive to the left (the spiral
+        /// of an offset alignment, S255).
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        offset: Option<f64>,
     },
 }
 
@@ -364,11 +368,12 @@ fn element(e: &ResolvedElement) -> AlignmentElement {
             id,
             start: p2(*start),
             end: p2(*end),
-            length: g.length,
+            length: g.curve_length(),
             start_radius: finite(g.start_radius),
             radius: finite(g.radius),
             ccw: g.counter_clockwise,
             kind: format!("{:?}", g.spiral_type),
+            offset: (g.offset != 0.0).then_some(g.offset),
         },
     }
 }
@@ -614,6 +619,7 @@ mod tests {
                     radius: Some(50.0),
                     ccw: true,
                     kind: "Clothoid".into(),
+                    offset: None,
                 }],
                 detached: Vec::new(),
                 groups: Vec::new(),

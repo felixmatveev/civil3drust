@@ -738,7 +738,7 @@ pub const TYPE_MISCELLANEOUS: i32 = 4;
 /// Bit offset of the alignment-type BL. After the design-speed table the
 /// record has BD 100, BL 0, BL n, n BDs (element IDs 1..n, present after
 /// some saves), then the type BL (docs/alignment-object.md, "Alignment type").
-fn type_bit(rec: &RawRecord, data: &[u8]) -> Result<usize, BuildError> {
+pub(crate) fn type_bit(rec: &RawRecord, data: &[u8]) -> Result<usize, BuildError> {
     // After the design-speed table (O2): with one speed it ends with GUID
     // copy 2, with more speeds the identity GUID is in another entry (S79).
     let r = RawRecord {

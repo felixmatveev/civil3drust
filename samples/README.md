@@ -266,6 +266,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S252 | `S252_S245_equations_and_masking_unique_guids.dwg` | civil3drust | S250's edits made again after the fix: every anchor GUID unique (FD7 9 intervals, 9 GUIDs). | 461797 | `9aec183653a31cd1` |
 | S253 | `S253_S178_masking_equation_on_json_group.dwg` | Civil 3D 2024 | Owner: S178 with a masking region (7+79.05–8+61.09) and a station equation (raw 9+58.09 → 10+00) on 11D4, both inside its JSON group (Free Reverse SSCSS). | 507868 | `1c8fecf4f8212f92` |
 | S254 | `S254_S252_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S252 opened (clean, AUDIT clean, stations and masks as written) and saved; reads back to the same model (intervals reordered). | 484832 | `b302556efae57662` |
+| S255 | `S255_offset_alignments_left_right.dwg` | Civil 3D 2024 | Owner: "Spline speed change" (FD7: tangent, outward spiral R 300 → ∞ L 200, tangent; start station 5) with two offset alignments, 10' to the left (115F) and 10' to the right (1170), whole length; the drawing holds only these three alignments. | 487822 | `722c4a4b12732bda` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

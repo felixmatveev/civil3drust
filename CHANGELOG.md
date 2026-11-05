@@ -7,6 +7,17 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Offset alignments (S255, read-only): the offset spiral record (kind 5:
+  the parent spiral, by its end point, plus the offset; D-071), drawn
+  along the offset curve with its own length; tangents are ordinary
+  records. `aecc_offset::offset_info` reads the offset, side, the parent's
+  and the alignment's station ranges and the element IDs after the type
+  (MIST19 for the rest); `aecc_alignment_refs::offset_parent` is the
+  parent (a soft pointer after the check set). `alignment_refs` accepts
+  soft pointers after the check set (the parent; profiles and profile
+  views in a production drawing), which made it fail before. `alignments` prints them, `dump` shows
+  the spiral's offset. Test `offset_alignments`; S255 re-encodes bit for
+  bit.
 - Station anchors inside JSON spiral groups (S253): intervals name the
   group as one element (ID, links, start, end, distance), matching Civil
   3D within 1e-6; equations and masking regions can be written on JSON

@@ -37,7 +37,7 @@ other records shift by the sizes of the variable parts.
 | 56–1783 | **proxy graphics** (display cache): 7 attribute chunks, one polyline per tangent, an attribute triple after each arc; with PROXYGRAPHICS 0 Civil 3D writes its placeholder instead (S141) | decoded; derived from geometry | **no** — Civil 3D regenerates it (S57); kept by default for programs without Civil 3D |
 | 1784–2196 | **section 2** (413 bits in the plain form), see 1.1 | decoded except MIST1–MIST4 contents | yes |
 | 2197–2206 | element count (BL) | decoded | yes |
-| 2207–2856 | **element records**, each with an 11-bit kind prefix (2 line, 4 curve, 6 spiral, 8 / 10 / 20 / 24 / 26 spiral groups and free spirals) | decoded (`aecc_elements`, `aecc_encode`; every kind re-encodes bit for bit) | yes — the geometry |
+| 2207–2856 | **element records**, each with an 11-bit kind prefix (2 line, 4 curve, 6 spiral — kind 5 within it is an offset alignment's spiral, S255 —, 8 / 10 / 20 / 24 / 26 spiral groups and free spirals) | decoded (`aecc_elements`, `aecc_encode`; every kind re-encodes bit for bit) | yes — the geometry |
 | 2857–2872 | interval block head: `BL 0, BL 0, BL 0, BL n` (n speed intervals) | decoded | yes |
 | 2873–3000 | first **interval**'s GUID (= its design-speed entry's GUID; not an alignment identity, S82; equations and masking regions have intervals too, S243) | decoded (random v4) | with speeds — a fresh GUID (a zero GUID changes how Civil 3D saves, S57 X5, MIST13) |
 | 3001–3017 | `B 1, BL kind (2 speed, 3 station equation, 4 masking), BD 0`, BD station (0), BD distance from the element start (0) | decoded | with speeds |
@@ -66,7 +66,7 @@ other records shift by the sizes of the variable parts.
 | content | status |
 |---|---|
 | design-speed table: BL 0, BL 1, BL n, n × {BL 1, BD station, BD speed, GUID} (the GUID shared with the speed's interval) | decoded (O2, S74) |
-| BD 100, BL 0, BL n, n BDs (element-ID list, optional: Civil 3D adds it after geometry edits, S12, S51), **BL alignment type** (1 Centerline, 4 Miscellaneous), BL 2, 2, 2, **masking list** `BL n`, n × {BD start, BD end, B, GUID, GUID} (S243), **BL implied-PI display** (1 by direction, 2 by curves, 3 none) | decoded (O1, S58/S59; S122; S243) |
+| BD 100, BL 0, BL n, n BDs (element-ID list, optional: Civil 3D adds it after geometry edits, S12, S51), **BL alignment type** (1 Centerline, 2 Offset, 4 Miscellaneous), BL 2, 2, 2 (an offset alignment has its offset parameters here instead, up to the PI display: alignment-object.md "Offset alignments", MIST19), **masking list** `BL n`, n × {BD start, BD end, B, GUID, GUID} (S243), **BL implied-PI display** (1 by direction, 2 by curves, 3 none) | decoded (O1, S58/S59; S122; S243) |
 | 1 bit (block bit 340) | 0 in all samples |
 | station-equation data (S9: +196 bits in section 2, more after the cache) | the list after the intervals is read (S243); S9's section-2 bits not decoded |
 

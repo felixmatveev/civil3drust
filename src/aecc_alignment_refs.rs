@@ -16,6 +16,10 @@
 //! | 2 | 5 | `AECC_ALIGNMENT_STYLE` — the alignment style (S18 vs S19) |
 //! | 1 | 5 | the design check set (`AECC_ALIGNMENT_DESIGN_CHECK_SET`) when the
 //! |   |   | alignment uses one (S79–S81), otherwise null |
+//!
+//! More soft pointers (code 4) may follow the check set: an offset
+//! alignment's parent (S255, last), and in a production drawing the
+//! alignment's profiles and profile views before it.
 
 use crate::handle_refs::{self, HandleRef};
 use crate::raw::{self, RawRecord};
@@ -30,17 +34,27 @@ pub struct AlignmentRefs {
     pub style: HandleRef,
     /// Design check set, or a null reference.
     pub check_set: HandleRef,
+    /// The soft pointers after the check set (S255): profiles, profile
+    /// views, an offset alignment's parent; see [`offset_parent`].
+    pub trailing: usize,
 }
 
 /// Pick the named references out of `rec`'s handle stream, or `None` if it
 /// doesn't have the known shape.
 pub fn alignment_refs(rec: &RawRecord) -> Option<AlignmentRefs> {
     let refs = handle_refs::of_record(rec);
-    let n = refs.len();
+    // The block ends at the last reference unless soft pointers follow the
+    // check set (S255).
+    let mut n = refs.len();
+    let mut trailing = 0;
+    while n > 7 && refs[n - 1].code == 4 && refs[n - 1].handle != 0 {
+        n -= 1;
+        trailing += 1;
+    }
     if n < 7 {
         return None;
     }
-    let t = &refs[n - 7..];
+    let t = &refs[n - 7..n];
     let shape = [5, 4, 5, 5, 4, 5, 5];
     if t.iter().zip(shape).any(|(r, c)| r.code != c)
         || t[1].handle != 0
@@ -54,7 +68,19 @@ pub fn alignment_refs(rec: &RawRecord) -> Option<AlignmentRefs> {
         companion: t[2],
         style: t[5],
         check_set: t[6],
+        trailing,
     })
+}
+
+/// The parent of an offset alignment (S255): the soft pointer after the
+/// check set that points to an `AECC_ALIGNMENT`.
+pub fn offset_parent(doc: &CadDocument, rec: &RawRecord) -> Option<u64> {
+    let a = alignment_refs(rec)?;
+    let refs = handle_refs::of_record(rec);
+    refs[refs.len() - a.trailing..]
+        .iter()
+        .map(|r| r.handle)
+        .find(|h| raw::class_of(doc, *h).as_deref() == Some("AECC_ALIGNMENT"))
 }
 
 #[derive(Debug, Clone, PartialEq)]

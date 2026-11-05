@@ -3143,7 +3143,9 @@ only, not stored; described generically) was read with every reader:
   its 11-bit kind prefix (D-069).
 - **Types 2 and 3.** One offset alignment (type 2) and three curb returns
   (type 3) — the API's Offset and CurbReturn values, as named. Their data
-  after `BL type, 2, 2, 2` is not the masking list; not decoded.
+  after `BL type` is not `2, 2, 2` and a masking list; the offset form
+  was decoded later from S255 ("Offset alignments"); the curb returns'
+  is not.
 - **Alignments from feature lines** have a section-2 form starting `BL
   0x40, BL 0, …` without the MIST1 anchor, and two more strings per
   element (262 tangents → 524).
@@ -3212,6 +3214,97 @@ been sampled there); unknown codes are drawn as clothoids. Compound
 spirals (two finite radii) of the arc-length types use the same rise;
 the tangent-defined types have no compound form and fall back to the
 clothoid. Test `spiral_types`.
+
+## Offset alignments (S255)
+
+**Sample.** S255 (owner, Civil 3D 2024): "Spline speed change" (FD7:
+tangent (0,0)→(100,0), outward clothoid R 300 → ∞ L 200 clockwise,
+tangent; start station 5) with two offset alignments over its whole
+length, 10' to the left (115F, "…-Left-10.000") and 10' to the right
+(1170, "…-Right-10.000"). Compared: the two offsets with each other (they
+differ only in the offset's sign, the side, the end station and GUIDs)
+and with the parent.
+
+**Elements.** Ordinary element records with the offset geometry, IDs 7–9
+(the parent has 1–3):
+
+- Tangents: kind 0 (fixed) with both points moved sideways by 10.
+- The spiral: kind prefix 6, a new spiral kind **5** after the parameter
+  block (`B 0, BD −1, BD −1, BL 1, BD −1`):
+
+  ```text
+  BL 5, BL id, BL before, BL after, BL 256 (type: clothoid), B clockwise,
+  RD x, y      the parent spiral's END point (294.1157, −43.8826)
+  RD dx, dy    the parent's direction there
+  BD 300       start radius
+  BD 200       length (the parent's)
+  BD inf       end radius
+  BD −10       offset: negative to the LEFT (+10 on the right offset)
+  BD 0, BD 1   tail, as on placed spirals
+  ```
+
+  The element is the parent spiral moved sideways: running the parent
+  back from the stored end gives its start (100, 0); every point moved by
+  10 along the left normal gives the offset curve, which meets both
+  offset tangents (within 3e-10) and matches the proxy graphics (all
+  polyline vertices within 0.01 but one mid-spiral vertex that the
+  parent's graphics have too). Its length is the parent's changed by the
+  offset times the turn (1/3 rad here): 203.333 outside the turn, 196.667
+  inside — the end stations Civil 3D stores (408.33, 401.67) agree.
+  Whether the stored point is always the parent's end, or the end at the
+  straight (∞) side, needs an inward and a compound spiral (one sample
+  only: outward, where both are the same point).
+
+**After the type** (`BL 2`). A centerline's `BL 2, 2, 2`, masking list
+and PI display are replaced by:
+
+```text
+BL 1, BL 2, BL 1                 (MIST19)
+BD −10                           offset, negative to the left
+BL 1                             side: 1 left, 2 right
+B 1, B 1, BL 1, BL 1             (MIST19)
+BD −10                           the offset again
+BD 5, BD 405                     the parent's station range followed
+BD 5, BD 408.33                  the offset alignment's own stations
+BL 2, BL 7, BL 9                 (2?), first and last element ID
+BL 0 × 5, BL 3, BL 0, BL 3, BL 1, BL −1,
+  {BL 1, BL id, BL k, BL −1} for ids 7 (k 2), 8 (k 3), 9 (k 2, no −1)
+                                 (MIST19: k is not the parent's ID)
+BD 5, GUID, BD 405, GUID         (a station range on the parent with an
+                                  anchor GUID?)
+BL 0, BL 0, BL 3, 1 bit          (likely: masking list n = 0, PI display
+                                  3 = none, as on the parent)
+```
+
+**Handle stream and associations.** The offset alignment's stream starts
+with a soft pointer to its own `AECC_ASSOC_DEPENDENCY` (where a
+centerline has none) and ends with one more reference after the check
+set: a soft pointer to the parent. The parent starts with soft pointers
+to two dependencies, one per offset. Each offset has an
+`AECC_ASSOC_ACTION` (owned by the drawing's associative network) that
+hard-owns an `AECC_ASSOC_OFFSET_ALIGNMENT_ACTION_BODY` (14 bytes: a hard
+pointer to the offset alignment) and two `AECC_ASSOC_DEPENDENCY` records
+(one on the parent, one on the offset; the parent's dependencies are
+chained to each other), each owning a 11-byte
+`AECC_ASSOC_DEPENDENCY_BODY`. The offset parameters live in the
+alignment record, not in these.
+
+**Production check.** The production drawing's offset alignment (one
+tangent, 14 to the left) reads the same way: offset, side and stations
+as its name and geometry say. Its handle stream has two dependency
+pointers first, and soft pointers to a profile and a profile view
+between the check set and the parent.
+
+**Not sampled.** An arc and inward/compound spirals in the parent; a
+partial station range; widenings; a static (non-dynamic) offset; the
+parent edited after the offsets were made.
+
+**civil3drust.** Read-only. `SPIRAL_OFFSET` records decode and re-encode
+bit for bit; `SpiralGeometry::offset` (positive to the left) moves the
+parent spiral, and `point_at` / `curve_length` work along the drawn
+curve (D-071). `aecc_offset::offset_info` reads the parameters up to the
+element IDs; `aecc_alignment_refs::offset_parent` is the parent. Test
+`offset_alignments`.
 
 ## MIST2: re-save field (partially solved, S151–S157)
 
