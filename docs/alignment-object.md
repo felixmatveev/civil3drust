@@ -3033,6 +3033,17 @@ start, last at the end, within 1e-6) and then treats them as model data
 (D-068): `MaskRegion::range` gives a locked side the alignment's own
 start or end, an unlocked side its recorded station.
 
+**Two station equations (S247, owner).** FE5 given a second equation
+before the first: 1+10 back → 1+09 ahead, then the old one at raw 1+90,
+now back 1+89 → 3+10 ahead (Station Control tab). The list holds both,
+in station order, each with its interval (kind 3) and its strings (the
+equation numbers `"1"`, `"2"`). Station Back of the second equation is
+derived from the first (raw 190 − 110 + ahead 109 = 189), as the
+Station Control help describes. The 18 leading bits are the same in both
+(MIST18); the trailing bit is 1 in both, both Increasing (the direction
+after the equation, so a lower ahead station is still Increasing). Test
+`s247_two_station_equations`.
+
 **S244 → S245 (owner).** S244 (S243 with every alignment's speeds
 rewritten by civil3drust: two on FD7's spiral, one in FDF's masking
 region, one after FE5's equation) opens clean, AUDIT clean, "behaviour as

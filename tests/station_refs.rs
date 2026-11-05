@@ -182,3 +182,36 @@ fn s246_masking_regions() {
     assert!(s.strings.iter().any(|x| x.text == "R1"));
     assert_eq!(required_string_count(&r).unwrap() + 1, s.strings.len());
 }
+
+/// S247 (owner): FE5 with two equations (Station Control tab: 1+10 back,
+/// 1+09 ahead; 1+90 raw back, 1+89 back, 3+10 ahead; both Increasing).
+/// The second's back station is derived from the raw one through the
+/// first equation (190 − 110 + 109); the equation numbers are strings.
+#[test]
+fn s247_two_station_equations() {
+    let o = raw::open("samples/S247_S246_two_station_equations.dwg").unwrap();
+    let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0xFE5)
+        .unwrap();
+    let e = station_equations(&r).unwrap();
+    let got: Vec<(f64, f64, f64, bool)> = e
+        .iter()
+        .map(|x| {
+            let q = |v: f64| (v * 1e6).round() / 1e6;
+            (q(x.raw_station), q(x.back), q(x.ahead), x.flag)
+        })
+        .collect();
+    assert_eq!(
+        got,
+        [(110.0, 110.0, 109.0, true), (190.0, 189.0, 310.0, true)]
+    );
+    assert!((e[1].back - (e[1].raw_station - e[0].raw_station + e[0].ahead)).abs() < 1e-9);
+    assert!(e.iter().all(|x| x.unknown == 1214));
+    let k = kinds(&r);
+    assert_eq!(k.iter().filter(|x| x.0 == KIND_EQUATION).count(), 2);
+    let s = string_stream::parse(&r.data, r.handle_bits).unwrap();
+    let texts: Vec<&str> = s.strings.iter().map(|x| x.text.as_str()).collect();
+    assert!(texts.contains(&"1") && texts.contains(&"2"));
+    assert_eq!(required_string_count(&r).unwrap() + 1, s.strings.len());
+}

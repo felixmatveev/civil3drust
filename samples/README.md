@@ -258,6 +258,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S244 | `S244_S243_speeds_rewritten.dwg` | civil3drust | S243 with the speeds rewritten by `set_speeds` (D-067): FD7 0:60 150:40 250:30 (two on the spiral), FDF 0:50 320:35 (in the masking region; region and its intervals kept), FE5 0:55 250:45 (raw station; equation and its interval kept). | 460690 | `2304f87996780818` |
 | S245 | `S245_S244_civ3d_resaved.dwg` | Civil 3D 2024 | S244 opened (clean, AUDIT clean, owner: behaviour as expected) and saved: same speeds, masking region and station equation; some interval stations recomputed in the last digits. | 481455 | `a4185f57dcb1f1c7` |
 | S246 | `S246_S245_masking_regions.dwg` | Civil 3D 2024 | Owner: S245 with FDF's masking regions edited (Masking tab): 1 Lock To Start, 0+00–0+69.20, comment `R1`; 2 1+39.93–1+81.09, Mask off; 3 2+90.30–3+34.11; 4 3+63.40–4+30.86, Lock To End. | 480671 | `02893cfb59910739` |
+| S247 | `S247_S246_two_station_equations.dwg` | Civil 3D 2024 | Owner: S246 with a second station equation on FE5 (Station Control: 1 raw back 1+10, back 1+10, ahead 1+09; 2 raw back 1+90, back 1+89, ahead 3+10; both Increasing; owner tried to make the first Decreasing, it stays Increasing after the change and reopen). | 486733 | `b2d855cd9df455ff` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

@@ -495,9 +495,24 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   lock is back after save and reopen — Civil 3D shows a lock whenever the
   first region starts at the alignment's start (or the last ends at its
   end). civil3drust's handling: D-068.
-- **Test (equations):** an alignment with two equations, one increasing
-  and one decreasing (the Station Equations tab's "Increasing/
-  Decreasing"); compare the 18 bits and the last bit.
+- **Equations (S247, owner):** FE5 with two equations (Station Control
+  tab: 1: raw back 1+10, back 1+10, ahead 1+09; 2: raw back 1+90, back
+  1+89, ahead 3+10; both shown Increasing). The fields are, in Autodesk's
+  names (Station Control tab help, names and meanings): **Raw Station
+  Back** (BD; the station before any equation), its interval's GUID,
+  **Station Back** (BD; for every equation but the first relative to the
+  one before: 190 − 110 + 109 = 189.0000000372529, stored with Civil 3D's
+  rounding), **Station Ahead** (BD), then the bit. The 18 bits are
+  `00 BE 04` in both equations, so they look constant (a tag?), not per
+  equation. The bit is 1 in both and both show Increasing; owner: the
+  first equation "should be called decreasing" (ahead 1+09 below back
+  1+10) but stays Increasing after the value change and reopen. Per the
+  help, Increase/Decrease is the direction of the stations *after* the
+  equation, not the jump at it, so a smaller ahead station is still
+  Increasing. The strings `"1"` and `"2"` are the Equation column (one of
+  the two strings per equation; the other is probably the comment).
+- **Still open:** a Decreasing equation (Increase/Decrease set to
+  Decreasing in the grid) to see the bit go 0; the 18 bits.
 
 ## Not sampled yet (not mysteries, just gaps)
 

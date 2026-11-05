@@ -53,13 +53,18 @@ pub struct Interval {
 /// A station equation (S243 FE5: back 190, ahead 310 at raw station 190).
 #[derive(Debug, Clone, PartialEq)]
 pub struct StationEquation {
-    /// Station along the alignment without equations.
+    /// Raw Station Back: the station without any equation.
     pub raw_station: f64,
+    /// Station Back: for every equation but the first, relative to the
+    /// one before (S247: 190 − 110 + 109 = 189).
     pub back: f64,
+    /// Station Ahead.
     pub ahead: f64,
-    /// The bit after the ahead station (1 in S243; increasing?).
+    /// The bit after the ahead station: 1 for every equation sampled, all
+    /// Increasing (S243, S247); probably Increase/Decrease (MIST18).
     pub flag: bool,
-    /// The 18 bits before the raw station, read as a BS (1214 in S243).
+    /// The 18 bits before the raw station, read as a BS: 1214 in every
+    /// equation sampled (S243, S247; MIST18).
     pub unknown: u16,
     pub guid: [u8; 16],
 }

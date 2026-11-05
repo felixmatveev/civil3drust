@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Sample S247 (two station equations): Station Back of later equations is
+  derived from the one before; the 18 leading bits are the same in both;
+  equation numbers are strings. Test `s247_two_station_equations`.
 - Masking regions' Mask check box (S246): the region's bit is the inverted
   Mask (`MaskRegion::masked`, was `flag`); the Lock To Start / End boxes
   are not stored as flags; civil3drust derives them on reading and then
