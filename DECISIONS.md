@@ -1299,7 +1299,12 @@ and is too verbose to read; kept in mind for a full round trip (FRT-2).
 
 ## D-066: Modularity: layers, one record map, tables for policy
 
-**Date:** 2026-11-04. **Status:** proposed.
+**Date:** 2026-11-04. **Status:** deferred (2026-11-05).
+
+**Deferred.** The owner keeps the current notes-style code for now and
+returns to modularity once more Civil 3D objects are sampled and the
+architecture, scope and passthrough areas are clearer. Until then
+`docs/modularity.md` is a reference, not a plan.
 
 **Context.** The owner wants contributors to be able to replace one
 unknown or unsupported piece (a MIST field, a spiral type such as NSW,

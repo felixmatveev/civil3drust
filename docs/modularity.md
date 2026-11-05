@@ -1,6 +1,7 @@
 # Modularity review and proposal
 
-Status: proposal (2026-11-04), not adopted. Reviewed at commit `754afb4`.
+Status: proposal (2026-11-04), deferred (2026-11-05, D-066) until more
+Civil 3D objects are sampled. Reviewed at commit `754afb4`.
 Nothing here changes behaviour; every step below is meant to keep
 `examples/fingerprint.rs` output byte-identical across all samples unless
 the step says otherwise.

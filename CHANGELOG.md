@@ -7,7 +7,7 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- `docs/modularity.md` (D-066, proposed): review of how hard the crate is
+- `docs/modularity.md` (D-066, deferred until more objects are sampled): review of how hard the crate is
   to extend piece by piece — 11 weak spots (dependency cycle across 16
   modules, no single record map, trial-scan element dispatch that drops
   unknown kinds, catch-all matches, scattered refusals and cache
