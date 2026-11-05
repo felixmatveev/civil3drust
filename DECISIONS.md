@@ -1372,3 +1372,20 @@ station.
 does: a region could gain or lose a lock as a side effect of an
 unrelated edit.
 
+## D-069: Element records are read as one contiguous run
+Date: 2026-11-05 · Status: accepted
+
+**Context.** The element reader searched the whole record bit by bit for
+anything that parses as an element. In a production drawing the interval
+block after the elements holds hundreds of intervals, where chance
+matches broke two alignments.
+
+**Decision.** The first record is found by searching; every next record
+must start right after the previous one and its 11-bit kind prefix (or,
+for the unit tests' synthetic records, right after it); the first gap
+ends the list.
+
+**Alternatives.** Reading the element count before the first record and
+stopping after it: equivalent for Civil 3D's records, but the count is
+not always where expected in the older forms.
+

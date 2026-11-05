@@ -2232,10 +2232,26 @@ fn arc_at(data: &[u8], bit: usize) -> Option<ArcRecord> {
 
 /// Every tangent or arc element record in `data`, in storage order.
 pub fn element_records(data: &[u8]) -> Vec<Element> {
-    let mut out = Vec::new();
+    let mut out: Vec<Element> = Vec::new();
     let mut bit = 0;
     let n = raw::bit_len(data);
     while bit + 26 <= n {
+        // The records are contiguous, each after an 11-bit kind prefix: once
+        // the first is found, the next one must start right after the
+        // previous record and its prefix, or the list has ended. (Scanning
+        // on would find chance matches in the large interval blocks of
+        // production drawings.)
+        // (The unit tests' synthetic records have no prefixes, so a record
+        // right at the end of the previous one is accepted too.)
+        if let Some(last) = out.last() {
+            let end = last.end_bit();
+            if bit == end && end + 11 + 26 <= n && probe(data, end + 11) {
+                bit = end + 11;
+            } else if bit != end && bit != end + 11 {
+                break;
+            }
+        }
+        let before = out.len();
         if let Some(t) = aecc_alignment::record_at(data, bit) {
             bit = t.end_bit();
             out.push(Element::Tangent(t));
@@ -2254,11 +2270,29 @@ pub fn element_records(data: &[u8]) -> Vec<Element> {
         } else if let Some(g) = line_spiral_at(data, bit) {
             bit = g.end_bit;
             out.push(Element::LineSpiral(g));
-        } else {
+        } else if out.is_empty() {
             bit += 1;
+        }
+        if out.len() == before && !out.is_empty() {
+            match out.last().map(|l| l.end_bit()) {
+                // Nothing at the end of the previous record: try once more
+                // after a prefix's length, then stop.
+                Some(end) if bit == end => bit = end + 11,
+                _ => break,
+            }
         }
     }
     out
+}
+
+/// True when an element record starts at `bit`.
+fn probe(data: &[u8], bit: usize) -> bool {
+    aecc_alignment::record_at(data, bit).is_some()
+        || group_at(data, bit).is_some()
+        || free_spiral_at(data, bit).is_some()
+        || spiral_at(data, bit).is_some()
+        || arc_at(data, bit).is_some()
+        || line_spiral_at(data, bit).is_some()
 }
 
 /// The geometry an element actually occupies along the alignment.

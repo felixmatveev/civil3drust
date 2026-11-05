@@ -24,8 +24,8 @@ Anything not listed is Passthrough.
 | Surfaces | — | Passthrough |
 | **Alignments** | `aecc_alignment`, `aecc_elements` (read); `aecc_create::create_alignment`; `aecc_delete::delete_alignment` | Partial — see the alignment rows below |
 | &nbsp;&nbsp;Centerline Alignments | `aecc_build::TYPE_CENTERLINE` (1), `alignment_type` / `set_alignment_type` | Supported |
-| &nbsp;&nbsp;Offset Alignments | — (API value 2) | Rejected as a bare type change: S61 opened with errors, RECOVER removed it (S63). Offset parameters and parent link not sampled |
-| &nbsp;&nbsp;Curb Return Alignments | — (API value 3) | Rejected the same way (S61, S63) |
+| &nbsp;&nbsp;Offset Alignments | — (API value 2) | Elements, type, speeds read (a production drawing); the data after the type is not decoded. Rejected as a bare type change: S61 opened with errors, RECOVER removed it (S63) |
+| &nbsp;&nbsp;Curb Return Alignments | — (API value 3) | Elements, type, speeds read (a production drawing); the data after the type is not decoded (no PI display or masking). Rejected as a bare type change (S61, S63) |
 | &nbsp;&nbsp;Rail Alignments | — (API value 5) | Rejected the same way (S61, S63) |
 | &nbsp;&nbsp;Rail Diverted Alignments | — (no API value known) | Passthrough |
 | &nbsp;&nbsp;Miscellaneous Alignments | `aecc_build::TYPE_MISCELLANEOUS` (4; API "Utility") | Supported |

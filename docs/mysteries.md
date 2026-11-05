@@ -533,11 +533,18 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
 
 ## Not sampled yet (not mysteries, just gaps)
 
-- Real-world alignments (a 2020 production drawing, checked locally): 2
-  of 10 alignments do not decode (one "tangents around free arc don't
-  meet at a PI"), and the alignment type / implied PI display are found
-  in only 1 of 10 — the block after the design-speed table has another
-  layout there. Needs purpose-made samples to reproduce.
+- Real-world alignments. A 2020 production drawing (checked locally
+  earlier): 2 of 10 did not decode. A second production drawing (Civil 3D
+  2024 schema, 26 alignments, checked locally 2026-11-05, not stored):
+  all 26 decode their elements now; type, speeds, equations, masking and
+  the PI display read on 21. Not read yet: the data after the type of
+  the three **curb returns** (type 3) and the **offset alignment** (type
+  2) — no PI display or masking found where they follow `2, 2, 2`; and
+  three alignments made from feature lines (section-2 form `BL 0x40, BL
+  0, …` without the MIST1 anchor; two extra strings per element; one
+  start station not found). Samples of a curb return and an offset
+  alignment would settle the first; the feature-line form needs one
+  alignment created from a feature line.
 - Offset and other alignment types (S1-style imports have no element
   records and a 22-bit gap after the elements instead of 161 bits).
 - Widening: offset alignments with widening regions (start and end

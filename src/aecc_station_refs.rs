@@ -5,7 +5,11 @@
 //! is not specific to design speeds: every object that sits at a station
 //! has one interval there, found by its GUID — a design speed (its table
 //! entry carries the GUID), a station equation (one interval) and a masking
-//! region (one at its start, one at its end). After the intervals:
+//! region (one at its start, one at its end). In a production drawing
+//! (checked locally) alignments carry hundreds of intervals of other kinds
+//! (labels and other objects anchored to stations; kinds up to ~700 and
+//! one near 0x7FFF per alignment), and the three BLs that open the block
+//! are small counters (1–3, 0–1, 0) instead of 0. After the intervals:
 //!
 //! ```text
 //! BL n_eq, n_eq × { 18 bits (BS 1214 in S243, unknown), BD raw station,
@@ -148,13 +152,13 @@ pub fn intervals_at(data: &[u8], start: usize) -> Option<(Vec<Interval>, usize)>
     let mut q = start;
     for _ in 0..3 {
         let (v, nq) = raw::read_bl(data, q)?;
-        if v != 0 {
+        if !(0..=1_000_000).contains(&v) {
             return None;
         }
         q = nq;
     }
     let (n, mut q) = raw::read_bl(data, q)?;
-    if !(0..=10_000).contains(&n) {
+    if !(0..=100_000).contains(&n) {
         return None;
     }
     let mut out = Vec::new();
@@ -169,7 +173,7 @@ pub fn intervals_at(data: &[u8], start: usize) -> Option<(Vec<Interval>, usize)>
         }
         let (kind, p) = raw::read_bl(data, q + 1)?;
         let (zero, p) = raw::read_bd(data, p)?;
-        if !(KIND_SPEED..=KIND_MASK).contains(&kind) || zero != 0.0 {
+        if !(0..=0xFFFF).contains(&kind) || zero != 0.0 {
             return None;
         }
         let (station, p) = raw::read_bd(data, p)?;
@@ -301,4 +305,45 @@ pub fn station_back(index: usize, equations: &[StationEquation]) -> Option<f64> 
         .cloned()
         .collect();
     Some(display_station(e.raw_station, &before))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::aecc_build::Bits;
+
+    /// The interval block of a production drawing (checked locally): the
+    /// three opening BLs are small counters, not 0, and intervals of other
+    /// objects carry kinds well above 4 (one per alignment near 0x7FFF).
+    #[test]
+    fn interval_block_with_counters_and_foreign_kinds() {
+        let mut w = Bits::default();
+        for v in [2, 1, 0, 2] {
+            w.bl(v);
+        }
+        for (k, st) in [(695, 151.397), (0x7FFA, 2000.0)] {
+            for b in 0..16u8 {
+                w.byte(b);
+            }
+            w.bit(1);
+            w.bl(k);
+            w.bd(0.0);
+            w.bd(st);
+            w.bd(1.0);
+            w.bd(2.0);
+            for v in [5, 4, 6] {
+                w.bl(v);
+            }
+            for v in [0.0; 6] {
+                w.rd(v);
+            }
+        }
+        w.bl(0);
+        let n = w.len();
+        let bytes = w.into_bytes();
+        let (v, end) = intervals_at(&bytes, 0).unwrap();
+        assert_eq!(v.iter().map(|i| i.kind).collect::<Vec<_>>(), [695, 0x7FFA]);
+        assert_eq!(v[1].station, 2000.0);
+        assert_eq!(end + 2, n);
+    }
 }

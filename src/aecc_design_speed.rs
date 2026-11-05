@@ -164,6 +164,10 @@ pub fn entry_guid_bits(rec: &RawRecord) -> Result<Vec<usize>, SpeedError> {
 /// The interval block of an alignment without design speeds: BL 0 ×4.
 const EMPTY_INTERVALS: [u8; 8] = [1, 0, 1, 0, 1, 0, 1, 0];
 
+fn end_of_elements(rec: &RawRecord) -> Result<usize, SpeedError> {
+    identity(rec).map(|x| x.0)
+}
+
 /// End of the element records and the identity GUID (copy 1, 16 bits
 /// after them).
 fn identity(rec: &RawRecord) -> Result<(usize, [u8; 16]), SpeedError> {
@@ -262,13 +266,29 @@ pub fn interval_count(rec: &RawRecord) -> Result<usize, SpeedError> {
     old_interval_count(&rec.data, end)
 }
 
-/// Number of intervals: after the elements come BL 0 ×3 and the count.
+/// Number of intervals: after the elements come three BLs (0 in every
+/// purpose-made sample, small counters in a production drawing) and the
+/// count.
 fn old_interval_count(data: &[u8], end: usize) -> Result<usize, SpeedError> {
-    if (0..6).any(|i| raw::get_bit(data, end + i) != EMPTY_INTERVALS[i]) {
-        return Err(err("interval block not where expected"));
+    crate::aecc_station_refs::intervals_at(data, end)
+        .map(|(v, _)| v.len())
+        .ok_or_else(|| err("interval block not where expected"))
+}
+
+/// The three BLs that open the interval block, as stored.
+fn interval_head(data: &[u8], end: usize) -> [i32; 3] {
+    let mut v = [0; 3];
+    let mut q = end;
+    for x in &mut v {
+        match raw::read_bl(data, q) {
+            Some((n, nq)) => {
+                *x = n;
+                q = nq;
+            }
+            None => break,
+        }
     }
-    let (n, _) = raw::read_bl(data, end + 6).ok_or_else(|| err("interval count"))?;
-    usize::try_from(n).map_err(|_| err("interval count"))
+    v
 }
 
 /// Write the interval block: BL 0 ×3, BL n, then per speed its GUID, 13
@@ -384,8 +404,8 @@ fn write_intervals(
     for &(from, to) in kept {
         intervals.copy(&rec.data, from, to);
     }
-    for _ in 0..3 {
-        w.bl(0);
+    for v in interval_head(&rec.data, end_of_elements(rec)?) {
+        w.bl(v);
     }
     w.bl((count + kept.len()) as i32);
     let n = intervals.len();
@@ -415,9 +435,10 @@ pub fn clear_design_speeds(rec: &RawRecord) -> Result<(Vec<u8>, usize), SpeedErr
     let data_end = total - rec.handle_bits;
     let mut w = Bits::default();
     w.copy(data, 0, end);
-    for b in EMPTY_INTERVALS {
-        w.bit(b);
+    for v in interval_head(data, end) {
+        w.bl(v);
     }
+    w.bl(0);
     w.bl(0);
     w.bl(1);
     w.bl(0);

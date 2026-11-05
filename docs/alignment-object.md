@@ -3089,6 +3089,35 @@ points (FDF's speed 320.00000000045003, FE5's equation 190.0000000372529,
 also its raw station) and reordered them; the equation's back and ahead
 stations and the region's stations are kept.
 
+## Production drawing check (2026-11-05)
+
+A Civil 3D 2024–schema production drawing with 26 alignments (local
+only, not stored; described generically) was read with every reader:
+
+- **The interval block is shared with many more objects.** Alignments
+  used by labels, profiles and other objects carry hundreds of intervals
+  (up to 1,203), with kinds far beyond 2–4 (values up to ~700, and one
+  near `0x7FFF` per alignment); every interval has the usual form and two
+  strings, so the string rule still holds (1,908 strings for 949
+  intervals, …). The three BLs that open the block are small counters
+  there (`1–3, 0–1, 0`), 0 in every purpose-made sample. Both are now
+  accepted (`aecc_station_refs::intervals_at`), and speed rewrites keep
+  the counters.
+- **Element records are contiguous.** The element scan used to search the
+  whole record and found chance matches inside the large interval blocks
+  (two alignments failed as "pieces hold 1 of 2 elements"). It now stops
+  at the first gap: each record starts right after the previous one and
+  its 11-bit kind prefix (D-069).
+- **Types 2 and 3.** One offset alignment (type 2) and three curb returns
+  (type 3) — the API's Offset and CurbReturn values, as named. Their data
+  after `BL type, 2, 2, 2` is not the masking list; not decoded.
+- **Alignments from feature lines** have a section-2 form starting `BL
+  0x40, BL 0, …` without the MIST1 anchor, and two more strings per
+  element (262 tangents → 524).
+
+Result: all 26 decode their elements; type, speeds, station equations,
+masking regions and PI display read on 21 of 26.
+
 ## Spiral types (S232)
 
 The owner filled S228 (one named 100' tangent per type) with an outward

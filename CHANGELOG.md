@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Production-drawing check (local only): the interval block's opening
+  BLs may be counters and its intervals may have any 16-bit kind
+  (labels and other objects); both are accepted and speed rewrites keep
+  the counters. Element records are read as one contiguous run (D-069),
+  which fixes two production alignments. 26 of 26 decode their elements.
 - `aecc_station_refs::display_station` and `station_back`: stations with
   station equations applied (S247: end 5+50.86 as Civil 3D shows it);
   `examples/alignments` prints equations and both stations. Sample S249
