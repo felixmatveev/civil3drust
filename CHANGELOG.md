@@ -7,7 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- `COMPATIBILITY.md`: every Civil 3D 2024 Prospector and Settings item,
+- `COMPATIBILITY.md`: every Civil 3D 2024 Prospector item and the full
+  Settings tree (one table per feature),
   with the code that handles it and its status (supported, partial,
   read-only, referenced, passthrough, rejected).
 - `docs/modularity.md` (D-066, deferred until more objects are sampled): review of how hard the crate is

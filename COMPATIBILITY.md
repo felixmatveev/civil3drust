@@ -81,45 +81,417 @@ alignment record itself.
 
 ## Settings (styles and settings)
 
+Listed as Civil 3D 2024 shows the Settings tree. Every item is a
+collection of objects in the drawing (styles, sets, rule sets, command
+defaults); a style's own sub-styles are not listed.
+
+### General
+
 | Civil 3D item | code | status |
 |---|---|---|
-| General | — | Passthrough |
-| Point | — | Passthrough |
-| Surface | — | Passthrough |
-| Parcel | — | Passthrough |
-| Grading | — | Passthrough |
-| **Alignment** | | Partial — see below |
-| &nbsp;&nbsp;Alignment styles | `aecc_alignment_refs::alignment_styles`, `set_alignment_style`; `aecc_style::components`, `set_component_visible` | Partial — listed, assigned, component visibility set; other style content not decoded; never created (D-015) |
-| &nbsp;&nbsp;Label set styles | — | Referenced — the alignment's handle to it is kept as read or as in the template; not decoded |
-| &nbsp;&nbsp;Design check sets | `aecc_alignment_refs` (`check_set`) | Referenced |
-| &nbsp;&nbsp;Label styles, design checks, command settings | — | Passthrough |
-| Profile | — | Passthrough |
-| Profile View | — | Passthrough |
-| Superelevation View | — | Passthrough |
-| Cant View | — | Passthrough |
-| Sample Line | — | Passthrough |
-| Section | — | Passthrough |
-| Section View | — | Passthrough |
-| Mass Haul Line | — | Passthrough |
-| Mass Haul View | — | Passthrough |
-| Rail | — | Passthrough |
-| Rail Turnout | — | Passthrough |
-| Catchment | — | Passthrough |
-| Pipe Network | — | Passthrough |
-| Pipe | — | Passthrough |
-| Structure | — | Passthrough |
-| Pressure Network | — | Passthrough |
-| Pressure Pipe | — | Passthrough |
-| Fitting | — | Passthrough |
-| Appurtenance | — | Passthrough |
-| Bridge | — | Passthrough |
-| Corridor | — | Passthrough |
-| Intersection | — | Passthrough |
-| Assembly | — | Passthrough |
-| Subassembly | — | Passthrough |
-| Quantity Takeoff | — | Passthrough |
-| Survey | — | Passthrough |
-| View Frame Group | — | Passthrough |
-| View Frame | — | Passthrough |
-| Match Line | — | Passthrough |
-| Building Site | — | Passthrough |
+| Multipurpose Styles | — | Passthrough |
+| &nbsp;&nbsp;Marker Styles | — | Passthrough |
+| &nbsp;&nbsp;Feature Line Styles | — | Passthrough |
+| &nbsp;&nbsp;Slope Pattern Styles | — | Passthrough |
+| &nbsp;&nbsp;Projection Styles | — | Passthrough |
+| &nbsp;&nbsp;Code Set Styles | — | Passthrough |
+| &nbsp;&nbsp;Link Styles | — | Passthrough |
+| &nbsp;&nbsp;Shape Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| &nbsp;&nbsp;Note | — | Passthrough |
+| &nbsp;&nbsp;Line | — | Passthrough |
+| &nbsp;&nbsp;Curve | — | Passthrough |
+| &nbsp;&nbsp;Marker | — | Passthrough |
+| &nbsp;&nbsp;Link | — | Passthrough |
+| &nbsp;&nbsp;Shape | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Point
+
+| Civil 3D item | code | status |
+|---|---|---|
+| User-Defined Property Classifications | — | Passthrough |
+| Point Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| Point File Formats | — | Passthrough |
+| Description Key Sets | — | Passthrough |
+| External Data References | — | Passthrough |
+| Table Styles | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Surface
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Surface Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| &nbsp;&nbsp;Contour | — | Passthrough |
+| &nbsp;&nbsp;Slope | — | Passthrough |
+| &nbsp;&nbsp;Spot Elevation | — | Passthrough |
+| &nbsp;&nbsp;Watershed | — | Passthrough |
+| Table Styles | — | Passthrough |
+| &nbsp;&nbsp;Direction | — | Passthrough |
+| &nbsp;&nbsp;Elevation | — | Passthrough |
+| &nbsp;&nbsp;Slope | — | Passthrough |
+| &nbsp;&nbsp;Slope Arrow | — | Passthrough |
+| &nbsp;&nbsp;Contour | — | Passthrough |
+| &nbsp;&nbsp;Watershed | — | Passthrough |
+| &nbsp;&nbsp;User-Defined Contour | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Parcel
+
+| Civil 3D item | code | status |
+|---|---|---|
+| User-Defined Property Classifications | — | Passthrough |
+| Parcel Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| &nbsp;&nbsp;Area | — | Passthrough |
+| &nbsp;&nbsp;Line | — | Passthrough |
+| &nbsp;&nbsp;Curve | — | Passthrough |
+| Table Styles | — | Passthrough |
+| &nbsp;&nbsp;Line | — | Passthrough |
+| &nbsp;&nbsp;Curve | — | Passthrough |
+| &nbsp;&nbsp;Segment | — | Passthrough |
+| &nbsp;&nbsp;Area | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Grading
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Grading Styles | — | Passthrough |
+| Grading Criteria Sets | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Alignment
+
+| Civil 3D item | code | status |
+|---|---|---|
+| **Alignment** | — | Partial — see the rows below |
+| Alignment Styles | `aecc_alignment_refs::alignment_styles`, `set_alignment_style`; `aecc_style::components`, `set_component_visible` | Partial — listed, assigned to an alignment, component visibility set; other style content not decoded; never created (D-015) |
+| Design Checks | — | Passthrough |
+| &nbsp;&nbsp;Design Check Sets | `aecc_alignment_refs` (`check_set`); `aecc_create` | Referenced — read; kept on a created alignment when the target drawing has it, otherwise cleared with its check box; content not decoded |
+| &nbsp;&nbsp;Line | — | Passthrough |
+| &nbsp;&nbsp;Curve | — | Passthrough |
+| &nbsp;&nbsp;Spiral | — | Passthrough |
+| &nbsp;&nbsp;Superelevation | — | Passthrough |
+| &nbsp;&nbsp;Tangent Intersection | — | Passthrough |
+| Label Styles | — | Passthrough |
+| &nbsp;&nbsp;Label Sets | — | Referenced — the alignment's link is kept as read or as in the template; not decoded |
+| &nbsp;&nbsp;Station | — | Passthrough |
+| &nbsp;&nbsp;Station Offset | — | Passthrough |
+| &nbsp;&nbsp;Line | — | Passthrough |
+| &nbsp;&nbsp;Curve | — | Passthrough |
+| &nbsp;&nbsp;Spiral | — | Passthrough |
+| &nbsp;&nbsp;Tangent Intersection | — | Passthrough |
+| &nbsp;&nbsp;Point of Intersection | — | Passthrough |
+| &nbsp;&nbsp;Cant Information | — | Passthrough |
+| Table Styles | — | Passthrough |
+| &nbsp;&nbsp;Line | — | Passthrough |
+| &nbsp;&nbsp;Curve | — | Passthrough |
+| &nbsp;&nbsp;Spiral | — | Passthrough |
+| &nbsp;&nbsp;Segment | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Profile
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Profile Styles | — | Passthrough |
+| Design Checks | — | Passthrough |
+| &nbsp;&nbsp;Design Check Sets | — | Passthrough |
+| &nbsp;&nbsp;Line | — | Passthrough |
+| &nbsp;&nbsp;Curve | — | Passthrough |
+| Label Styles | — | Passthrough |
+| &nbsp;&nbsp;Label Sets | — | Passthrough |
+| &nbsp;&nbsp;Station | — | Passthrough |
+| &nbsp;&nbsp;Grade Breaks | — | Passthrough |
+| &nbsp;&nbsp;Line | — | Passthrough |
+| &nbsp;&nbsp;Curve | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Profile View
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Profile View Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| &nbsp;&nbsp;Station Elevation | — | Passthrough |
+| &nbsp;&nbsp;Depth | — | Passthrough |
+| &nbsp;&nbsp;Projection | — | Passthrough |
+| &nbsp;&nbsp;Crossing | — | Passthrough |
+| Band Styles | — | Passthrough |
+| &nbsp;&nbsp;Band Sets | — | Passthrough |
+| &nbsp;&nbsp;Profile Data | — | Passthrough |
+| &nbsp;&nbsp;Vertical Geometry | — | Passthrough |
+| &nbsp;&nbsp;Horizontal Geometry | — | Passthrough |
+| &nbsp;&nbsp;Superelevation Data | — | Passthrough |
+| &nbsp;&nbsp;Sectional Data | — | Passthrough |
+| &nbsp;&nbsp;Cant Data | — | Passthrough |
+| &nbsp;&nbsp;Speed | — | Passthrough |
+| &nbsp;&nbsp;Point Proximity | — | Passthrough |
+| &nbsp;&nbsp;Alignment Proximity | — | Passthrough |
+| &nbsp;&nbsp;Pipe Network | — | Passthrough |
+| &nbsp;&nbsp;Pressure Network | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Superelevation View
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Superelevation View Styles | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Cant View
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Cant View Styles | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Sample Line
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Sample Line Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Section
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Section Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| &nbsp;&nbsp;Label Sets | — | Passthrough |
+| &nbsp;&nbsp;Major Offset | — | Passthrough |
+| &nbsp;&nbsp;Minor Offset | — | Passthrough |
+| &nbsp;&nbsp;Grade Break | — | Passthrough |
+| &nbsp;&nbsp;Segment | — | Passthrough |
+| &nbsp;&nbsp;Corridor Points | — | Passthrough |
+
+### Section View
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Section View Styles | — | Passthrough |
+| Group Plot Styles | — | Passthrough |
+| Sheet Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| &nbsp;&nbsp;Offset Elevation | — | Passthrough |
+| &nbsp;&nbsp;Grade | — | Passthrough |
+| &nbsp;&nbsp;Projection | — | Passthrough |
+| &nbsp;&nbsp;Crossing | — | Passthrough |
+| Band Styles | — | Passthrough |
+| &nbsp;&nbsp;Band Sets | — | Passthrough |
+| &nbsp;&nbsp;Section Data | — | Passthrough |
+| &nbsp;&nbsp;Section Segment | — | Passthrough |
+| Table Styles | — | Passthrough |
+| &nbsp;&nbsp;Total Volume | — | Passthrough |
+| &nbsp;&nbsp;Material | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Mass Haul Line
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Mass Haul Line Styles | — | Passthrough |
+
+### Mass Haul View
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Mass Haul View Styles | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Rail
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Commands | — | Passthrough |
+
+### Rail Turnout
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Turnout Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| &nbsp;&nbsp;Label Sets | — | Passthrough |
+| &nbsp;&nbsp;Turnout | — | Passthrough |
+| &nbsp;&nbsp;Turnout Profile | — | Passthrough |
+| &nbsp;&nbsp;Critical Points | — | Passthrough |
+| &nbsp;&nbsp;Critical Points Profile | — | Passthrough |
+| &nbsp;&nbsp;Turnout Dimension Profile | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Catchment
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Catchment Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| &nbsp;&nbsp;Area | — | Passthrough |
+| &nbsp;&nbsp;Flow Segment | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Pipe Network
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Parts Lists | — | Passthrough |
+| Interference Styles | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Pipe
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Pipe Styles | — | Passthrough |
+| Pipe Rule Set | — | Passthrough |
+| Label Styles | — | Passthrough |
+| &nbsp;&nbsp;Plan Profile | — | Passthrough |
+| &nbsp;&nbsp;Crossing Section | — | Passthrough |
+| &nbsp;&nbsp;Crossing Profile | — | Passthrough |
+| Table Styles | — | Passthrough |
+
+### Structure
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Structure Styles | — | Passthrough |
+| Structure Rule Set | — | Passthrough |
+| Label Styles | — | Passthrough |
+| Table Styles | — | Passthrough |
+
+### Pressure Network
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Parts Lists | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Pressure Pipe
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Pressure Pipe Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| &nbsp;&nbsp;Plan Profile | — | Passthrough |
+| &nbsp;&nbsp;Crossing Section | — | Passthrough |
+| &nbsp;&nbsp;Crossing Profile | — | Passthrough |
+| Table Styles | — | Passthrough |
+
+### Fitting
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Fitting Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| Table Styles | — | Passthrough |
+
+### Appurtenance
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Appurtenance Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| Table Styles | — | Passthrough |
+
+### Bridge
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Bridge Projection Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| &nbsp;&nbsp;Label Sets | — | Passthrough |
+| &nbsp;&nbsp;Deck | — | Passthrough |
+| &nbsp;&nbsp;Girder Group | — | Passthrough |
+| &nbsp;&nbsp;Girder | — | Passthrough |
+| &nbsp;&nbsp;Pier | — | Passthrough |
+| &nbsp;&nbsp;Foundation | — | Passthrough |
+| &nbsp;&nbsp;Abutment | — | Passthrough |
+| &nbsp;&nbsp;Generic Object | — | Passthrough |
+
+### Corridor
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Corridor Styles | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Intersection
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Intersection Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| &nbsp;&nbsp;Intersection Location Labels | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Assembly
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Assembly Styles | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Subassembly
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Commands | — | Passthrough |
+
+### Quantity Takeoff
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Quantity Takeoff Criteria | — | Passthrough |
+| Table Styles | — | Passthrough |
+| &nbsp;&nbsp;Total Volume | — | Passthrough |
+| &nbsp;&nbsp;Material | — | Passthrough |
+| Commands | — | Passthrough |
+
+### Survey
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Networks | — | Passthrough |
+| &nbsp;&nbsp;Network Styles | — | Passthrough |
+| Figures | — | Passthrough |
+| &nbsp;&nbsp;Figure Styles | — | Passthrough |
+| &nbsp;&nbsp;Label Styles | — | Passthrough |
+| &nbsp;&nbsp;&nbsp;&nbsp;Figure | — | Passthrough |
+| &nbsp;&nbsp;&nbsp;&nbsp;Line | — | Passthrough |
+| &nbsp;&nbsp;&nbsp;&nbsp;Curve | — | Passthrough |
+| Commands | — | Passthrough |
+
+### View Frame Group
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Commands | — | Passthrough |
+
+### View Frame
+
+| Civil 3D item | code | status |
+|---|---|---|
+| View Frame Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| &nbsp;&nbsp;View Frame | — | Passthrough |
+
+### Match Line
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Match Line Styles | — | Passthrough |
+| Label Styles | — | Passthrough |
+| &nbsp;&nbsp;Match Line Left | — | Passthrough |
+| &nbsp;&nbsp;Match Line Right | — | Passthrough |
+
+### Building Site
+
+| Civil 3D item | code | status |
+|---|---|---|
+| Building Site Styles | — | Passthrough |
+| Commands | — | Passthrough |
