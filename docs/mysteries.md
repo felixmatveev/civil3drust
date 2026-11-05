@@ -545,9 +545,9 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   criteria) and the parent alignment's link to them. Sample plan: one
   alignment, an offset alignment, then one widening added, edited and
   removed, each step saved separately.
-- Station equations are read (S243, S247, S248); civil3drust's element
-  stations are still raw stations — applying the equations to the
-  stations it reports is not done yet.
+- Station equations are read (S243, S247, S248) and applied by
+  `display_station`; element stations stay raw. The reference point is
+  not stored, only the start station it produces (S249).
 - Alignment groups (owner): Civil 3D's own grouping of alignments in the
   Toolspace (Prospector), for siteless alignments and inside each site.
   Sample plan, each step saved separately from S24: 1. two siteless

@@ -272,8 +272,9 @@ pub fn masking_at(data: &[u8], at: usize) -> Option<(Vec<MaskRegion>, usize)> {
 /// the alignment) with the station equations applied: past an equation's
 /// Raw Station Back the stations continue from its Station Ahead, up or
 /// down by its Increase/Decrease (S247, S248). Station Back is not used:
-/// it is derived from the equations before it, and Civil 3D leaves it
-/// stale when the start station moves (S249). Exactly at an equation the
+/// it is derived from the equations before it, and when the start station
+/// moves Civil 3D shifts the raw station but keeps the stored back (S249:
+/// raw 115, back 110). Exactly at an equation the
 /// station ahead is returned.
 pub fn display_station(raw: f64, equations: &[StationEquation]) -> f64 {
     equations

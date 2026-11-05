@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `aecc_station_refs::display_station` and `station_back`: stations with
+  station equations applied (S247: end 5+50.86 as Civil 3D shows it);
+  `examples/alignments` prints equations and both stations. Sample S249
+  (start station moved via the reference point: only the start station
+  is stored; speeds removed, regions and raw stations moved). Tests
+  `stations_with_equations`, `s249_start_station_moved`.
 - Station equations: the bit after Station Ahead is Increase/Decrease
   (`StationEquation::increasing`, was `flag`; S248); each equation's
   strings are its comment and number. Test `s248_decreasing_equation`.

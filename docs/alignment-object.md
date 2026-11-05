@@ -3052,6 +3052,34 @@ the two strings per equation: the comment, then the number (`"First
 record"`, `"1"`, `"Decreasing start"`, `"2"`). Test
 `s248_decreasing_equation`.
 
+**Stations with equations.** `aecc_station_refs::display_station`
+gives the station Civil 3D shows at a raw station (start + distance):
+past an equation's Raw Station Back the stations continue from its
+Station Ahead, up or down by Increase/Decrease; Station Back is derived
+(`station_back`). S247's end is 430.859 raw → 310 + 240.859 = 5+50.86,
+the End the owner's Station Control tab shows; with equation 2 Decreasing
+(S248) it is 310 − 240.859 = 0+69.14. Element stations in civil3drust
+stay raw; `examples/alignments` prints both. Test
+`stations_with_equations`.
+
+**Moving the start station (S249, owner).** S248 with each alignment's
+start station changed through the Station Control tab's reference point
+(FD7 and FE5 to 0+05, FDF to 0+00.50). The record stores only the new
+start station (the BD at the end of section 2); no reference-point
+coordinates appear anywhere. Civil 3D:
+
+- removes the design speeds (all three; as S82);
+- moves every masking region by the same amount (0.5), locks kept;
+- moves each equation's Raw Station Back with the start (110 → 115,
+  190 → 195, last digits re-rounded) and keeps Station Back and Station
+  Ahead as stored (110 / 109, 189 / 310), so the stored Station Back of
+  the first equation no longer equals its raw station;
+- moves the intervals of the regions and equations with them.
+
+civil3drust still refuses start-station moves on alignments with
+equations or masking regions (D-067); S249 shows what doing it the Civil
+3D way takes. Test `s249_start_station_moved`.
+
 **S244 → S245 (owner).** S244 (S243 with every alignment's speeds
 rewritten by civil3drust: two on FD7's spiral, one in FDF's masking
 region, one after FE5's equation) opens clean, AUDIT clean, "behaviour as
