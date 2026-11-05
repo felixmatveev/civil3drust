@@ -1036,7 +1036,7 @@ fn pi_display_bit(rec: &RawRecord, data: &[u8]) -> Result<usize, BuildError> {
 
 /// Bit of the masking list: the alignment type, then `BL 2, 2, 2` (S243;
 /// the `0` that followed in every earlier sample is the empty list).
-fn masking_bit(rec: &RawRecord, data: &[u8]) -> Result<usize, BuildError> {
+pub(crate) fn masking_bit(rec: &RawRecord, data: &[u8]) -> Result<usize, BuildError> {
     let mut q = type_bit(rec, data)?;
     let bad = || layout("masking list not found");
     for want in [None, Some(2), Some(2), Some(2)] {

@@ -307,6 +307,395 @@ pub fn station_back(index: usize, equations: &[StationEquation]) -> Option<f64> 
     Some(display_station(e.raw_station, &before))
 }
 
+/// Why a station-reference edit was refused.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StationRefError(pub String);
+
+impl std::fmt::Display for StationRefError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "station references: {}", self.0)
+    }
+}
+
+impl std::error::Error for StationRefError {}
+
+fn fail(m: impl Into<String>) -> StationRefError {
+    StationRefError(m.into())
+}
+
+/// A station equation to write. Station Back is derived from the
+/// equations before it, as Civil 3D does (S247).
+#[derive(Debug, Clone, PartialEq)]
+pub struct EquationSpec {
+    /// Raw Station Back: start station + distance along the alignment.
+    pub raw_station: f64,
+    pub ahead: f64,
+    pub increasing: bool,
+    pub comment: String,
+}
+
+/// A masking region to write. A locked side takes the alignment's start or
+/// end (D-068); only the first region may be locked to the start and only
+/// the last to the end.
+#[derive(Debug, Clone, PartialEq)]
+pub struct MaskSpec {
+    pub start: f64,
+    pub end: f64,
+    pub masked: bool,
+    pub lock_to_start: bool,
+    pub lock_to_end: bool,
+    pub comment: String,
+}
+
+/// The equation marker (`00` + `BE 04`; MIST18, a fixed marker).
+const EQUATION_MARKER: [u8; 2] = [0xBE, 0x04];
+
+/// Where the station-anchored parts of a record are.
+struct Layout {
+    d: crate::aecc_elements::DecodedElements,
+    start: f64,
+    end: f64,
+    /// Interval block: start bit, intervals, end bit (= equation list).
+    block: usize,
+    intervals: Vec<Interval>,
+    eq_start: usize,
+    equations: Vec<StationEquation>,
+    eq_end: usize,
+    mask_start: usize,
+    regions: Vec<MaskRegion>,
+    mask_end: usize,
+    speeds: usize,
+    strings: usize,
+}
+
+impl Layout {
+    fn read(rec: &RawRecord) -> Result<Self, StationRefError> {
+        let data = &rec.data;
+        let d = decode_elements(rec).map_err(|e| fail(e.to_string()))?;
+        if !d.detached.is_empty() || !d.layout_groups.is_empty() {
+            return Err(fail("detached pieces or JSON groups (not sampled)"));
+        }
+        let start = crate::aecc_station::start_station(rec).ok_or_else(|| fail("start station"))?;
+        let end = start + d.length();
+        let block = d.records_end_bit().ok_or_else(|| fail("no elements"))?;
+        let (intervals, eq_start) =
+            intervals_at(data, block).ok_or_else(|| fail("interval block not readable"))?;
+        let (equations, eq_end) = station_equations_at(data, eq_start)
+            .ok_or_else(|| fail("station-equation list not readable"))?;
+        let mask_start =
+            crate::aecc_build::masking_bit(rec, data).map_err(|e| fail(e.to_string()))?;
+        let (mut regions, mask_end) =
+            masking_at(data, mask_start).ok_or_else(|| fail("masking list not readable"))?;
+        derive_locks(&mut regions, start, end);
+        let speeds = crate::aecc_design_speed::design_speeds(rec)
+            .map_err(|e| fail(e.to_string()))?
+            .len();
+        let strings = crate::string_stream::parse(data, rec.handle_bits)
+            .map_err(|e| fail(e.to_string()))?
+            .strings
+            .len();
+        Ok(Layout {
+            d,
+            start,
+            end,
+            block,
+            intervals,
+            eq_start,
+            equations,
+            eq_end,
+            mask_start,
+            regions,
+            mask_end,
+            speeds,
+            strings,
+        })
+    }
+
+    /// The interval block with the intervals of `kind` replaced by `new`.
+    fn interval_block(
+        &self,
+        data: &[u8],
+        kind: i32,
+        new: &[(f64, [u8; 16])],
+    ) -> Result<crate::aecc_build::Bits, StationRefError> {
+        let mut body = crate::aecc_build::Bits::default();
+        let mut n = 0;
+        for i in self.intervals.iter().filter(|i| i.kind != kind) {
+            body.copy(data, i.start_bit, i.end_bit);
+            n += 1;
+        }
+        for (station, id) in new {
+            crate::aecc_design_speed::write_interval(
+                &self.d, self.start, *station, kind, id, &mut body,
+            )
+            .map_err(|e| fail(e.to_string()))?;
+            n += 1;
+        }
+        let mut w = crate::aecc_build::Bits::default();
+        // The opening BLs as stored (0 in samples, counters in production).
+        let mut q = self.block;
+        for _ in 0..3 {
+            let (v, nq) = raw::read_bl(data, q).ok_or_else(|| fail("interval head"))?;
+            w.bl(v);
+            q = nq;
+        }
+        w.bl(n);
+        let len = body.len();
+        let bytes = body.into_bytes();
+        w.copy(&bytes, 0, len);
+        Ok(w)
+    }
+}
+
+/// Copy `data` with the bit ranges in `edits` (sorted, not overlapping)
+/// replaced; returns bytes and handle-stream size.
+fn splice_all(
+    data: &[u8],
+    handle_bits: usize,
+    edits: Vec<(usize, usize, crate::aecc_build::Bits)>,
+) -> (Vec<u8>, usize) {
+    let total = raw::bit_len(data);
+    let data_end = total - handle_bits;
+    let mut w = crate::aecc_build::Bits::default();
+    let mut at = 0;
+    let mut delta: isize = 0;
+    for (from, to, with) in edits {
+        w.copy(data, at, from);
+        let n = with.len();
+        let bytes = with.into_bytes();
+        w.copy(&bytes, 0, n);
+        delta += n as isize - (to - from) as isize;
+        at = to;
+    }
+    w.copy(data, at, total);
+    let new_data_end = (data_end as isize + delta) as usize;
+    let bytes = w.into_bytes();
+    let hb = bytes.len() * 8 - new_data_end;
+    (bytes, hb)
+}
+
+/// Replace `remove` strings at `index` by `insert` (empty strings are
+/// inserted for `""`).
+fn edit_strings(
+    data: Vec<u8>,
+    hb: usize,
+    index: usize,
+    remove: usize,
+    insert: &[String],
+) -> Result<(Vec<u8>, usize), StationRefError> {
+    use crate::string_stream as ss;
+    let e = |x: ss::StringStreamError| fail(x.to_string());
+    let (mut data, mut hb) = (data, hb);
+    for _ in 0..remove {
+        (data, hb) = ss::remove(&data, hb, index).map_err(e)?;
+    }
+    for (k, text) in insert.iter().enumerate() {
+        (data, hb) = ss::insert_empty(&data, hb, index + k).map_err(e)?;
+        if !text.is_empty() {
+            (data, hb) = ss::replace(&data, hb, index + k, text).map_err(e)?;
+        }
+    }
+    Ok((data, hb))
+}
+
+/// Rewrite the alignment's station equations (S243, S247, S248): their
+/// intervals (kind 3), the equation list with the fixed marker, Raw
+/// Station Back, Station Back (derived), Station Ahead and
+/// Increase/Decrease, and their strings (comment, number; before the
+/// speeds' comments). Old equations' GUIDs are reused in order; new ones
+/// come from `seed`. Everything else is kept.
+pub fn set_station_equations(
+    rec: &RawRecord,
+    equations: &[EquationSpec],
+    seed: u64,
+) -> Result<(Vec<u8>, usize), StationRefError> {
+    let l = Layout::read(rec)?;
+    let data = &rec.data;
+    let mut sorted = equations.to_vec();
+    sorted.sort_by(|a, b| a.raw_station.total_cmp(&b.raw_station));
+    for (i, e) in sorted.iter().enumerate() {
+        if !(e.raw_station > l.start && e.raw_station < l.end) || !e.ahead.is_finite() {
+            return Err(fail(format!(
+                "equation at {} must lie inside the alignment ({} to {})",
+                e.raw_station, l.start, l.end
+            )));
+        }
+        if i > 0 && (e.raw_station - sorted[i - 1].raw_station).abs() < 1e-9 {
+            return Err(fail("two equations at one station"));
+        }
+    }
+    let ids: Vec<[u8; 16]> = (0..sorted.len())
+        .map(|i| {
+            l.equations
+                .get(i)
+                .map(|e| e.guid)
+                .unwrap_or_else(|| crate::aecc_build::guid_v4(seed.wrapping_add(i as u64)))
+        })
+        .collect();
+    let mut eqs: Vec<StationEquation> = sorted
+        .iter()
+        .zip(&ids)
+        .map(|(e, g)| StationEquation {
+            raw_station: e.raw_station,
+            back: 0.0,
+            ahead: e.ahead,
+            increasing: e.increasing,
+            unknown: u16::from_le_bytes(EQUATION_MARKER),
+            guid: *g,
+        })
+        .collect();
+    for i in 0..eqs.len() {
+        eqs[i].back = station_back(i, &eqs).unwrap_or(eqs[i].raw_station);
+    }
+    let anchors: Vec<(f64, [u8; 16])> = eqs.iter().map(|e| (e.raw_station, e.guid)).collect();
+    let block = l.interval_block(data, KIND_EQUATION, &anchors)?;
+    let mut list = crate::aecc_build::Bits::default();
+    list.bl(eqs.len() as i32);
+    for e in &eqs {
+        list.bits(0, 2);
+        list.byte(EQUATION_MARKER[0]);
+        list.byte(EQUATION_MARKER[1]);
+        list.bd(e.raw_station);
+        for b in e.guid {
+            list.byte(b);
+        }
+        list.bd(e.back);
+        list.bd(e.ahead);
+        list.bit(u8::from(e.increasing));
+    }
+    let (bytes, hb) = splice_all(
+        data,
+        rec.handle_bits,
+        vec![(l.block, l.eq_start, block), (l.eq_start, l.eq_end, list)],
+    );
+    // Strings, counted from the end: the masking regions' comments, the
+    // speeds' comments, then the equations' (comment, number) pairs (S246,
+    // S248). Two empty strings per interval go with them.
+    let old = l.equations.len();
+    let at = l
+        .strings
+        .checked_sub(l.regions.len() + l.speeds + 2 * old)
+        .ok_or_else(|| fail("string stream too short"))?;
+    let mut pairs = Vec::new();
+    for (i, e) in sorted.iter().enumerate() {
+        pairs.push(e.comment.clone());
+        pairs.push((i + 1).to_string());
+    }
+    let (bytes, hb) = edit_strings(bytes, hb, at, 2 * old, &pairs)?;
+    let (bytes, hb) = adjust_empties(bytes, hb, at, 2 * old, 2 * eqs.len())?;
+    Ok(crate::handle_refs::trim_padding(&bytes, hb, rec.handle))
+}
+
+/// Remove `remove` empty strings just before string `before` and insert
+/// `add` empty strings there: the interval strings, whose place among the
+/// empty strings is not known (they are always empty).
+fn adjust_empties(
+    data: Vec<u8>,
+    hb: usize,
+    before: usize,
+    remove: usize,
+    add: usize,
+) -> Result<(Vec<u8>, usize), StationRefError> {
+    let ss = crate::string_stream::parse(&data, hb).map_err(|e| fail(e.to_string()))?;
+    let from = before
+        .checked_sub(remove)
+        .ok_or_else(|| fail("string stream too short"))?;
+    if ss.strings[from..before].iter().any(|x| !x.text.is_empty()) {
+        return Err(fail("the interval strings are not where expected"));
+    }
+    edit_strings(data, hb, from, remove, &vec![String::new(); add])
+}
+
+/// Rewrite the alignment's masking regions (S243, S246): their intervals
+/// (kind 4, one at each end), the masking list (stations, the inverted
+/// Mask bit, the two GUIDs) and their comments (the last strings). A
+/// locked side is written as the alignment's start or end (D-068). Old
+/// regions' GUIDs are reused in order; new ones come from `seed`.
+pub fn set_masking_regions(
+    rec: &RawRecord,
+    regions: &[MaskSpec],
+    seed: u64,
+) -> Result<(Vec<u8>, usize), StationRefError> {
+    let l = Layout::read(rec)?;
+    let data = &rec.data;
+    let n = regions.len();
+    let mut spans = Vec::new();
+    for (i, r) in regions.iter().enumerate() {
+        if (r.lock_to_start && i != 0) || (r.lock_to_end && i + 1 != n) {
+            return Err(fail(
+                "only the first region locks to the start, the last to the end",
+            ));
+        }
+        let s = if r.lock_to_start { l.start } else { r.start };
+        let e = if r.lock_to_end { l.end } else { r.end };
+        if s.partial_cmp(&e) != Some(std::cmp::Ordering::Less)
+            || s < l.start - 1e-9
+            || e > l.end + 1e-9
+        {
+            return Err(fail(format!(
+                "region {s} to {e} must lie inside the alignment ({} to {})",
+                l.start, l.end
+            )));
+        }
+        if spans.last().is_some_and(|&(_, pe): &(f64, f64)| s < pe) {
+            return Err(fail("regions must be in station order and not overlap"));
+        }
+        spans.push((s, e));
+    }
+    let ids: Vec<([u8; 16], [u8; 16])> = (0..n)
+        .map(|i| {
+            l.regions
+                .get(i)
+                .map(|r| (r.start_guid, r.end_guid))
+                .unwrap_or_else(|| {
+                    let k = seed.wrapping_add(2 * i as u64);
+                    (
+                        crate::aecc_build::guid_v4(k),
+                        crate::aecc_build::guid_v4(k + 1),
+                    )
+                })
+        })
+        .collect();
+    let anchors: Vec<(f64, [u8; 16])> = spans
+        .iter()
+        .zip(&ids)
+        .flat_map(|(&(s, e), &(a, b))| [(s, a), (e, b)])
+        .collect();
+    let block = l.interval_block(data, KIND_MASK, &anchors)?;
+    let mut list = crate::aecc_build::Bits::default();
+    list.bl(n as i32);
+    for ((r, &(s, e)), (a, b)) in regions.iter().zip(&spans).zip(&ids) {
+        list.bd(s);
+        list.bd(e);
+        list.bit(u8::from(!r.masked));
+        for x in a.iter().chain(b) {
+            list.byte(*x);
+        }
+    }
+    let (bytes, hb) = splice_all(
+        data,
+        rec.handle_bits,
+        vec![
+            (l.block, l.eq_start, block),
+            (l.mask_start, l.mask_end, list),
+        ],
+    );
+    // Strings: the regions' comments are the last ones (S246); their four
+    // interval strings go before the speeds' and equations' strings.
+    let old = l.regions.len();
+    let tail = l
+        .strings
+        .checked_sub(old)
+        .ok_or_else(|| fail("string stream too short"))?;
+    let comments: Vec<String> = regions.iter().map(|r| r.comment.clone()).collect();
+    let (bytes, hb) = edit_strings(bytes, hb, tail, old, &comments)?;
+    let at = tail
+        .checked_sub(l.speeds + 2 * l.equations.len())
+        .ok_or_else(|| fail("string stream too short"))?;
+    let (bytes, hb) = adjust_empties(bytes, hb, at, 4 * old, 4 * n)?;
+    Ok(crate::handle_refs::trim_padding(&bytes, hb, rec.handle))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

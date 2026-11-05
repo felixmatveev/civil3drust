@@ -7,6 +7,13 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Writing station equations and masking regions (D-070):
+  `aecc_station_refs::set_station_equations` and `set_masking_regions`
+  (intervals, lists, derived Station Back, locks, comments and numbers;
+  other intervals kept), `examples/set_station_refs`. `write_interval`
+  is shared with the design speeds. Tests: S248's equations and S246's
+  regions written again match Civil 3D's; equations and regions added to
+  and removed from an alignment. Sample S250 for Civil 3D to check.
 - Production-drawing check (local only): the interval block's opening
   BLs may be counters and its intervals may have any 16-bit kind
   (labels and other objects); both are accepted and speed rewrites keep

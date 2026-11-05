@@ -306,99 +306,10 @@ fn write_intervals(
 ) -> Result<usize, SpeedError> {
     let d = decode_elements(rec).map_err(|e| err(e.to_string()))?;
     let start = crate::aecc_station::start_station(rec).unwrap_or(0.0);
-    let total: f64 = d.elements.iter().map(|e| e.segment.length()).sum();
     let mut intervals = Bits::default();
     let mut count = 0;
     for ((station, _), id) in speeds.iter().zip(ids) {
-        let dist = station - start;
-        if dist < -1e-9 || dist > total + 1e-9 {
-            return Err(err(format!(
-                "speed station {station} is outside the alignment ({start} to {})",
-                start + total
-            )));
-        }
-        // The element containing the point (at an element boundary, the
-        // next one, except at the very end).
-        let mut acc = 0.0;
-        let mut found = None;
-        for (i, e) in d.elements.iter().enumerate() {
-            let len = e.segment.length();
-            let last = i + 1 == d.elements.len();
-            if dist < acc + len - 1e-9 || last {
-                found = Some((e, (dist - acc).clamp(0.0, len), len));
-                break;
-            }
-            acc += len;
-        }
-        let (e, t, len) = found.ok_or_else(|| err("no elements"))?;
-        // The interval stores the element's start and end and the point at
-        // the station; on a curve the point lies on the arc. The third distance is the length to the element's end, as
-        // on tangents (S113: 15.548 = 29.650 − 14.102); S89's curve
-        // interval stores 84.63 there instead of 35.72 (not explained).
-        let (a, b, p) = match e.segment {
-            Segment::Line { start: a, end: b } => {
-                let f = if len > 0.0 { t / len } else { 0.0 };
-                (
-                    a,
-                    b,
-                    Point2::new(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f),
-                )
-            }
-            Segment::Arc {
-                start: a,
-                end: b,
-                geometry: g,
-            } => {
-                let a0 = (a.y - g.center.y).atan2(a.x - g.center.x);
-                let th = if g.counter_clockwise {
-                    a0 + t / g.radius
-                } else {
-                    a0 - t / g.radius
-                };
-                let p = Point2::new(
-                    g.center.x + g.radius * th.cos(),
-                    g.center.y + g.radius * th.sin(),
-                );
-                (a, b, p)
-            }
-            // A fixed spiral: the point at the distance along it (S243 FD7:
-            // 30 at 2+00 on a spiral from 1+00, distance 100, point on the
-            // clothoid).
-            Segment::Spiral {
-                start: a,
-                end: b,
-                geometry: g,
-            } => (a, b, g.point_at(t).0),
-        };
-        if matches!(
-            e.record,
-            Element::LineSpiral(_) | Element::FreeSpiral(_) | Element::Group(_)
-        ) {
-            return Err(err("a speed on a spiral group (no sample yet)"));
-        }
-        // The element's own ID and links (S115: Civil 3D rewrote our
-        // (1, 0, next) to (4, 1, 3) for a speed on element 4; S113's
-        // "2, 1, 3" on a curve is element 2, before 1, after 3).
-        let (eid, before, after) = (
-            crate::aecc_alignment::Linked::id(&e.record),
-            crate::aecc_alignment::Linked::before(&e.record),
-            crate::aecc_alignment::Linked::after(&e.record),
-        );
-        for byte in id {
-            intervals.byte(*byte);
-        }
-        intervals.bits(INTERVAL_CONSTANT, 13);
-        intervals.bd(*station);
-        // Distance from the element's start (S89: 84.64 on its second
-        // element), then the length to the element's end.
-        intervals.bd(t);
-        intervals.bd(len - t);
-        intervals.bl(eid);
-        intervals.bl(before);
-        intervals.bl(after);
-        for v in [a.x, a.y, b.x, b.y, p.x, p.y] {
-            intervals.rd(v);
-        }
+        write_interval(&d, start, *station, KIND_SPEED, id, &mut intervals)?;
         count += 1;
     }
     for &(from, to) in kept {
@@ -414,9 +325,106 @@ fn write_intervals(
     Ok(count)
 }
 
-/// The 13 bits after a speed interval's GUID: `B 1, BL 2 (speed), BD 0`
-/// (S243: 3 for station equations, 4 for masking regions).
-const INTERVAL_CONSTANT: u64 = 0b1010000001010;
+/// Design-speed intervals (`B 1, BL 2, BD 0` after the GUID).
+const KIND_SPEED: i32 = crate::aecc_station_refs::KIND_SPEED;
+
+/// Write one interval at raw `station` (start station + distance) of
+/// `kind` with `id`: GUID, `B 1, BL kind, BD 0`, BD station, BD distance
+/// from the element's start, BD length to its end, the element's ID and
+/// links (S115), RD element start, end and the point at the station (S24,
+/// S74, S84, S113, S243). The element is the one containing the station
+/// (at a boundary the next one, except at the very end).
+pub(crate) fn write_interval(
+    d: &crate::aecc_elements::DecodedElements,
+    start: f64,
+    station: f64,
+    kind: i32,
+    id: &[u8; 16],
+    w: &mut Bits,
+) -> Result<(), SpeedError> {
+    let total: f64 = d.elements.iter().map(|e| e.segment.length()).sum();
+    let dist = station - start;
+    if dist < -1e-9 || dist > total + 1e-9 {
+        return Err(err(format!(
+            "station {station} is outside the alignment ({start} to {})",
+            start + total
+        )));
+    }
+    let mut acc = 0.0;
+    let mut found = None;
+    for (i, e) in d.elements.iter().enumerate() {
+        let len = e.segment.length();
+        let last = i + 1 == d.elements.len();
+        if dist < acc + len - 1e-9 || last {
+            found = Some((e, (dist - acc).clamp(0.0, len), len));
+            break;
+        }
+        acc += len;
+    }
+    let (e, t, len) = found.ok_or_else(|| err("no elements"))?;
+    // The point at the station: on the line, the arc or the spiral (S113:
+    // the length to the element's end follows the tangent rule on curves
+    // too; S243 FD7: a point on a clothoid).
+    let (a, b, p) = match e.segment {
+        Segment::Line { start: a, end: b } => {
+            let f = if len > 0.0 { t / len } else { 0.0 };
+            (
+                a,
+                b,
+                Point2::new(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f),
+            )
+        }
+        Segment::Arc {
+            start: a,
+            end: b,
+            geometry: g,
+        } => {
+            let a0 = (a.y - g.center.y).atan2(a.x - g.center.x);
+            let th = if g.counter_clockwise {
+                a0 + t / g.radius
+            } else {
+                a0 - t / g.radius
+            };
+            let p = Point2::new(
+                g.center.x + g.radius * th.cos(),
+                g.center.y + g.radius * th.sin(),
+            );
+            (a, b, p)
+        }
+        Segment::Spiral {
+            start: a,
+            end: b,
+            geometry: g,
+        } => (a, b, g.point_at(t).0),
+    };
+    if matches!(
+        e.record,
+        Element::LineSpiral(_) | Element::FreeSpiral(_) | Element::Group(_)
+    ) {
+        return Err(err("a station on a spiral group (no sample yet)"));
+    }
+    let (eid, before, after) = (
+        crate::aecc_alignment::Linked::id(&e.record),
+        crate::aecc_alignment::Linked::before(&e.record),
+        crate::aecc_alignment::Linked::after(&e.record),
+    );
+    for byte in id {
+        w.byte(*byte);
+    }
+    w.bit(1);
+    w.bl(kind);
+    w.bd(0.0);
+    w.bd(station);
+    w.bd(t);
+    w.bd(len - t);
+    w.bl(eid);
+    w.bl(before);
+    w.bl(after);
+    for v in [a.x, a.y, b.x, b.y, p.x, p.y] {
+        w.rd(v);
+    }
+    Ok(())
+}
 
 /// Remove all design speeds, as Civil 3D does when the start station
 /// changes (S82): the interval block after the elements becomes four BL 0,

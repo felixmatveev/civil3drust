@@ -1389,3 +1389,27 @@ ends the list.
 stopping after it: equivalent for Civil 3D's records, but the count is
 not always where expected in the older forms.
 
+## D-070: Station equations and masking regions are written as model data
+Date: 2026-11-05 · Status: accepted
+
+**Context.** Both are decoded (S243–S248): an interval per anchor in the
+shared interval block, a list (equations after the intervals, regions
+after the type), and strings.
+
+**Decision.** `set_station_equations` and `set_masking_regions` take the
+model values only — equations: Raw Station Back, Station Ahead,
+Increase/Decrease, comment; regions: start, end, Mask, the two locks,
+comment — and write everything else from them: the intervals (from the
+geometry, like the speeds'), Station Back (derived, S247), the
+equations' fixed marker (MIST18), locked stations (D-068), equation
+numbers, and the strings. Old GUIDs are reused in order, new ones are
+random v4. Other intervals (speeds, labels, other objects) and the
+interval head are kept. The strings' places are taken from the samples:
+from the end, region comments, speed comments, then each equation's
+comment and number; the interval strings (always empty) go just before
+those. Not written on alignments with detached pieces or JSON groups,
+or with a station on a spiral group (not sampled).
+
+**Alternatives.** Copying Civil 3D's stored Station Back: it goes stale
+when the start station moves (S249), and it is not model data.
+

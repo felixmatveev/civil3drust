@@ -316,3 +316,176 @@ fn s249_start_station_moved() {
         );
     }
 }
+
+fn rec_in(file: &str, h: u64) -> RawRecord {
+    let o = raw::open(file).unwrap();
+    raw::records(&o.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == h)
+        .unwrap()
+}
+
+fn with(r: &RawRecord, (data, handle_bits): (Vec<u8>, usize)) -> RawRecord {
+    RawRecord {
+        data,
+        handle_bits,
+        ..r.clone()
+    }
+}
+
+/// Writing S248's two equations again gives Civil 3D's record back.
+#[test]
+fn equations_rewritten_like_civil3d_s248() {
+    use civil3drust::aecc_station_refs::{set_station_equations, EquationSpec};
+    let r = rec_in("samples/S248_S247_decreasing_equation.dwg", 0xFE5);
+    let specs: Vec<EquationSpec> = station_equations(&r)
+        .unwrap()
+        .iter()
+        .zip(["First record", "Decreasing start"])
+        .map(|(e, c)| EquationSpec {
+            raw_station: e.raw_station,
+            ahead: e.ahead,
+            increasing: e.increasing,
+            comment: c.into(),
+        })
+        .collect();
+    let n = with(&r, set_station_equations(&r, &specs, 1).unwrap());
+    assert_eq!(station_equations(&n), station_equations(&r));
+    let s = |x: &RawRecord| {
+        string_stream::parse(&x.data, x.handle_bits)
+            .unwrap()
+            .strings
+            .iter()
+            .map(|t| t.text.clone())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(s(&n), s(&r));
+    let mut a = kinds(&r);
+    let mut b = kinds(&n);
+    a.sort_by(|x, y| x.partial_cmp(y).unwrap());
+    b.sort_by(|x, y| x.partial_cmp(y).unwrap());
+    assert_eq!(a.len(), b.len());
+    for (x, y) in a.iter().zip(&b) {
+        assert_eq!(x.0, y.0);
+        assert!((x.1 - y.1).abs() < 1e-6);
+    }
+    assert_eq!(design_speeds(&n).unwrap(), design_speeds(&r).unwrap());
+}
+
+/// New equations and regions on an alignment that has none (S243 FD7),
+/// then removed again.
+#[test]
+fn equations_and_regions_added_and_removed() {
+    use civil3drust::aecc_station_refs::{
+        display_station, set_masking_regions, set_station_equations, EquationSpec, MaskSpec,
+    };
+    let r = rec(0xFD7);
+    let eqs = [
+        EquationSpec {
+            raw_station: 150.0,
+            ahead: 1000.0,
+            increasing: true,
+            comment: "E1".into(),
+        },
+        EquationSpec {
+            raw_station: 320.0,
+            ahead: 2000.0,
+            increasing: false,
+            comment: String::new(),
+        },
+    ];
+    let a = with(&r, set_station_equations(&r, &eqs, 11).unwrap());
+    let e = station_equations(&a).unwrap();
+    assert_eq!(e.len(), 2);
+    assert_eq!(e[1].back, 1170.0); // 320 − 150 + 1000
+    assert_eq!(display_station(400.0, &e), 1920.0);
+    let regions = [
+        MaskSpec {
+            start: 0.0,
+            end: 50.0,
+            masked: true,
+            lock_to_start: true,
+            lock_to_end: false,
+            comment: "M1".into(),
+        },
+        MaskSpec {
+            start: 210.0,
+            end: 999.0,
+            masked: false,
+            lock_to_start: false,
+            lock_to_end: true,
+            comment: String::new(),
+        },
+    ];
+    let b = with(&a, set_masking_regions(&a, &regions, 21).unwrap());
+    let m = masking_regions(&b).unwrap();
+    assert_eq!(m.len(), 2);
+    assert_eq!(
+        (m[0].start, m[0].lock_to_start, m[0].masked),
+        (0.0, true, true)
+    );
+    assert_eq!(
+        (m[1].end, m[1].lock_to_end, m[1].masked),
+        (400.0, true, false)
+    );
+    assert_eq!(station_equations(&b).unwrap(), e);
+    assert_eq!(design_speeds(&b).unwrap(), design_speeds(&r).unwrap());
+    let texts: Vec<String> = string_stream::parse(&b.data, b.handle_bits)
+        .unwrap()
+        .strings
+        .iter()
+        .map(|t| t.text.clone())
+        .collect();
+    let n = texts.len();
+    assert_eq!(texts[n - 2], "M1");
+    assert!(texts.contains(&"E1".to_string()) && texts.contains(&"2".to_string()));
+    assert_eq!(required_string_count(&b).unwrap() + 1, n);
+    // Remove both again: back to the original strings and stations.
+    let c = with(&b, set_masking_regions(&b, &[], 0).unwrap());
+    let c = with(&c, set_station_equations(&c, &[], 0).unwrap());
+    assert!(masking_regions(&c).unwrap().is_empty());
+    assert!(station_equations(&c).unwrap().is_empty());
+    assert_eq!(c.data.len(), r.data.len());
+    assert_eq!(kinds(&c), kinds(&r));
+}
+
+/// S246's four regions written again: the same regions, locks and comment.
+#[test]
+fn regions_rewritten_like_civil3d_s246() {
+    use civil3drust::aecc_station_refs::{set_masking_regions, MaskSpec};
+    let r = rec_in("samples/S246_S245_masking_regions.dwg", 0xFDF);
+    let old = masking_regions(&r).unwrap();
+    let specs: Vec<MaskSpec> = old
+        .iter()
+        .enumerate()
+        .map(|(i, m)| MaskSpec {
+            start: m.start,
+            end: m.end,
+            masked: m.masked,
+            lock_to_start: m.lock_to_start,
+            lock_to_end: m.lock_to_end,
+            comment: if i == 0 { "R1".into() } else { String::new() },
+        })
+        .collect();
+    let n = with(&r, set_masking_regions(&r, &specs, 3).unwrap());
+    let new = masking_regions(&n).unwrap();
+    assert_eq!(new.len(), 4);
+    for (a, b) in old.iter().zip(&new) {
+        assert_eq!(
+            (a.masked, a.lock_to_start, a.lock_to_end),
+            (b.masked, b.lock_to_start, b.lock_to_end)
+        );
+        assert!((a.start - b.start).abs() < 1e-6 && (a.end - b.end).abs() < 1e-6);
+        assert_eq!((a.start_guid, a.end_guid), (b.start_guid, b.end_guid));
+    }
+    let t = |x: &RawRecord| {
+        string_stream::parse(&x.data, x.handle_bits)
+            .unwrap()
+            .strings
+            .iter()
+            .map(|t| t.text.clone())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(t(&n), t(&r));
+    assert_eq!(n.data.len(), r.data.len());
+}
