@@ -489,3 +489,81 @@ fn regions_rewritten_like_civil3d_s246() {
     assert_eq!(t(&n), t(&r));
     assert_eq!(n.data.len(), r.data.len());
 }
+
+/// S250 → S251 (owner: clean open and AUDIT): civil3drust gave FD7's first
+/// masking region the same two GUIDs as its station equations (one seed
+/// for both edits), and Civil 3D merged them: the region moved onto the
+/// equations' stations (1+50–3+20) and the duplicate intervals were
+/// dropped. Everything else reads back as written. New anchors now never
+/// reuse a GUID the record has.
+#[test]
+fn s251_resave_and_unique_guids() {
+    use civil3drust::aecc_station_refs::{
+        intervals, set_masking_regions, set_station_equations, EquationSpec, MaskSpec,
+    };
+    let s251 = |h| rec_in("samples/S251_S250_civ3d_resaved.dwg", h);
+    let s250 = |h| rec_in("samples/S250_S245_equations_and_masking_written.dwg", h);
+    for h in [0xFDF, 0xFE5] {
+        // Raw stations re-rounded by Civil 3D (119.9999999254942).
+        let eq = |x: &RawRecord| {
+            station_equations(x)
+                .unwrap()
+                .iter()
+                .map(|e| {
+                    (
+                        (e.raw_station * 1e6).round() as i64,
+                        e.back,
+                        e.ahead,
+                        e.increasing,
+                        e.guid,
+                    )
+                })
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(eq(&s251(h)), eq(&s250(h)));
+        // Civil 3D gives the regions new GUIDs on save and re-rounds a
+        // locked end; the model is the same.
+        let key = |x: &RawRecord| {
+            masking_regions(x)
+                .unwrap()
+                .iter()
+                .map(|m| {
+                    let q = |v: f64| (v * 1e6).round() as i64;
+                    (
+                        q(m.start),
+                        q(m.end),
+                        m.masked,
+                        m.lock_to_start,
+                        m.lock_to_end,
+                    )
+                })
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(key(&s251(h)), key(&s250(h)));
+    }
+    let m = masking_regions(&s251(0xFD7)).unwrap();
+    assert!((m[0].start - 150.0).abs() < 1e-6 && (m[0].end - 320.0).abs() < 1e-6);
+    // The same two edits with one seed now give distinct GUIDs.
+    let r = rec(0xFD7);
+    let eq = [EquationSpec {
+        raw_station: 150.0,
+        ahead: 1000.0,
+        increasing: true,
+        comment: String::new(),
+    }];
+    let a = with(&r, set_station_equations(&r, &eq, 5).unwrap());
+    let mk = [MaskSpec {
+        start: 0.0,
+        end: 50.0,
+        masked: true,
+        lock_to_start: false,
+        lock_to_end: false,
+        comment: String::new(),
+    }];
+    let b = with(&a, set_masking_regions(&a, &mk, 5).unwrap());
+    let g: Vec<[u8; 16]> = intervals(&b).unwrap().1.iter().map(|i| i.guid).collect();
+    let mut u = g.clone();
+    u.sort();
+    u.dedup();
+    assert_eq!(u.len(), g.len());
+}

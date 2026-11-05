@@ -53,6 +53,7 @@ How to read a row: **condition** in the file → **Civil 3D's response** →
 | Design-criteria flags set without the criteria file strings or a check set | flags cleared when the alignment is viewed (bits `111 0111` → `100 0101`, tangency check cleared too) | S80 `C1 flags` → S81 | to check: write the flags only with their strings and check set (`aecc_criteria`) |
 | Element tag third byte with bit 0x04 (`0x04060008`) | accepted, AUDIT clean; written back as `0x04020008` | S137 → S139 | — (never written) |
 | Element tag third byte with bit 0x01 (`0x04030008`) | accepted and kept on save | S127 → S132 | — (never written) |
+| Two station anchors with one GUID (a masking region given the GUIDs of two station equations' intervals) | accepted, AUDIT clean; on save the duplicate intervals are dropped and the region takes the equations' stations | S250 → S251 | guarded: new anchors never reuse a GUID the record has (`fresh_guid`) |
 | Zero speed-interval GUID together with no graphics, zero MIST1 and no label group (X5) | accepted; Civil 3D gives the table entry a new GUID and writes a second interval for it, leaving the zero-GUID interval as an orphan (MIST13) | S56 X5 → S57 | guarded: `create_alignment` writes a random GUID; zero speed GUIDs are replaced (D-045) |
 
 ## 5. Outside Civil 3D

@@ -3080,6 +3080,18 @@ civil3drust still refuses start-station moves on alignments with
 equations or masking regions (D-067); S249 shows what doing it the Civil
 3D way takes. Test `s249_start_station_moved`.
 
+**Writing equations and regions (D-070; S250 → S251, owner: clean open
+and AUDIT).** S250 had civil3drust write equations and regions on all
+three alignments. On FDF and FE5, Civil 3D's re-save S251 reads back to
+the same model: Civil 3D gave the regions new GUIDs and re-rounded some
+raw stations (119.9999999254942), nothing else. On FD7 the first region
+had been given the same two GUIDs as the two equations (the example used
+one seed for both edits): Civil 3D merged the anchors, keeping one
+interval per GUID, and the region took the equations' stations
+(1+50–3+20). Since then new anchors never reuse a GUID the record has
+(speeds included). S252 is S250 made again that way. Tests
+`s251_resave_and_unique_guids`.
+
 **S244 → S245 (owner).** S244 (S243 with every alignment's speeds
 rewritten by civil3drust: two on FD7's spiral, one in FDF's masking
 region, one after FE5's equation) opens clean, AUDIT clean, "behaviour as

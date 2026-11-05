@@ -19,7 +19,7 @@
 //! they are when the speeds are rewritten (S243, `aecc_station_refs`). See
 //! `docs/alignment-object.md`, "Design speeds".
 
-use crate::aecc_build::{guid_v4, Bits};
+use crate::aecc_build::Bits;
 use crate::aecc_elements::{decode_elements, Element, Segment};
 use crate::alignment::Point2;
 use crate::raw::{self, RawRecord};
@@ -226,11 +226,16 @@ pub fn set_design_speeds(
             ids.push(e.id);
         }
     }
+    // Fresh GUIDs must not repeat one the record uses (Civil 3D merges
+    // anchors that share a GUID, S251).
+    let mut used = crate::aecc_station_refs::record_guids(rec);
+    used.extend(ids.iter().copied());
+    let mut seed = seed;
     let ids: Vec<[u8; 16]> = (0..speeds.len())
         .map(|i| {
             ids.get(i)
                 .copied()
-                .unwrap_or_else(|| guid_v4(seed.wrapping_add(i as u64)))
+                .unwrap_or_else(|| crate::aecc_station_refs::fresh_guid(&mut seed, &mut used))
         })
         .collect();
     let mut w = Bits::default();

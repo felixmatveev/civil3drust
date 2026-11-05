@@ -447,6 +447,43 @@ impl Layout {
     }
 }
 
+/// A random v4 GUID from `seed` that is not in `used` (and add it): two
+/// anchors with one GUID are merged by Civil 3D (S250 → S251: a masking
+/// region given an equation's GUIDs was moved onto the equation's
+/// stations).
+pub(crate) fn fresh_guid(seed: &mut u64, used: &mut Vec<[u8; 16]>) -> [u8; 16] {
+    loop {
+        let g = crate::aecc_build::guid_v4(*seed);
+        *seed = seed.wrapping_add(0x9E37_79B9_7F4A_7C15);
+        if !used.contains(&g) {
+            used.push(g);
+            return g;
+        }
+    }
+}
+
+/// Every GUID the record's anchors use (intervals, equations, regions);
+/// empty when they can't be read.
+pub(crate) fn record_guids(rec: &RawRecord) -> Vec<[u8; 16]> {
+    Layout::read(rec).map(|l| l.guids()).unwrap_or_else(|_| {
+        intervals(rec)
+            .map(|(_, v, _)| v.iter().map(|i| i.guid).collect())
+            .unwrap_or_default()
+    })
+}
+
+impl Layout {
+    /// Every GUID the record's anchors use: intervals, equations, regions.
+    fn guids(&self) -> Vec<[u8; 16]> {
+        self.intervals
+            .iter()
+            .map(|i| i.guid)
+            .chain(self.equations.iter().map(|e| e.guid))
+            .chain(self.regions.iter().flat_map(|r| [r.start_guid, r.end_guid]))
+            .collect()
+    }
+}
+
 /// Copy `data` with the bit ranges in `edits` (sorted, not overlapping)
 /// replaced; returns bytes and handle-stream size.
 fn splice_all(
@@ -524,12 +561,12 @@ pub fn set_station_equations(
             return Err(fail("two equations at one station"));
         }
     }
+    let mut used = l.guids();
+    let mut seed = seed;
     let ids: Vec<[u8; 16]> = (0..sorted.len())
-        .map(|i| {
-            l.equations
-                .get(i)
-                .map(|e| e.guid)
-                .unwrap_or_else(|| crate::aecc_build::guid_v4(seed.wrapping_add(i as u64)))
+        .map(|i| match l.equations.get(i) {
+            Some(e) => e.guid,
+            None => fresh_guid(&mut seed, &mut used),
         })
         .collect();
     let mut eqs: Vec<StationEquation> = sorted
@@ -642,18 +679,15 @@ pub fn set_masking_regions(
         }
         spans.push((s, e));
     }
+    let mut used = l.guids();
+    let mut seed = seed;
     let ids: Vec<([u8; 16], [u8; 16])> = (0..n)
-        .map(|i| {
-            l.regions
-                .get(i)
-                .map(|r| (r.start_guid, r.end_guid))
-                .unwrap_or_else(|| {
-                    let k = seed.wrapping_add(2 * i as u64);
-                    (
-                        crate::aecc_build::guid_v4(k),
-                        crate::aecc_build::guid_v4(k + 1),
-                    )
-                })
+        .map(|i| match l.regions.get(i) {
+            Some(r) => (r.start_guid, r.end_guid),
+            None => (
+                fresh_guid(&mut seed, &mut used),
+                fresh_guid(&mut seed, &mut used),
+            ),
         })
         .collect();
     let anchors: Vec<(f64, [u8; 16])> = spans

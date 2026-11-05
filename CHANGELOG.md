@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- S251 (Civil 3D re-save of S250: equations and regions read back, except a
+  region that shared GUIDs with equations and was merged onto them); new
+  anchors (speeds, equations, regions) never reuse a GUID the record has.
+  S252: S250 made again.
 - Writing station equations and masking regions (D-070):
   `aecc_station_refs::set_station_equations` and `set_masking_regions`
   (intervals, lists, derived Station Back, locks, comments and numbers;
