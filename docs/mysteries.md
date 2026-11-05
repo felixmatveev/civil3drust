@@ -478,9 +478,16 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   equation; its last bit is 1; the region's bit is 0. Raw station and
   back station are both 190 (one equation, so they can't be told apart
   yet); ahead 310.
+- **Masking tab (owner's screenshot of FDF):** a region has Mask
+  (checked), Lock To Start (off), Start Station 2+90.30', Lock To End
+  (off), End Station 3+34.11', Comment (empty). So three check boxes
+  against one stored bit (0): the locks may live elsewhere (e.g. no
+  interval, or a zero GUID, for a locked end) and the comment is
+  probably the region's one string.
 - **Test:** an alignment with two equations, one increasing and one
-  decreasing (the Station Equations tab's "Increasing/Decreasing"), and
-  a masking region edited after creation; compare the bits.
+  decreasing (the Station Equations tab's "Increasing/Decreasing"); and
+  masking regions covering the check boxes: Mask off, Lock To Start on,
+  Lock To End on, and one with a comment; compare the bits.
 
 ## Not sampled yet (not mysteries, just gaps)
 

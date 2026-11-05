@@ -3017,6 +3017,15 @@ same speeds gives FD7's record back except the last digits of the
 spiral's end and point; FDF and FE5 keep their region and equation
 (test `station_refs`).
 
+**S244 → S245 (owner).** S244 (S243 with every alignment's speeds
+rewritten by civil3drust: two on FD7's spiral, one in FDF's masking
+region, one after FE5's equation) opens clean, AUDIT clean, "behaviour as
+expected". Its re-save S245 reads back to the same speeds, region and
+equation. Civil 3D recomputed the stations of some intervals from their
+points (FDF's speed 320.00000000045003, FE5's equation 190.0000000372529,
+also its raw station) and reordered them; the equation's back and ahead
+stations and the region's stations are kept.
+
 ## Spiral types (S232)
 
 The owner filled S228 (one named 100' tangent per type) with an outward

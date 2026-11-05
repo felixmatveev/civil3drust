@@ -17,7 +17,7 @@ versions follow [Semantic Versioning](https://semver.org/).
   are refused while an alignment has them. `required_string_count`
   counts 2 per interval, 1 per speed and region, 2 per equation. Sample
   S243, test `station_refs`, MIST18. S244: S243's speeds rewritten this
-  way, for Civil 3D to check.
+  way; Civil 3D accepts it and its re-save S245 reads back the same.
 - MIST14 solved: an open centre curve with nothing on one side is a half
   circle from the line on the other side, either way round; a kind-3
   line into such a curve is resolved (S242, test

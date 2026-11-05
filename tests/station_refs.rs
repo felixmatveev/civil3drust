@@ -99,3 +99,36 @@ fn s243_speed_rewrite_keeps_other_refs() {
         }
     }
 }
+
+/// S244 (S243's speeds rewritten by civil3drust) re-saved by Civil 3D:
+/// the same speeds, masking region and station equation.
+#[test]
+fn s245_resave_reads_back() {
+    let o = raw::open("samples/S245_S244_civ3d_resaved.dwg").unwrap();
+    let want: [(u64, &[(f64, f64)]); 3] = [
+        (0xFD7, &[(0.0, 60.0), (150.0, 40.0), (250.0, 30.0)]),
+        (0xFDF, &[(0.0, 50.0), (320.0, 35.0)]),
+        (0xFE5, &[(0.0, 55.0), (250.0, 45.0)]),
+    ];
+    for (h, speeds) in want {
+        let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap();
+        let got = design_speeds(&r).unwrap();
+        assert_eq!(got.len(), speeds.len());
+        for (g, (st, sp)) in got.iter().zip(speeds) {
+            assert!((g.station - st).abs() < 1e-6 && g.speed == *sp, "{h:X}");
+        }
+    }
+    let r = |h| {
+        raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap()
+    };
+    let m = masking_regions(&r(0xFDF)).unwrap();
+    assert_eq!(m, masking_regions(&rec(0xFDF)).unwrap());
+    let e = station_equations(&r(0xFE5)).unwrap();
+    assert_eq!((e[0].back, e[0].ahead), (190.0, 310.0));
+}
