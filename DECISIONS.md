@@ -1330,3 +1330,23 @@ many files). A plugin system or runtime registry (more machinery than a
 two-person cleanroom project needs). Mirroring Civil 3D's class layering
 (rejected by D-049).
 
+## D-067: Speed edits keep other station-anchored data
+Date: 2026-11-05 · Status: accepted
+
+**Context.** The interval block after the elements holds the intervals
+of design speeds, station equations and masking regions (S243); the
+equation list sits between it and the speed table, the masking list
+after the type. civil3drust rewrote the whole block when it set speeds.
+
+**Decision.** `set_design_speeds` rewrites only the speeds' intervals and
+table entries; other intervals, the equation list and the masking list
+are copied unchanged (their strings too). Clearing or shifting the
+speeds for a start-station change is refused while equations or masking
+regions exist, because how Civil 3D moves them is not sampled.
+Equations and masking regions are read, not written, until MIST18 is
+settled.
+
+**Alternatives.** Rebuilding equation and masking intervals from their
+stations (they are derived like the speed intervals): possible, but
+their unknown bits (MIST18) would have to be copied anyway.
+

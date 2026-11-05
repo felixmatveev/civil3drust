@@ -31,13 +31,14 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 | MIST8 | curve flag bit | solved: set on load |
 | MIST9 | `−1` parameters of curves and groups | mostly solved: criteria values |
 | MIST10 | the `256` after a spiral's IDs | solved: spiral type |
-| MIST11 | S89's curve speed-interval distance | open |
-| MIST12 | companion topology flags | open (uniform form accepted) |
-| MIST13 | extra block for a zero speed GUID | open (lead) |
-| MIST14 | half-circle rule | one sample |
+| MIST11 | S89's curve speed-interval distance | solved: a stale interval |
+| MIST12 | companion topology flags | handled (D-064) |
+| MIST13 | extra block for a zero speed GUID | solved: a duplicate speed interval |
+| MIST14 | half-circle rule | solved (S242) |
 | MIST15 | flag 16 bits before the section-2 end | solved: tangency swapping |
 | MIST16 | three BDs after a spiral's geometry | open |
 | MIST17 | 128 bits after a `0x0D` element header | solved: group start point |
+| MIST18 | station equation's 18 bits and flag; masking region's flag | open |
 
 ## MIST1 — the 66-bit section-2 field — **PARTIALLY SOLVED (S142–S150, S214)**
 
@@ -169,13 +170,13 @@ These bits belong to the full BL at section-2 bit 115, `0x1148` without
 MIST2 and `0x1188` with it (MIST2). That is why the first Civil 3D
 re-save (S7 → S8, S24 → S131) changed them together with adding MIST2.
 
-## MIST6 — the post-type value `BL 2, 2, 2, 0, x` — **SOLVED (S122)**
+## MIST6 — the post-type value `BL 2, 2, 2, 0, x` — **SOLVED (S122, S243)**
 
 x is the implied point-of-intersection display (Alignment Properties →
 Point of Intersection): 1 by change in alignment direction, 2 by
 individual curves and curve group, 3 do not display. Stored per
 alignment; a new alignment takes the drawing's default (S5–S23 default
-1, S24 default 3). `aecc_build::pi_display` / `set_pi_display`.
+1, S24 default 3). `aecc_build::pi_display` / `set_pi_display`. The `0` before it is the masking-region count (S243).
 
 ## MIST7 — the element header — **structure mapped; bits open**
 
@@ -466,6 +467,21 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   any pieces is accepted too: Civil 3D solves the pieces from it (S216 →
   S217).
 
+## MIST18 — station equation and masking fields — **open**
+
+- **Where:** S243 (owner). The station-equation list after the interval
+  block holds, per equation, `18 bits, BD raw station, GUID, BD back,
+  BD ahead, B`; the masking list after `BL 2, 2, 2` holds, per region,
+  `BD start, BD end, B, GUID start, GUID end` (`aecc_station_refs`,
+  `alignment-object.md` "Station-anchored data").
+- **Seen:** the 18 bits are `00` + `BE 04` (read as BS 1214) in FE5's one
+  equation; its last bit is 1; the region's bit is 0. Raw station and
+  back station are both 190 (one equation, so they can't be told apart
+  yet); ahead 310.
+- **Test:** an alignment with two equations, one increasing and one
+  decreasing (the Station Equations tab's "Increasing/Decreasing"), and
+  a masking region edited after creation; compare the bits.
+
 ## Not sampled yet (not mysteries, just gaps)
 
 - Real-world alignments (a 2020 production drawing, checked locally): 2
@@ -480,7 +496,8 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   criteria) and the parent alignment's link to them. Sample plan: one
   alignment, an offset alignment, then one widening added, edited and
   removed, each step saved separately.
-- Station equations (data seen in S9, not decoded).
+- Station equations: one equation sampled (S243, MIST18); several
+  equations, a decreasing one and their effect on stationing are not.
 - Alignment groups (owner): Civil 3D's own grouping of alignments in the
   Toolspace (Prospector), for siteless alignments and inside each site.
   Sample plan, each step saved separately from S24: 1. two siteless

@@ -1028,9 +1028,18 @@ pub const PI_DISPLAY_NONE: i32 = 3;
 /// Bit of the implied-PI display BL: the alignment type, then `BL 2, 2,
 /// 2, 0`, then the display option (S122).
 fn pi_display_bit(rec: &RawRecord, data: &[u8]) -> Result<usize, BuildError> {
+    let q = masking_bit(rec, data)?;
+    crate::aecc_station_refs::masking_at(data, q)
+        .map(|x| x.1)
+        .ok_or_else(|| layout("implied-PI display field not found"))
+}
+
+/// Bit of the masking list: the alignment type, then `BL 2, 2, 2` (S243;
+/// the `0` that followed in every earlier sample is the empty list).
+fn masking_bit(rec: &RawRecord, data: &[u8]) -> Result<usize, BuildError> {
     let mut q = type_bit(rec, data)?;
-    let bad = || layout("implied-PI display field not found");
-    for want in [None, Some(2), Some(2), Some(2), Some(0)] {
+    let bad = || layout("masking list not found");
+    for want in [None, Some(2), Some(2), Some(2)] {
         let (v, nq) = raw::read_bl(data, q).ok_or_else(bad)?;
         if want.is_some_and(|w| w != v) {
             return Err(bad());
@@ -1038,6 +1047,16 @@ fn pi_display_bit(rec: &RawRecord, data: &[u8]) -> Result<usize, BuildError> {
         q = nq;
     }
     Ok(q)
+}
+
+/// The alignment's masking regions (Alignment Properties → Masking; S243).
+pub fn masking_regions(
+    rec: &RawRecord,
+) -> Result<Vec<crate::aecc_station_refs::MaskRegion>, BuildError> {
+    let q = masking_bit(rec, &rec.data)?;
+    crate::aecc_station_refs::masking_at(&rec.data, q)
+        .map(|x| x.0)
+        .ok_or_else(|| layout("masking list not readable"))
 }
 
 /// The implied point-of-intersection display option of the Alignment

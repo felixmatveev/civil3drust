@@ -48,6 +48,7 @@ pub mod aecc_layout_solve;
 pub mod aecc_registry;
 pub mod aecc_site;
 pub mod aecc_station;
+pub mod aecc_station_refs;
 pub mod aecc_style;
 pub mod aecc_topology;
 pub mod alignment;

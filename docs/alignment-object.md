@@ -1416,7 +1416,7 @@ After the element records:
 ```text
 BL 0, BL 0, BL 0, BL n,
 n × { 16-byte GUID (the matching design-speed entry's),
-      13 bits 1010000001010,
+      13 bits 1010000001010 (B 1, BL kind 2 = speed, BD 0; S243),
       BD station, BD distance from the element's start, BD length to the element end,
       BL ID of the containing element, BL its before-ID, BL its after-ID,
       RD element start x, y, element end x, y, point x, y },
@@ -1427,7 +1427,9 @@ next`, true for speeds on element 1; S115 showed they are the containing
 element's ID and links.) Curves have the same form (S113). Civil 3D
 orders the intervals by creation (S74: 2+00 first).
 Each speed with an interval has three strings (comment + two), a speed
-without an interval one.
+without an interval one. **Later (S243):** the block also holds the
+intervals of station equations (kind 3) and masking regions (kind 4);
+see "Station-anchored data".
 
 `set_design_speeds` now writes the whole block from the geometry (one
 interval per speed, table order), so it also adds speeds to alignments
@@ -2944,6 +2946,76 @@ line form; a program that edits the model calls the same function.
 S230: S228 with `Alignment - (1)` deleted this way. Owner: S230 opens with no issues, AUDIT clean;
 its re-save S231 reads back to the same seven alignments, the companion
 still empty (D-049 acceptance).
+
+## Station-anchored data: a speed on a spiral, masking, a station equation (S243)
+
+S243 (owner, S24-based): three alignments, each a 100' tangent, an
+outward spiral (R 300 → ∞, L 200) and a floating line, the last two also
+a floating curve R 100; design speeds 60 at 0+00 and 30 at 2+00.
+
+- `Spline speed change` (FD7): the 30 mph speed at 2+00 lies on the
+  spiral (1+00–3+00);
+- `masking` (FDF): a masking region 2+90.30–3+34.11 (Alignment
+  Properties → Masking);
+- `station equation` (FE5): one station equation, back 1+90, ahead
+  3+10.
+
+**The interval block holds every station-anchored object.** Its 13
+"constant" bits are `B 1, BL kind, BD 0`: kind 2 for a design speed (all
+earlier samples), 3 for a station equation, 4 for a masking region. FDF
+has four intervals (0, 2+90.30, 2+00, 3+34.11: the speeds and the
+region's start and end), FE5 three (0, 2+00, and 1+90 for the equation).
+The intervals of the region and the equation carry the stations Civil 3D
+took from the cursor (190.2994155883789, 89.99996185302734: single
+precision), the speeds' exact ones.
+
+**Speed on a spiral (FD7).** The interval has the same form as on lines
+and curves: station 200, distance 100 from the spiral's start, length 100
+to its end, element 2 (before 1, after 3), the spiral's start and end,
+and the point at 2+00 on the clothoid (198.7772, −13.8094). civil3drust's
+point differs from Civil 3D's by 3e-10.
+
+**Station equations (FE5).** The `BL 0` that came before the design
+speeds' `BL 1, BL n` in every earlier record is the station-equation
+count. FE5 has one:
+
+```text
+BL 1 (count),
+{ 18 bits `00` + `BE 04` (BS 1214?), BD 190 (raw station), GUID (its
+  interval's), BD 190 (back), BD 310 (ahead), B 1 },
+BL 1, BL 2, … (design speeds as before)
+```
+
+**Masking (FDF).** The `0` of `BL 2, 2, 2, 0` before the implied-PI
+display (MIST6) is the masking-region count. FDF has one:
+
+```text
+BL 1 (count),
+{ BD 290.299391746521 (start), BD 334.1108031681572 (end), B 0,
+  GUID (start interval), GUID (end interval) },
+BL 3 (implied-PI display)
+```
+
+The unexplained bits (the equation's 18 bits and last bit, the region's
+bit) are MIST18.
+
+**Strings.** The counts fit `9 + 2 per interval + 1 per speed + 1 per
+masking region + 2 per station equation + 3 per non-line element (+ 1
+JSON, + 1 user string in the Properties form)`: FD7 19, FDF 27, FE5 26
+(D-056 with intervals counted by kind). FE5's equation strings include a
+`"1"`.
+
+**civil3drust.** `aecc_station_refs` reads the intervals (with their
+kind), the station equations and the masking list
+(`aecc_build::masking_regions`); the design-speed reader, the type and
+PI-display readers and `required_string_count` follow the new layout
+(the old reader failed on FE5). `set_design_speeds` now writes speeds on
+fixed spirals and keeps the other intervals, the equation list and the
+masking list as they are; moving the start station is refused while an
+alignment has equations or masking regions (not sampled). Rewriting the
+same speeds gives FD7's record back except the last digits of the
+spiral's end and point; FDF and FE5 keep their region and equation
+(test `station_refs`).
 
 ## Spiral types (S232)
 

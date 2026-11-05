@@ -12,9 +12,11 @@
 //! Speeds are stored in the drawing's speed unit (mph in the samples). Every
 //! alignment has at least one entry: Civil 3D's default is 60 at the start
 //! station, which is why "BD 60" looked like a constant (S24–S73). Each entry
-//! has a comment string in the record's string stream (S76); one entry
-//! carries the alignment's identity GUID ("GUID copy 2"); the others have
-//! their own random GUIDs (S74 `mixed speed`). See
+//! has a comment string in the record's string stream (S76) and a GUID
+//! shared with its interval after the elements. The leading `BL 0` is the
+//! (empty) station-equation list; the interval block also holds the
+//! intervals of station equations and masking regions, which are kept as
+//! they are when the speeds are rewritten (S243, `aecc_station_refs`). See
 //! `docs/alignment-object.md`, "Design speeds".
 
 use crate::aecc_build::{guid_v4, Bits};
@@ -51,9 +53,18 @@ fn err(m: impl Into<String>) -> SpeedError {
 /// Returns the entries and the bit offset after the last entry.
 fn parse_at(data: &[u8], start: usize) -> Option<(Vec<DesignSpeed>, usize)> {
     let (zero, q) = raw::read_bl(data, start)?;
+    if zero != 0 {
+        return None;
+    }
+    parse_body(data, q)
+}
+
+/// The table after the station-equation list: `BL 1, BL n`, the entries,
+/// then BD 100.
+fn parse_body(data: &[u8], q: usize) -> Option<(Vec<DesignSpeed>, usize)> {
     let (one, q) = raw::read_bl(data, q)?;
     let (n, mut q) = raw::read_bl(data, q)?;
-    if zero != 0 || one != 1 || !(0..=1000).contains(&n) {
+    if one != 1 || !(0..=1000).contains(&n) {
         return None;
     }
     let mut out = Vec::with_capacity(n as usize);
@@ -86,6 +97,14 @@ fn parse_at(data: &[u8], start: usize) -> Option<(Vec<DesignSpeed>, usize)> {
 pub fn locate(rec: &RawRecord) -> Result<(usize, usize, Vec<DesignSpeed>), SpeedError> {
     let (end, identity) = identity(rec)?;
     let data = &rec.data;
+    // The direct path: intervals, station equations, table (S243).
+    if let Some((_, after)) = crate::aecc_station_refs::intervals_at(data, end) {
+        if let Some((_, tab)) = crate::aecc_station_refs::station_equations_at(data, after) {
+            if let Some((v, q)) = parse_body(data, tab) {
+                return Ok((after, q, v));
+            }
+        }
+    }
     // No design speeds (S1, S9, S82 FB6/FB9): no intervals (four BL 0)
     // and an empty table right after them.
     if (0..EMPTY_INTERVALS.len()).all(|i| raw::get_bit(data, end + i) == EMPTY_INTERVALS[i]) {
@@ -183,17 +202,19 @@ pub fn set_design_speeds(
     {
         return Err(err("stations must be finite and speeds positive"));
     }
-    let (_, stop, old) = locate(rec)?;
+    let (eq_start, stop, old) = locate(rec)?;
     let (end, first) = identity(rec)?;
     let data = &rec.data;
     let old_intervals = old_interval_count(data, end)?;
-    // GUIDs: old ones first (the first interval's, then the rest in table
-    // order), then fresh ones.
+    // Intervals of other station-anchored objects (station equations,
+    // masking regions; S243) are kept, as is the station-equation list.
+    let refs = StationRefs::read(rec, eq_start, &old)?;
+    let old_intervals = old_intervals - refs.kept.len();
     // A zero GUID (S123, Civil 3D 2027: a speed with no interval) is not
     // reused: written into an interval it would make the identity
     // ambiguous, and Civil 3D saves zero-GUID records differently (MIST13).
     let mut ids: Vec<[u8; 16]> = Vec::new();
-    if old_intervals > 0 && first != ZERO_GUID {
+    if old_intervals > 0 && first != ZERO_GUID && old.iter().any(|e| e.id == first) {
         ids.push(first);
     }
     for e in &old {
@@ -209,8 +230,8 @@ pub fn set_design_speeds(
         })
         .collect();
     let mut w = Bits::default();
-    let with_interval = write_intervals(rec, &mut w, speeds, &ids)?;
-    w.bl(0);
+    let with_interval = write_intervals(rec, &mut w, speeds, &ids, &refs.kept)?;
+    w.copy(data, eq_start, refs.table);
     w.bl(1);
     w.bl(speeds.len() as i32);
     for ((station, speed), id) in speeds.iter().zip(&ids) {
@@ -223,7 +244,8 @@ pub fn set_design_speeds(
     }
     let (bytes, hb) = splice(data, rec.handle_bits, end, stop, w);
     // Strings: three per speed with an interval (the speed's comment and
-    // the interval's two), one per speed without (S76, S79, S82).
+    // the interval's two), one per speed without (S76, S79, S82); the
+    // other intervals keep theirs.
     let ss = string_stream::parse(&bytes, hb).map_err(|e| err(e.to_string()))?;
     let base = ss
         .strings
@@ -260,6 +282,7 @@ fn write_intervals(
     w: &mut Bits,
     speeds: &[(f64, f64)],
     ids: &[[u8; 16]],
+    kept: &[(usize, usize)],
 ) -> Result<usize, SpeedError> {
     let d = decode_elements(rec).map_err(|e| err(e.to_string()))?;
     let start = crate::aecc_station::start_station(rec).unwrap_or(0.0);
@@ -318,16 +341,18 @@ fn write_intervals(
                 );
                 (a, b, p)
             }
-            Segment::Spiral { .. } => {
-                return Err(err("a speed on a spiral group (no sample yet)"));
-            }
+            // A fixed spiral: the point at the distance along it (S243 FD7:
+            // 30 at 2+00 on a spiral from 1+00, distance 100, point on the
+            // clothoid).
+            Segment::Spiral {
+                start: a,
+                end: b,
+                geometry: g,
+            } => (a, b, g.point_at(t).0),
         };
         if matches!(
             e.record,
-            Element::LineSpiral(_)
-                | Element::Spiral(_)
-                | Element::FreeSpiral(_)
-                | Element::Group(_)
+            Element::LineSpiral(_) | Element::FreeSpiral(_) | Element::Group(_)
         ) {
             return Err(err("a speed on a spiral group (no sample yet)"));
         }
@@ -356,17 +381,21 @@ fn write_intervals(
         }
         count += 1;
     }
+    for &(from, to) in kept {
+        intervals.copy(&rec.data, from, to);
+    }
     for _ in 0..3 {
         w.bl(0);
     }
-    w.bl(count as i32);
+    w.bl((count + kept.len()) as i32);
     let n = intervals.len();
     let bytes = intervals.into_bytes();
     w.copy(&bytes, 0, n);
     Ok(count)
 }
 
-/// The 13 bits after each interval's GUID, the same in every sample.
+/// The 13 bits after a speed interval's GUID: `B 1, BL 2 (speed), BD 0`
+/// (S243: 3 for station equations, 4 for masking regions).
 const INTERVAL_CONSTANT: u64 = 0b1010000001010;
 
 /// Remove all design speeds, as Civil 3D does when the start station
@@ -374,7 +403,12 @@ const INTERVAL_CONSTANT: u64 = 0b1010000001010;
 /// the table gets `n = 0`, and the three strings per speed (comment and
 /// the interval's two) are removed from the end of the string stream.
 pub fn clear_design_speeds(rec: &RawRecord) -> Result<(Vec<u8>, usize), SpeedError> {
-    let (_, stop, old) = locate(rec)?;
+    let (eq_start, stop, old) = locate(rec)?;
+    if StationRefs::read(rec, eq_start, &old)?.any() {
+        return Err(err(
+            "the alignment has station equations or masking regions (not sampled with a start-station change)",
+        ));
+    }
     let (end, _) = identity(rec)?;
     let data = &rec.data;
     let total = raw::bit_len(data);
@@ -407,6 +441,44 @@ const FIRST_INTERVAL_STATION: usize = 16 + 128 + 13;
 
 /// Replace bits `[from, to)` of a record with `with`, keeping the handle
 /// stream; returns the new bytes and handle-stream size.
+/// What else the interval block and the equation list hold (S243).
+struct StationRefs {
+    /// Bit ranges of intervals that belong to no design speed.
+    kept: Vec<(usize, usize)>,
+    /// Start of the design-speed table's `BL 1, BL n` (after the
+    /// station-equation list starting at `eq_start`).
+    table: usize,
+    equations: usize,
+    masking: bool,
+}
+
+impl StationRefs {
+    fn read(rec: &RawRecord, eq_start: usize, old: &[DesignSpeed]) -> Result<Self, SpeedError> {
+        use crate::aecc_station_refs as refs;
+        let data = &rec.data;
+        let (end, _) = identity(rec)?;
+        let (ints, _) = refs::intervals_at(data, end).unwrap_or_default();
+        let kept: Vec<(usize, usize)> = ints
+            .iter()
+            .filter(|i| !old.iter().any(|e| e.id == i.guid))
+            .map(|i| (i.start_bit, i.end_bit))
+            .collect();
+        let (eqs, table) = refs::station_equations_at(data, eq_start)
+            .ok_or_else(|| err("station-equation list not readable"))?;
+        let masking = crate::aecc_build::masking_regions(rec).is_ok_and(|m| !m.is_empty());
+        Ok(StationRefs {
+            kept,
+            table,
+            equations: eqs.len(),
+            masking,
+        })
+    }
+
+    fn any(&self) -> bool {
+        !self.kept.is_empty() || self.equations > 0 || self.masking
+    }
+}
+
 fn splice(data: &[u8], handle_bits: usize, from: usize, to: usize, with: Bits) -> (Vec<u8>, usize) {
     let total = raw::bit_len(data);
     let data_end = total - handle_bits;
@@ -431,6 +503,11 @@ pub fn shift_design_speeds(rec: &RawRecord, delta: f64) -> Result<(Vec<u8>, usiz
     let (start, stop, old) = locate(rec)?;
     if old.is_empty() || delta == 0.0 {
         return Ok((rec.data.clone(), rec.handle_bits));
+    }
+    if StationRefs::read(rec, start, &old)?.any() {
+        return Err(err(
+            "the alignment has station equations or masking regions (not sampled with a start-station change)",
+        ));
     }
     // Table first (later in the record), then the interval station.
     let mut t = Bits::default();

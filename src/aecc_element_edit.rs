@@ -812,7 +812,12 @@ pub fn required_string_count(rec: &RawRecord) -> Result<usize, ElementEditError>
         .filter(|e| !matches!(e, Element::Tangent(_)))
         .count();
     let json = usize::from(string_stream::layout_json(&rec.data, rec.handle_bits).is_some());
-    Ok(9 + 3 * intervals + speeds.saturating_sub(intervals) + 3 * curves + json)
+    // Two strings per interval (speeds, station equations and masking
+    // regions all have intervals), one per speed (its comment), one per
+    // masking region, two per station equation (S243).
+    let equations = crate::aecc_station_refs::station_equations(rec).map_or(0, |e| e.len());
+    let masks = crate::aecc_build::masking_regions(rec).map_or(0, |m| m.len());
+    Ok(9 + 2 * intervals + speeds + masks + 2 * equations + 3 * curves + json)
 }
 
 /// Constraint code of a curve (for reports): 29 free, 15 floating, 2

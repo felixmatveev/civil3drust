@@ -7,6 +7,16 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Station-anchored data (S243): `aecc_station_refs` reads the interval
+  block with each interval's kind (2 design speed, 3 station equation,
+  4 masking region), the station-equation list and (with
+  `aecc_build::masking_regions`) the masking list. Design speeds, type
+  and PI display are read on alignments with equations or masking
+  regions; `set_design_speeds` writes speeds on fixed spirals and keeps
+  equations, masking regions and their intervals; start-station moves
+  are refused while an alignment has them. `required_string_count`
+  counts 2 per interval, 1 per speed and region, 2 per equation. Sample
+  S243, test `station_refs`, MIST18.
 - MIST14 solved: an open centre curve with nothing on one side is a half
   circle from the line on the other side, either way round; a kind-3
   line into such a curve is resolved (S242, test

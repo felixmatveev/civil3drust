@@ -39,11 +39,12 @@ other records shift by the sizes of the variable parts.
 | 2197–2206 | element count (BL) | decoded | yes |
 | 2207–2856 | **element records**, each with an 11-bit kind prefix (2 line, 4 curve, 6 spiral, 8 / 10 / 20 / 24 / 26 spiral groups and free spirals) | decoded (`aecc_elements`, `aecc_encode`; every kind re-encodes bit for bit) | yes — the geometry |
 | 2857–2872 | interval block head: `BL 0, BL 0, BL 0, BL n` (n speed intervals) | decoded | yes |
-| 2873–3000 | first **speed interval**'s GUID (= its design-speed entry's GUID; not an alignment identity, S82) | decoded (random v4) | with speeds — a fresh GUID (a zero GUID changes how Civil 3D saves, S57 X5, MIST13) |
-| 3001–3017 | 13 constant bits, BD station (0), BD distance from the element start (0) | decoded | with speeds |
+| 2873–3000 | first **interval**'s GUID (= its design-speed entry's GUID; not an alignment identity, S82; equations and masking regions have intervals too, S243) | decoded (random v4) | with speeds — a fresh GUID (a zero GUID changes how Civil 3D saves, S57 X5, MIST13) |
+| 3001–3017 | `B 1, BL kind (2 speed, 3 station equation, 4 masking), BD 0`, BD station (0), BD distance from the element start (0) | decoded | with speeds |
 | 3018–3083 | BD length to the element's end (here: the station at the end of element 0) | decoded; derived | with speeds |
 | 3084–3489 | rest of the interval: containing element's ID, before and after IDs (S115); element start, end, point at the station (6 RD) — alignment-object.md "The interval block" | decoded; derived from speeds + geometry | written by `set_design_speeds` |
-| 3490–3858 | **post-cache block**, see 1.2 | decoded (speed table, type, PI display) | yes |
+| (after the intervals) | station-equation list: `BL n`, n × {18 bits, BD raw station, GUID, BD back, BD ahead, B} (S243; the `BL 0` before the speed table) | read (MIST18 bits open) | empty list |
+| 3490–3858 | **post-cache block**, see 1.2 | decoded (speed table, type, masking, PI display) | yes |
 | 3859–4394 | **string stream**: class name, description ×2, [user, Properties form], [JSON layout], name, empty strings: 9 + 3 per speed with an interval + 1 per speed without + 3 per non-line element record + 1 with a JSON layout (D-056) | decoded | yes |
 | 4395–4411 | string-stream size (16 bits) + flag | decoded | yes |
 | 4412–4527 | **handle stream**: layer, null, companion ×2, null, style, null | decoded | layer and **style required** (null style: invisible, crash on select, S67–S69); companion refs may be null (§2) |
@@ -65,9 +66,9 @@ other records shift by the sizes of the variable parts.
 | content | status |
 |---|---|
 | design-speed table: BL 0, BL 1, BL n, n × {BL 1, BD station, BD speed, GUID} (the GUID shared with the speed's interval) | decoded (O2, S74) |
-| BD 100, BL 0, BL n, n BDs (element-ID list, optional: Civil 3D adds it after geometry edits, S12, S51), **BL alignment type** (1 Centerline, 4 Miscellaneous), BL 2, 2, 2, 0, **BL implied-PI display** (1 by direction, 2 by curves, 3 none) | decoded (O1, S58/S59; S122) |
+| BD 100, BL 0, BL n, n BDs (element-ID list, optional: Civil 3D adds it after geometry edits, S12, S51), **BL alignment type** (1 Centerline, 4 Miscellaneous), BL 2, 2, 2, **masking list** `BL n`, n × {BD start, BD end, B, GUID, GUID} (S243), **BL implied-PI display** (1 by direction, 2 by curves, 3 none) | decoded (O1, S58/S59; S122; S243) |
 | 1 bit (block bit 340) | 0 in all samples |
-| station-equation data (S9: +196 bits in section 2, more after the cache) | **optional**, not decoded — only with station equations |
+| station-equation data (S9: +196 bits in section 2, more after the cache) | the list after the intervals is read (S243); S9's section-2 bits not decoded |
 
 ## 2. Other records created with an alignment
 
