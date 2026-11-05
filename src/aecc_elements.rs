@@ -2562,23 +2562,38 @@ fn resolve_with(
                         _ => None,
                     };
                     let prev = i.checked_sub(1).and_then(|j| chain.get(j));
-                    let Some(end) = touch(chain.get(i + 1), false) else {
-                        return Err(unsupported(format!(
-                            "arc {}: a curve by its centre not followed by a line \
-                             (no sample yet)",
-                            a.id
-                        )));
-                    };
-                    // With nothing before it, the curve is a half circle
-                    // ending there (S118).
-                    let start = match prev {
-                        None => Point2::new(2.0 * center.x - end.x, 2.0 * center.y - end.y),
-                        _ => touch(prev, true).ok_or_else(|| {
-                            unsupported(format!(
-                                "arc {}: a curve by its centre after a curve (no sample yet)",
+                    let next = chain.get(i + 1);
+                    let half = |p: Point2| Point2::new(2.0 * center.x - p.x, 2.0 * center.y - p.y);
+                    // With nothing on one side, the curve is a half circle
+                    // from or to the line on the other (S118; S242 both
+                    // ways, whatever point gave the radius).
+                    let (start, end) = match (prev, touch(next, false)) {
+                        (None, Some(end)) => (half(end), end),
+                        (Some(_), Some(end)) => (
+                            touch(prev, true).ok_or_else(|| {
+                                unsupported(format!(
+                                    "arc {}: a curve by its centre after a curve (no sample yet)",
+                                    a.id
+                                ))
+                            })?,
+                            end,
+                        ),
+                        (Some(_), None) if next.is_none() => {
+                            let start = touch(prev, true).ok_or_else(|| {
+                                unsupported(format!(
+                                    "arc {}: a curve by its centre after a curve (no sample yet)",
+                                    a.id
+                                ))
+                            })?;
+                            (start, half(start))
+                        }
+                        _ => {
+                            return Err(unsupported(format!(
+                                "arc {}: a curve by its centre not next to a line \
+                                 (no sample yet)",
                                 a.id
-                            ))
-                        })?,
+                            )))
+                        }
                     };
                     let g = arc_on(&g, start, end);
                     let g = if g.sweep <= 1e-12 {
@@ -3424,6 +3439,32 @@ fn resolve_piece(mut chained: Vec<Element>) -> Result<Vec<ResolvedElement>, Deco
     // lines (kind 9, S113) touch the circles of the curves on both sides.
     let mut pre: Vec<Placed> = vec![None; chained.len()];
     let mut groups: Vec<Parts> = vec![None; chained.len()];
+    // A line constrained by the next element (kind 3: start point only)
+    // into an open centre curve ends where it touches that circle (S242
+    // `C EAST`).
+    for i in 0..chained.len() {
+        let Element::Tangent(t) = &chained[i] else {
+            continue;
+        };
+        if t.kind != aecc_alignment::KIND_FLOATING_NEXT {
+            continue;
+        }
+        let Some(c) = open_centre_circle(chained.get(i + 1)) else {
+            continue;
+        };
+        let point = ArcGeometry {
+            radius: 0.0,
+            ..circle(t.start, 0.0, true)
+        };
+        let id = t.id;
+        let (_, b) = tangent_between(&point, &c).ok_or_else(|| {
+            DecodeError::BrokenChain(format!("tangent {id}: start point inside the curve"))
+        })?;
+        let Element::Tangent(t) = &mut chained[i] else {
+            unreachable!()
+        };
+        t.end = b;
+    }
     // Line-spiral groups into an open centre curve (S119).
     for i in 0..chained.len() {
         let Element::LineSpiral(g) = &chained[i] else {

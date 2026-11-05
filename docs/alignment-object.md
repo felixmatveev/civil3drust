@@ -2101,7 +2101,12 @@ next to them. The free line between them touches both circles; the
 floating line after the second leaves its circle tangentially toward its
 stored end point. The first curve, with nothing before it, is a half
 circle (180.0000°) ending where the free line leaves it — its start is
-not stored. Civil 3D turns commas in alignment names into `_`.
+not stored. Civil 3D turns commas in alignment names into `_`. The same
+holds the other way round (S242 `C EAST`): a line constrained by the
+next element (kind 3, start point only) runs into the circle
+tangentially and the curve, with nothing after it, is a half circle from
+there; S242 `C NORTH` repeats S118's case with the radius picked
+elsewhere (MIST14).
 
 **Line-spiral group (S119).** The owner edited S118's first circle;
 Civil 3D added element 7 before it: a line from (438, 2124) and a

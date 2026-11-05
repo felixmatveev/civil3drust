@@ -776,3 +776,41 @@ fn s225_group_pieces_after_end_entity_deleted() {
     }
     assert_eq!(n, 5);
 }
+
+/// MIST14: an open curve by its centre with nothing on one side is a half
+/// circle from or to the line on the other side, whatever point gave the
+/// radius (S242: `C EAST` radius picked east, the line first; `C NORTH`
+/// radius picked north, the curve first). The ends match the arcs Civil 3D
+/// drew in the proxy graphics.
+#[test]
+fn open_centre_curve_half_circle_s242() {
+    use civil3drust::aecc_elements::{decode_elements, Segment};
+    use civil3drust::alignment::Point2;
+    let o = raw::open("samples/S242_S24_open_centre_curves.dwg").unwrap();
+    let p = |x, y| Point2::new(x, y);
+    let s = 100.0 / 3.0;
+    let r = 1000.0 + (100.0f64.powi(2) - s * s).sqrt();
+    let l = 2000.0 - r;
+    for (h, arc_from, arc_to) in [
+        (0xFD7, p(r, s), p(l, -s)), // C EAST: line (1000, 300) → arc
+        (0xFEA, p(r, -s), p(l, s)), // C NORTH: arc → line to (1000, 300)
+    ] {
+        let rec = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|x| x.handle == h)
+            .unwrap();
+        let d = decode_elements(&rec).unwrap();
+        let arc = d
+            .elements
+            .iter()
+            .find_map(|e| match e.segment {
+                Segment::Arc { geometry, .. } => Some((e.segment, geometry)),
+                _ => None,
+            })
+            .unwrap();
+        assert!((arc.1.sweep - std::f64::consts::PI).abs() < 1e-9, "{h:X}");
+        assert!(arc.0.start().distance_to(arc_from) < 1e-6, "{h:X}");
+        assert!(arc.0.end().distance_to(arc_to) < 1e-6, "{h:X}");
+        assert!((d.length() - 597.0020).abs() < 1e-3, "{h:X}");
+    }
+}

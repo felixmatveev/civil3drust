@@ -253,6 +253,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S239 | `S239_S161_companions_rebuilt_form.dwg` | civil3drust | MIST12 test: S161 with the companions of 8C49 (`0x030`, from a polyline) and 8C56 (`0x810`, layout tools) in the same form. Clean open and AUDIT (owner). | 946171 | `bd7f77b693f5b3b9` |
 | S240 | `S240_S238_civ3d_resaved.dwg` | Civil 3D 2024 | S238 re-saved (owner): both companions still `0x10`/(10, 0, 0); F9D rebuilt with new node IDs. | 474370 | `ae79fae688ac3e70` |
 | S241 | `S241_S239_civ3d_resaved.dwg` | Civil 3D 2024 | S239 re-saved (owner): both companions still in the rebuilt form. | 970902 | `c5e5848bf32b96ac` |
+| S242 | `S242_S24_open_centre_curves.dwg` | Civil 3D 2024 | MIST14 (owner, from S24; `Alignment - (1)` removed): `C EAST` (FD7) and `C NORTH` (FEA), each a Fixed Curve by center (1000, 0) and radius 100, clockwise, with a Floating Line through (1000, 300); radius picked at (1100, 0) and (1000, 100). `C EAST` is stored line first (kind 3 from (1000, 300)), `C NORTH` curve first. Both curves drawn as 180°. | 478278 | `76e32e45ad0356da` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

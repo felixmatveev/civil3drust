@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- MIST14 solved: an open centre curve with nothing on one side is a half
+  circle from the line on the other side, either way round; a kind-3
+  line into such a curve is resolved (S242, test
+  `open_centre_curve_half_circle_s242`).
 - `COMPATIBILITY.md`: every Civil 3D 2024 Prospector item and the full
   Settings tree (one table per feature),
   with the code that handles it and its status (supported, partial,

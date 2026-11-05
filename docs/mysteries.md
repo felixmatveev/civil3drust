@@ -406,7 +406,20 @@ writes 0 for new curves and keeps the stored value on rewritten ones
   interval Civil 3D adds for the zero-GUID entry. To confirm by comparing
   S57 X5's block with S161 8C49's interval.
 
-## MIST14 — the half-circle rule — **one sample**
+## MIST14 — the half-circle rule — **SOLVED (S242)**
+
+- **Answer (2026-11-05):** an open curve by its centre with nothing on
+  one side is always a half circle from or to the point where the line
+  on the other side touches it; where the radius was picked does not
+  matter (it is not stored). S242 (owner, from S24): `C NORTH` (radius
+  picked north, curve first, then a floating line to (1000, 300)) and
+  `C EAST` (radius picked east; Civil 3D stored it the other way round:
+  a line "constrained by next", kind 3, from (1000, 300), then the
+  curve) are both drawn by Civil 3D as 180° arcs between the tangent
+  point and its opposite. civil3drust now also places a kind-3 line
+  into such a curve and the curve after it (test
+  `open_centre_curve_half_circle_s242`).
+
 
 - **Seen:** an open curve defined by its centre, with nothing before it,
   is drawn as exactly 180° ending where the next line leaves it (S118);
