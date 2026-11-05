@@ -3026,6 +3026,13 @@ as flags: the locked regions keep stations 0 and 430.859 and ordinary
 kind-4 intervals. All eight region intervals and the comment string fit
 the string rule (42 strings). Test `s246_masking_regions`.
 
+The lock is Civil 3D's reading of the stations: with Lock To Start
+cleared but the start left at 0+00, it is back after save and reopen
+(owner). civil3drust reads the locks the same way (first region at the
+start, last at the end, within 1e-6) and then treats them as model data
+(D-068): `MaskRegion::range` gives a locked side the alignment's own
+start or end, an unlocked side its recorded station.
+
 **S244 → S245 (owner).** S244 (S243 with every alignment's speeds
 rewritten by civil3drust: two on FD7's spiral, one in FDF's masking
 region, one after FE5's equation) opens clean, AUDIT clean, "behaviour as

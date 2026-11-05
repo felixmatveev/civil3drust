@@ -490,9 +490,11 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   at 0, region 4 ends at the alignment's end, both with ordinary kind-4
   intervals); the owner notes they exist only on the first and last
   region and act as "from the start" / "to the end". The comment `R1` is
-  in the string stream (one string per region). Whether a lock is only
-  the dialog's reading of a region touching an end is not tested (a
-  region typed to start at 0+00 without the lock would show).
+  in the string stream (one string per region). **The lock is derived
+  (owner):** with Lock To Start removed but the start left at 0+00, the
+  lock is back after save and reopen — Civil 3D shows a lock whenever the
+  first region starts at the alignment's start (or the last ends at its
+  end). civil3drust's handling: D-068.
 - **Test (equations):** an alignment with two equations, one increasing
   and one decreasing (the Station Equations tab's "Increasing/
   Decreasing"); compare the 18 bits and the last bit.

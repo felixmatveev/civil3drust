@@ -9,7 +9,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ### Added
 - Masking regions' Mask check box (S246): the region's bit is the inverted
   Mask (`MaskRegion::masked`, was `flag`); the Lock To Start / End boxes
-  are not stored as flags. Test `s246_masking_regions`.
+  are not stored as flags; civil3drust derives them on reading and then
+  keeps them as model data (`lock_to_start`, `lock_to_end`,
+  `MaskRegion::range`; D-068). Test `s246_masking_regions`.
 - Station-anchored data (S243): `aecc_station_refs` reads the interval
   block with each interval's kind (2 design speed, 3 station equation,
   4 masking region), the station-equation list and (with

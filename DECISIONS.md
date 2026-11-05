@@ -1350,3 +1350,25 @@ settled.
 stations (they are derived like the speed intervals): possible, but
 their unknown bits (MIST18) would have to be copied anyway.
 
+## D-068: Masking locks are derived on reading, then kept as model data
+Date: 2026-11-05 · Status: accepted (owner)
+
+**Context.** The Masking tab's Lock To Start / Lock To End (first and
+last region only) are not stored (S246). Civil 3D shows a lock whenever
+the first region starts at the alignment's start or the last ends at its
+end: clearing the lock and keeping 0+00 brings it back on reopen (owner).
+
+**Decision (owner).** When civil3drust reads a drawing it sets the locks
+the way Civil 3D shows them (`aecc_station_refs::derive_locks`, within
+1e-6). From then on the lock is part of the model: a locked side ignores
+the recorded station and uses the alignment's start or end
+(`MaskRegion::range`), so it follows the alignment when its length or
+start changes; an unlocked side keeps its recorded station, and
+civil3drust does not set a lock just because a station lands on an end.
+When regions are written, a locked side is written as the alignment's
+station.
+
+**Alternatives.** Re-deriving the lock after every edit, as the dialog
+does: a region could gain or lose a lock as a side effect of an
+unrelated edit.
+

@@ -28,7 +28,12 @@
 //! The Masking tab's "Lock To Start" / "Lock To End" (only on the first
 //! and last region, owner) are not stored as flags: a locked region keeps
 //! its stations (0 and the alignment's end) and intervals like any other
-//! (S246).
+//! (S246), and Civil 3D shows the lock again whenever the first region
+//! starts at the alignment's start or the last one ends at its end
+//! (owner). civil3drust derives the locks the same way when it reads a
+//! drawing; after that a lock is model data (D-068): a locked region uses
+//! the alignment's start or end, whatever station is recorded, and an
+//! unlocked one keeps its recorded station without gaining a lock.
 
 use crate::aecc_elements::decode_elements;
 use crate::raw::{self, RawRecord};
@@ -67,8 +72,45 @@ pub struct MaskRegion {
     /// The Masking tab's "Mask" check box: the stored bit is 0 when it is
     /// checked, 1 when not (S246 region 2).
     pub masked: bool,
+    /// "Lock To Start" (first region only): derived on reading, see
+    /// [`MaskRegion::range`].
+    pub lock_to_start: bool,
+    /// "Lock To End" (last region only).
+    pub lock_to_end: bool,
     pub start_guid: [u8; 16],
     pub end_guid: [u8; 16],
+}
+
+impl MaskRegion {
+    /// The region's stations on an alignment running from `start` to
+    /// `end`: a locked side takes the alignment's own station, an unlocked
+    /// side the recorded one (D-068).
+    pub fn range(&self, start: f64, end: f64) -> (f64, f64) {
+        (
+            if self.lock_to_start {
+                start
+            } else {
+                self.start
+            },
+            if self.lock_to_end { end } else { self.end },
+        )
+    }
+}
+
+/// How close a recorded station must be to the alignment's start or end
+/// to read as locked (S246: the locked end is 2.7e-10 past the decoded
+/// length).
+pub const LOCK_TOLERANCE: f64 = 1e-6;
+
+/// Set the locks as Civil 3D shows them: the first region locked to the
+/// start when it starts at `start`, the last locked to the end when it
+/// ends at `end`.
+pub fn derive_locks(regions: &mut [MaskRegion], start: f64, end: f64) {
+    let n = regions.len();
+    for (i, r) in regions.iter_mut().enumerate() {
+        r.lock_to_start = i == 0 && (r.start - start).abs() <= LOCK_TOLERANCE;
+        r.lock_to_end = i + 1 == n && (r.end - end).abs() <= LOCK_TOLERANCE;
+    }
 }
 
 fn guid(data: &[u8], bit: usize) -> Option<[u8; 16]> {
@@ -211,6 +253,8 @@ pub fn masking_at(data: &[u8], at: usize) -> Option<(Vec<MaskRegion>, usize)> {
             start,
             end,
             masked,
+            lock_to_start: false,
+            lock_to_end: false,
             start_guid,
             end_guid,
         });

@@ -1054,9 +1054,18 @@ pub fn masking_regions(
     rec: &RawRecord,
 ) -> Result<Vec<crate::aecc_station_refs::MaskRegion>, BuildError> {
     let q = masking_bit(rec, &rec.data)?;
-    crate::aecc_station_refs::masking_at(&rec.data, q)
+    let mut regions = crate::aecc_station_refs::masking_at(&rec.data, q)
         .map(|x| x.0)
-        .ok_or_else(|| layout("masking list not readable"))
+        .ok_or_else(|| layout("masking list not readable"))?;
+    // The locks are not stored; read them as Civil 3D shows them (S246).
+    if !regions.is_empty() {
+        let start = crate::aecc_station::start_station(rec).unwrap_or(0.0);
+        let length = crate::aecc_elements::decode_elements(rec)
+            .map_err(|e| layout(e.to_string()))?
+            .length();
+        crate::aecc_station_refs::derive_locks(&mut regions, start, start + length);
+    }
+    Ok(regions)
 }
 
 /// The implied point-of-intersection display option of the Alignment

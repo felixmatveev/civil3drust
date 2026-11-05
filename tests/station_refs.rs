@@ -164,6 +164,18 @@ fn s246_masking_regions() {
             (363.4, 430.86, true)
         ]
     );
+    // Locks as Civil 3D shows them: first region from the start, last to
+    // the end (derived; not stored).
+    let locks: Vec<(bool, bool)> = m.iter().map(|x| (x.lock_to_start, x.lock_to_end)).collect();
+    assert_eq!(
+        locks,
+        [(true, false), (false, false), (false, false), (false, true)]
+    );
+    // A lock wins over the recorded station; an unlocked side keeps it.
+    assert_eq!(m[3].range(0.0, 431.0).1, 431.0);
+    let mut unlocked = m[0].clone();
+    unlocked.lock_to_start = false;
+    assert_eq!(unlocked.range(-5.0, 431.0).0, m[0].start);
     let k = kinds(&r);
     assert_eq!(k.iter().filter(|x| x.0 == KIND_MASK).count(), 8);
     let s = string_stream::parse(&r.data, r.handle_bits).unwrap();
