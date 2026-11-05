@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `docs/modularity.md` (D-066, proposed): review of how hard the crate is
+  to extend piece by piece — 11 weak spots (dependency cycle across 16
+  modules, no single record map, trial-scan element dispatch that drops
+  unknown kinds, catch-all matches, scattered refusals and cache
+  handling, mixed write strategies, grab-bag modules), a layered target
+  shape and a 10-step migration order. Documentation only.
 - `dump` module and `examples/dump` (D-065): a plain-text RON view of a
   DWG — model-space entities in compact form (`Line(h: "2A1", layer:
   "0", start: (…), end: (…))`), decoded alignments (elements, style,

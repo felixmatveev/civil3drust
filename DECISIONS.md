@@ -1297,3 +1297,31 @@ hand-written format: a parser to maintain. acadrust's full document
 serialization: complete for acadrust's types but loses the AECC bytes
 and is too verbose to read; kept in mind for a full round trip (FRT-2).
 
+## D-066: Modularity: layers, one record map, tables for policy
+
+**Date:** 2026-11-04. **Status:** proposed.
+
+**Context.** The owner wants contributors to be able to replace one
+unknown or unsupported piece (a MIST field, a spiral type such as NSW,
+an element kind, a new class) without affecting anything else. Review at
+`754afb4`: 16 of 28 modules form one dependency cycle; record offsets
+are located separately in 9 files; element records are found by trial
+and unrecognised ones are skipped; `Element` is matched at 141 sites
+with catch-alls; refusals and cache handling are repeated per feature.
+
+**Decision (proposed).** Restructure as in `docs/modularity.md`: a bits
+layer with no crate imports, a per-class record map that tags every span
+model / derived / binding / raw, codecs per span, a format-free geometry
+model, one writer, a small facade with research tools behind a feature.
+Policy moves into compiled tables (element kinds with an `Unknown` case,
+capabilities, cache rules mirroring `docs/mysteries.md`, a class
+contract). Steps 1–7 must leave the fingerprint of every sample
+unchanged; frozen `hexview/` and `viewer/` keep compiling through
+re-exports.
+
+**Alternatives.** Leave the structure and fix extension points one at a
+time as they come up (cheaper now, but each new finding keeps touching
+many files). A plugin system or runtime registry (more machinery than a
+two-person cleanroom project needs). Mirroring Civil 3D's class layering
+(rejected by D-049).
+
