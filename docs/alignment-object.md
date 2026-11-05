@@ -3092,6 +3092,27 @@ interval per GUID, and the region took the equations' stations
 (speeds included). S252 is S250 made again that way. Tests
 `s251_resave_and_unique_guids`.
 
+**Acceptance (S252 → S254, owner).** S252 (S250's edits with unique
+GUIDs) opens clean, AUDIT clean, stations and masks as written; its
+re-save S254 reads back to the same equations, regions and speeds
+(intervals reordered). Test `s254_resave_reads_back`.
+
+**Inside a JSON group (S253, owner).** S178 11D4 with a masking region
+and a station equation inside its JSON group (Free Reverse SSCSS).
+Civil 3D anchors them to the **group as one element**: the intervals
+name the group's ID and links (3, before 1, after 2), the group's start
+and end points, the distance from the group's start and the length to
+its end (the sum of its pieces); only the point lies on the piece that
+holds the station. `write_interval` now treats elements sharing an ID as
+one, for JSON groups (other groups still refused, unsampled); written
+from civil3drust's own solution of the group, all three intervals match
+Civil 3D's within 1e-6. After the edit 11D4 has 15 surplus empty strings
+**after** the ones the string rule counts (56 for 41 + 1 user), so the
+writers place the tail from the counted end, not the last string. S243
+FD7's section-2 flag BL is 0x1C1 (flags 0x80 and 0x100 besides 0x41,
+meanings unknown); the form reader now accepts any flag value with
+0x01. Test `s253_refs_inside_a_json_group`.
+
 **S244 → S245 (owner).** S244 (S243 with every alignment's speeds
 rewritten by civil3drust: two on FD7's spiral, one in FDF's masking
 region, one after FE5's equation) opens clean, AUDIT clean, "behaviour as

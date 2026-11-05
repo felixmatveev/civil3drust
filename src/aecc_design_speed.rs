@@ -19,6 +19,7 @@
 //! they are when the speeds are rewritten (S243, `aecc_station_refs`). See
 //! `docs/alignment-object.md`, "Design speeds".
 
+use crate::aecc_alignment::Linked;
 use crate::aecc_build::Bits;
 use crate::aecc_elements::{decode_elements, Element, Segment};
 use crate::alignment::Point2;
@@ -355,59 +356,77 @@ pub(crate) fn write_interval(
             start + total
         )));
     }
+    // Elements that share an ID form one element for the interval: the
+    // parts of a group, in particular a JSON group (S253: Civil 3D anchors
+    // a station inside a JSON group to the group itself — its ID and
+    // links, its start and end, the distance from its start — with the
+    // point on the solved piece).
+    let mut spans: Vec<(usize, usize)> = Vec::new();
+    for (i, e) in d.elements.iter().enumerate() {
+        match spans.last_mut() {
+            Some(sp) if d.elements[sp.0].record.id() == e.record.id() => sp.1 = i + 1,
+            _ => spans.push((i, i + 1)),
+        }
+    }
     let mut acc = 0.0;
     let mut found = None;
-    for (i, e) in d.elements.iter().enumerate() {
-        let len = e.segment.length();
-        let last = i + 1 == d.elements.len();
-        if dist < acc + len - 1e-9 || last {
-            found = Some((e, (dist - acc).clamp(0.0, len), len));
+    for (k, &(i0, i1)) in spans.iter().enumerate() {
+        let len: f64 = d.elements[i0..i1].iter().map(|e| e.segment.length()).sum();
+        if dist < acc + len - 1e-9 || k + 1 == spans.len() {
+            found = Some((i0, i1, (dist - acc).clamp(0.0, len), len));
             break;
         }
         acc += len;
     }
-    let (e, t, len) = found.ok_or_else(|| err("no elements"))?;
+    let (i0, i1, t, len) = found.ok_or_else(|| err("no elements"))?;
+    let e = &d.elements[i0];
+    let layout_group = matches!(&e.record, Element::Group(g) if matches!(g.def, crate::aecc_elements::GroupDef::Layout { .. }));
+    if i1 - i0 > 1 && !layout_group
+        || matches!(e.record, Element::LineSpiral(_) | Element::FreeSpiral(_))
+        || matches!(&e.record, Element::Group(_)) && !layout_group
+    {
+        return Err(err("a station on a spiral group (no sample yet)"));
+    }
+    // The part holding the point, and the distance along it.
+    let mut part = i0;
+    let mut tp = t;
+    while part + 1 < i1 && tp > d.elements[part].segment.length() + 1e-9 {
+        tp -= d.elements[part].segment.length();
+        part += 1;
+    }
+    let seg = &d.elements[part].segment;
+    let tp = tp.clamp(0.0, seg.length());
+    let (a, b) = (
+        d.elements[i0].segment.start(),
+        d.elements[i1 - 1].segment.end(),
+    );
     // The point at the station: on the line, the arc or the spiral (S113:
     // the length to the element's end follows the tangent rule on curves
     // too; S243 FD7: a point on a clothoid).
-    let (a, b, p) = match e.segment {
+    let p = match *seg {
         Segment::Line { start: a, end: b } => {
-            let f = if len > 0.0 { t / len } else { 0.0 };
-            (
-                a,
-                b,
-                Point2::new(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f),
-            )
+            let l = seg.length();
+            let f = if l > 0.0 { tp / l } else { 0.0 };
+            Point2::new(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f)
         }
         Segment::Arc {
             start: a,
-            end: b,
             geometry: g,
+            ..
         } => {
             let a0 = (a.y - g.center.y).atan2(a.x - g.center.x);
             let th = if g.counter_clockwise {
-                a0 + t / g.radius
+                a0 + tp / g.radius
             } else {
-                a0 - t / g.radius
+                a0 - tp / g.radius
             };
-            let p = Point2::new(
+            Point2::new(
                 g.center.x + g.radius * th.cos(),
                 g.center.y + g.radius * th.sin(),
-            );
-            (a, b, p)
+            )
         }
-        Segment::Spiral {
-            start: a,
-            end: b,
-            geometry: g,
-        } => (a, b, g.point_at(t).0),
+        Segment::Spiral { geometry: g, .. } => g.point_at(tp).0,
     };
-    if matches!(
-        e.record,
-        Element::LineSpiral(_) | Element::FreeSpiral(_) | Element::Group(_)
-    ) {
-        return Err(err("a station on a spiral group (no sample yet)"));
-    }
     let (eid, before, after) = (
         crate::aecc_alignment::Linked::id(&e.record),
         crate::aecc_alignment::Linked::before(&e.record),

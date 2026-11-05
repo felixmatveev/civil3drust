@@ -7,6 +7,13 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Station anchors inside JSON spiral groups (S253): intervals name the
+  group as one element (ID, links, start, end, distance), matching Civil
+  3D within 1e-6; equations and masking regions can be written on JSON
+  alignments. The writers place their strings from the end of the
+  counted strings (Civil 3D leaves surplus ones after them). The
+  section-2 form reader accepts flag values above 0xFF (S243 FD7: 0x1C1).
+  S254: Civil 3D's re-save of S252 reads back the same (acceptance).
 - S251 (Civil 3D re-save of S250: equations and regions read back, except a
   region that shared GUIDs with equations and was merged onto them); new
   anchors (speeds, equations, regions) never reuse a GUID the record has.

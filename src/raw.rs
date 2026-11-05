@@ -465,7 +465,9 @@ pub fn section2_form(data: &[u8]) -> Option<Section2Form> {
     let c = crate::aecc_entity::entity_common(data)?;
     match read_bl(data, c.start_bit + 115)? {
         (0x1148 | 0x1188, _) => Some(Section2Form::Plain),
-        (v, _) if (0..0x100).contains(&v) && v & 0x01 != 0 => Some(Section2Form::Properties),
+        // Flags: 0x01 Properties header, 0x02 JSON, 0x40 MIST2; S243 FD7
+        // also has 0x80 and 0x100 (0x1C1, meanings not known).
+        (v, _) if (0..0x1000).contains(&v) && v & 0x01 != 0 => Some(Section2Form::Properties),
         _ => None,
     }
 }
@@ -477,7 +479,7 @@ pub fn layout_json_flag(data: &[u8]) -> bool {
     let Some(c) = crate::aecc_entity::entity_common(data) else {
         return false;
     };
-    matches!(read_bl(data, c.start_bit + 115), Some((v, _)) if (0..0x100).contains(&v) && v & 0x01 != 0 && v & 0x02 != 0)
+    matches!(read_bl(data, c.start_bit + 115), Some((v, _)) if (0..0x1000).contains(&v) && v & 0x01 != 0 && v & 0x02 != 0)
 }
 
 fn structured_name(data: &[u8]) -> Option<String> {

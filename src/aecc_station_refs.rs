@@ -372,8 +372,8 @@ impl Layout {
     fn read(rec: &RawRecord) -> Result<Self, StationRefError> {
         let data = &rec.data;
         let d = decode_elements(rec).map_err(|e| fail(e.to_string()))?;
-        if !d.detached.is_empty() || !d.layout_groups.is_empty() {
-            return Err(fail("detached pieces or JSON groups (not sampled)"));
+        if !d.detached.is_empty() || d.layout_groups.iter().any(|g| !g.solved) {
+            return Err(fail("detached pieces or an unsolved JSON group"));
         }
         let start = crate::aecc_station::start_station(rec).ok_or_else(|| fail("start station"))?;
         let end = start + d.length();
@@ -390,10 +390,17 @@ impl Layout {
         let speeds = crate::aecc_design_speed::design_speeds(rec)
             .map_err(|e| fail(e.to_string()))?
             .len();
-        let strings = crate::string_stream::parse(data, rec.handle_bits)
+        let total = crate::string_stream::parse(data, rec.handle_bits)
             .map_err(|e| fail(e.to_string()))?
             .strings
             .len();
+        // The tail is counted from the end of the strings the rule
+        // requires, not from the last string: Civil 3D can leave surplus
+        // empty strings after them (S253: 15 after an edit).
+        let required = crate::aecc_element_edit::required_string_count(rec)
+            .map_err(|e| fail(e.to_string()))?;
+        let user = usize::from(raw::section2_form(data) == Some(raw::Section2Form::Properties));
+        let strings = (required + user).min(total);
         Ok(Layout {
             d,
             start,

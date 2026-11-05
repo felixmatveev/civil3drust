@@ -567,3 +567,160 @@ fn s251_resave_and_unique_guids() {
     u.dedup();
     assert_eq!(u.len(), g.len());
 }
+
+/// The fields of each interval: kind, station, distance, length to the
+/// element's end, element ID and links, the six coordinates.
+/// Kind, distances, element ID and links, coordinates.
+type Fields = (i32, [f64; 3], [i32; 3], [f64; 6]);
+
+fn interval_fields(r: &RawRecord) -> Vec<Fields> {
+    civil3drust::aecc_station_refs::intervals(r)
+        .unwrap()
+        .1
+        .iter()
+        .map(|i| {
+            let mut q = i.start_bit + 129;
+            q = raw::read_bl(&r.data, q).unwrap().1;
+            q = raw::read_bd(&r.data, q).unwrap().1;
+            let mut bd = [0.0; 3];
+            for x in &mut bd {
+                let (v, p) = raw::read_bd(&r.data, q).unwrap();
+                *x = v;
+                q = p;
+            }
+            let mut ids = [0; 3];
+            for x in &mut ids {
+                let (v, p) = raw::read_bl(&r.data, q).unwrap();
+                *x = v;
+                q = p;
+            }
+            let mut rd = [0.0; 6];
+            for (k, x) in rd.iter_mut().enumerate() {
+                *x = raw::get_f64(&r.data, q + 64 * k);
+            }
+            (i.kind, bd, ids, rd)
+        })
+        .collect()
+}
+
+/// S253 (owner): S178 11D4 (JSON group SSCSS between two curves) with a
+/// masking region and a station equation inside the group. Civil 3D
+/// anchors them to the group as one element (ID 3, links 1 and 2; its
+/// start and end; distance from its start). Written again by civil3drust
+/// (group solved from the JSON) the intervals match within 1e-6, and the
+/// strings stay where Civil 3D put them, before its 15 surplus ones.
+#[test]
+fn s253_refs_inside_a_json_group() {
+    use civil3drust::aecc_station_refs::{
+        set_masking_regions, set_station_equations, EquationSpec, MaskSpec,
+    };
+    let r = rec_in(
+        "samples/S253_S178_masking_equation_on_json_group.dwg",
+        0x11D4,
+    );
+    let e = station_equations(&r).unwrap();
+    assert_eq!(e.len(), 1);
+    assert!((e[0].raw_station - 958.0918).abs() < 1e-3 && e[0].ahead == 1000.0);
+    let m = masking_regions(&r).unwrap();
+    assert!((m[0].start - 779.0456).abs() < 1e-3 && (m[0].end - 861.0892).abs() < 1e-3);
+    let a = with(
+        &r,
+        set_station_equations(
+            &r,
+            &[EquationSpec {
+                raw_station: e[0].raw_station,
+                ahead: e[0].ahead,
+                increasing: true,
+                comment: String::new(),
+            }],
+            1,
+        )
+        .unwrap(),
+    );
+    let b = with(
+        &a,
+        set_masking_regions(
+            &a,
+            &[MaskSpec {
+                start: m[0].start,
+                end: m[0].end,
+                masked: true,
+                lock_to_start: false,
+                lock_to_end: false,
+                comment: String::new(),
+            }],
+            2,
+        )
+        .unwrap(),
+    );
+    let mut old = interval_fields(&r);
+    let mut new = interval_fields(&b);
+    old.sort_by(|x, y| x.1[0].total_cmp(&y.1[0]));
+    new.sort_by(|x, y| x.1[0].total_cmp(&y.1[0]));
+    assert_eq!(old.len(), new.len());
+    for (o, n) in old.iter().zip(&new) {
+        assert_eq!((o.0, o.2), (n.0, n.2));
+        assert_eq!(n.2, [3, 1, 2]);
+        for (x, y) in o.1.iter().zip(&n.1).chain(o.3.iter().zip(&n.3)) {
+            assert!((x - y).abs() < 1e-6, "{o:?} {n:?}");
+        }
+    }
+    let t = |x: &RawRecord| {
+        string_stream::parse(&x.data, x.handle_bits)
+            .unwrap()
+            .strings
+            .iter()
+            .map(|t| t.text.clone())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(t(&b), t(&r));
+}
+
+/// S254: Civil 3D's re-save of S252 (owner: clean open and AUDIT, stations
+/// and masks as written) reads back to the same model.
+#[test]
+fn s254_resave_reads_back() {
+    for h in [0xFD7, 0xFDF, 0xFE5] {
+        let a = rec_in(
+            "samples/S252_S245_equations_and_masking_unique_guids.dwg",
+            h,
+        );
+        let b = rec_in("samples/S254_S252_civ3d_resaved.dwg", h);
+        let eq = |x: &RawRecord| {
+            station_equations(x)
+                .unwrap()
+                .iter()
+                .map(|e| {
+                    (
+                        (e.raw_station * 1e6).round() as i64,
+                        e.back,
+                        e.ahead,
+                        e.increasing,
+                    )
+                })
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(eq(&a), eq(&b));
+        let mk = |x: &RawRecord| {
+            masking_regions(x)
+                .unwrap()
+                .iter()
+                .map(|m| {
+                    let q = |v: f64| (v * 1e6).round() as i64;
+                    (
+                        q(m.start),
+                        q(m.end),
+                        m.masked,
+                        m.lock_to_start,
+                        m.lock_to_end,
+                    )
+                })
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(mk(&a), mk(&b));
+        assert_eq!(
+            design_speeds(&a).unwrap().len(),
+            design_speeds(&b).unwrap().len()
+        );
+    }
+}
