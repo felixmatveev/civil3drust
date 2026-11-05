@@ -239,3 +239,80 @@ fn s248_decreasing_equation() {
     assert_eq!(pos("2"), pos("Decreasing start") + 1);
     assert_eq!(pos("Decreasing start"), pos("1") + 1);
 }
+
+/// Stations with equations applied (S247: Civil 3D's Station Control tab
+/// shows End 5+50.86'; S248 with equation 2 Decreasing).
+#[test]
+fn stations_with_equations() {
+    use civil3drust::aecc_elements::decode_elements;
+    use civil3drust::aecc_station_refs::{display_station, station_back};
+    let end = |file: &str| {
+        let o = raw::open(file).unwrap();
+        let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == 0xFE5)
+            .unwrap();
+        let e = station_equations(&r).unwrap();
+        let len = decode_elements(&r).unwrap().length();
+        (display_station(len, &e), station_back(1, &e).unwrap())
+    };
+    let (inc, back) = end("samples/S247_S246_two_station_equations.dwg");
+    assert!((inc - 550.859).abs() < 1e-3, "{inc}");
+    assert!((back - 189.0).abs() < 1e-6);
+    let (dec, _) = end("samples/S248_S247_decreasing_equation.dwg");
+    assert!((dec - (310.0 - (430.859 - 190.0))).abs() < 1e-3, "{dec}");
+}
+
+/// S249 (owner): S248 with each alignment's start station moved through
+/// the reference point. Civil 3D stores only the new start station (no
+/// reference point), removes the design speeds, moves masking regions
+/// and the equations' Raw Station Back with it, and keeps Station Back
+/// and Station Ahead as typed.
+#[test]
+fn s249_start_station_moved() {
+    use civil3drust::aecc_station::start_station;
+    let o = raw::open("samples/S249_S248_start_stations_moved.dwg").unwrap();
+    let r = |h| {
+        raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap()
+    };
+    let (a, m, e) = (r(0xFD7), r(0xFDF), r(0xFE5));
+    assert_eq!(start_station(&a), Some(5.0));
+    assert_eq!(start_station(&m), Some(0.5));
+    assert_eq!(start_station(&e), Some(5.0));
+    for x in [&a, &m, &e] {
+        assert!(design_speeds(x).unwrap().is_empty());
+        assert!(kinds(x).iter().all(|k| k.0 != KIND_SPEED));
+    }
+    let old = raw::open("samples/S248_S247_decreasing_equation.dwg").unwrap();
+    let o_r = |h| {
+        raw::records(&old.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap()
+    };
+    for (n, p) in masking_regions(&m)
+        .unwrap()
+        .iter()
+        .zip(masking_regions(&o_r(0xFDF)).unwrap())
+    {
+        assert!((n.start - p.start - 0.5).abs() < 1e-9 && (n.end - p.end - 0.5).abs() < 1e-9);
+        assert_eq!(
+            (n.lock_to_start, n.lock_to_end),
+            (p.lock_to_start, p.lock_to_end)
+        );
+    }
+    for (n, p) in station_equations(&e)
+        .unwrap()
+        .iter()
+        .zip(station_equations(&o_r(0xFE5)).unwrap())
+    {
+        assert!((n.raw_station - p.raw_station - 5.0).abs() < 1e-6);
+        assert_eq!(
+            (n.back, n.ahead, n.increasing),
+            (p.back, p.ahead, p.increasing)
+        );
+    }
+}

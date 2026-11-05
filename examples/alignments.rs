@@ -54,6 +54,38 @@ fn main() {
                 ""
             }
         );
+        // Station equations (S243, S247): stations below are shown as
+        // Civil 3D shows them, raw ones in brackets.
+        let eqs = civil3drust::aecc_station_refs::station_equations(rec).unwrap_or_default();
+        let show = |raw: f64| civil3drust::aecc_station_refs::display_station(raw, &eqs);
+        let fmt = |raw: f64| {
+            if eqs.is_empty() {
+                format!("{raw:.2}")
+            } else {
+                format!("{:.2} [raw {raw:.2}]", show(raw))
+            }
+        };
+        for (i, e) in eqs.iter().enumerate() {
+            println!(
+                "  station equation {}: raw back {:.2}, back {:.2}, ahead {:.2}, {}",
+                i + 1,
+                e.raw_station,
+                civil3drust::aecc_station_refs::station_back(i, &eqs).unwrap_or(e.back),
+                e.ahead,
+                if e.increasing {
+                    "increasing"
+                } else {
+                    "decreasing"
+                }
+            );
+        }
+        if !eqs.is_empty() {
+            println!(
+                "  stations with equations: {} to {}",
+                fmt(start),
+                fmt(start + d.length())
+            );
+        }
         let mut sta = start;
         for e in &d.elements {
             let len = e.segment.length();
@@ -102,7 +134,7 @@ fn main() {
                 }
             };
             println!(
-                "  id {:>2} (before {}, after {})  {}  ({:.4}, {:.4}) -> ({:.4}, {:.4})  L={:.4}  sta {:.2}-{:.2}",
+                "  id {:>2} (before {}, after {})  {}  ({:.4}, {:.4}) -> ({:.4}, {:.4})  L={:.4}  sta {}-{}",
                 e.id(),
                 e.before(),
                 e.after(),
@@ -112,8 +144,8 @@ fn main() {
                 t.x,
                 t.y,
                 len,
-                sta,
-                sta + len
+                fmt(sta),
+                fmt(sta + len)
             );
             sta += len;
         }

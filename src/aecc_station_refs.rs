@@ -267,3 +267,37 @@ pub fn masking_at(data: &[u8], at: usize) -> Option<(Vec<MaskRegion>, usize)> {
     }
     Some((out, q))
 }
+
+/// The station Civil 3D shows at `raw` (start station + distance along
+/// the alignment) with the station equations applied: past an equation's
+/// Raw Station Back the stations continue from its Station Ahead, up or
+/// down by its Increase/Decrease (S247, S248). Station Back is not used:
+/// it is derived from the equations before it, and Civil 3D leaves it
+/// stale when the start station moves (S249). Exactly at an equation the
+/// station ahead is returned.
+pub fn display_station(raw: f64, equations: &[StationEquation]) -> f64 {
+    equations
+        .iter()
+        .filter(|e| e.raw_station <= raw)
+        .max_by(|a, b| a.raw_station.total_cmp(&b.raw_station))
+        .map_or(raw, |e| {
+            let d = raw - e.raw_station;
+            if e.increasing {
+                e.ahead + d
+            } else {
+                e.ahead - d
+            }
+        })
+}
+
+/// Station Back as Civil 3D shows it: the station reached just before the
+/// equation through the ones before it (for the first, its raw station).
+pub fn station_back(index: usize, equations: &[StationEquation]) -> Option<f64> {
+    let e = equations.get(index)?;
+    let before: Vec<StationEquation> = equations
+        .iter()
+        .filter(|x| x.raw_station < e.raw_station)
+        .cloned()
+        .collect();
+    Some(display_station(e.raw_station, &before))
+}
