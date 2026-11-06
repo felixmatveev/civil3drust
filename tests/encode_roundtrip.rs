@@ -34,6 +34,7 @@ const SAMPLES: &[&str] = &[
     "S225_S177_end_entities_deleted.dwg",
     "S255_offset_alignments_left_right.dwg",
     "S256_offsets_partial_widening.dwg",
+    "S257_widening_transitions.dwg",
 ];
 
 fn bits(data: &[u8], from: usize, to: usize) -> String {
@@ -77,6 +78,12 @@ fn every_element_record_reencodes_bit_for_bit() {
                             format!("group {k} code {}", g.code)
                         }
                         civil3drust::aecc_elements::Element::FreeSpiral(_) => "free spiral".into(),
+                        civil3drust::aecc_elements::Element::Widening(w) => match w.def {
+                            civil3drust::aecc_widening::WideningDef::Linear { form, .. } => {
+                                format!("widening linear form {form}")
+                            }
+                            _ => "widening curve-line-curve".into(),
+                        },
                         civil3drust::aecc_elements::Element::LineSpiral(_) => "line spiral".into(),
                     })
                     .or_insert(0) += 1;

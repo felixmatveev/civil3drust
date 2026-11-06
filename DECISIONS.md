@@ -1438,3 +1438,24 @@ piece with the radii at those fractions.
 `Segment` would need a new arm for the same arithmetic. Storing the
 offset curve as a spiral of the offset radii: wrong shape, and the
 record's values would not round-trip.
+
+## D-072: Widening transitions are elements, placed like Civil 3D stores them
+Date: 2026-11-06 · Status: accepted
+
+**Context.** An offset alignment with a widening stores its transitions
+as element records of two new kinds (S256, S257): linear ones with their
+points, curve-line-curve ones with only the two radii.
+
+**Decision.** `Element::Widening` holds both; they re-encode bit for
+bit. A linear transition is drawn as lines through its stored points
+(Civil 3D's stations agree with that to 1e-9). A curve-line-curve one is
+placed between the resolved element before and the one after: curve 1,
+line, curve 2, the curves turning through the same angle, solved from
+the distance along and across (the neighbours run parallel along the
+parent). Transitions are read-only; edits refuse alignments that have
+them.
+
+**Alternatives.** Rebuilding transitions from the region list (parent
+geometry, offsets, lengths): needs every transition type and widenings
+on curves; the element records already give the result.
+

@@ -1,11 +1,37 @@
 //! Offset alignments (S255, owner): 10' to the left and to the right of a
 //! tangent – outward spiral – tangent alignment.
 
+use civil3drust::aecc_alignment::Linked;
 use civil3drust::aecc_alignment_refs::{alignment_refs, offset_parent};
 use civil3drust::aecc_elements::{decode_elements, Element, Segment, SPIRAL_OFFSET};
 use civil3drust::aecc_offset::{offset_info, Side};
 use civil3drust::proxy_graphics as pg;
 use civil3drust::raw;
+
+/// Point at distance `t` along `seg`.
+fn point_on(seg: &Segment, t: f64) -> civil3drust::Point2 {
+    match *seg {
+        Segment::Spiral { geometry, .. } => geometry.point_at(t).0,
+        Segment::Line { start, end } => {
+            let f = t / seg.length();
+            civil3drust::Point2::new(
+                start.x + f * (end.x - start.x),
+                start.y + f * (end.y - start.y),
+            )
+        }
+        Segment::Arc {
+            start, geometry: g, ..
+        } => {
+            let a0 = (start.y - g.center.y).atan2(start.x - g.center.x);
+            let s = if g.counter_clockwise { 1.0 } else { -1.0 };
+            let a = a0 + s * t / g.radius;
+            civil3drust::Point2::new(
+                g.center.x + g.radius * a.cos(),
+                g.center.y + g.radius * a.sin(),
+            )
+        }
+    }
+}
 
 /// Graphics polyline vertices farther than 0.01 from the decoded
 /// alignment (sampled every 0.01 along the curves).
@@ -13,20 +39,9 @@ fn stray_vertices(r: &raw::RawRecord, segs: &[Segment]) -> usize {
     let g = pg::find(&r.data, 4096).unwrap();
     let mut samples = Vec::new();
     for s in segs {
-        let n = (s.length() / 0.01) as usize;
+        let n = (s.length() / 0.01).ceil() as usize;
         for i in 0..=n {
-            let t = s.length() * i as f64 / n as f64;
-            samples.push(match s {
-                Segment::Spiral { geometry, .. } => geometry.point_at(t).0,
-                Segment::Line { start, end } => {
-                    let f = t / s.length();
-                    civil3drust::Point2::new(
-                        start.x + f * (end.x - start.x),
-                        start.y + f * (end.y - start.y),
-                    )
-                }
-                Segment::Arc { .. } => s.start(),
-            });
+            samples.push(point_on(s, s.length() * i as f64 / n as f64));
         }
     }
     g.chunks
@@ -184,8 +199,148 @@ fn s256_partial_offsets_and_orphans() {
         }
     }
 
-    // The offset of an offset with a widening: two records of a new kind
-    // (prefix 22) are not decoded yet.
+    // The offset of an offset with a widening: linear transitions (prefix
+    // 22); the second crosses onto the spiral with three points, the last
+    // where the trimmed offset spiral starts.
     assert_eq!(offset_parent(&o.doc, rec(0x11D9)), Some(0x11B1));
-    assert!(decode_elements(rec(0x11D9)).is_err());
+    let d = decode_elements(rec(0x11D9)).unwrap();
+    for w in d.elements.windows(2) {
+        let (a, b) = (w[0].segment.end(), w[1].segment.start());
+        assert!((a.x - b.x).hypot(a.y - b.y) < 1e-9);
+    }
+    let segs: Vec<Segment> = d.elements.iter().map(|e| e.segment).collect();
+    // Element ends against the stations Civil 3D stores for the regions.
+    let info = offset_info(rec(0x11D9)).unwrap().unwrap();
+    assert_eq!(info.regions.len(), 3);
+    assert_eq!(info.regions[1].offset, -30.0);
+    let station_after = |id: i32| {
+        let mut s = 100.0;
+        for e in &d.elements {
+            s += e.segment.length();
+            if e.record.id() == id
+                && d.elements
+                    .iter()
+                    .rposition(|x| x.record.id() == id)
+                    .is_some_and(|j| std::ptr::eq(&d.elements[j], e))
+            {
+                return s;
+            }
+        }
+        unreachable!()
+    };
+    let r = &info.regions;
+    for (id, want, tol) in [
+        (14, r[0].end, 1e-9),
+        (17, r[1].start, 1e-9),
+        (16, r[1].end, 1e-9),
+        // Over the spiral the transition is three points: Civil 3D's
+        // stations agree with lines joining them.
+        (18, r[2].start, 1e-9),
+        (15, r[2].end, 1e-9),
+    ] {
+        let got = station_after(id);
+        assert!((got - want).abs() < tol, "{id}: {got} vs {want}");
+    }
+    // Three graphics vertices lie off those lines, between the points over
+    // the spiral (the drawing follows a curve there).
+    assert!(stray_vertices(rec(0x11D9), &segs) <= 3);
+}
+
+/// S257 (owner): offsets at 0 with one widening (26 left, stations
+/// 112.17–260.54), transitions of 75 in and out — linear (1218) and
+/// curve-line-curve with radii 45 and 25 (1234).
+#[test]
+fn s257_widenings() {
+    let o = raw::open("samples/S257_widening_transitions.dwg").unwrap();
+    let recs = raw::records(&o.doc, "AECC_ALIGNMENT");
+    for (h, stations) in [
+        (
+            0x1218,
+            [
+                37.17428376534788,
+                116.5531222552124,
+                264.9231247834791,
+                344.30196327334363,
+                424.154815000994,
+            ],
+        ),
+        (
+            0x1234,
+            [
+                37.17428376534788,
+                117.120138730357,
+                265.49014125862374,
+                345.43599622363286,
+                425.28884795128323,
+            ],
+        ),
+    ] {
+        let r = recs.iter().find(|r| r.handle == h).unwrap();
+        let d = decode_elements(r).unwrap();
+        // Element ends match the region stations Civil 3D stores.
+        let mut ends = Vec::new();
+        let mut s = 0.0;
+        for (i, e) in d.elements.iter().enumerate() {
+            s += e.segment.length();
+            let last = d
+                .elements
+                .get(i + 1)
+                .is_none_or(|n| n.record.id() != e.record.id());
+            if last {
+                ends.push(s);
+            }
+        }
+        assert_eq!(ends.len(), 5, "{h:X}");
+        for (a, b) in ends.iter().zip(stations) {
+            assert!((a - b).abs() < 1e-6, "{h:X}: {a} vs {b}");
+        }
+        let segs: Vec<Segment> = d.elements.iter().map(|e| e.segment).collect();
+        assert_eq!(stray_vertices(r, &segs), 0, "{h:X}: graphics off the curve");
+    }
+}
+
+#[test]
+fn s257_offset_regions_and_transitions() {
+    use civil3drust::aecc_offset::OffsetTransition;
+    let o = raw::open("samples/S257_widening_transitions.dwg").unwrap();
+    let recs = raw::records(&o.doc, "AECC_ALIGNMENT");
+    for (h, kind, ids, own, values) in [
+        (
+            0x1218,
+            1,
+            [6, 7],
+            [116.5531222552124, 264.9231247834791],
+            vec![0.0, 0.0, 2.0, 0.0],
+        ),
+        (
+            0x1234,
+            2,
+            [8, 9],
+            [117.120138730357, 265.49014125862374],
+            vec![0.0, 45.0, 25.0],
+        ),
+    ] {
+        let r = recs.iter().find(|r| r.handle == h).unwrap();
+        let info = offset_info(r).unwrap().unwrap();
+        assert_eq!(info.regions.len(), 3);
+        let w = &info.regions[1];
+        assert_eq!((w.offset, w.kind), (-26.0, 1));
+        assert!((w.parent_start - 112.17428376534788).abs() < 1e-9);
+        assert!((w.parent_end - 260.5442862936146).abs() < 1e-9);
+        assert_eq!([w.start, w.end], own);
+        assert_eq!((w.first_element, w.last_element), (4, 4));
+        let ends: Vec<i32> = info.regions.iter().map(|r| r.kind).collect();
+        assert_eq!(ends, [2, 1, 2]);
+        assert_eq!(
+            info.transitions.unwrap(),
+            ids.iter()
+                .map(|&element| OffsetTransition {
+                    kind,
+                    length: 75.0,
+                    element,
+                    values: values.clone(),
+                })
+                .collect::<Vec<_>>()
+        );
+    }
 }

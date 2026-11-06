@@ -68,6 +68,34 @@ fn main() {
                 o.start,
                 o.end
             );
+            if o.regions.len() > 1 {
+                for g in &o.regions {
+                    println!(
+                        "    {} {:.3}: parent {:.2}-{:.2}, own {:.2}-{:.2}, elements {}-{}",
+                        if g.kind == 1 { "widening" } else { "nominal" },
+                        0.0 - g.offset,
+                        g.parent_start,
+                        g.parent_end,
+                        g.start,
+                        g.end,
+                        g.first_element,
+                        g.last_element
+                    );
+                }
+            }
+            for t in o.transitions.iter().flatten() {
+                println!(
+                    "    transition: element {}, {} L {:.3} {:?}",
+                    t.element,
+                    if t.kind == 1 {
+                        "linear"
+                    } else {
+                        "curve-line-curve"
+                    },
+                    t.length,
+                    t.values
+                );
+            }
         }
         // Station equations (S243, S247): stations below are shown as
         // Civil 3D shows them, raw ones in brackets.

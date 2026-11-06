@@ -24,7 +24,7 @@ Anything not listed is Passthrough.
 | Surfaces | — | Passthrough |
 | **Alignments** | `aecc_alignment`, `aecc_elements` (read); `aecc_create::create_alignment`; `aecc_delete::delete_alignment` | Partial — see the alignment rows below |
 | &nbsp;&nbsp;Centerline Alignments | `aecc_build::TYPE_CENTERLINE` (1), `alignment_type` / `set_alignment_type` | Supported |
-| &nbsp;&nbsp;Offset Alignments | — (API value 2) | Read (S255, S256): elements (offset tangents and arcs; offset spirals as part of the parent + offset), parent (also after it is deleted), offset and side, station ranges; the rest of the parameters (MIST19) and widenings (S256 11D9) not decoded; not written. Rejected as a bare type change: S61 opened with errors, RECOVER removed it (S63) |
+| &nbsp;&nbsp;Offset Alignments | — (API value 2) | Read (S255, S256): elements (offset tangents and arcs; offset spirals as part of the parent + offset), parent (also after it is deleted), offset and side, station ranges; widenings (regions, linear and curve-line-curve transitions, S257); other transition types not sampled, parts of the parameters open (MIST19); not written. Rejected as a bare type change: S61 opened with errors, RECOVER removed it (S63) |
 | &nbsp;&nbsp;Curb Return Alignments | — (API value 3) | Elements, type, speeds read (a production drawing); the data after the type is not decoded (no PI display or masking). Rejected as a bare type change (S61, S63) |
 | &nbsp;&nbsp;Rail Alignments | — (API value 5) | Rejected the same way (S61, S63) |
 | &nbsp;&nbsp;Rail Diverted Alignments | — (no API value known) | Passthrough |

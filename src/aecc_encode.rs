@@ -33,6 +33,14 @@ pub fn kind_prefix(el: &Element) -> u16 {
         Element::Spiral(_) => PREFIX_SPIRAL,
         Element::FreeSpiral(_) => PREFIX_GROUP,
         Element::Group(g) => group_prefix(&g.def),
+        Element::Widening(w) => match w.def {
+            crate::aecc_widening::WideningDef::Linear { .. } => {
+                crate::aecc_widening::PREFIX_WIDENING
+            }
+            crate::aecc_widening::WideningDef::CurveLineCurve { .. } => {
+                crate::aecc_widening::PREFIX_WIDENING_CURVES
+            }
+        },
     }
 }
 
@@ -67,6 +75,7 @@ pub fn encode_element(w: &mut Bits, header: &ElementHeader, el: &Element) {
         Element::Spiral(s) => spiral(w, s, header.type_byte),
         Element::FreeSpiral(s) => free_spiral(w, s),
         Element::Group(g) => group(w, g),
+        Element::Widening(r) => crate::aecc_widening::encode_widening(w, r),
     }
 }
 

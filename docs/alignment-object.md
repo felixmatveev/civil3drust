@@ -3215,7 +3215,7 @@ spirals (two finite radii) of the arc-length types use the same rise;
 the tangent-defined types have no compound form and fall back to the
 clothoid. Test `spiral_types`.
 
-## Offset alignments (S255, S256)
+## Offset alignments (S255–S257)
 
 **Sample.** S255 (owner, Civil 3D 2024): "Spline speed change" (FD7:
 tangent (0,0)→(100,0), outward clothoid R 300 → ∞ L 200 clockwise,
@@ -3266,14 +3266,18 @@ BL 1, BL 2, BL 1                 (MIST19; 2, 2, 2 once the parent is
                                   deleted, S256)
 BD −10                           offset, negative to the left
 BL 1                             side: 1 left, 2 right
-2 bits, BL 1, BL 1               (MIST19: bits 11 in S255, 00 in S256;
-                                  the second BL is 3 on S256's 11D9)
-BD −10                           the offset again
-BD 5, BD 405                     the parent's station range followed
-BD 5, BD 408.33                  the offset alignment's own stations
-BL 2, BL 7, BL 9                 (2?), first and last element ID as
-                                  made (not renumbered later, S256)
-BL 0 × 5, BL 3, BL 0, BL n,
+2 bits, BL 1                     (MIST19: bits 11 in S255, 00 later)
+BL 1                             number of regions (3 with a widening,
+                                  S257: "Widenings" below); per region:
+BD −10                             its offset
+BD 5, BD 405                       the parent's station range followed
+BD 5, BD 408.33                    the offset alignment's own stations
+BL 2, BL 7, BL 9                   kind (2 nominal), first and last
+                                    element ID as made (not renumbered
+                                    later, S256)
+BL 0 × 5, BL 3                     (MIST19)
+BL 0                             number of widening transitions
+BL n,
   n × {BL i, BL −1, BL 1, BL id} i = 1…n, one per element (S256's 11B1
                                   lists 11, 13, 14, 12, 15: tangents,
                                   then the arc, then the spiral)
@@ -3318,33 +3322,76 @@ tangent, tangent, inward clothoid ∞ → R 100, L 200) with three offsets:
   the 41-bit gap before the first element set (centerlines and S255:
   0); the start-station check no longer tests it.
 - **An offset of an offset with a widening** (11D9, "…-Left-0.000",
-  parent 11B1, offset 0, stations 100–454.91): its elements are offsets
-  of TEST (the spiral record holds TEST's spiral with offset −25 and
-  fractions 0.1758–0.8416), plus two records of a new prefix, **22**:
+  parent 11B1, offset 0): its elements are offsets of TEST (the spiral
+  record holds TEST's spiral with offset −25 and fractions
+  0.1758–0.8416) with a widening of 30 more to the left and linear
+  transitions (S257 read the rest; "Widenings" below).
+
+**Widenings** (S257; owner's screenshot of the Offset Alignment
+Parameters for 1234). Two single-tangent centerlines, each with an
+offset at 0 and one user-specified widening, 26 to the left over parent
+stations 112.17–260.54, with transitions of length 75 in and out:
+linear (1218) and Curve – Line – Curve with curve 1 radius 45 and
+curve 2 radius 25 (1234). Each element list holds tangent 3 (nominal),
+transition in, tangent 4 (widened), transition out, tangent 5 (nominal).
+
+- **Regions.** The block after the type keeps one entry per stretch at
+  one offset; S255/S256 have one, a widening makes three (nominal,
+  widening, nominal):
 
   ```text
-  params (B 0, BD −1, BD −1, BL 1, BD −1)
-  BL 3, BL id, BL before, BL after, BL form (1 | 2), BL 0x1000, BL 2,
-  RD start x, y, RD end x, y
-  form 2 adds: BL 0x1000, BL n, n × RD x, y, BD 0, 0, 0, 1
+  BL 1, BL 2, BL 1, BD nominal offset, BL side, 2 bits, BL 1,
+  BL n regions,
+  n × { BD offset, BD parent start, BD parent end, BD start, BD end,
+        BL kind (2 nominal, 1 widening), BL first, BL last element,
+        BL 0 × 5, BL 3 }
+  BL m transitions,
+  m × { BL kind (1 linear, 2 curve-line-curve), BD length, BL element,
+        linear: BD 0, BD 0, BL 2, BD 0
+        curve-line-curve: BD 0, BD curve 1 radius, BD curve 2 radius }
   ```
 
-  17 (form 1) runs from offset 25 at (444.69, 111.59) to 55 at
-  (505.68, 164.55) along TEST's straight tangent; tangent 16 holds about 55;
-  18 (form 2) runs from (658.49, 217.68) to (697.37, 215.89) over the
-  tangent and on with 3 points to (736.53, 212.66) — the trimmed spiral's
-  start, to 1e-9. Read as widening transitions (in and out); their
-  geometry rules are not decoded, so 11D9 does not decode yet.
+  1234: regions (0, 0–37.17, own 0–37.17, element 3), (−26,
+  112.17–260.54, own 117.12–265.49, element 4), (0, 335.54–415.40, own
+  345.44–425.29, element 5); transitions (2, 75, element 8, 0, 45, 25)
+  and (2, 75, element 9, 0, 45, 25). The own stations are those of the
+  drawn curve, so they differ between the linear and the curved
+  transitions (116.55 / 117.12).
+- **Linear transition records** (prefix **22**):
 
-**Not sampled.** A compound spiral in the parent; a widening on its own
-(its parameters and transition types); a static offset; the parent
-edited after the offsets were made.
+  ```text
+  params (B, BD −1, BD −1, BL 1, BD −1)
+  BL 3, BL id, BL before, BL after, BL form (1 | 2), BL 0x1000, BL 2,
+  RD start x, y, RD end x, y
+  form 2 adds: BL 0x1000, BL n, n × RD x, y
+  ```
+
+  Form 1 is a straight line from start to end (S257's 6 and 7; S256's
+  17). Form 2 (S256's 18) runs over the parent's tangent from start to
+  end, then through the n points over the parent's spiral (the first is
+  the end, the last the trimmed offset spiral's start). Civil 3D's
+  stored stations agree, to 1e-9, with straight lines through the
+  points; its graphics curve between them (3 vertices off the lines).
+- **Curve-line-curve records** (prefix **34**): only `BL 0, BL id, BL
+  before, BL after, BD curve 1 radius, BD curve 2 radius`. The curve is
+  placed between the element before and the one after (both along the
+  parent, parallel): curve 1 at its start turns toward the other line,
+  a line crosses, curve 2 turns back, the two curves turning through
+  the same angle. The stored own stations agree to 1e-6 and every
+  vertex of the graphics lies within 0.01 of the result, in and out
+  (curve 1 first in both).
+
+**Not sampled.** A compound spiral in the parent; the other transition
+types; a widening along a curve of the parent; a static offset; the
+parent edited after the offsets were made.
 
 **civil3drust.** Read-only. `SPIRAL_OFFSET` records decode and re-encode
 bit for bit; `SpiralGeometry::offset` (positive to the left) moves the
 parent spiral, and `point_at` / `curve_length` work along the drawn
 curve (D-071), over the part of the parent given by the fractions.
-`aecc_offset::offset_info` reads the parameters up to the element IDs;
+Widening transitions are `Element::Widening` (`aecc_widening`; D-072),
+read and re-encoded bit for bit; not editable.
+`aecc_offset::offset_info` reads the regions and transitions;
 `aecc_alignment_refs::offset_parent` is the parent (none after it is
 deleted). Test `offset_alignments`.
 

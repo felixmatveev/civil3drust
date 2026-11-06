@@ -7,6 +7,15 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Widenings on offset alignments (S257, owner): transition records of
+  two new kinds — linear (prefix 22, by points, also crossing onto a
+  spiral) and curve-line-curve (prefix 34, by its two radii, placed
+  between its neighbours; D-072) — decode and re-encode bit for bit.
+  `offset_info` reads the regions (nominal and widened stretches with
+  parent and own station ranges) and the transitions (kind, length,
+  element, radii). S256's offset of an offset now decodes; all element
+  stations match Civil 3D's to 1e-6 and the graphics to 0.01. The form-2
+  record has no four-BD tail (that was the interval head).
 - Offset alignments (S255, read-only): the offset spiral record (kind 5:
   the parent spiral, by its end point, plus the offset; D-071), drawn
   along the offset curve with its own length; tangents are ordinary
@@ -18,8 +27,7 @@ versions follow [Semantic Versioning](https://semver.org/).
   and an inward spiral decode (the spiral record stores the parent's
   straight end and the fractions followed; stations match Civil 3D's to
   1e-9); orphaned offsets read (block head `2, 2, 2`); the start-station
-  check ignores bit 16 of the gap. An offset of an offset with a widening
-  (new record prefix 22) is documented, not decoded. `alignment_refs` accepts
+  check ignores bit 16 of the gap. `alignment_refs` accepts
   soft pointers after the check set (the parent; profiles and profile
   views in a production drawing), which made it fail before. `alignments` prints them, `dump` shows
   the spiral's offset. Test `offset_alignments`; S255 re-encodes bit for

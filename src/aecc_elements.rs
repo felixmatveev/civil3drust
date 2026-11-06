@@ -340,6 +340,8 @@ pub enum Element {
     FreeSpiral(FreeSpiralRecord),
     /// A spiral group: spiral-curve-spiral, spiral-curve, spiral-line (S173).
     Group(GroupRecord),
+    /// A widening transition of an offset alignment (S256, S257).
+    Widening(crate::aecc_widening::WideningRecord),
 }
 
 impl Element {
@@ -351,6 +353,7 @@ impl Element {
             Self::Spiral(g) => g.header_bit,
             Self::FreeSpiral(g) => g.header_bit,
             Self::Group(g) => g.header_bit,
+            Self::Widening(g) => g.header_bit,
         }
     }
     /// Bit offset just after the record.
@@ -362,6 +365,7 @@ impl Element {
             Self::Spiral(g) => g.end_bit,
             Self::FreeSpiral(g) => g.end_bit,
             Self::Group(g) => g.end_bit,
+            Self::Widening(g) => g.end_bit,
         }
     }
 }
@@ -375,6 +379,7 @@ impl Linked for Element {
             Self::Spiral(g) => g.id,
             Self::FreeSpiral(g) => g.id,
             Self::Group(g) => g.id,
+            Self::Widening(g) => g.id,
         }
     }
     fn before(&self) -> i32 {
@@ -385,6 +390,7 @@ impl Linked for Element {
             Self::Spiral(g) => g.before,
             Self::FreeSpiral(g) => g.before,
             Self::Group(g) => g.before,
+            Self::Widening(g) => g.before,
         }
     }
     fn after(&self) -> i32 {
@@ -395,6 +401,7 @@ impl Linked for Element {
             Self::Spiral(g) => g.after,
             Self::FreeSpiral(g) => g.after,
             Self::Group(g) => g.after,
+            Self::Widening(g) => g.after,
         }
     }
 }
@@ -409,6 +416,7 @@ impl Element {
             Self::Spiral(x) => (&mut x.before, &mut x.after),
             Self::FreeSpiral(x) => (&mut x.before, &mut x.after),
             Self::Group(x) => (&mut x.before, &mut x.after),
+            Self::Widening(x) => (&mut x.before, &mut x.after),
         };
         *b = before;
         *a = after;
@@ -2354,7 +2362,18 @@ pub fn element_records(data: &[u8]) -> Vec<Element> {
             }
         }
         let before = out.len();
-        if let Some(t) = aecc_alignment::record_at(data, bit) {
+        // Widening transitions (S256, S257): only after the first record,
+        // told apart by their kind prefix.
+        let widening = (!out.is_empty() && bit >= 11)
+            .then(|| {
+                let prefix = crate::aecc_widening::prefix_at(data, bit);
+                crate::aecc_widening::widening_at(data, bit, prefix)
+            })
+            .flatten();
+        if let Some(w) = widening {
+            bit = w.end_bit;
+            out.push(Element::Widening(w));
+        } else if let Some(t) = aecc_alignment::record_at(data, bit) {
             bit = t.end_bit();
             out.push(Element::Tangent(t));
         } else if let Some(g) = group_at(data, bit) {
@@ -2389,7 +2408,9 @@ pub fn element_records(data: &[u8]) -> Vec<Element> {
 
 /// True when an element record starts at `bit`.
 fn probe(data: &[u8], bit: usize) -> bool {
-    aecc_alignment::record_at(data, bit).is_some()
+    let prefix = crate::aecc_widening::prefix_at(data, bit);
+    crate::aecc_widening::widening_at(data, bit, prefix).is_some()
+        || aecc_alignment::record_at(data, bit).is_some()
         || group_at(data, bit).is_some()
         || free_spiral_at(data, bit).is_some()
         || spiral_at(data, bit).is_some()
@@ -2897,6 +2918,7 @@ fn resolve_with(
         }
     }
     let mut out = Vec::with_capacity(chain.len());
+    let mut pending: Vec<(usize, Element)> = Vec::new();
     for (i, e) in chain.iter().enumerate() {
         if let Element::Group(g) = e {
             let parts = groups[i].clone().ok_or_else(|| {
@@ -2911,8 +2933,26 @@ fn resolve_with(
             }
             continue;
         }
+        if let Element::Widening(w) = e {
+            if let crate::aecc_widening::WideningDef::CurveLineCurve { .. } = w.def {
+                // Placed between its neighbours once they are resolved.
+                pending.push((out.len(), e.clone()));
+            } else {
+                for (part, segment) in crate::aecc_widening::linear_segments(w)
+                    .into_iter()
+                    .enumerate()
+                {
+                    out.push(ResolvedElement {
+                        record: e.clone(),
+                        segment,
+                        part,
+                    });
+                }
+            }
+            continue;
+        }
         let segment = match e {
-            Element::Group(_) => unreachable!(),
+            Element::Group(_) | Element::Widening(_) => unreachable!(),
             Element::FreeSpiral(_) => {
                 let (start, end, geometry) = spirals[i].expect("placed above");
                 Segment::Spiral {
@@ -3045,7 +3085,67 @@ fn resolve_with(
             });
         }
     }
+    // Curve-line-curve widening transitions (S257): between the end of the
+    // element before and the start of the one after, both running along
+    // the parent (parallel).
+    for (pos, e) in pending.into_iter().rev() {
+        let Element::Widening(w) = &e else {
+            unreachable!()
+        };
+        let crate::aecc_widening::WideningDef::CurveLineCurve {
+            radius1, radius2, ..
+        } = w.def
+        else {
+            unreachable!()
+        };
+        let (prev, next) = match (pos.checked_sub(1).and_then(|j| out.get(j)), out.get(pos)) {
+            (Some(p), Some(n)) => (p.segment, n.segment),
+            _ => {
+                return Err(unsupported(format!(
+                    "widening transition {}: no element on each side",
+                    w.id
+                )))
+            }
+        };
+        let dir = segment_end_direction(&prev);
+        let parts =
+            crate::aecc_widening::curve_line_curve(prev.end(), next.start(), dir, radius1, radius2)
+                .ok_or_else(|| {
+                    unsupported(format!("widening transition {}: the radii don't fit", w.id))
+                })?;
+        for (part, segment) in parts.into_iter().enumerate().rev() {
+            out.insert(
+                pos,
+                ResolvedElement {
+                    record: e.clone(),
+                    segment,
+                    part,
+                },
+            );
+        }
+    }
     Ok(out)
+}
+
+/// Unit direction of travel at the end of `seg`.
+fn segment_end_direction(seg: &Segment) -> (f64, f64) {
+    match seg {
+        Segment::Line { start, end } => {
+            let (dx, dy) = (end.x - start.x, end.y - start.y);
+            let l = dx.hypot(dy);
+            (dx / l, dy / l)
+        }
+        Segment::Arc { end, geometry, .. } => {
+            let (rx, ry) = (end.x - geometry.center.x, end.y - geometry.center.y);
+            let l = rx.hypot(ry);
+            if geometry.counter_clockwise {
+                (-ry / l, rx / l)
+            } else {
+                (ry / l, -rx / l)
+            }
+        }
+        Segment::Spiral { geometry, .. } => geometry.point_at(geometry.curve_length()).1,
+    }
 }
 
 /// An alignment decoded into resolved elements.

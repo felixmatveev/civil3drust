@@ -52,6 +52,7 @@ pub mod aecc_station;
 pub mod aecc_station_refs;
 pub mod aecc_style;
 pub mod aecc_topology;
+pub mod aecc_widening;
 pub mod alignment;
 pub mod dump;
 pub mod handle_refs;

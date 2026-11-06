@@ -142,6 +142,9 @@ fn encode_kept(
         .ok_or_else(|| err(format!("element {}: header not readable", el.id())))?
         .0;
     match (el, rewrite) {
+        (Element::Widening(r), _) => {
+            return Err(err(format!("widening transition {}: not editable", r.id)));
+        }
         (Element::Tangent(t), Rewrite::FixedTangent(a, b)) => {
             encode_tangent(w, flags, t.id, before, after, a, b);
         }
@@ -542,9 +545,10 @@ pub fn remove_element(
             Element::LineSpiral(_)
             | Element::Spiral(_)
             | Element::FreeSpiral(_)
-            | Element::Group(_) => {
+            | Element::Group(_)
+            | Element::Widening(_) => {
                 return Err(err(format!(
-                    "spiral {}: not editable yet",
+                    "element {}: not editable yet",
                     crate::aecc_alignment::Linked::id(&prev.record)
                 )))
             }

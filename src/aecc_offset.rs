@@ -1,4 +1,4 @@
-//! Offset alignments (type 2; S255): the offset parameters stored after
+//! Offset alignments (type 2; S255–S257): the offset parameters stored after
 //! the alignment type (read-only).
 //!
 //! An offset alignment's elements are ordinary element records holding the
@@ -8,18 +8,20 @@
 //! by this block (docs/alignment-object.md, "Offset alignments"):
 //!
 //! ```text
-//! BL 1, BL 2, BL 1                       (2, 2, 2 once the parent is
-//!                                         deleted; MIST19)
-//! BD offset                              (negative to the left)
-//! BL side                                (1 left, 2 right)
-//! 2 bits, BL 1, BL 1 | 3                 (MIST19)
-//! BD offset                              (again)
-//! BD parent start station, BD parent end station
-//! BD start station, BD end station       (of the offset alignment)
-//! BL 2, BL first element ID, BL last element ID
-//! BL 0 × 5, BL 3, BL 0, BL n, n × {BL i (from 1), BL −1, BL 1, BL id}
-//! …                                      (not decoded: BL 2, BD, GUID,
-//!                                         BD, GUID, …)
+//! BL 1, BL 2, BL 1             (2, 2, 2 once the parent is deleted; MIST19)
+//! BD nominal offset            (negative to the left)
+//! BL side                      (1 left, 2 right)
+//! 2 bits, BL 1                 (MIST19)
+//! BL n regions                 (stretches at one offset, S257)
+//! n × { BD offset, BD parent start, BD parent end, BD start, BD end,
+//!       BL kind (2 nominal, 1 widening), BL first element, BL last
+//!       element, BL 0 × 5, BL 3 }
+//! BL m transitions             (S257)
+//! m × { BL kind, BD length, BL element,
+//!       kind 1 (linear): BD 0, BD 0, BL 2, BD 0
+//!       kind 2 (curve-line-curve): BD 0, BD curve 1 radius, BD curve 2 radius }
+//! BL k, k × {BL i (from 1), BL −1, BL count, count × BL element}  (MIST19)
+//! …                            (not decoded: BL 2, BD, GUID, BD, GUID, …)
 //! ```
 //!
 //! The parent is a soft pointer after the check set
@@ -38,16 +40,46 @@ pub enum Side {
     Right,
 }
 
+/// A stretch of an offset alignment at one offset (S257): the nominal
+/// offset, or a widening.
+#[derive(Debug, Clone, PartialEq)]
+pub struct OffsetRegion {
+    /// Negative to the left, like [`OffsetInfo::offset`].
+    pub offset: f64,
+    /// 2 at the nominal offset, 1 for a widening (S257).
+    pub kind: i32,
+    pub parent_start: f64,
+    pub parent_end: f64,
+    pub start: f64,
+    pub end: f64,
+    /// The elements of the stretch, as made (not renumbered, S256).
+    pub first_element: i32,
+    pub last_element: i32,
+}
+
+/// A widening transition (S257): `kind` 1 linear, 2 curve-line-curve.
+#[derive(Debug, Clone, PartialEq)]
+pub struct OffsetTransition {
+    pub kind: i32,
+    pub length: f64,
+    /// The transition element.
+    pub element: i32,
+    /// Linear: BD 0, BD 0, BL 2, BD 0 (as BDs, the BL as a number);
+    /// curve-line-curve: BD 0, curve 1 radius, curve 2 radius.
+    pub values: Vec<f64>,
+}
+
 /// The decoded part of an offset alignment's parameters.
 #[derive(Debug, Clone, PartialEq)]
 pub struct OffsetInfo {
     /// The block's first three BLs: `1, 2, 1` with a parent, `2, 2, 2`
     /// after the parent was deleted (S256; MIST19).
     pub head: [i32; 3],
-    /// The offset as stored: negative to the left of the parent.
+    /// The nominal offset as stored: negative to the left of the parent.
     pub offset: f64,
     pub side: Side,
-    /// The parent's station range the offset follows.
+    /// The parent's station range the offset follows (first region's
+    /// start to last region's end).
     pub parent_start: f64,
     pub parent_end: f64,
     /// The offset alignment's own station range.
@@ -55,6 +87,10 @@ pub struct OffsetInfo {
     pub end: f64,
     pub first_element: i32,
     pub last_element: i32,
+    /// The stretches at one offset, in order (one without widenings).
+    pub regions: Vec<OffsetRegion>,
+    /// The widening transitions; `None` when a kind is not known.
+    pub transitions: Option<Vec<OffsetTransition>>,
 }
 
 impl OffsetInfo {
@@ -97,32 +133,99 @@ pub fn offset_info(rec: &RawRecord) -> Result<Option<OffsetInfo>, BuildError> {
         _ => return Err(bad("unknown side")),
     };
     let (_, q) = bl(q + 2)?;
-    let (_, q) = bl(q)?;
-    let (again, q) = bd(q)?;
-    let (parent_start, q) = bd(q)?;
-    let (parent_end, q) = bd(q)?;
-    let (start, q) = bd(q)?;
-    let (end, q) = bd(q)?;
-    let (_, q) = bl(q)?;
-    let (first_element, q) = bl(q)?;
-    let (last_element, _) = bl(q)?;
-    if again != offset
-        || !offset.is_finite()
-        || ![parent_start, parent_end, start, end]
-            .iter()
-            .all(|v| v.is_finite())
-    {
+    let (n, mut q) = bl(q)?;
+    if !(1..=1000).contains(&n) || !offset.is_finite() {
         return Err(bad("values out of shape"));
     }
+    let mut regions = Vec::new();
+    for _ in 0..n {
+        let mut v = [0.0; 5];
+        for x in &mut v {
+            let (y, r) = bd(q)?;
+            *x = y;
+            q = r;
+        }
+        let (kind, r) = bl(q)?;
+        let (first_element, r) = bl(r)?;
+        let (last_element, mut r) = bl(r)?;
+        // BL 0 × 5, BL 3.
+        for want in [0, 0, 0, 0, 0, 3] {
+            let (x, t) = bl(r)?;
+            if x != want {
+                return Err(bad("region tail"));
+            }
+            r = t;
+        }
+        q = r;
+        if !v.iter().all(|x| x.is_finite()) {
+            return Err(bad("values out of shape"));
+        }
+        regions.push(OffsetRegion {
+            offset: v[0],
+            kind,
+            parent_start: v[1],
+            parent_end: v[2],
+            start: v[3],
+            end: v[4],
+            first_element,
+            last_element,
+        });
+    }
+    let (nt, mut q) = bl(q)?;
+    let mut transitions = Some(Vec::new());
+    for _ in 0..nt {
+        let (kind, r) = bl(q)?;
+        let (length, r) = bd(r)?;
+        let (element, mut r) = bl(r)?;
+        let mut values = Vec::new();
+        match kind {
+            1 => {
+                for is_bl in [false, false, true, false] {
+                    if is_bl {
+                        let (x, t) = bl(r)?;
+                        values.push(f64::from(x));
+                        r = t;
+                    } else {
+                        let (x, t) = bd(r)?;
+                        values.push(x);
+                        r = t;
+                    }
+                }
+            }
+            2 => {
+                for _ in 0..3 {
+                    let (x, t) = bd(r)?;
+                    values.push(x);
+                    r = t;
+                }
+            }
+            _ => {
+                transitions = None;
+                break;
+            }
+        }
+        q = r;
+        if let Some(t) = transitions.as_mut() {
+            t.push(OffsetTransition {
+                kind,
+                length,
+                element,
+                values,
+            });
+        }
+    }
+    let (first, last) = (&regions[0], &regions[regions.len() - 1]);
     Ok(Some(OffsetInfo {
         head,
         offset,
         side,
-        parent_start,
-        parent_end,
-        start,
-        end,
-        first_element,
-        last_element,
+        parent_start: first.parent_start,
+        parent_end: last.parent_end,
+        start: first.start,
+        end: last.end,
+        first_element: first.first_element,
+        last_element: last.last_element,
+        regions: regions.clone(),
+        transitions,
     }))
 }
