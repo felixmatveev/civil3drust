@@ -39,7 +39,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 | MIST16 | three BDs after a spiral's geometry | open |
 | MIST17 | 128 bits after a `0x0D` element header | solved: group start point |
 | MIST18 | station equation and masking fields | solved; the equations' 18 leading bits are a fixed marker (owner) |
-| MIST19 | offset alignment block after the type | partly read |
+| MIST19 | offset alignment block after the type; widening records | partly read |
 
 ## MIST1 — the 66-bit section-2 field — **PARTIALLY SOLVED (S142–S150, S214)**
 
@@ -532,7 +532,7 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   written exactly as `00 BE 04` for every equation, not decoded further
   (the object-header fields around bit 48 are not mapped).
 
-## MIST19 — the offset alignment block after the type — **open (S255)**
+## MIST19 — the offset alignment block after the type — **open (S255, S256)**
 
 - **Where:** after `BL type` 2 of an offset alignment, in place of a
   centerline's `BL 2, 2, 2` and masking list (alignment-object.md,
@@ -540,16 +540,21 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
 - **Read:** the offset (twice, negative to the left), the side (1 left,
   2 right), the parent's station range, the alignment's own station
   range, the first and last element ID.
-- **Open:** the head `BL 1, 2, 1`; `B 1, B 1, BL 1, BL 1` after the side;
-  the `BL 2` before the element IDs; a list after them, one entry per
-  element `{BL 1, BL id, BL k, BL −1}` with k = 2, 3, 2 for tangent,
-  spiral, tangent (the parent's IDs are 1, 2, 3, so not those; perhaps
-  the element's kind), preceded by `BL 0 × 5, BL 3, BL 0, BL 3, BL 1,
-  BL −1`; then `BD 5, GUID, BD 405, GUID` and `BL 0, BL 0, BL 3` (likely
-  an empty masking list and the PI display).
-- **Next samples:** a parent with an arc (k for curves); an offset over
-  part of the parent (which station pair changes); a widening; the
-  offset value edited in its properties; a static offset.
+- **Partly read (S256):** the head is `1, 2, 1` with a parent and
+  `2, 2, 2` after the parent is deleted; the first/last element IDs are
+  those made and are not renumbered; after `BL 0 × 5, BL 3, BL 0` comes
+  a list `BL n, n × {BL i, BL −1, BL 1, BL id}` (i from 1), one entry per
+  element.
+- **Open:** the 2 bits and two BLs after the side (`11, 1, 1` in S255;
+  `00, 1, 1` in S256's 11B1/11C2; `00, 1, 3` on 11D9, the offset with a
+  widening); the `BL 2` before the IDs; the rest (`BL 2, BD, GUID, BD,
+  GUID`, …); where a widening's own parameters are stored; the geometry
+  of S256's widening transition records (prefix 22, kind 3, forms 1 and
+  2; alignment-object.md).
+- **Next samples:** one widening on an offset of a centerline (no
+  offset-of-offset), saved once with a linear and once with a curved
+  transition, with its start/end stations and width noted; the offset
+  value edited in its properties; a static offset.
 
 ## Not sampled yet (not mysteries, just gaps)
 

@@ -8,16 +8,18 @@
 //! by this block (docs/alignment-object.md, "Offset alignments"):
 //!
 //! ```text
-//! BL 1, BL 2, BL 1                       (MIST19)
+//! BL 1, BL 2, BL 1                       (2, 2, 2 once the parent is
+//!                                         deleted; MIST19)
 //! BD offset                              (negative to the left)
 //! BL side                                (1 left, 2 right)
-//! B 1, B 1, BL 1, BL 1                   (MIST19)
+//! 2 bits, BL 1, BL 1 | 3                 (MIST19)
 //! BD offset                              (again)
 //! BD parent start station, BD parent end station
 //! BD start station, BD end station       (of the offset alignment)
 //! BL 2, BL first element ID, BL last element ID
-//! …                                      (not decoded: BL 0 × 5, a list
-//!                                         per element, BD, GUID, BD, GUID)
+//! BL 0 × 5, BL 3, BL 0, BL n, n × {BL i (from 1), BL −1, BL 1, BL id}
+//! …                                      (not decoded: BL 2, BD, GUID,
+//!                                         BD, GUID, …)
 //! ```
 //!
 //! The parent is a soft pointer after the check set
@@ -39,6 +41,9 @@ pub enum Side {
 /// The decoded part of an offset alignment's parameters.
 #[derive(Debug, Clone, PartialEq)]
 pub struct OffsetInfo {
+    /// The block's first three BLs: `1, 2, 1` with a parent, `2, 2, 2`
+    /// after the parent was deleted (S256; MIST19).
+    pub head: [i32; 3],
     /// The offset as stored: negative to the left of the parent.
     pub offset: f64,
     pub side: Side,
@@ -74,12 +79,14 @@ pub fn offset_info(rec: &RawRecord) -> Result<Option<OffsetInfo>, BuildError> {
     if ty != TYPE_OFFSET {
         return Ok(None);
     }
+    let mut head = [0; 3];
     let mut q = q;
-    for want in [1, 2, 1] {
+    for (i, h) in head.iter_mut().enumerate() {
         let (v, n) = bl(q)?;
-        if v != want {
+        if !(1..=2).contains(&v) || (i == 1 && v != 2) {
             return Err(bad("unknown block head"));
         }
+        *h = v;
         q = n;
     }
     let (offset, q) = bd(q)?;
@@ -108,6 +115,7 @@ pub fn offset_info(rec: &RawRecord) -> Result<Option<OffsetInfo>, BuildError> {
         return Err(bad("values out of shape"));
     }
     Ok(Some(OffsetInfo {
+        head,
         offset,
         side,
         parent_start,

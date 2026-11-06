@@ -1427,9 +1427,12 @@ stay the parent's, so the record's values are kept as stored.
 `point_at(s)` and `curve_length()` work along the drawn curve (the
 parent distance is found by Newton's method from `s = t − offset ·
 turn(t)`), so stations, lengths and segment ends need no special case.
-The stored point is read as the parent's end (S255 has one outward
-spiral, where the end and the straight end coincide; to be checked with
-an inward and a compound spiral).
+The stored point is the parent's straight (infinite-radius) end with
+the direction of travel there — the end of an outward spiral (S255), the
+start of an inward one (S256); a compound spiral is read from its start
+(not sampled). The tail's two values are the fractions of the parent
+followed (S256); the geometry is that part of the parent, as a clothoid
+piece with the radii at those fractions.
 
 **Alternatives.** A separate offset-curve segment kind: every match on
 `Segment` would need a new arm for the same arithmetic. Storing the

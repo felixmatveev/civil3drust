@@ -37,7 +37,7 @@ other records shift by the sizes of the variable parts.
 | 56–1783 | **proxy graphics** (display cache): 7 attribute chunks, one polyline per tangent, an attribute triple after each arc; with PROXYGRAPHICS 0 Civil 3D writes its placeholder instead (S141) | decoded; derived from geometry | **no** — Civil 3D regenerates it (S57); kept by default for programs without Civil 3D |
 | 1784–2196 | **section 2** (413 bits in the plain form), see 1.1 | decoded except MIST1–MIST4 contents | yes |
 | 2197–2206 | element count (BL) | decoded | yes |
-| 2207–2856 | **element records**, each with an 11-bit kind prefix (2 line, 4 curve, 6 spiral — kind 5 within it is an offset alignment's spiral, S255 —, 8 / 10 / 20 / 24 / 26 spiral groups and free spirals) | decoded (`aecc_elements`, `aecc_encode`; every kind re-encodes bit for bit) | yes — the geometry |
+| 2207–2856 | **element records**, each with an 11-bit kind prefix (2 line, 4 curve, 6 spiral — kind 5 within it is an offset alignment's spiral, S255 —, 8 / 10 / 20 / 24 / 26 spiral groups and free spirals; 22 an offset alignment's widening transition, S256, not decoded) | decoded (`aecc_elements`, `aecc_encode`; every kind re-encodes bit for bit) | yes — the geometry |
 | 2857–2872 | interval block head: `BL 0, BL 0, BL 0, BL n` (n speed intervals) | decoded | yes |
 | 2873–3000 | first **interval**'s GUID (= its design-speed entry's GUID; not an alignment identity, S82; equations and masking regions have intervals too, S243) | decoded (random v4) | with speeds — a fresh GUID (a zero GUID changes how Civil 3D saves, S57 X5, MIST13) |
 | 3001–3017 | `B 1, BL kind (2 speed, 3 station equation, 4 masking), BD 0`, BD station (0), BD distance from the element start (0) | decoded | with speeds |

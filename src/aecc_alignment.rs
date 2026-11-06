@@ -524,8 +524,10 @@ pub const STATION_GAP_BITS: usize = 41;
 
 /// The leading part of that gap. Bits 1–3 and 6 are the Design Criteria
 /// check boxes (`aecc_criteria`, O3), bits 4 and 5 the Constraint Editing
-/// options (MIST15, S163; lock, S164), so they are not checked.
-const STATION_GAP_PREFIX: [u8; 17] = [0, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0];
+/// options (MIST15, S163; lock, S164), so they are not checked. Bit 16 is
+/// set on S256's offset alignments over part of their parent (meaning not
+/// known), so it is not checked either.
+const STATION_GAP_PREFIX: [u8; 17] = [0, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0, 1, 0, 0, 0, 0, 2];
 
 /// Read the start station stored before the tangent whose header is at
 /// `first_header_bit` (the first element of the chain).

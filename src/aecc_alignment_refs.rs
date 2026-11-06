@@ -47,7 +47,8 @@ pub fn alignment_refs(rec: &RawRecord) -> Option<AlignmentRefs> {
     // check set (S255).
     let mut n = refs.len();
     let mut trailing = 0;
-    while n > 7 && refs[n - 1].code == 4 && refs[n - 1].handle != 0 {
+    // A null one is the slot of a deleted parent (S256).
+    while n > 7 && refs[n - 1].code == 4 {
         n -= 1;
         trailing += 1;
     }
@@ -80,6 +81,7 @@ pub fn offset_parent(doc: &CadDocument, rec: &RawRecord) -> Option<u64> {
     refs[refs.len() - a.trailing..]
         .iter()
         .map(|r| r.handle)
+        .filter(|h| *h != 0)
         .find(|h| raw::class_of(doc, *h).as_deref() == Some("AECC_ALIGNMENT"))
 }
 

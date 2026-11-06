@@ -33,6 +33,7 @@ const SAMPLES: &[&str] = &[
     "S178_S177_long_reverse_spirals.dwg",
     "S225_S177_end_entities_deleted.dwg",
     "S255_offset_alignments_left_right.dwg",
+    "S256_offsets_partial_widening.dwg",
 ];
 
 fn bits(data: &[u8], from: usize, to: usize) -> String {

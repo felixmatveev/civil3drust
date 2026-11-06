@@ -299,7 +299,7 @@ tangent alignments in the production drawing. Two of those read 1000.0 and
 2000.0, matching their 10+00 and 20+00 stationing; the rest read 0.0. The
 first 17 of the 41 bits (`0000?111000100000`, `?` varies) are identical in
 all of them, so `aecc_alignment::start_station` checks them before trusting
-the value. The exception is an alignment made from a feature line with 262
+the value (bit 16 excepted since S256's offset alignments set it). The exception is an alignment made from a feature line with 262
 tangents, where the gap differs; there the station is reported as unknown.
 The rest of the 41 bits holds the design-criteria and constraint-editing
 flags (the last 20 bits of section 2; "Design criteria"), then the
@@ -3215,7 +3215,7 @@ spirals (two finite radii) of the arc-length types use the same rise;
 the tangent-defined types have no compound form and fall back to the
 clothoid. Test `spiral_types`.
 
-## Offset alignments (S255)
+## Offset alignments (S255, S256)
 
 **Sample.** S255 (owner, Civil 3D 2024): "Spline speed change" (FD7:
 tangent (0,0)→(100,0), outward clothoid R 300 → ∞ L 200 clockwise,
@@ -3234,13 +3234,16 @@ and with the parent.
 
   ```text
   BL 5, BL id, BL before, BL after, BL 256 (type: clothoid), B clockwise,
-  RD x, y      the parent spiral's END point (294.1157, −43.8826)
-  RD dx, dy    the parent's direction there
+  RD x, y      the parent spiral's straight (∞) end: here its END
+               (294.1157, −43.8826); its start for an inward spiral (S256)
+  RD dx, dy    the parent's direction of travel there
   BD 300       start radius
   BD 200       length (the parent's)
   BD inf       end radius
   BD −10       offset: negative to the LEFT (+10 on the right offset)
-  BD 0, BD 1   tail, as on placed spirals
+  BD 0, BD 1   the part of the parent followed, as fractions of its
+               length (S256: 0 to 0.8416 when the offset stops at a
+               parent station inside the spiral)
   ```
 
   The element is the parent spiral moved sideways: running the parent
@@ -3251,29 +3254,32 @@ and with the parent.
   parent's graphics have too). Its length is the parent's changed by the
   offset times the turn (1/3 rad here): 203.333 outside the turn, 196.667
   inside — the end stations Civil 3D stores (408.33, 401.67) agree.
-  Whether the stored point is always the parent's end, or the end at the
-  straight (∞) side, needs an inward and a compound spiral (one sample
-  only: outward, where both are the same point).
+  S256's inward spiral settled the stored point: the straight end. A
+  compound spiral (no straight end) is not sampled; civil3drust reads
+  the point as its start there.
 
 **After the type** (`BL 2`). A centerline's `BL 2, 2, 2`, masking list
 and PI display are replaced by:
 
 ```text
-BL 1, BL 2, BL 1                 (MIST19)
+BL 1, BL 2, BL 1                 (MIST19; 2, 2, 2 once the parent is
+                                  deleted, S256)
 BD −10                           offset, negative to the left
 BL 1                             side: 1 left, 2 right
-B 1, B 1, BL 1, BL 1             (MIST19)
+2 bits, BL 1, BL 1               (MIST19: bits 11 in S255, 00 in S256;
+                                  the second BL is 3 on S256's 11D9)
 BD −10                           the offset again
 BD 5, BD 405                     the parent's station range followed
 BD 5, BD 408.33                  the offset alignment's own stations
-BL 2, BL 7, BL 9                 (2?), first and last element ID
-BL 0 × 5, BL 3, BL 0, BL 3, BL 1, BL −1,
-  {BL 1, BL id, BL k, BL −1} for ids 7 (k 2), 8 (k 3), 9 (k 2, no −1)
-                                 (MIST19: k is not the parent's ID)
-BD 5, GUID, BD 405, GUID         (a station range on the parent with an
-                                  anchor GUID?)
-BL 0, BL 0, BL 3, 1 bit          (likely: masking list n = 0, PI display
-                                  3 = none, as on the parent)
+BL 2, BL 7, BL 9                 (2?), first and last element ID as
+                                  made (not renumbered later, S256)
+BL 0 × 5, BL 3, BL 0, BL n,
+  n × {BL i, BL −1, BL 1, BL id} i = 1…n, one per element (S256's 11B1
+                                  lists 11, 13, 14, 12, 15: tangents,
+                                  then the arc, then the spiral)
+…                                (MIST19: BL 2, BD 5, GUID, BD 405, GUID,
+                                  then likely BL 0 (masking), BL 3 (PI
+                                  display), as on a centerline)
 ```
 
 **Handle stream and associations.** The offset alignment's stream starts
@@ -3295,16 +3301,52 @@ as its name and geometry say. Its handle stream has two dependency
 pointers first, and soft pointers to a profile and a profile view
 between the check set and the parent.
 
-**Not sampled.** An arc and inward/compound spirals in the parent; a
-partial station range; widenings; a static (non-dynamic) offset; the
-parent edited after the offsets were made.
+**S256** (owner's file; steps read from the drawing). S255 with the
+parent FD7 deleted, plus TEST (119F: tangent, free arc R 236.03,
+tangent, tangent, inward clothoid ∞ → R 100, L 200) with three offsets:
+
+- **Parent deleted** (115F, 1170): still type 2 with the same geometry;
+  the block head reads `2, 2, 2`, the dependency pointer is gone, and
+  the parent slot after the check set is a null soft pointer. The
+  elements were renumbered 1–3, the block's first/last IDs still say 7, 9.
+- **Over part of the parent** (11B1 25 left, 11C2 10 right, parent
+  stations 100–900; the offset alignment starts at station 100): the
+  arc's offset is an ordinary fixed three-point arc (R 261.03 / 226.03,
+  same center); the spiral record stores the parent spiral's start and
+  the fractions 0 to 0.8416 (station 900). Decoded lengths plus 100
+  match the stored end stations to 1e-9. These records have bit 16 of
+  the 41-bit gap before the first element set (centerlines and S255:
+  0); the start-station check no longer tests it.
+- **An offset of an offset with a widening** (11D9, "…-Left-0.000",
+  parent 11B1, offset 0, stations 100–454.91): its elements are offsets
+  of TEST (the spiral record holds TEST's spiral with offset −25 and
+  fractions 0.1758–0.8416), plus two records of a new prefix, **22**:
+
+  ```text
+  params (B 0, BD −1, BD −1, BL 1, BD −1)
+  BL 3, BL id, BL before, BL after, BL form (1 | 2), BL 0x1000, BL 2,
+  RD start x, y, RD end x, y
+  form 2 adds: BL 0x1000, BL n, n × RD x, y, BD 0, 0, 0, 1
+  ```
+
+  17 (form 1) runs from offset 25 at (444.69, 111.59) to 55 at
+  (505.68, 164.55) along TEST's straight tangent; tangent 16 holds about 55;
+  18 (form 2) runs from (658.49, 217.68) to (697.37, 215.89) over the
+  tangent and on with 3 points to (736.53, 212.66) — the trimmed spiral's
+  start, to 1e-9. Read as widening transitions (in and out); their
+  geometry rules are not decoded, so 11D9 does not decode yet.
+
+**Not sampled.** A compound spiral in the parent; a widening on its own
+(its parameters and transition types); a static offset; the parent
+edited after the offsets were made.
 
 **civil3drust.** Read-only. `SPIRAL_OFFSET` records decode and re-encode
 bit for bit; `SpiralGeometry::offset` (positive to the left) moves the
 parent spiral, and `point_at` / `curve_length` work along the drawn
-curve (D-071). `aecc_offset::offset_info` reads the parameters up to the
-element IDs; `aecc_alignment_refs::offset_parent` is the parent. Test
-`offset_alignments`.
+curve (D-071), over the part of the parent given by the fractions.
+`aecc_offset::offset_info` reads the parameters up to the element IDs;
+`aecc_alignment_refs::offset_parent` is the parent (none after it is
+deleted). Test `offset_alignments`.
 
 ## MIST2: re-save field (partially solved, S151–S157)
 

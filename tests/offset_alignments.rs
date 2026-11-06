@@ -125,3 +125,67 @@ fn s255_offsets_decode() {
         assert_eq!(stray_vertices(r, &segs), 1, "{h:X}: graphics off the curve");
     }
 }
+
+/// S256 (owner): offsets over part of an alignment with an arc and an
+/// inward spiral, offsets whose parent was deleted, an offset of an offset
+/// with a widening.
+#[test]
+fn s256_partial_offsets_and_orphans() {
+    let o = raw::open("samples/S256_offsets_partial_widening.dwg").unwrap();
+    let recs = raw::records(&o.doc, "AECC_ALIGNMENT");
+    let rec = |h: u64| recs.iter().find(|r| r.handle == h).unwrap();
+    let s255 = raw::open("samples/S255_offset_alignments_left_right.dwg").unwrap();
+    let old = raw::records(&s255.doc, "AECC_ALIGNMENT");
+
+    // Parent deleted: still offset alignments, head 2, 2, 2, the parent
+    // slot null, the geometry unchanged. The elements were renumbered 1–3;
+    // the block keeps the old first and last IDs.
+    for h in [0x115F, 0x1170] {
+        let r = rec(h);
+        let info = offset_info(r).unwrap().unwrap();
+        assert_eq!(info.head, [2, 2, 2]);
+        assert_eq!((info.first_element, info.last_element), (7, 9));
+        assert_eq!(alignment_refs(r).unwrap().trailing, 1);
+        assert_eq!(offset_parent(&o.doc, r), None);
+        let before = decode_elements(old.iter().find(|x| x.handle == h).unwrap()).unwrap();
+        let after = decode_elements(r).unwrap();
+        for (a, b) in after.elements.iter().zip(&before.elements) {
+            assert!((a.segment.end().x - b.segment.end().x).abs() < 1e-9);
+            assert!((a.segment.end().y - b.segment.end().y).abs() < 1e-9);
+        }
+    }
+
+    // Offsets over parent stations 100–900 of TEST, whose spiral is inward:
+    // the stored point is the parent's start (its straight end) and the
+    // tail holds the part followed (0 to 0.8416 = station 900).
+    for (h, left, end) in [
+        (0x11B1, 25.0, 913.8601525487878),
+        (0x11C2, -10.0, 894.4559389804848),
+    ] {
+        let r = rec(h);
+        let info = offset_info(r).unwrap().unwrap();
+        assert_eq!(info.head, [1, 2, 1]);
+        assert_eq!(info.left_offset(), left);
+        assert_eq!((info.parent_start, info.parent_end), (100.0, 900.0));
+        assert_eq!(offset_parent(&o.doc, r), Some(0x119F));
+        let d = decode_elements(r).unwrap();
+        assert_eq!(d.stored_start_station, Some(100.0));
+        // The stored end station agrees with the decoded length.
+        assert!((100.0 + d.length() - end).abs() < 1e-9, "{h:X}");
+        assert!((info.end - end).abs() < 1e-9);
+        let Element::Spiral(sp) = &d.elements[4].record else {
+            panic!("element 15 is not a spiral");
+        };
+        assert_eq!(sp.kind, SPIRAL_OFFSET);
+        assert_eq!((sp.tail[0], (sp.tail[1] * 1e4).round()), (0.0, 8416.0));
+        for w in d.elements.windows(2) {
+            let (a, b) = (w[0].segment.end(), w[1].segment.start());
+            assert!((a.x - b.x).hypot(a.y - b.y) < 1e-9);
+        }
+    }
+
+    // The offset of an offset with a widening: two records of a new kind
+    // (prefix 22) are not decoded yet.
+    assert_eq!(offset_parent(&o.doc, rec(0x11D9)), Some(0x11B1));
+    assert!(decode_elements(rec(0x11D9)).is_err());
+}

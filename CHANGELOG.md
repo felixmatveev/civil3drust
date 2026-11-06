@@ -13,7 +13,13 @@ versions follow [Semantic Versioning](https://semver.org/).
   records. `aecc_offset::offset_info` reads the offset, side, the parent's
   and the alignment's station ranges and the element IDs after the type
   (MIST19 for the rest); `aecc_alignment_refs::offset_parent` is the
-  parent (a soft pointer after the check set). `alignment_refs` accepts
+  parent (a soft pointer after the check set; none once the parent is
+  deleted, S256). S256: offsets over part of an alignment with an arc
+  and an inward spiral decode (the spiral record stores the parent's
+  straight end and the fractions followed; stations match Civil 3D's to
+  1e-9); orphaned offsets read (block head `2, 2, 2`); the start-station
+  check ignores bit 16 of the gap. An offset of an offset with a widening
+  (new record prefix 22) is documented, not decoded. `alignment_refs` accepts
   soft pointers after the check set (the parent; profiles and profile
   views in a production drawing), which made it fail before. `alignments` prints them, `dump` shows
   the spiral's offset. Test `offset_alignments`; S255 re-encodes bit for

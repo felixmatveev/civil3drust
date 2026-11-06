@@ -631,28 +631,65 @@ impl SpiralRecord {
     pub fn geometry(&self) -> SpiralGeometry {
         let spiral_type = SpiralType::from_code(self.mode).unwrap_or(SpiralType::Clothoid);
         if self.kind == SPIRAL_OFFSET {
-            // Stored at the parent's end: run the parent backwards from
-            // there to find its start.
-            let back = SpiralGeometry {
-                start: self.start,
-                direction: (-self.direction.0, -self.direction.1),
-                length: self.length,
-                radius: self.start_radius,
-                start_radius: self.end_radius,
-                counter_clockwise: self.clockwise,
-                spiral_type,
-                offset: 0.0,
+            // Stored at the parent's straight (infinite-radius) end with
+            // the direction of travel there: its start for an inward
+            // spiral (S256), its end for an outward one (S255).
+            let parent = if self.end_radius.is_infinite() && self.start_radius.is_finite() {
+                let back = SpiralGeometry {
+                    start: self.start,
+                    direction: (-self.direction.0, -self.direction.1),
+                    length: self.length,
+                    radius: self.start_radius,
+                    start_radius: self.end_radius,
+                    counter_clockwise: self.clockwise,
+                    spiral_type,
+                    offset: 0.0,
+                };
+                let (p, d) = back.point_at(self.length);
+                SpiralGeometry {
+                    start: p,
+                    direction: (-d.0, -d.1),
+                    length: self.length,
+                    radius: self.end_radius,
+                    start_radius: self.start_radius,
+                    counter_clockwise: !self.clockwise,
+                    spiral_type,
+                    offset: 0.0,
+                }
+            } else {
+                SpiralGeometry {
+                    start: self.start,
+                    direction: self.direction,
+                    length: self.length,
+                    radius: self.end_radius,
+                    start_radius: self.start_radius,
+                    counter_clockwise: !self.clockwise,
+                    spiral_type,
+                    offset: 0.0,
+                }
             };
-            let (p, d) = back.point_at(self.length);
+            // The part of the parent followed: the two tail values are
+            // fractions of its length (0 and 1 for all of it; S256).
+            let (f0, f1) = (self.tail[0], self.tail[1]);
+            let (p, d) = parent.point_at(f0 * self.length);
+            let k = |r: f64| if r.is_finite() { 1.0 / r } else { 0.0 };
+            let (k0, k1) = (k(self.start_radius), k(self.end_radius));
+            let r = |f: f64| {
+                let c = k0 + (k1 - k0) * f;
+                if c == 0.0 {
+                    f64::INFINITY
+                } else {
+                    1.0 / c
+                }
+            };
             return SpiralGeometry {
                 start: p,
-                direction: (-d.0, -d.1),
-                length: self.length,
-                radius: self.end_radius,
-                start_radius: self.start_radius,
-                counter_clockwise: !self.clockwise,
-                spiral_type,
+                direction: d,
+                length: (f1 - f0) * self.length,
+                radius: r(f1),
+                start_radius: r(f0),
                 offset: -self.offset,
+                ..parent
             };
         }
         SpiralGeometry {
