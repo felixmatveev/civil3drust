@@ -1459,3 +1459,31 @@ them.
 geometry, offsets, lengths): needs every transition type and widenings
 on curves; the element records already give the result.
 
+## D-073: One egui workbench for viewing, hex/RON inspection and editing
+Date: 2026-11-06 · Status: accepted (design only)
+
+**Context.** Testing edits means running an example per change, then
+opening the result in `viewer/` and `hexview/` separately. Both are
+read-only and frozen; `Scene::load` drops the document after drawing.
+
+**Decision.** A new `workbench/` crate (design: `docs/workbench.md`),
+started as a copy of the viewer and hexview code. The opened document
+(`raw::open`) is the only source of truth; the scene and a record index
+are rebuilt from it after every change. One selection drives a
+plan/orbit view, a hex pane showing only the selected record and the
+records it references or is referenced by, a RON pane (Raw: record
+bytes, always applicable; Model: the decoded alignment, translated into
+existing edit calls — a first per-object slice of FRT-2), and a command
+line whose commands mirror the examples and call library functions
+(logic still inside examples moves to `src/` first). Edits run under
+`catch_unwind`; Save As only, followed by a reopen-and-compare check.
+`viewer/` and `hexview/` stay frozen until the workbench reaches parity,
+then are removed.
+
+**Alternatives.** Tkinter (Python) driving a Rust CLI over JSON lines:
+no recompile for GUI changes and panic isolation, but a JSON layer to
+maintain and no reuse of the existing egui code; library edits recompile
+either way. Tauri: two toolchains for a throwaway tool. An Open CAD
+Studio plugin: GPL-3.0 host, its acadrust version pinned to ours, and
+long builds.
+

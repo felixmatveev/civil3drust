@@ -1,0 +1,209 @@
+# Workbench: a DWG research app (design sketch)
+
+Status: **accepted design, not started** (D-073). Replaces `viewer/` and `hexview/` (both frozen) when it can
+do everything they do; until then all three exist.
+
+## Purpose
+
+One window to study and test civil3drust on real drawings:
+
+1. open a DWG and render it (plain AutoCAD context + AECC objects);
+2. select one object and see it as geometry, as hex and as RON;
+3. edit it with commands or by editing its RON;
+4. save a copy and open it in Civil 3D (or another CAD program) to check it.
+
+Not a CAD program. Ugly is fine; slow with many objects is fine. Correct and
+easy to extend is what matters.
+
+## Layout
+
+```
++-----------------------------------------------------------------------------+
+| [Open] [Save As] [Reload] [Undo] [Redo]  file.dwg  AC1032  *modified*       |
++---------------+-------------------------------------------+-----------------+
+| OBJECTS       | VIEW (plan / orbit)                       | RON             |
+| filter: ____  |                                           |  (selected obj) |
+| > AECC_ALIGN. |      selected object highlighted,         |  Alignment(     |
+|   #2A3 "CL-1" |      the rest dimmed                      |   h: "2A3",     |
+|   #2B0 "CL-2" |                                           |   name: ..      |
+| > AECC_SITE   |      click = pick handle / point          |   elements: [.. |
+| > (context)   |                                           |  [Model|Raw]    |
+|               |                                           |  [Apply][Revert]|
++---------------+-------------------------------------------+-----------------+
+| HEX (selected object + related records only)                                |
+| -- #2A3 AECC_ALIGNMENT  (own record, 1 840 B)  ---------------------------- |
+| 0000  4E 02 ...  fields underlined, changed bits since last edit in red     |
+| -- #2A4 companion (referenced by #2A3) --------------------- [collapsed] -- |
+| -- #1F0 style (referenced by #2A3) ------------------------- [collapsed] -- |
+| -- #120 registry (references #2A3) ------------------------- [collapsed] -- |
++-----------------------------------------------------------------------------+
+| > set_length CL-1 2 150.0                                                    |
+| ok: segment 2 150.000 -> 150.000, 1 record changed (42 bits)                 |
++-----------------------------------------------------------------------------+
+```
+
+Every pane follows one **selection** (a handle). Selecting in the list, the
+view, the hex pane or a handle link in RON selects everywhere.
+
+## State
+
+```rust
+struct Workbench {
+    path: PathBuf,
+    doc: Opened,            // raw::open — the only source of truth
+    scene: Scene,           // derived: rebuilt from doc after every change
+    index: RecordIndex,     // derived: handle -> class, bytes, refs, back-refs
+    selected: Option<u64>,
+    undo: Vec<Snapshot>,    // whole changed records (bytes + handle bits)
+    redo: Vec<Snapshot>,
+    baseline: HashMap<u64, Vec<u8>>, // record bytes as opened, for the diff
+    log: Vec<String>,       // command-line history and results
+}
+```
+
+One rule: **nothing edits `scene` or `index` directly.** Every change goes
+`doc` → rebuild `scene` and `index` → redraw. With small test drawings the
+full rebuild is instant; no incremental updates to get wrong.
+
+`Scene::load` today opens the file and drops the document. It gets split into
+`Scene::from_doc(&Opened)` so the workbench can rebuild without re-reading
+the file.
+
+## Hex pane: only what belongs to the object
+
+An AECC object is spread over several records (the entity record, its
+companions, style, registry entry, site, …) and those sit at unrelated
+places in the objects section. The pane does not show the file; it shows a
+list of **record blocks**:
+
+- the selected record (expanded);
+- records it references (`handle_refs::of_record`), labelled with the
+  reference kind where known;
+- records that reference it (back-references from `RecordIndex`);
+- a depth toggle (0 = own record, 1 = default, 2 = one more hop) and a
+  class filter, so a style used by 40 alignments doesn't flood the list.
+
+Each block reuses hexview's code: record framing, field overlay
+(`model::Field` with bit offsets, click a field = jump to it), handle links.
+Bytes come from the record data in `doc`, not from the file, so the pane
+shows **edited** bytes before saving. Changed bits against `baseline` are
+coloured (`raw::changed_bit_ranges`).
+
+File-offset view of the decompressed section (hexview's current main pane)
+stays available as a secondary tab for whole-file browsing, read from the
+file on disk.
+
+## RON pane: two modes
+
+- **Model** — the object as `dump::Alignment` (decoded geometry, name,
+  style, start station). This is the readable one.
+- **Raw** — the record as `dump::Record` (class, handle bits, bytes as hex).
+  Ugly, but it can express *any* change, including to classes civil3drust
+  doesn't decode yet.
+
+`Apply`:
+
+- Raw: parse, check handle and class are unchanged, `raw::set_record`.
+  Always works; for experiments by hand.
+- Model: parse, compare with the current decode, and translate the
+  difference into existing edit calls: element list →
+  `aecc_element_edit::replace_elements`, name → the set_name path, start
+  station → the set_start path. Anything the translation can't express
+  is refused with a message naming the field (no silent drops). This is
+  the first slice of FRT-2 (RON → DWG), for one object at a time.
+
+Parse errors show RON's span (line:col) in the pane.
+
+## Command line
+
+Commands mirror the existing examples' arguments minus the file names,
+since the file is already open. Missing arguments are taken from the
+selection and from clicks in the view (handle or point), so
+`set_pis` + clicking points works as well as typing them.
+
+```
+set_length  <alignment> <seg> <len>
+set_radius  <alignment> <arc id> <radius>
+set_pis     <alignment> "x,y x,y ..."
+curve       <alignment> <tangent id> <radius>
+remove      <alignment> <element id>
+set_name    <alignment> <name|-> [--description "text"]
+set_start   <alignment> <station> [--clear-speeds]
+set_speeds  <alignment> "station:speed ..."
+create      <name> "x,y x,y,r ..." [--style ..] [--template ..]
+delete      <alignment>
+select      <name|#handle>
+diff        [other.dwg]     # bit diff vs baseline or another file
+```
+
+Implementation: one `match` arm per command, each calling a **library**
+function. Where an example still holds the logic (some `set_*` examples do
+their own patching), that logic moves into `src/` first, so the example,
+the workbench and the tests share one copy.
+
+Every command runs inside `std::panic::catch_unwind` on a clone of the
+records it touches; a panic or error leaves `doc` unchanged and prints the
+message. A bad file can't kill the app.
+
+## Save
+
+- **Save As only.** Never overwrites the opened file or anything in
+  `samples/`.
+- After writing (`DwgWriter::write_to_file`), reopen the saved file with
+  `raw::open` and compare its records to the in-memory ones; show the
+  result in the log ("saved, 312 records, all match" or the list that
+  doesn't). Every save is also a round-trip test.
+- Warn before saving if the drawing was opened in failsafe mode (records
+  acadrust dropped would be missing from the copy).
+
+## Crate
+
+```
+workbench/
+  Cargo.toml        # own [workspace], like viewer/ and hexview/
+  src/main.rs       # args: [file.dwg] [--goto #handle]
+  src/app.rs        # window, panes, selection
+  src/scene.rs      # from viewer, split into from_doc()
+  src/view.rs       # from viewer (camera, picking)
+  src/hex.rs        # from hexview model.rs, per-record blocks
+  src/ron_pane.rs
+  src/commands.rs   # parse + dispatch to library functions
+  src/state.rs      # Workbench, undo, rebuild
+```
+
+Starts as a copy of `viewer/` + `hexview/` code, not a dependency on them,
+so the frozen crates stay untouched.
+
+## Build order
+
+1. Open, render, select; `Scene::from_doc`; object list + view
+   (viewer parity minus SVG export).
+2. Hex pane with per-object record blocks and refs/back-refs.
+3. RON pane, read-only (Model and Raw).
+4. Save As + reopen check.
+5. Command line with `set_length`, `set_pis`, `set_radius`; undo.
+6. Raw RON apply.
+7. Model RON apply (element list, name, start station).
+8. Remaining commands; then hexview parity (file-offset tab, two-file
+   compare) and retire `viewer/` and `hexview/`.
+
+Steps 1–5 cover the current testing needs: open, look, edit, save, check in
+Civil 3D.
+
+## Build time
+
+Each library change relinks the workbench (eframe/wgpu make that link the
+slow part). Mitigations, set once:
+
+- `mold` (Linux) or `lld` as the linker;
+- `[profile.dev.package."*"] opt-level = 2` and run the workbench in dev
+  profile: dependencies are built optimised once, our code builds fast;
+- `cargo check` while editing.
+
+## Open questions
+
+- Which reference kinds can be labelled today (companion, style, label set,
+  site, registry)? Unlabelled ones show as `ref`.
+- Model RON for classes other than `AECC_ALIGNMENT`: Raw only until they
+  have a decoder.
+- Point picking: snap to existing PIs/element ends, or free clicks only?

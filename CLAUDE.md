@@ -36,7 +36,9 @@ samples and steps that produced it.
   use 2027 samples for information only, and keep `tests/civil3d_2027.rs`
   passing (`docs/civil3d-2027.md`).
 - `hexview/` and `viewer/` are **frozen**: leave them as they are (no
-  updates for library changes) until the owner says otherwise.
+  updates for library changes) until the owner says otherwise. Their
+  successor is `workbench/` (design in `docs/workbench.md`, D-073); both
+  are retired once it does everything they do.
 - LandXML export is **low priority** for now.
 - End goal (D-049): open or create Civil 3D drawings, edit them, and write
   files that civil3drust and Civil 3D read the same. Write model data and

@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Design sketch for `workbench/`, a DWG research app that will replace
+  `viewer/` and `hexview/` (`docs/workbench.md`, D-073): render, select,
+  per-object hex and RON panes, command-line edits, raw and model RON
+  apply, Save As with a reopen check. No code yet.
 - Widenings on offset alignments (S257, owner): transition records of
   two new kinds — linear (prefix 22, by points, also crossing onto a
   spiral) and curve-line-curve (prefix 34, by its two radii, placed
