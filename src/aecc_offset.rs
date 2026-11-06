@@ -19,7 +19,9 @@
 //! BL m transitions             (S257)
 //! m × { BL kind, BD length, BL element,
 //!       kind 1 (linear): BD 0, BD 0, BL 2, BD 0
-//!       kind 2 (curve-line-curve): BD 0, BD curve 1 radius, BD curve 2 radius }
+//!       kind 2 (curve-line-curve): BD 0, BD curve 1 radius, BD curve 2 radius
+//!       kind 4 (curve-curve-reverse curve): BD 0, BD × 3 radii
+//!       kind 5 (curve-reverse curve): BD 0, B, BD curve 1 radius }
 //! BL k, k × {BL i (from 1), BL −1, BL count, count × BL element}  (MIST19)
 //! …                            (not decoded: BL 2, BD, GUID, BD, GUID, …)
 //! ```
@@ -57,7 +59,8 @@ pub struct OffsetRegion {
     pub last_element: i32,
 }
 
-/// A widening transition (S257): `kind` 1 linear, 2 curve-line-curve.
+/// A widening transition (S257, S258): `kind` 1 linear, 2 curve – line –
+/// curve, 4 curve – curve – reverse curve, 5 curve – reverse curve.
 #[derive(Debug, Clone, PartialEq)]
 pub struct OffsetTransition {
     pub kind: i32,
@@ -65,7 +68,10 @@ pub struct OffsetTransition {
     /// The transition element.
     pub element: i32,
     /// Linear: BD 0, BD 0, BL 2, BD 0 (as BDs, the BL as a number);
-    /// curve-line-curve: BD 0, curve 1 radius, curve 2 radius.
+    /// curve – line – curve: BD 0, curve 1 radius, curve 2 radius;
+    /// curve – curve – reverse curve: BD 0, curve 1, 2 and 3 radii (2 as
+    /// Civil 3D derived it); curve – reverse curve: BD 0, B 0, curve 1
+    /// radius.
     pub values: Vec<f64>,
 }
 
@@ -192,12 +198,20 @@ pub fn offset_info(rec: &RawRecord) -> Result<Option<OffsetInfo>, BuildError> {
                     }
                 }
             }
-            2 => {
-                for _ in 0..3 {
+            2 | 4 => {
+                for _ in 0..if kind == 2 { 3 } else { 4 } {
                     let (x, t) = bd(r)?;
                     values.push(x);
                     r = t;
                 }
+            }
+            5 => {
+                let (x, t) = bd(r)?;
+                values.push(x);
+                values.push(f64::from(raw::get_bit(data, t)));
+                let (x, t) = bd(r + (t - r) + 1)?;
+                values.push(x);
+                r = t;
             }
             _ => {
                 transitions = None;

@@ -87,10 +87,12 @@ fn main() {
                 println!(
                     "    transition: element {}, {} L {:.3} {:?}",
                     t.element,
-                    if t.kind == 1 {
-                        "linear"
-                    } else {
-                        "curve-line-curve"
+                    match t.kind {
+                        1 => "linear",
+                        2 => "curve-line-curve",
+                        4 => "curve-curve-reverse curve",
+                        5 => "curve-reverse curve",
+                        _ => "?",
                     },
                     t.length,
                     t.values

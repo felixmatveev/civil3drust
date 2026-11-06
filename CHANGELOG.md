@@ -11,6 +11,14 @@ versions follow [Semantic Versioning](https://semver.org/).
   `viewer/` and `hexview/` (`docs/workbench.md`, D-073): render, select,
   per-object hex and RON panes, command-line edits, raw and model RON
   apply, Save As with a reopen check. No code yet.
+- Widenings on curves and the reverse-curve transition types (S258,
+  owner): curve – reverse curve (prefix 36) and curve – curve – reverse
+  curve (prefix 38) records; curved transitions are placed between any
+  neighbours (tangent, arc, spiral) by tangent circles (D-072 updated);
+  linear transitions hold one point list per part of the parent crossed.
+  `offset_info` reads transition types 4 and 5. Every region's stations
+  match Civil 3D's to 1e-6 and the curve graphics to 0.01; the derived
+  reverse radii match the values Civil 3D shows.
 - Widenings on offset alignments (S257, owner): transition records of
   two new kinds — linear (prefix 22, by points, also crossing onto a
   spiral) and curve-line-curve (prefix 34, by its two radii, placed

@@ -2934,7 +2934,7 @@ fn resolve_with(
             continue;
         }
         if let Element::Widening(w) = e {
-            if let crate::aecc_widening::WideningDef::CurveLineCurve { .. } = w.def {
+            if !matches!(w.def, crate::aecc_widening::WideningDef::Linear { .. }) {
                 // Placed between its neighbours once they are resolved.
                 pending.push((out.len(), e.clone()));
             } else {
@@ -3085,17 +3085,10 @@ fn resolve_with(
             });
         }
     }
-    // Curve-line-curve widening transitions (S257): between the end of the
-    // element before and the start of the one after, both running along
-    // the parent (parallel).
+    // Curved widening transitions (S257, S258): between the end of the
+    // element before and the start of the one after.
     for (pos, e) in pending.into_iter().rev() {
         let Element::Widening(w) = &e else {
-            unreachable!()
-        };
-        let crate::aecc_widening::WideningDef::CurveLineCurve {
-            radius1, radius2, ..
-        } = w.def
-        else {
             unreachable!()
         };
         let (prev, next) = match (pos.checked_sub(1).and_then(|j| out.get(j)), out.get(pos)) {
@@ -3107,12 +3100,14 @@ fn resolve_with(
                 )))
             }
         };
-        let dir = segment_end_direction(&prev);
-        let parts =
-            crate::aecc_widening::curve_line_curve(prev.end(), next.start(), dir, radius1, radius2)
-                .ok_or_else(|| {
-                    unsupported(format!("widening transition {}: the radii don't fit", w.id))
-                })?;
+        let parts = crate::aecc_widening::curved_segments(
+            &w.def,
+            prev.end(),
+            segment_end_direction(&prev),
+            next.start(),
+            segment_start_direction(&next),
+        )
+        .ok_or_else(|| unsupported(format!("widening transition {}: the radii don't fit", w.id)))?;
         for (part, segment) in parts.into_iter().enumerate().rev() {
             out.insert(
                 pos,
@@ -3125,6 +3120,25 @@ fn resolve_with(
         }
     }
     Ok(out)
+}
+
+/// Unit direction of travel at the start of `seg`.
+fn segment_start_direction(seg: &Segment) -> (f64, f64) {
+    match seg {
+        Segment::Line { .. } => segment_end_direction(seg),
+        Segment::Arc {
+            start, geometry, ..
+        } => {
+            let (rx, ry) = (start.x - geometry.center.x, start.y - geometry.center.y);
+            let l = rx.hypot(ry);
+            if geometry.counter_clockwise {
+                (-ry / l, rx / l)
+            } else {
+                (ry / l, -rx / l)
+            }
+        }
+        Segment::Spiral { geometry, .. } => geometry.point_at(0.0).1,
+    }
 }
 
 /// Unit direction of travel at the end of `seg`.

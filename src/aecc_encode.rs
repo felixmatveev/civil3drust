@@ -33,14 +33,7 @@ pub fn kind_prefix(el: &Element) -> u16 {
         Element::Spiral(_) => PREFIX_SPIRAL,
         Element::FreeSpiral(_) => PREFIX_GROUP,
         Element::Group(g) => group_prefix(&g.def),
-        Element::Widening(w) => match w.def {
-            crate::aecc_widening::WideningDef::Linear { .. } => {
-                crate::aecc_widening::PREFIX_WIDENING
-            }
-            crate::aecc_widening::WideningDef::CurveLineCurve { .. } => {
-                crate::aecc_widening::PREFIX_WIDENING_CURVES
-            }
-        },
+        Element::Widening(w) => crate::aecc_widening::kind_prefix(&w.def),
     }
 }
 

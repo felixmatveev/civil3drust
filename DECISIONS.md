@@ -1449,10 +1449,14 @@ points, curve-line-curve ones with only the two radii.
 **Decision.** `Element::Widening` holds both; they re-encode bit for
 bit. A linear transition is drawn as lines through its stored points
 (Civil 3D's stations agree with that to 1e-9). A curve-line-curve one is
-placed between the resolved element before and the one after: curve 1,
-line, curve 2, the curves turning through the same angle, solved from
-the distance along and across (the neighbours run parallel along the
-parent). Transitions are read-only; edits refuse alignments that have
+placed between the end of the resolved element before and the start of
+the one after (tangent, arc or spiral; S258): curve 1 tangent at the
+start turning toward the other end, then — curve – line – curve: the
+line touching both circles and curve 2 tangent at the end; curve –
+reverse curve: the reverse curve tangent at the end whose circle
+touches curve 1 (its radius derived, as Civil 3D derives it); curve –
+curve – reverse curve: curve 2 at its stored radius touching curve 1
+inside and curve 3 outside, the shorter of the two placements. Transitions are read-only; edits refuse alignments that have
 them.
 
 **Alternatives.** Rebuilding transitions from the region list (parent

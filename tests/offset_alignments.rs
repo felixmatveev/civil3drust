@@ -33,7 +33,8 @@ fn point_on(seg: &Segment, t: f64) -> civil3drust::Point2 {
     }
 }
 
-/// Graphics polyline vertices farther than 0.01 from the decoded
+/// Vertices of the graphics' curve polylines (more than two vertices; the
+/// two-vertex ones are tick marks) farther than 0.01 from the decoded
 /// alignment (sampled every 0.01 along the curves).
 fn stray_vertices(r: &raw::RawRecord, segs: &[Segment]) -> usize {
     let g = pg::find(&r.data, 4096).unwrap();
@@ -47,12 +48,17 @@ fn stray_vertices(r: &raw::RawRecord, segs: &[Segment]) -> usize {
     g.chunks
         .iter()
         .filter(|c| c.opcode == pg::OP_POLYLINE)
-        .flat_map(|c| pg::poly_vertices(&r.data, c).into_iter().map(|v| v.1))
+        .flat_map(|c| {
+            let v = pg::poly_vertices(&r.data, c);
+            let n = v.len();
+            v.into_iter().filter(move |_| n > 2).map(|v| v.1)
+        })
         .map(|p| {
-            samples
+            let d = samples
                 .iter()
                 .map(|q| (p[0] - q.x).hypot(p[1] - q.y))
-                .fold(f64::MAX, f64::min)
+                .fold(f64::MAX, f64::min);
+            d
         })
         .filter(|d| *d > 0.01)
         .count()
@@ -68,9 +74,7 @@ fn s255_offsets_decode() {
     assert_eq!(offset_parent(&o.doc, parent), None);
     let p = decode_elements(parent).unwrap();
     let psegs: Vec<Segment> = p.elements.iter().map(|e| e.segment).collect();
-    // One vertex of the parent's graphics, mid-spiral, is 0.08 off the
-    // curve (not an alignment point; the offsets have one too).
-    assert_eq!(stray_vertices(parent, &psegs), 1);
+    assert_eq!(stray_vertices(parent, &psegs), 0);
     for (h, side, left, length) in [
         (0x115F, Side::Left, 10.0, 200.0 + 10.0 / 3.0),
         (0x1170, Side::Right, -10.0, 200.0 - 10.0 / 3.0),
@@ -137,7 +141,7 @@ fn s255_offsets_decode() {
             }
         }
         let segs: Vec<Segment> = d.elements.iter().map(|e| e.segment).collect();
-        assert_eq!(stray_vertices(r, &segs), 1, "{h:X}: graphics off the curve");
+        assert_eq!(stray_vertices(r, &segs), 0, "{h:X}: graphics off the curve");
     }
 }
 
@@ -241,9 +245,7 @@ fn s256_partial_offsets_and_orphans() {
         let got = station_after(id);
         assert!((got - want).abs() < tol, "{id}: {got} vs {want}");
     }
-    // Three graphics vertices lie off those lines, between the points over
-    // the spiral (the drawing follows a curve there).
-    assert!(stray_vertices(rec(0x11D9), &segs) <= 3);
+    assert_eq!(stray_vertices(rec(0x11D9), &segs), 0);
 }
 
 /// S257 (owner): offsets at 0 with one widening (26 left, stations
@@ -343,4 +345,105 @@ fn s257_offset_regions_and_transitions() {
                 .collect::<Vec<_>>()
         );
     }
+}
+
+/// Element start/end stations by ID (first part's start, last part's end).
+fn element_stations(
+    elements: &[civil3drust::aecc_elements::ResolvedElement],
+    start: f64,
+) -> std::collections::HashMap<i32, (f64, f64)> {
+    let mut out = std::collections::HashMap::new();
+    let mut s = start;
+    for e in elements {
+        let a = s;
+        s += e.segment.length();
+        out.entry(e.record.id()).or_insert((a, s)).1 = s;
+    }
+    out
+}
+
+/// S258 (owner): widenings (57.055 left, nominal 10.28 left) on a parent
+/// with an arc and a spiral: transitions ending on the arc, a widening
+/// over the arc, one ending on the spiral (linear, point lists), and
+/// curve – reverse curve and curve – curve – reverse curve transitions.
+#[test]
+fn s258_widenings_on_curves() {
+    use civil3drust::aecc_widening::WideningDef;
+    let o = raw::open("samples/S258_widening_curves.dwg").unwrap();
+    let recs = raw::records(&o.doc, "AECC_ALIGNMENT");
+    for h in [0x1297, 0x12A6, 0x12B4, 0x12C2, 0x12D0] {
+        let r = recs.iter().find(|r| r.handle == h).unwrap();
+        let info = offset_info(r).unwrap().unwrap();
+        assert_eq!(info.regions.len(), 3);
+        let d = decode_elements(r).unwrap();
+        for w in d.elements.windows(2) {
+            let (a, b) = (w[0].segment.end(), w[1].segment.start());
+            // The offset spiral (parent R 14.94, turning 2.1 rad) starts
+            // 8e-6 from the end of the offset tangent Civil 3D stores.
+            let gap = (a.x - b.x).hypot(a.y - b.y);
+            assert!(gap < 1e-5, "{h:X}: {gap}");
+        }
+        // Every region starts and ends where Civil 3D says.
+        let st = element_stations(&d.elements, 0.0);
+        for g in &info.regions {
+            let (a, b) = (st[&g.first_element].0, st[&g.last_element].1);
+            assert!((a - g.start).abs() < 1e-6, "{h:X}: {a} vs {}", g.start);
+            assert!((b - g.end).abs() < 1e-6, "{h:X}: {b} vs {}", g.end);
+        }
+        let segs: Vec<Segment> = d.elements.iter().map(|e| e.segment).collect();
+        assert_eq!(stray_vertices(r, &segs), 0, "{h:X}: graphics off the curve");
+    }
+    // Transition settings: type, length, element, radii as Civil 3D shows.
+    for (h, want) in [
+        (
+            0x1297,
+            vec![(2, 8, vec![0.0, 45.0, 25.0]), (2, 9, vec![0.0, 45.0, 25.0])],
+        ),
+        (
+            0x12B4,
+            vec![
+                (2, 8, vec![0.0, 45.0, 25.0]),
+                (1, 14, vec![0.0, 0.0, 2.0, 0.0]),
+            ],
+        ),
+        (
+            0x12C2,
+            vec![
+                (4, 14, vec![0.0, 45.0, 60.032898432624165, 25.0]),
+                (4, 17, vec![0.0, 45.0, 71.89078541519343, 25.0]),
+            ],
+        ),
+        (
+            0x12D0,
+            vec![(5, 19, vec![0.0, 0.0, 45.0]), (5, 22, vec![0.0, 0.0, 45.0])],
+        ),
+    ] {
+        let r = recs.iter().find(|r| r.handle == h).unwrap();
+        let t = offset_info(r).unwrap().unwrap().transitions.unwrap();
+        let got: Vec<_> = t
+            .iter()
+            .map(|t| (t.kind, t.element, t.values.clone()))
+            .collect();
+        assert_eq!(got, want, "{h:X}");
+        assert_eq!(t[0].length, 75.0);
+        assert!((t[1].length - 74.98759200070248).abs() < 1e-12);
+    }
+    // The reverse radii Civil 3D shows for 12D0 (curve – reverse curve):
+    // 38.516 in, 126.914 out.
+    let r = recs.iter().find(|r| r.handle == 0x12D0).unwrap();
+    let d = decode_elements(r).unwrap();
+    let mut radii = Vec::new();
+    for (i, e) in d.elements.iter().enumerate() {
+        let civil3drust::aecc_elements::Element::Widening(w) = &e.record else {
+            continue;
+        };
+        assert!(matches!(w.def, WideningDef::CurveReverseCurve { .. }));
+        if e.part == 0 {
+            let Segment::Arc { geometry: g, .. } = d.elements[i + 1].segment else {
+                panic!()
+            };
+            radii.push((g.radius * 1000.0).round() / 1000.0);
+        }
+    }
+    assert_eq!(radii, [38.516, 126.914]);
 }

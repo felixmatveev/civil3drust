@@ -3215,7 +3215,7 @@ spirals (two finite radii) of the arc-length types use the same rise;
 the tangent-defined types have no compound form and fall back to the
 clothoid. Test `spiral_types`.
 
-## Offset alignments (S255–S257)
+## Offset alignments (S255–S258)
 
 **Sample.** S255 (owner, Civil 3D 2024): "Spline speed change" (FD7:
 tangent (0,0)→(100,0), outward clothoid R 300 → ∞ L 200 clockwise,
@@ -3249,9 +3249,9 @@ and with the parent.
   The element is the parent spiral moved sideways: running the parent
   back from the stored end gives its start (100, 0); every point moved by
   10 along the left normal gives the offset curve, which meets both
-  offset tangents (within 3e-10) and matches the proxy graphics (all
-  polyline vertices within 0.01 but one mid-spiral vertex that the
-  parent's graphics have too). Its length is the parent's changed by the
+  offset tangents (within 3e-10) and matches the proxy graphics (every
+  vertex of the curve polylines within 0.01; the one vertex off is on a
+  two-vertex tick mark, as on the parent). Its length is the parent's changed by the
   offset times the turn (1/3 rad here): 203.333 outside the turn, 196.667
   inside — the end stations Civil 3D stores (408.33, 401.67) agree.
   S256's inward spiral settled the stored point: the straight end. A
@@ -3327,13 +3327,19 @@ tangent, tangent, inward clothoid ∞ → R 100, L 200) with three offsets:
   0.1758–0.8416) with a widening of 30 more to the left and linear
   transitions (S257 read the rest; "Widenings" below).
 
-**Widenings** (S257; owner's screenshot of the Offset Alignment
-Parameters for 1234). Two single-tangent centerlines, each with an
-offset at 0 and one user-specified widening, 26 to the left over parent
+**Widenings** (S257, S258; owner's screenshots of the Offset Alignment
+Parameters). S257: two single-tangent centerlines, each with an offset
+at 0 and one user-specified widening, 26 to the left over parent
 stations 112.17–260.54, with transitions of length 75 in and out:
 linear (1218) and Curve – Line – Curve with curve 1 radius 45 and
 curve 2 radius 25 (1234). Each element list holds tangent 3 (nominal),
 transition in, tangent 4 (widened), transition out, tangent 5 (nominal).
+S258: centerlines with a tangent, an arc and a free spiral, offset 10.28
+left, widened to 57.055 left from 1+12.17: onto the arc (1297, the
+widened stretch is tangent + arc), ending just after the arc's start
+(12A6, transition out onto the arc), out over the spiral (12B4, linear),
+and the Curve – Curve – Reverse Curve (12C2) and Curve – Reverse Curve
+(12D0) types.
 
 - **Regions.** The block after the type keeps one entry per stretch at
   one offset; S255/S256 have one, a widening makes three (nominal,
@@ -3346,44 +3352,58 @@ transition in, tangent 4 (widened), transition out, tangent 5 (nominal).
         BL kind (2 nominal, 1 widening), BL first, BL last element,
         BL 0 × 5, BL 3 }
   BL m transitions,
-  m × { BL kind (1 linear, 2 curve-line-curve), BD length, BL element,
-        linear: BD 0, BD 0, BL 2, BD 0
-        curve-line-curve: BD 0, BD curve 1 radius, BD curve 2 radius }
+  m × { BL type, BD length (along the parent), BL element,
+        1 linear:                       BD 0, BD 0, BL 2, BD 0
+        2 curve – line – curve:         BD 0, BD R1, BD R2
+        4 curve – curve – reverse curve: BD 0, BD R1, BD R2, BD R3
+        5 curve – reverse curve:        BD 0, B 0, BD R1 }
   ```
 
   1234: regions (0, 0–37.17, own 0–37.17, element 3), (−26,
   112.17–260.54, own 117.12–265.49, element 4), (0, 335.54–415.40, own
   345.44–425.29, element 5); transitions (2, 75, element 8, 0, 45, 25)
   and (2, 75, element 9, 0, 45, 25). The own stations are those of the
-  drawn curve, so they differ between the linear and the curved
-  transitions (116.55 / 117.12).
+  drawn curve, so they differ between the transition types (116.55
+  linear, 117.12 curve – line – curve, 130.14 / 130.32 for S258's
+  reverse-curve types). The curve 2 radius of type 4 is the one Civil 3D
+  shows greyed (derived: 60.033 in, 71.891 out); type 5 stores no
+  reverse radius (Civil 3D shows 38.516 / 126.914). Type 3 is not
+  sampled. A transition out that ends on the arc measures 74.988 (the
+  75 the owner entered, along the parent; MIST19).
 - **Linear transition records** (prefix **22**):
 
   ```text
   params (B, BD −1, BD −1, BL 1, BD −1)
-  BL 3, BL id, BL before, BL after, BL form (1 | 2), BL 0x1000, BL 2,
-  RD start x, y, RD end x, y
-  form 2 adds: BL 0x1000, BL n, n × RD x, y
+  BL 3, BL id, BL before, BL after,
+  BL m, m × { BL 0x1000, BL k, k × RD x, y }
   ```
 
-  Form 1 is a straight line from start to end (S257's 6 and 7; S256's
-  17). Form 2 (S256's 18) runs over the parent's tangent from start to
-  end, then through the n points over the parent's spiral (the first is
-  the end, the last the trimmed offset spiral's start). Civil 3D's
-  stored stations agree, to 1e-9, with straight lines through the
-  points; its graphics curve between them (3 vertices off the lines).
-- **Curve-line-curve records** (prefix **34**): only `BL 0, BL id, BL
-  before, BL after, BD curve 1 radius, BD curve 2 radius`. The curve is
-  placed between the element before and the one after (both along the
-  parent, parallel): curve 1 at its start turns toward the other line,
-  a line crosses, curve 2 turns back, the two curves turning through
-  the same angle. The stored own stations agree to 1e-6 and every
-  vertex of the graphics lies within 0.01 of the result, in and out
-  (curve 1 first in both).
+  One point list per part of the parent crossed: 2 points over a
+  tangent (S257's 6 and 7; S256's 17), more over a spiral (S256's 18:
+  2 over the tangent, then 3 over the spiral; S258's 12B4: 3 over the
+  spiral, then 2 over the tangent). Consecutive lists share their
+  joining point. Civil 3D's stations agree, to 1e-9, with straight lines
+  through the points, and so do its graphics.
+- **Curved transition records** — only the radii; the curve is placed
+  between the end of the element before and the start of the one after
+  (on a tangent, an arc or a spiral). Curve 1 starts there and turns
+  toward the other offset:
 
-**Not sampled.** A compound spiral in the parent; the other transition
-types; a widening along a curve of the parent; a static offset; the
-parent edited after the offsets were made.
+  | prefix | type | record after the header | shape |
+  |---|---|---|---|
+  | 34 | curve – line – curve | `BL 0, id, before, after, BD R1, BD R2` | curve 1, the line touching both circles, curve 2 (reverse) |
+  | 36 | curve – reverse curve | `BL 0, id, before, after, BD R1` | curve 1, then the reverse curve tangent at the end whose circle touches curve 1 — its radius is derived (38.516 / 126.914, as Civil 3D shows) |
+  | 38 | curve – curve – reverse curve | `BL 1, id, before, after, BD R1, BD R2, BD R3, BD length, B` | curve 1, curve 2 (same turn, touching curve 1 inside), reverse curve 3 tangent at the end; of the two placements of curve 2, the shorter path |
+
+  The B ending the type-38 record was 1 on the transition in and 0 on
+  the transition out (which was also locked, flag byte 0x02). Every
+  region's stored start and end station agrees with the placed curves
+  to 1e-6, in all S257/S258 samples, and every vertex of the graphics'
+  curve polylines lies within 0.01 of them (two-vertex polylines are
+  tick marks and are not compared).
+
+**Not sampled.** A compound spiral in the parent; transition type 3; a
+static offset; the parent edited after the offsets were made.
 
 **civil3drust.** Read-only. `SPIRAL_OFFSET` records decode and re-encode
 bit for bit; `SpiralGeometry::offset` (positive to the left) moves the

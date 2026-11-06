@@ -547,13 +547,15 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   of widening transitions (kind, length, element, values); then
   `BL k, k × {BL i, BL −1, BL count, count × BL element}`.
 - **Open:** the 2 bits and the BL after the side (`11, 1` in S255, `00,
-  1` later); the region tail `BL 0 × 5, BL 3`; the linear transition's
-  `BD 0, BD 0, BL 2, BD 0` and the curve-line-curve's leading `BD 0`;
+  1` later); the region tail `BL 0 × 5, BL 3`; the values after each
+  transition's element ID (linear `BD 0, BD 0, BL 2, BD 0`, the leading
+  `BD 0` of the curved types, type 5's `B`); transition type 3; the
+  transition length 74.988 stored for an entered 75 ending on an arc
+  (S258); the B ending a type-38 record (1 in, 0 out);
   the element list after the transitions (S257: one entry with three
   elements); the rest (`BL 2, BD, GUID, BD, GUID`, …).
-- **Next samples:** the other transition types; a widening on a curve
-  of the parent; the offset value edited in its properties; a static
-  offset.
+- **Next samples:** transition type 3 (if the list has one more type);
+  the offset value edited in its properties; a static offset.
 
 ## Not sampled yet (not mysteries, just gaps)
 
