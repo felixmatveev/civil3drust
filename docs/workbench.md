@@ -1,6 +1,7 @@
-# Workbench: a DWG research app (design sketch)
+# Workbench: a DWG research app
 
-Status: **accepted design, not started** (D-073). Replaces `viewer/` and `hexview/` (both frozen) when it can
+Status: **built, steps 1–7** (D-073, D-074; how to use it:
+[`workbench/README.md`](../workbench/README.md)). Replaces `viewer/` and `hexview/` (both frozen) when it can
 do everything they do; until then all three exist.
 
 ## Purpose
@@ -200,10 +201,53 @@ slow part). Mitigations, set once:
   profile: dependencies are built optimised once, our code builds fast;
 - `cargo check` while editing.
 
+## As built (2026-11-07)
+
+Differences from the sketch above, and what it settled:
+
+- **Commands come from the library registry** (`src/commands.rs`,
+  D-074), not from a match in the workbench. The same list runs in
+  `c3dr`, the console and the command form; `help` lists it. Arguments
+  are the examples' minus file names; `create` takes the donor DWG as its
+  first argument. `@` in a command stands for the selected handle.
+  `select` and `diff` from the sketch are not commands: selection is the
+  list, the view, the hex pane's handle links and "go to handle"; the
+  diff is always on (red bytes, ✎ in the list).
+- **Command form** (right panel): a form generated from each command's
+  argument spec, with "pick" buttons that take a handle or points from
+  clicks in the view. In the console, Ctrl+click inserts `x,y` and
+  Alt+click a handle. Points are free clicks (3 decimals), no snapping.
+- **External c3dr**: the form can load another `c3dr`'s command list
+  (`c3dr --spec`) and run commands through it on a temporary copy of the
+  drawing (written, edited by `c3dr`, read back). New library commands
+  are then usable without rebuilding the workbench.
+- **Hex pane**: depth 1 and back-references on by default; class filter
+  to hide e.g. layers. Raw records show the document's bytes; records
+  acadrust parses show bytes from the file map (hexview's loader, run in
+  the background after opening, and again after Save As). Reference
+  kinds are labelled by their handle-reference code only
+  (`Ref code N`); names for them are future work. A byte click decodes
+  RC/RS/RL/RD/BD/BL and the next 16 bits at that bit; the bit can be
+  stepped one at a time for unaligned fields. When a record changes size,
+  the bytes between the common start and common end are marked changed.
+- **RON pane**: Raw is `dump::record_ron` (bytes 16 per line in the RON
+  string). Model Apply diffs against the current decode and runs
+  `set_name`, `set_style`, `set_start`, `set_pis` (PIs from the moved
+  lines: first start, intersections of consecutive lines, last end) and
+  `set_radius` as one undo step; Preview lists them. Element count,
+  kinds, IDs, spirals, groups and derived values are refused by name.
+- **Undo** keeps whole-document snapshots (50 steps).
+- **Headless modes** for checks without a display: `--script` (commands
+  and Save As through the same state code), `--related` (the hex pane's
+  record list), `--svg` (the view).
+
+Not done yet (step 8): hexview's whole-file offset tab and two-file
+compare, viewer's `--dump`; then `viewer/` and `hexview/` can go.
+
 ## Open questions
 
-- Which reference kinds can be labelled today (companion, style, label set,
-  site, registry)? Unlabelled ones show as `ref`.
+- Names for reference kinds (companion, style, label set, site,
+  registry) instead of codes.
 - Model RON for classes other than `AECC_ALIGNMENT`: Raw only until they
   have a decoder.
-- Point picking: snap to existing PIs/element ends, or free clicks only?
+- Snapping picked points to PIs and element ends.

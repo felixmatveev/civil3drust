@@ -97,6 +97,7 @@ raw records so they are saved byte for byte (D-033,
 | `proxy_graphics` | The display cache embedded in AECC entity records. |
 | `alignment`, `inventory` | Format-independent alignment geometry; AECC class inventory. |
 | `dump` | Plain-text RON view of a drawing: compact entities, decoded alignments, raw records (D-065). |
+| `commands` | Every edit as a named command with an argument spec; run by `c3dr` and the workbench (D-074). |
 
 The command-line examples (`alignments`, `dump`, `create_alignment`,
 `edit_elements`, `set_pis`, `set_speeds`, `set_style`, …) are listed with
@@ -109,7 +110,9 @@ cargo run --release --example create_alignment -- donor.dwg target.dwg out.dwg "
 cargo run --release --example edit_elements -- in.dwg out.dwg "New" remove 1
 ```
 
-Tools: [`hexview/`](hexview/README.md) (hex view and record-by-record bit
+Tools: [`workbench/`](workbench/README.md) (view, inspect as hex and RON,
+edit with commands, save a copy; D-073), `c3dr` (every edit as a shell
+command: `cargo run --bin c3dr -- help`; D-074), [`hexview/`](hexview/README.md) (hex view and record-by-record bit
 diff of two drawings) and [`viewer/`](viewer/README.md) (2D/3D viewer for
 checking decoded objects against Civil 3D's graphics).
 

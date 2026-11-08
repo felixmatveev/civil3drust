@@ -517,7 +517,7 @@ pub fn record_of(rec: &RawRecord) -> Record {
 pub fn record_ron(rec: &RawRecord) -> String {
     let mut data = String::new();
     for row in rec.data.chunks(16) {
-        data.push_str("\n        ");
+        data.push_str("\n    ");
         data.push_str(&hex_bytes(row));
     }
     format!(

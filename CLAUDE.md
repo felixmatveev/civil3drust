@@ -53,6 +53,7 @@ samples and steps that produced it.
 - Never ship Autodesk-provided styles or other template content (D-015).
 
 ## Tools
+- `cd workbench && cargo run -- [file.dwg] [--goto <handle>]` (DWG research app, D-073: view, hex/RON panes, commands, Save As; headless `--script file.dwg [--save out.dwg] "cmd" ...`, `--related file.dwg <handle>`, `--svg out.svg file.dwg`)
 - `cargo run --release --bin c3dr -- help [command]` (every edit as a command, D-074: `c3dr <command> in.dwg [out.dwg] args...`; `--spec` lists them as RON)
 - `cargo run --release --example rawdiff -- a.dwg b.dwg [AECC_CLASS]`
 - `cargo run --release --example alignments -- file.dwg`

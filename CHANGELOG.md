@@ -7,6 +7,17 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `workbench/` (D-073): DWG research app replacing `viewer/` and
+  `hexview/` over time. Renders the drawing (viewer code, scene rebuilt
+  from the document after each change); one selection drives a hex pane
+  (the record, the records it references and that reference it, current
+  bytes with changed bits in red, field overlay, values at any bit), a
+  RON pane (Model: decoded alignment, Apply runs the equivalent commands;
+  Raw: record bytes, Apply replaces them), a command form generated from
+  the registry with handle/point picking, and a console. Undo/redo, Save
+  As with a read-back comparison of every raw record, optional external
+  `c3dr` for commands from a newer library build. Headless `--script`,
+  `--related`, `--svg`. Edits run on a copy under `catch_unwind`.
 - Command registry (`commands`, D-074): every edit as a named command
   with an argument spec — `set_length`, `set_radius`, `set_pis`, `curve`,
   `remove`, `set_name`, `set_start`, `set_speeds`, `set_style`,

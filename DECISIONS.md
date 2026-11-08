@@ -1464,7 +1464,7 @@ geometry, offsets, lengths): needs every transition type and widenings
 on curves; the element records already give the result.
 
 ## D-073: One egui workbench for viewing, hex/RON inspection and editing
-Date: 2026-11-06 · Status: accepted (design only)
+Date: 2026-11-06 · Status: accepted; built 2026-11-07 (steps 1–7, see `docs/workbench.md` "As built")
 
 **Context.** Testing edits means running an example per change, then
 opening the result in `viewer/` and `hexview/` separately. Both are
