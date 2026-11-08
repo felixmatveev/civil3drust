@@ -53,6 +53,7 @@ samples and steps that produced it.
 - Never ship Autodesk-provided styles or other template content (D-015).
 
 ## Tools
+- `cargo run --release --bin c3dr -- help [command]` (every edit as a command, D-074: `c3dr <command> in.dwg [out.dwg] args...`; `--spec` lists them as RON)
 - `cargo run --release --example rawdiff -- a.dwg b.dwg [AECC_CLASS]`
 - `cargo run --release --example alignments -- file.dwg`
 - `cargo run --release --example dump -- file.dwg [out.ron] [--raw]` (plain-text RON view: entities, decoded alignments, raw records; D-065)

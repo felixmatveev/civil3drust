@@ -30,6 +30,7 @@ use crate::aecc_alignment::Linked;
 use crate::aecc_alignment_refs::{alignment_refs, alignment_styles};
 use crate::aecc_elements::{decode_elements, Element, ResolvedElement, Segment};
 use crate::raw::{self, Opened, RawRecord};
+use acadrust::document::CadDocument;
 use acadrust::entities::EntityType;
 use acadrust::objects::ObjectType;
 use serde::{Deserialize, Serialize};
@@ -432,7 +433,11 @@ fn alignment(rec: &RawRecord, styles: &[(u64, String)]) -> Alignment {
 /// Every record acadrust keeps as raw bytes (AECC and other unmodelled
 /// classes), sorted by handle.
 pub fn raw_records(opened: &Opened) -> Vec<RawRecord> {
-    let doc = &opened.doc;
+    raw_records_of(&opened.doc)
+}
+
+/// [`raw_records`] for a bare document.
+pub fn raw_records_of(doc: &CadDocument) -> Vec<RawRecord> {
     let mut out = Vec::new();
     for e in doc.entities() {
         if let EntityType::Unknown(u) = e {
@@ -466,6 +471,79 @@ pub fn raw_records(opened: &Opened) -> Vec<RawRecord> {
     }
     out.sort_by_key(|r| r.handle);
     out
+}
+
+/// The raw record with handle `handle`, of any class.
+pub fn raw_record(doc: &CadDocument, handle: u64) -> Option<RawRecord> {
+    raw_records_of(doc).into_iter().find(|r| r.handle == handle)
+}
+
+/// One decoded alignment, as in the dump.
+pub fn alignment_of(doc: &CadDocument, handle: u64) -> Option<Alignment> {
+    let rec = raw::records(doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == handle)?;
+    Some(alignment(&rec, &alignment_styles(doc)))
+}
+
+/// One alignment as RON, an element per line.
+pub fn alignment_ron(a: &Alignment) -> String {
+    let cfg = ron::ser::PrettyConfig::new()
+        .depth_limit(2)
+        .separator(" ")
+        .indentor("    ")
+        .struct_names(true);
+    ron::ser::to_string_pretty(a, cfg).expect("dump values serialize")
+}
+
+/// Read one alignment back from [`alignment_ron`] text.
+pub fn alignment_from_ron(text: &str) -> Result<Alignment, ron::error::SpannedError> {
+    ron::from_str(text)
+}
+
+/// A raw record as it appears in the dump.
+pub fn record_of(rec: &RawRecord) -> Record {
+    Record {
+        h: hx(rec.handle),
+        class: rec.class.clone(),
+        entity: rec.is_entity,
+        handle_bits: rec.handle_bits,
+        data: hex_bytes(&rec.data),
+    }
+}
+
+/// One record as RON, its bytes 16 to a line inside the string (RON
+/// strings may span lines).
+pub fn record_ron(rec: &RawRecord) -> String {
+    let mut data = String::new();
+    for row in rec.data.chunks(16) {
+        data.push_str("\n        ");
+        data.push_str(&hex_bytes(row));
+    }
+    format!(
+        "Record(\n    h: {:?},\n    class: {:?},\n    entity: {},\n    handle_bits: {},\n    data: \"{}\n    \",\n)\n",
+        hx(rec.handle),
+        rec.class,
+        rec.is_entity,
+        rec.handle_bits,
+        data
+    )
+}
+
+/// Read one record back from [`record_ron`] text: the record and its
+/// bytes.
+pub fn record_from_ron(text: &str) -> Result<(Record, Vec<u8>), String> {
+    let r: Record = ron::from_str(text).map_err(|e| e.to_string())?;
+    let bytes = record_bytes(&r)?;
+    Ok((r, bytes))
+}
+
+/// The bytes of a dumped record (hex, any whitespace between bytes).
+pub fn record_bytes(r: &Record) -> Result<Vec<u8>, String> {
+    r.data
+        .split_whitespace()
+        .map(|b| u8::from_str_radix(b, 16).map_err(|_| format!("bad byte '{b}'")))
+        .collect()
 }
 
 fn hex_bytes(data: &[u8]) -> String {
@@ -590,6 +668,23 @@ pub fn from_ron(text: &str) -> Result<Drawing, ron::error::SpannedError> {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn record_ron_reads_back() {
+        let rec = RawRecord {
+            handle: 0x2A3,
+            class: "AECC_ALIGNMENT".into(),
+            is_entity: true,
+            data: (0..=40u8).collect(),
+            handle_bits: 77,
+        };
+        let text = record_ron(&rec);
+        let (r, bytes) = record_from_ron(&text).unwrap();
+        assert_eq!(bytes, rec.data);
+        assert_eq!(r.h, "2A3");
+        assert_eq!(r.handle_bits, 77);
+        assert!(r.entity);
+    }
     use super::*;
 
     #[test]

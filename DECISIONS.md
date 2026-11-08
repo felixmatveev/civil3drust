@@ -1491,3 +1491,31 @@ either way. Tauri: two toolchains for a throwaway tool. An Open CAD
 Studio plugin: GPL-3.0 host, its acadrust version pinned to ours, and
 long builds.
 
+## D-074: Commands are a registry in the library, with a `c3dr` front end
+Date: 2026-11-07 · Status: accepted
+
+**Context.** Each edit was reachable only through its own example, with
+its own argument parsing and post-steps. The workbench (D-073) needs to
+call every edit by name, and new library features should be usable from
+the workbench without GUI work.
+
+**Decision.** `src/commands.rs` holds a static list of commands: name,
+help, argument spec (positional and `--options`, typed as alignment,
+style, handle, number, points, …) and a `run` function on a
+`CadDocument`. `run_line` parses one command line (double quotes group
+words) and runs it; `help_text` and `spec()` describe the list, the
+latter as serializable data so a GUI can build a form for any command,
+including ones from a newer `c3dr` (`c3dr --spec`). A new library feature
+becomes available everywhere by adding one entry. Post-steps are the
+examples' (companion refresh, cache drop after in-place geometry edits).
+`set_name`, `set_start` and `set_speeds` replace the record with
+`raw::set_record` (only that entity loses its verbatim bytes) where the
+examples loop over `entities_mut` (every entity re-encoded by acadrust);
+the AECC records come out identical (rawdiff), the files differ in size.
+The list is explicit rather than attribute-registered (`linkme`): one
+place to read, no extra dependency.
+
+**Alternatives.** Parsing the examples' command lines from the GUI:
+duplicates every parser and keeps logic outside `src/`. Runtime plugin
+loading of the library: no stable Rust ABI.
+

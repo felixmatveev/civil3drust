@@ -7,6 +7,21 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Command registry (`commands`, D-074): every edit as a named command
+  with an argument spec — `set_length`, `set_radius`, `set_pis`, `curve`,
+  `remove`, `set_name`, `set_start`, `set_speeds`, `set_style`,
+  `style_component`, `equations`, `masking`, `create`, `delete` — plus
+  reports (`alignments`, `elements`, `styles`, `refs`, `help`).
+  `run_line` runs a command line on an open document; `spec()` gives the
+  list as data. New `c3dr` binary runs them from the shell
+  (`c3dr <command> in.dwg [out.dwg] args…`, `c3dr help`, `c3dr --spec`).
+  Edits match the examples' output (identical files for `set_length`,
+  `set_radius`, `set_pis`, `remove`, `equations`, `masking`, `set_style`,
+  `style_component`).
+- `dump`: per-object helpers for the workbench — `raw_record`,
+  `raw_records_of`, `alignment_of`, `alignment_ron`/`alignment_from_ron`,
+  `record_of`, `record_ron`/`record_from_ron` (bytes 16 per line inside
+  the RON string), `record_bytes`.
 - Design sketch for `workbench/`, a DWG research app that will replace
   `viewer/` and `hexview/` (`docs/workbench.md`, D-073): render, select,
   per-object hex and RON panes, command-line edits, raw and model RON

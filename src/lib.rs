@@ -25,6 +25,8 @@
 //! - [`aecc_alignment_edit`] — writes changed tangent geometry back into an
 //!   `AECC_ALIGNMENT` record as same-size patches.
 //! - [`proxy_graphics`] — the display cache embedded in AECC entity records.
+//! - [`commands`] — every edit as a named command with an argument spec
+//!   (the `c3dr` binary and the workbench run them).
 //! - [`dump`] — a plain-text (RON) view of a drawing: entities, decoded
 //!   alignments and the raw records.
 //! - [`raw`] — the stored bytes of AECC records (kept opaque by acadrust)
@@ -54,6 +56,7 @@ pub mod aecc_style;
 pub mod aecc_topology;
 pub mod aecc_widening;
 pub mod alignment;
+pub mod commands;
 pub mod dump;
 pub mod handle_refs;
 pub mod inventory;
