@@ -3282,14 +3282,29 @@ BL 2, BL 7, BL 9                   kind (2 nominal), first and last
                                     later, S256)
 BL 0 × 5, BL 3                     (MIST19)
 BL 0                             number of widening transitions
-BL n,
-  n × {BL i, BL −1, BL 1, BL id} i = 1…n, one per element (S256's 11B1
-                                  lists 11, 13, 14, 12, 15: tangents,
-                                  then the arc, then the spiral)
-…                                (MIST19: BL 2, BD 5, GUID, BD 405, GUID,
-                                  then likely BL 0 (masking), BL 3 (PI
-                                  display), as on a centerline)
+BL k, k × {BL parent element ID, BL −1, BL n, n × BL offset element ID}
+                                 the offset elements that follow each
+                                  parent element (S256's 11B1: TEST's
+                                  1, 2, 3, 4, 5 → 11, 13, 14, 12, 15;
+                                  a widened tangent maps to two, 11D9's
+                                  14 → 14, 16; transitions are not
+                                  listed; the −1 was 275 for S258's free
+                                  spiral)
+BL m, m × {BD parent station, GUID}
+                                 the parent's anchors for the start and
+                                  end and both ends of every transition,
+                                  in station order; each GUID names one
+                                  of the parent's intervals at that
+                                  station (S258: 0, 37.17, 112.17, 260.54,
+                                  335.54, 415.40)
+BL 0, BL 0, BL 3, 1 bit          (MIST19: 0; likely the masking count
+                                  and the PI display, 1 in S260, as on a
+                                  centerline)
 ```
+
+A copied offset with its copied parent (S258's 127B of 1277): the copy's
+parent has the inner anchors under the original's GUIDs but no start or
+end anchor, and Civil 3D accepted the drawing.
 
 **Handle stream and associations.** The soft pointers at the start of
 the handle streams are reactors (the common object header's reactor
@@ -3329,6 +3344,12 @@ regenerated from the plain form S259 had (as any edited alignment,
 D-057); the save-time records (`AECC_LASTSAVED_APPVERSION` and another
 xrecord) rewritten. The two networks were the drawing's first, so this
 is what an offset adds to a drawing without associations.
+
+acadrust 0.6.7 reads the networks and dictionaries as typed objects and
+writes them back equal (S260 opened and saved by civil3drust, reopened:
+same objects, AECC records bit for bit). Whether Civil 3D accepts that
+file and keeps the offset live (an edit of the parent moving the
+offset) is experiment S274 (pending).
 
 Deleting the offset removed the alignment, the action with its body,
 dependencies and their bodies, both networks and both dictionaries

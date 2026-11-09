@@ -7,6 +7,13 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- The rest of the offset block: `OffsetInfo::element_map` (offset
+  elements per parent element), `anchors` (the parent's station anchors
+  for the range and every transition end, by GUID) and the three BLs
+  after them; checked on every offset sample (test
+  `offset_element_map_and_anchors`). acadrust 0.6.7 re-encodes the
+  associative networks and dictionaries unchanged (S260 round trip);
+  experiment S274 prepared for Civil 3D.
 - Experiment S268 (a stale offset) with the owner's re-saves S272 (no
   AUDIT: the stale geometry kept) and S273 (AUDIT: rebuilt): offset
   elements must be written from the parent. civil3d-rebuilds.md row.

@@ -796,3 +796,91 @@ fn s268_stale_offset_kept_until_audit() {
         assert_eq!((i.parent_end, i.end), (500.0, 500.0), "{path}");
     }
 }
+
+/// The block after the transitions, in every offset sample: the element
+/// map covers each non-transition element once; the anchors name the
+/// parent's intervals at their stations and span the parent range.
+#[test]
+fn offset_element_map_and_anchors() {
+    use civil3drust::aecc_elements::Element;
+    let mut checked = 0;
+    for path in [
+        "samples/S255_offset_alignments_left_right.dwg",
+        "samples/S256_offsets_partial_widening.dwg",
+        "samples/S257_widening_transitions.dwg",
+        "samples/S258_widening_curves.dwg",
+        "samples/S260_S259_offset_left_10.dwg",
+        "samples/S262_S260_parent_deleted.dwg",
+        "samples/S264_S263_offset_stations.dwg",
+        "samples/S266_S260_parent_shortened.dwg",
+        "samples/S270_S269_station_locking.dwg",
+        "samples/S273_S268_audit_resaved.dwg",
+    ] {
+        let o = raw::open(path).unwrap();
+        let recs = raw::records(&o.doc, "AECC_ALIGNMENT");
+        for r in &recs {
+            let Some(info) = offset_info(r).unwrap() else {
+                continue;
+            };
+            let d = decode_elements(r).unwrap();
+            let mut ids: Vec<i32> = d
+                .elements
+                .iter()
+                .filter(|e| !matches!(e.record, Element::Widening(_)))
+                .map(|e| e.record.id())
+                .collect();
+            ids.dedup();
+            ids.sort();
+            let mut mapped: Vec<i32> = info
+                .element_map
+                .iter()
+                .flat_map(|(_, _, v)| v.clone())
+                .collect();
+            mapped.sort();
+            // Orphans keep the map as made (S256 renumbered its elements).
+            if info.head[2] == 1 {
+                assert_eq!(mapped, ids, "{path} {:X}", r.handle);
+            }
+            // One anchor per region start and end, shared where regions
+            // meet without a transition: start, end and both ends of each
+            // transition (2 + 2 per transition).
+            let n_tr = info.transitions.as_ref().map_or(0, Vec::len);
+            assert_eq!(info.anchors.len(), 2 + 2 * n_tr, "{path} {:X}", r.handle);
+            let first = info.anchors.first().unwrap().0;
+            let last = info.anchors.last().unwrap().0;
+            assert!(
+                (first - info.parent_start).abs() < 1e-9,
+                "{path} {:X}",
+                r.handle
+            );
+            assert!(
+                (last - info.parent_end).abs() < 1e-9,
+                "{path} {:X}",
+                r.handle
+            );
+            assert_eq!(info.tail[0], 0);
+            if let Some(p) = offset_parent(&o.doc, r) {
+                let parent = recs.iter().find(|x| x.handle == p).unwrap();
+                let ivs = intervals_of(parent);
+                for (st, g) in &info.anchors {
+                    let hit = ivs.iter().find(|(_, _, ig)| ig == g);
+                    // S258's 127B, a copy of 1234 with its parent copied:
+                    // the parent copy has the inner anchors (same GUIDs as
+                    // the original's) but not the start and end ones.
+                    if hit.is_none()
+                        && (path, r.handle) == ("samples/S258_widening_curves.dwg", 0x127B)
+                    {
+                        assert!(*st == 0.0 || (st - info.parent_end).abs() < 1e-9);
+                        continue;
+                    }
+                    let (_, s, _) = hit.unwrap_or_else(|| {
+                        panic!("{path} {:X}: anchor {st} not on the parent", r.handle)
+                    });
+                    assert!((s - st).abs() < 1e-6, "{path} {:X}", r.handle);
+                }
+            }
+            checked += 1;
+        }
+    }
+    assert!(checked >= 20, "{checked}");
+}
