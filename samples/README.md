@@ -285,6 +285,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S271 | `S271_S270_cant.dwg` | Civil 3D 2024 | Owner: superelevation type changed to Cant. | 980347 | `c024990bfe38283e` |
 | S272 | `S272_S268_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S268 opened (clean) and saved without AUDIT. | 976264 | `49a256dc8fac2f34` |
 | S273 | `S273_S268_audit_resaved.dwg` | Civil 3D 2024 | Owner: S268 opened, AUDIT run (it fixed the offset), saved. | 981732 | `552e864e261bd880` |
+| S274 | `S274_S260_roundtrip.dwg` | civil3drust | Experiment: S260 opened and saved by civil3drust (`fingerprint`), nothing changed; the associative networks and dictionaries re-encoded by acadrust 0.6.7. Owner: clean open, clean AUDIT, the offset follows parent edits (associativity kept). | 949061 | `4f78c69c2b0d2869` |
+| S275 | `S275_S274_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S274 opened, checked (AUDIT, parent edit) and saved; reads back as S260 (parent 1000, offset 10' left over 0–1000). | 968698 | `97cdf96921075cdb` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

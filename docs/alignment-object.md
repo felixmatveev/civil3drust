@@ -3347,9 +3347,9 @@ is what an offset adds to a drawing without associations.
 
 acadrust 0.6.7 reads the networks and dictionaries as typed objects and
 writes them back equal (S260 opened and saved by civil3drust, reopened:
-same objects, AECC records bit for bit). Whether Civil 3D accepts that
-file and keeps the offset live (an edit of the parent moving the
-offset) is experiment S274 (pending).
+same objects, AECC records bit for bit). Civil 3D accepts that file
+(S274, owner): clean open, clean AUDIT, and the offset still follows
+edits of its parent; its re-save S275 reads back as S260.
 
 Deleting the offset removed the alignment, the action with its body,
 dependencies and their bodies, both networks and both dictionaries

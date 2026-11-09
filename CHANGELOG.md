@@ -13,7 +13,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   after them; checked on every offset sample (test
   `offset_element_map_and_anchors`). acadrust 0.6.7 re-encodes the
   associative networks and dictionaries unchanged (S260 round trip);
-  experiment S274 prepared for Civil 3D.
+  Civil 3D accepts the result and keeps the offset associative (S274,
+  re-saved S275).
 - Experiment S268 (a stale offset) with the owner's re-saves S272 (no
   AUDIT: the stale geometry kept) and S273 (AUDIT: rebuilt): offset
   elements must be written from the parent. civil3d-rebuilds.md row.

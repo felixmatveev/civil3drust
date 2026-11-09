@@ -884,3 +884,33 @@ fn offset_element_map_and_anchors() {
     }
     assert!(checked >= 20, "{checked}");
 }
+
+/// S274 (S260 saved by civil3drust) and its Civil 3D re-save S275 read
+/// back as S260; the networks are still there.
+#[test]
+fn s274_roundtrip_keeps_offset() {
+    for path in [
+        "samples/S274_S260_roundtrip.dwg",
+        "samples/S275_S274_civ3d_resaved.dwg",
+    ] {
+        let inv = inventory(path);
+        for (h, c) in [
+            (0x8D73, "Associative"),
+            (0x8D75, "Associative"),
+            (0x8D76, "AECC_ASSOC_ACTION"),
+        ] {
+            assert_eq!(inv.get(&h).map(String::as_str), Some(c), "{path} {h:X}");
+        }
+        let o = raw::open(path).unwrap();
+        let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == 0x8D71)
+            .unwrap();
+        let i = offset_info(&r).unwrap().unwrap();
+        assert_eq!(
+            (i.head, i.left_offset(), i.parent_end),
+            ([1, 2, 1], 10.0, 1000.0)
+        );
+        assert_eq!(offset_parent(&o.doc, &r), Some(0x8C4A));
+    }
+}
