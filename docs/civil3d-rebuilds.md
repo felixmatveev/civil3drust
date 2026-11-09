@@ -26,6 +26,7 @@ template and does not add them. The opposite list — what Civil 3D refuses
 | Curve flag (MIST8, the bit after a curve's header) | 0 | set to 1 for every curve read from the file when the drawing is opened; new curves keep 0 until the next open | S207–S210 | 0 for new curves, kept on rewritten ones |
 | Parameter flag of curves, spirals and groups (the first bit of the record) | 0 (unsolved, as civil3drust writes new and re-encoded elements) | sets it to 1 on save; geometry unchanged | S188 → S195, S190 → S196 | written as 0 for new elements |
 | Pieces of a spiral group with a JSON layout (Reverse SSCSS/SSCS/SCSS) | absent (only the two fixed elements and the JSON group object), linked to each other or to the group ID | solves the group from the JSON's typed parameters, trims the fixed elements, writes the pieces; the JSON's values win over pieces that were written | S216 → S217 | written as JSON only (D-059) |
+| An offset alignment's elements | stale (S268: the tangent 1000 long, parent and offset parameters 0–500) | opens cleanly and draws and saves the stale geometry (S272); AUDIT rebuilds the elements from the parent and the parameters, with fresh range anchors on the parent (S273) | S268 → S272, S273 | written from the parent and the parameters (not yet written) |
 
 ## Not tolerated
 

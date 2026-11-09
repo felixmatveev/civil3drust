@@ -775,3 +775,24 @@ fn s269_s271_update_and_lock_modes() {
     let r = get("samples/S270_S269_station_locking.dwg", 0x8D71);
     assert!(raw::find_f64s(&r.data, &[4.92125], 0, raw::bit_len(&r.data)).is_empty());
 }
+
+/// S268 (experiment: a stale offset) → S272 (re-saved) / S273 (AUDIT,
+/// re-saved): Civil 3D keeps stale offset geometry until AUDIT.
+#[test]
+fn s268_stale_offset_kept_until_audit() {
+    for (path, length) in [
+        ("samples/S268_S266_offset_stale.dwg", 1000.0),
+        ("samples/S272_S268_civ3d_resaved.dwg", 1000.0),
+        ("samples/S273_S268_audit_resaved.dwg", 500.0),
+    ] {
+        let o = raw::open(path).unwrap();
+        let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == 0x8D71)
+            .unwrap();
+        let d = decode_elements(&r).unwrap();
+        assert_eq!(d.length(), length, "{path}");
+        let i = offset_info(&r).unwrap().unwrap();
+        assert_eq!((i.parent_end, i.end), (500.0, 500.0), "{path}");
+    }
+}

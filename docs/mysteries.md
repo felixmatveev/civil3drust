@@ -557,7 +557,6 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   nothing, S266); the superelevation type's own field (S271 changes
   section 2: a BD 0 → 4.92125 and 42 more bits, not decoded).
 - **Next samples:** transition type 3 (if the list has one more type);
-  experiment S268 (a stale offset: does Civil 3D rebuild it on open?);
   Cant set on a centerline, if Civil 3D offers it there.
 
 ## Not sampled yet (not mysteries, just gaps)

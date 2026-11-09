@@ -279,9 +279,12 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S265 | `S265_S264_offset_static.dwg` | Civil 3D 2024 | Owner: S264 with the offset alignment converted from dynamic to static. | 979290 | `252f88392a28302d` |
 | S266 | `S266_S260_parent_shortened.dwg` | Civil 3D 2024 | Owner: S260 with the parent BASE edited — its tangent shortened from 1000 to 500 — while the offset (dynamic, both stations locked) exists. | 990546 | `1ab5fec8f6b5ad25` |
 | S267 | `S267_S266_end_unlocked.dwg` | Civil 3D 2024 | Owner: S266 with "Start station – lock to start of parent" kept and the end station's lock cleared (Offset Parameters tab; the screenshot shows 4+00 typed, the saved end is 5+00). | 983124 | `08d6ce43cfa2a9f3` |
+| S268 | `S268_S266_offset_stale.dwg` | civil3drust | Experiment: S266 with only the offset's tangent set to 1000 (`set_length … 8D71 1 1000`) while its parent and its parameters say 0–500. Owner: opens cleanly, the stale line drawn; AUDIT fixes it. | 949161 | `7a6c7ffbb4b8c983` |
 | S269 | `S269_S267_static_end_400.dwg` | Civil 3D 2024 | Owner: "update static" — from the S267 offset; read from the drawing: update mode static, end station 4+00 (as in the S267 screenshot), start locked. (S268 is reserved for the stale-offset experiment.) | 980018 | `42a997fe5e52111c` |
 | S270 | `S270_S269_station_locking.dwg` | Civil 3D 2024 | Owner: lock mode changed to Station Locking (Offset Parameters tab); read from the drawing: update mode dynamic again. | 980942 | `ba2a09727209d80f` |
 | S271 | `S271_S270_cant.dwg` | Civil 3D 2024 | Owner: superelevation type changed to Cant. | 980347 | `c024990bfe38283e` |
+| S272 | `S272_S268_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S268 opened (clean) and saved without AUDIT. | 976264 | `49a256dc8fac2f34` |
+| S273 | `S273_S268_audit_resaved.dwg` | Civil 3D 2024 | Owner: S268 opened, AUDIT run (it fixed the offset), saved. | 981732 | `552e864e261bd880` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

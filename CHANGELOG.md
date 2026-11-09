@@ -7,6 +7,9 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Experiment S268 (a stale offset) with the owner's re-saves S272 (no
+  AUDIT: the stale geometry kept) and S273 (AUDIT: rebuilt): offset
+  elements must be written from the parent. civil3d-rebuilds.md row.
 - Offset lock mode and superelevation type (S269–S271, owner):
   `OffsetInfo::lock_mode` (1 Geometry Locking, 2 Station Locking); with
   station locking both ends are anchored as stations (kind 6). Cant

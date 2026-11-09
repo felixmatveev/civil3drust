@@ -3369,8 +3369,11 @@ own stations 0–500, fresh anchor GUIDs on the parent (start kind 0 at 0,
 end kind 90 at 500). The parent's second start/end pair kept its end at
 1000, past the parent's new end — it follows nothing. Whether Civil 3D
 also rebuilds an offset saved stale (elements not matching the parent)
-is experiment S268 (the S266 offset's tangent set back to 1000;
-pending).
+was experiment S268 (the S266 offset's tangent set back to 1000):
+Civil 3D opens it cleanly and keeps the stale line — drawn, and saved
+unchanged (S272); AUDIT rebuilds it to 500, with the caches and fresh
+range anchors on the parent (S273). So the elements are model data a
+writer must compute; only AUDIT or an edit makes Civil 3D redo them.
 
 **One lock cleared** (S266 → S267, owner): "Start station – lock to
 start of parent" kept, the end's lock cleared at 5+00. The first lock
