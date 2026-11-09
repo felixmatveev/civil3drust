@@ -573,11 +573,9 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   needs one alignment created from a feature line.
 - Other alignment types (S1-style imports have no element records and a
   22-bit gap after the elements instead of 161 bits).
-- Widening: offset alignments with widening regions (start and end
-  stations, offset, transitions in and out — linear, curved, or by
-  criteria) and the parent alignment's link to them. Sample plan: one
-  alignment, an offset alignment, then one widening added, edited and
-  removed, each step saved separately.
+- Widening: read since S257/S258 (alignment-object.md, "Offset
+  alignments"). Not sampled: adding, editing and removing one widening
+  on an existing offset, each step saved.
 - Station equations are read (S243, S247, S248) and applied by
   `display_station`; element stations stay raw. The reference point is
   not stored, only the start station it produces (S249).

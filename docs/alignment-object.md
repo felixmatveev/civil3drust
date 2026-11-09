@@ -3286,18 +3286,51 @@ BL n,
                                   display), as on a centerline)
 ```
 
-**Handle stream and associations.** The offset alignment's stream starts
-with a soft pointer to its own `AECC_ASSOC_DEPENDENCY` (where a
-centerline has none) and ends with one more reference after the check
-set: a soft pointer to the parent. The parent starts with soft pointers
-to two dependencies, one per offset. Each offset has an
-`AECC_ASSOC_ACTION` (owned by the drawing's associative network) that
-hard-owns an `AECC_ASSOC_OFFSET_ALIGNMENT_ACTION_BODY` (14 bytes: a hard
-pointer to the offset alignment) and two `AECC_ASSOC_DEPENDENCY` records
-(one on the parent, one on the offset; the parent's dependencies are
-chained to each other), each owning a 11-byte
-`AECC_ASSOC_DEPENDENCY_BODY`. The offset parameters live in the
-alignment record, not in these.
+**Handle stream and associations.** The soft pointers at the start of
+the handle streams are reactors (the common object header's reactor
+count goes 0 → 1 on the parent in S260 and back in S261): the offset
+alignment has one, its own `AECC_ASSOC_DEPENDENCY`; the parent has one
+per offset, the dependency on it. The offset's stream ends with one
+more reference after the check set: a soft pointer to the parent. Each
+offset has an `AECC_ASSOC_ACTION` (owned by the model space's
+associative network) that hard-owns an
+`AECC_ASSOC_OFFSET_ALIGNMENT_ACTION_BODY` (14 bytes: a hard pointer to
+the offset alignment) and two `AECC_ASSOC_DEPENDENCY` records (22 bytes:
+one with a soft pointer to the parent, one to the offset; with several
+offsets the parent's dependencies are chained to each other), each
+hard-owning an 11-byte `AECC_ASSOC_DEPENDENCY_BODY`. The offset
+parameters live in the alignment record, not in these.
+
+**Created and deleted** (S259 → S260 → S261, owner: one single-tangent
+centerline, an offset 10' left added, then deleted; object inventories
+compared). Adding the offset created, besides the offset alignment
+(8D71) and its companion (8D70, registered like any alignment's):
+
+| handle | object | owner / role |
+|---|---|---|
+| 8D72 | dictionary `ACAD_ASSOCNETWORK` → 8D73 | the model space's extension dictionary (8D72 is added to it) |
+| 8D73 | `AcDbAssocNetwork` | the model space's network; holds action 8D76 (owned) |
+| 8D74 | dictionary `ACAD_ASSOCNETWORK` → 8D75 | the named objects dictionary (entry added) |
+| 8D75 | `AcDbAssocNetwork` | the drawing's top network; lists 8D73 (not owned) |
+| 8D76 | `AECC_ASSOC_ACTION` | owned by 8D73; owns 8D77, 8D78, 8D7A |
+| 8D77 | `AECC_ASSOC_OFFSET_ALIGNMENT_ACTION_BODY` | hard pointer → 8D71 |
+| 8D78 / 8D79 | dependency on the parent / its body | parent's reactor |
+| 8D7A / 8D7B | dependency on the offset / its body | offset's reactor |
+
+Also changed: the parent's reactor list; a new `AECC_SETTINGS_NODE`
+holding `AeccCreateOffsetAlignment` (the command's remembered dialog
+values, kept after the delete — not model data); the parent record
+regenerated from the plain form S259 had (as any edited alignment,
+D-057); the save-time records (`AECC_LASTSAVED_APPVERSION` and another
+xrecord) rewritten. The two networks were the drawing's first, so this
+is what an offset adds to a drawing without associations.
+
+Deleting the offset removed the alignment, the action with its body,
+dependencies and their bodies, both networks and both dictionaries
+(entries gone from the model space's extension dictionary and the named
+objects dictionary), and the parent's reactor — S261's parent differs
+from S260's only there. The companion stays, orphaned and still
+registered, as for any deleted alignment (D-062).
 
 **Production check.** The production drawing's offset alignment (one
 tangent, 14 to the left) reads the same way: offset, side and stations

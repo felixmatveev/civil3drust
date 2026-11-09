@@ -447,3 +447,80 @@ fn s258_widenings_on_curves() {
     }
     assert_eq!(radii, [38.516, 126.914]);
 }
+
+/// All handles and class names of a drawing.
+fn inventory(path: &str) -> std::collections::BTreeMap<u64, String> {
+    use acadrust::entities::EntityType;
+    use acadrust::objects::ObjectType;
+    let o = raw::open(path).unwrap();
+    let name = |s: String| s.split(['(', ' ', '{']).next().unwrap_or("?").to_string();
+    let mut out = std::collections::BTreeMap::new();
+    for e in o.doc.entities() {
+        let c = match e {
+            EntityType::Unknown(u) => u.dxf_name.clone(),
+            other => name(format!("{other:?}")),
+        };
+        out.insert(e.common().handle.value(), c);
+    }
+    for (h, ob) in o.doc.objects.iter() {
+        let c = match ob {
+            ObjectType::Unknown { type_name, .. } => type_name.clone(),
+            other => name(format!("{other:?}")),
+        };
+        out.insert(h.value(), c);
+    }
+    out
+}
+
+/// S259 → S260 → S261 (owner): an offset alignment added to a drawing
+/// without associations, then deleted.
+#[test]
+fn s259_s261_offset_objects() {
+    let a = inventory("samples/S259_offset_base.dwg");
+    let b = inventory("samples/S260_S259_offset_left_10.dwg");
+    let c = inventory("samples/S261_S260_offset_deleted.dwg");
+    let added: Vec<(u64, &str)> = b
+        .iter()
+        .filter(|(h, _)| !a.contains_key(h))
+        .map(|(h, n)| (*h, n.as_str()))
+        .collect();
+    assert_eq!(
+        added,
+        [
+            (0x8D70, "AECC_FEATURE_STYLE"),
+            (0x8D71, "AECC_ALIGNMENT"),
+            (0x8D72, "Dictionary"),
+            (0x8D73, "Associative"),
+            (0x8D74, "Dictionary"),
+            (0x8D75, "Associative"),
+            (0x8D76, "AECC_ASSOC_ACTION"),
+            (0x8D77, "AECC_ASSOC_OFFSET_ALIGNMENT_ACTION_BODY"),
+            (0x8D78, "AECC_ASSOC_DEPENDENCY"),
+            (0x8D79, "AECC_ASSOC_DEPENDENCY_BODY"),
+            (0x8D7A, "AECC_ASSOC_DEPENDENCY"),
+            (0x8D7B, "AECC_ASSOC_DEPENDENCY_BODY"),
+            // Save-time xrecords (rewritten on every save).
+            (0x8D7C, "XRecord"),
+            (0x8D7D, "XRecord"),
+        ]
+    );
+    // After the delete only the companion is left of them.
+    let kept: Vec<u64> = c.keys().filter(|h| !a.contains_key(h)).copied().collect();
+    assert_eq!(kept, [0x8D70, 0x8D87, 0x8D88]);
+    assert_eq!(c[&0x8D87], "XRecord");
+    // The parent's reactor: the dependency on it, gone after the delete.
+    let o = raw::open("samples/S260_S259_offset_left_10.dwg").unwrap();
+    let parent = raw::records(&o.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0x8C4A)
+        .unwrap();
+    let refs = civil3drust::handle_refs::of_record(&parent);
+    assert_eq!((refs[0].code, refs[0].handle), (4, 0x8D78));
+    let o = raw::open("samples/S261_S260_offset_deleted.dwg").unwrap();
+    let parent = raw::records(&o.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0x8C4A)
+        .unwrap();
+    let refs = civil3drust::handle_refs::of_record(&parent);
+    assert_ne!(refs[0].handle, 0x8D78);
+}
