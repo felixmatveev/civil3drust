@@ -3332,6 +3332,19 @@ objects dictionary), and the parent's reactor — S261's parent differs
 from S260's only there. The companion stays, orphaned and still
 registered, as for any deleted alignment (D-062).
 
+**Parent deleted, offset kept** (S260 → S262, owner). Removed: the
+parent with its label groups (its companion stays, D-062), and the
+whole association — action, body, both dependencies and bodies, both
+networks and both `ACAD_ASSOCNETWORK` dictionaries — exactly as when the
+offset itself is deleted (S261). The offset alignment keeps its size and
+geometry; only its block head turns from `1, 2, 1` to `2, 2, 2`, its
+reactor goes and the parent slot after the check set becomes a null
+soft pointer (as in S256). Its region list, offset, side, stations and
+element IDs are unchanged (S256's renumbering came from something else
+done in that file). Also replaced: an `AECC_CLASS_NODE` and its
+`AECC_USER_DEFINED_ATTRIBUTE_CLASSIFICATION` (same content, new
+handles) and the save-time xrecords.
+
 **Production check.** The production drawing's offset alignment (one
 tangent, 14 to the left) reads the same way: offset, side and stations
 as its name and geometry say. Its handle stream has two dependency

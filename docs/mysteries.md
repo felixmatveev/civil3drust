@@ -540,8 +540,9 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
 - **Read:** the offset (twice, negative to the left), the side (1 left,
   2 right), the parent's station range, the alignment's own station
   range, the first and last element ID.
-- **Partly read (S256, S257):** the head is `1, 2, 1` with a parent and
-  `2, 2, 2` after the parent is deleted; then a list of regions (stretches
+- **Partly read (S256, S257, S262):** the head is `1, 2, 1` with a
+  parent and `2, 2, 2` after the parent is deleted (nothing else in the
+  record changes, S262); then a list of regions (stretches
   at one offset: offset, parent and own station ranges, nominal or
   widening, first and last element as made — not renumbered) and a list
   of widening transitions (kind, length, element, values); then

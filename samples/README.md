@@ -273,6 +273,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S259 | `S259_offset_base.dwg` | Civil 3D 2024 | Owner: base drawing for the offset steps — one centerline BASE (8C4A), a single tangent of 1000, no offsets. | 982742 | `45132c860cb0552b` |
 | S260 | `S260_S259_offset_left_10.dwg` | Civil 3D 2024 | Owner: S259 with one offset alignment added, 10' left over the whole length (8D71 "BASE-Left-10.00"). | 983127 | `8e4e4e69f6ba1ca5` |
 | S261 | `S261_S260_offset_deleted.dwg` | Civil 3D 2024 | Owner: S260 with the offset alignment deleted. | 981070 | `b39fd10c29fd4ba7` |
+| S262 | `S262_S260_parent_deleted.dwg` | Civil 3D 2024 | Owner: S260 with the parent alignment BASE deleted, the offset alignment kept. | 990866 | `4b99618ee38db133` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

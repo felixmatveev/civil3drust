@@ -524,3 +524,32 @@ fn s259_s261_offset_objects() {
     let refs = civil3drust::handle_refs::of_record(&parent);
     assert_ne!(refs[0].handle, 0x8D78);
 }
+
+/// S262 (owner): S260 with the parent deleted; the offset stays.
+#[test]
+fn s262_parent_deleted() {
+    let b = inventory("samples/S260_S259_offset_left_10.dwg");
+    let d = inventory("samples/S262_S260_parent_deleted.dwg");
+    for h in 0x8D72..=0x8D7B {
+        assert!(!d.contains_key(&h), "{h:X} kept");
+    }
+    assert!(!d.contains_key(&0x8C4A));
+    assert_eq!(d[&0x8C49], "AECC_FEATURE_STYLE"); // the parent's companion
+    assert_eq!(b[&0x8D71], d[&0x8D71]);
+    let o = raw::open("samples/S262_S260_parent_deleted.dwg").unwrap();
+    let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0x8D71)
+        .unwrap();
+    let info = offset_info(&r).unwrap().unwrap();
+    assert_eq!(info.head, [2, 2, 2]);
+    assert_eq!((info.first_element, info.last_element), (3, 3));
+    assert_eq!(info.left_offset(), 10.0);
+    let refs = alignment_refs(&r).unwrap();
+    assert_eq!(refs.trailing, 1);
+    assert_eq!(offset_parent(&o.doc, &r), None);
+    let all = civil3drust::handle_refs::of_record(&r);
+    assert_ne!(all[0].code, 4, "reactor kept");
+    let d = decode_elements(&r).unwrap();
+    assert_eq!(d.elements.len(), 1);
+}

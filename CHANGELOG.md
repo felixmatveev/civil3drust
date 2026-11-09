@@ -13,6 +13,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   with their `ACAD_ASSOCNETWORK` dictionaries, the reactors on parent and
   offset; Civil 3D removes all of them on delete, keeping the companion.
   Documented in alignment-object.md; test `s259_s261_offset_objects`.
+  S262: the parent deleted instead — the same association objects go,
+  the offset stays with head `2, 2, 2`, no reactor, a null parent slot.
 - `workbench/` (D-073): DWG research app replacing `viewer/` and
   `hexview/` over time. Renders the drawing (viewer code, scene rebuilt
   from the document after each change); one selection drives a hex pane
