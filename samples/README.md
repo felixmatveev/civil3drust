@@ -274,6 +274,9 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S260 | `S260_S259_offset_left_10.dwg` | Civil 3D 2024 | Owner: S259 with one offset alignment added, 10' left over the whole length (8D71 "BASE-Left-10.00"). | 983127 | `8e4e4e69f6ba1ca5` |
 | S261 | `S261_S260_offset_deleted.dwg` | Civil 3D 2024 | Owner: S260 with the offset alignment deleted. | 981070 | `b39fd10c29fd4ba7` |
 | S262 | `S262_S260_parent_deleted.dwg` | Civil 3D 2024 | Owner: S260 with the parent alignment BASE deleted, the offset alignment kept. | 990866 | `4b99618ee38db133` |
+| S263 | `S263_S260_offset_20.dwg` | Civil 3D 2024 | Owner: S260 with the offset alignment's nominal offset changed to 20' left (Offset Parameters tab). (The owner's files 01 and 02 of this series are S259 and S260, byte for byte.) | 980951 | `0f51e9e9586cdbfe` |
+| S264 | `S264_S263_offset_stations.dwg` | Civil 3D 2024 | Owner: S263 with the start and end stations set to 1+00 and 9+00, both "lock to start/end of parent" boxes cleared (owner's screenshot: update mode Dynamic, lock mode Geometry Locking, superelevation type Superelevation). | 978814 | `f251b1614c0272ae` |
+| S265 | `S265_S264_offset_static.dwg` | Civil 3D 2024 | Owner: S264 with the offset alignment converted from dynamic to static. | 979290 | `252f88392a28302d` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

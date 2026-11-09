@@ -3262,11 +3262,16 @@ and with the parent.
 and PI display are replaced by:
 
 ```text
-BL 1, BL 2, BL 1                 (MIST19; 2, 2, 2 once the parent is
-                                  deleted, S256)
+BL 1, BL 2, BL 1                 update mode (1 dynamic, 2 static,
+                                  S265), 2 (MIST19), 1 (2 once the parent
+                                  is deleted, S256, S262)
 BD −10                           offset, negative to the left
 BL 1                             side: 1 left, 2 right
-2 bits, BL 1                     (MIST19: bits 11 in S255, 00 later)
+B, B                             start / end station locked to the
+                                  parent's start / end (both set or both
+                                  clear in every sample, so which is
+                                  which is assumed; S264)
+BL 1                             (MIST19)
 BL 1                             number of regions (3 with a widening,
                                   S257: "Widenings" below); per region:
 BD −10                             its offset
@@ -3332,6 +3337,30 @@ objects dictionary), and the parent's reactor — S261's parent differs
 from S260's only there. The companion stays, orphaned and still
 registered, as for any deleted alignment (D-062).
 
+**Parameters edited** (S260 → S263 → S264 → S265, owner, one step per
+save in the Offset Parameters tab):
+
+- **Nominal offset 10 → 20 left** (S263): the nominal offset, the
+  region's offset and the element (now at y = 20) change; nothing else
+  in the offset. The parent's station anchors for the range are
+  rewritten with fresh GUIDs.
+- **Stations 1+00–9+00, locks cleared** (S264): the two lock bits clear;
+  the region's parent range becomes 100–900 and the element is rebuilt
+  over it; the offset keeps its own stationing from 0 (0–800; S256's
+  offsets were made over 100–900 and start at 100). The range is
+  anchored on the parent: two parent intervals at the range's parent
+  stations whose GUIDs are the two in the offset's block (`BD parent
+  start, GUID, BD parent end, GUID` after the transitions). Their
+  `kind` field is 6 for set stations; with the locks set it was 0 at
+  the start and 90 at the end (S260, S263; S255's parent: 0 and 237).
+  The parent also holds a second start/end pair (0 / 90) no other
+  record names.
+- **Dynamic → static** (S265): the update mode becomes 2 and the
+  offset's element is locked (element header flag 0x02); the parent,
+  the association objects and the rest of the record are unchanged.
+  Civil 3D no longer rebuilds the elements from the parent, which the
+  lock records.
+
 **Parent deleted, offset kept** (S260 → S262, owner). Removed: the
 parent with its label groups (its companion stays, D-062), and the
 whole association — action, body, both dependencies and bodies, both
@@ -3392,7 +3421,8 @@ and the Curve – Curve – Reverse Curve (12C2) and Curve – Reverse Curve
   widening, nominal):
 
   ```text
-  BL 1, BL 2, BL 1, BD nominal offset, BL side, 2 bits, BL 1,
+  BL update mode, BL 2, BL 1, BD nominal offset, BL side, B lock start,
+  B lock end, BL 1,
   BL n regions,
   n × { BD offset, BD parent start, BD parent end, BD start, BD end,
         BL kind (2 nominal, 1 widening), BL first, BL last element,

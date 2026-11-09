@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Offset parameters edited (S263–S265, owner): `OffsetInfo` gains the
+  start/end lock bits; the block head's first value is the update mode
+  (1 dynamic, 2 static; static also locks the elements). The station
+  range is anchored by two parent intervals whose GUIDs the offset
+  holds. Test `s263_s265_offset_parameters`.
 - What creating and deleting an offset alignment adds and removes
   (S259–S261, owner): the association objects (action, body, two
   dependencies and bodies), the model-space and top associative networks

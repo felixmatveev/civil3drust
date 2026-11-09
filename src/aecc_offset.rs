@@ -8,10 +8,11 @@
 //! by this block (docs/alignment-object.md, "Offset alignments"):
 //!
 //! ```text
-//! BL 1, BL 2, BL 1             (2, 2, 2 once the parent is deleted; MIST19)
+//! BL update mode (1 dynamic, 2 static), BL 2, BL 1 (2 once the parent is
+//!                              deleted)
 //! BD nominal offset            (negative to the left)
 //! BL side                      (1 left, 2 right)
-//! 2 bits, BL 1                 (MIST19)
+//! B lock start, B lock end, BL 1 (MIST19)
 //! BL n regions                 (stretches at one offset, S257)
 //! n × { BD offset, BD parent start, BD parent end, BD start, BD end,
 //!       BL kind (2 nominal, 1 widening), BL first element, BL last
@@ -78,9 +79,14 @@ pub struct OffsetTransition {
 /// The decoded part of an offset alignment's parameters.
 #[derive(Debug, Clone, PartialEq)]
 pub struct OffsetInfo {
-    /// The block's first three BLs: `1, 2, 1` with a parent, `2, 2, 2`
-    /// after the parent was deleted (S256; MIST19).
+    /// The block's first three BLs: the update mode (1 dynamic, 2 static,
+    /// S265), 2, and 1 — 2 once the parent is deleted (S256, S262; MIST19
+    /// for the meaning). A deleted parent also makes the offset static.
     pub head: [i32; 3],
+    /// The two bits after the side: "Start station – lock to start of
+    /// parent" and "End station – lock to end of parent" (S263–S265).
+    pub lock_start: bool,
+    pub lock_end: bool,
     /// The nominal offset as stored: negative to the left of the parent.
     pub offset: f64,
     pub side: Side,
@@ -138,6 +144,8 @@ pub fn offset_info(rec: &RawRecord) -> Result<Option<OffsetInfo>, BuildError> {
         2 => Side::Right,
         _ => return Err(bad("unknown side")),
     };
+    let lock_start = raw::get_bit(data, q) == 1;
+    let lock_end = raw::get_bit(data, q + 1) == 1;
     let (_, q) = bl(q + 2)?;
     let (n, mut q) = bl(q)?;
     if !(1..=1000).contains(&n) || !offset.is_finite() {
@@ -231,6 +239,8 @@ pub fn offset_info(rec: &RawRecord) -> Result<Option<OffsetInfo>, BuildError> {
     let (first, last) = (&regions[0], &regions[regions.len() - 1]);
     Ok(Some(OffsetInfo {
         head,
+        lock_start,
+        lock_end,
         offset,
         side,
         parent_start: first.parent_start,

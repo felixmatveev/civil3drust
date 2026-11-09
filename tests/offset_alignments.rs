@@ -553,3 +553,121 @@ fn s262_parent_deleted() {
     let d = decode_elements(&r).unwrap();
     assert_eq!(d.elements.len(), 1);
 }
+
+/// Interval (kind, station, GUID) list of an alignment record.
+fn intervals_of(r: &raw::RawRecord) -> Vec<(i32, f64, [u8; 16])> {
+    let d = decode_elements(r).unwrap();
+    let e = d.records_end_bit().unwrap();
+    civil3drust::aecc_station_refs::intervals_at(&r.data, e)
+        .unwrap()
+        .0
+        .iter()
+        .map(|i| (i.kind, i.station, i.guid))
+        .collect()
+}
+
+/// Whether the 16 bytes of `g` occur, at any bit, in `r`.
+fn holds_guid(r: &raw::RawRecord, g: &[u8; 16]) -> bool {
+    let n = raw::bit_len(&r.data);
+    (0..n.saturating_sub(128)).any(|b| (0..16).all(|i| raw::get_byte(&r.data, b + 8 * i) == g[i]))
+}
+
+/// S260 → S263 → S264 → S265 (owner): the offset changed to 20' left, its
+/// stations set to 1+00–9+00 (locks cleared), then made static.
+#[test]
+fn s263_s265_offset_parameters() {
+    let get = |path: &str, h: u64| {
+        let o = raw::open(path).unwrap();
+        raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap()
+    };
+    let steps = [
+        (
+            "samples/S260_S259_offset_left_10.dwg",
+            [1, 2, 1],
+            true,
+            10.0,
+            (0.0, 1000.0),
+            1000.0,
+        ),
+        (
+            "samples/S263_S260_offset_20.dwg",
+            [1, 2, 1],
+            true,
+            20.0,
+            (0.0, 1000.0),
+            1000.0,
+        ),
+        (
+            "samples/S264_S263_offset_stations.dwg",
+            [1, 2, 1],
+            false,
+            20.0,
+            (100.0, 900.0),
+            800.0,
+        ),
+        (
+            "samples/S265_S264_offset_static.dwg",
+            [2, 2, 1],
+            false,
+            20.0,
+            (100.0, 900.0),
+            800.0,
+        ),
+    ];
+    for (path, head, locks, left, (ps, pe), end) in steps {
+        let r = get(path, 0x8D71);
+        let i = offset_info(&r).unwrap().unwrap();
+        assert_eq!(i.head, head, "{path}");
+        assert_eq!((i.lock_start, i.lock_end), (locks, locks), "{path}");
+        assert_eq!(i.left_offset(), left, "{path}");
+        assert_eq!((i.parent_start, i.parent_end), (ps, pe), "{path}");
+        // The offset keeps its own stationing from 0.
+        assert_eq!((i.start, i.end), (0.0, end), "{path}");
+        let d = decode_elements(&r).unwrap();
+        let Segment::Line { start, end: e } = d.elements[0].segment else {
+            panic!()
+        };
+        assert_eq!((start.x, start.y, e.x, e.y), (ps, left, pe, left), "{path}");
+        // The parent anchors the range: two intervals at the parent
+        // stations whose GUIDs the offset record holds.
+        let parent = get(path, 0x8C4A);
+        let anchors: Vec<(i32, f64)> = intervals_of(&parent)
+            .into_iter()
+            .filter(|(_, _, g)| holds_guid(&r, g))
+            .map(|(k, s, _)| (k, s))
+            .collect();
+        let want: Vec<(i32, f64)> = if locks {
+            vec![(90, pe), (0, ps)]
+        } else {
+            vec![(6, pe), (6, ps)]
+        };
+        let mut a = anchors.clone();
+        a.sort_by(|x, y| x.1.total_cmp(&y.1));
+        let mut w = want.clone();
+        w.sort_by(|x, y| x.1.total_cmp(&y.1));
+        assert_eq!(a, w, "{path}");
+    }
+    // Static: the element is locked (header flag 0x02), nothing else in
+    // the record changes; the association objects stay.
+    let r = get("samples/S265_S264_offset_static.dwg", 0x8D71);
+    let d = decode_elements(&r).unwrap();
+    let flags =
+        civil3drust::aecc_alignment::read_header(&r.data, d.elements[0].record.header_bit())
+            .unwrap()
+            .flags;
+    assert_eq!(flags, Some(0x02));
+    let r = get("samples/S264_S263_offset_stations.dwg", 0x8D71);
+    let d = decode_elements(&r).unwrap();
+    let flags =
+        civil3drust::aecc_alignment::read_header(&r.data, d.elements[0].record.header_bit())
+            .unwrap()
+            .flags;
+    assert_eq!(flags, None);
+    let inv = inventory("samples/S265_S264_offset_static.dwg");
+    for h in 0x8D72..=0x8D7B {
+        assert!(inv.contains_key(&h), "{h:X} removed");
+    }
+}

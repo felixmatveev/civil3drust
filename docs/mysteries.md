@@ -540,23 +540,25 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
 - **Read:** the offset (twice, negative to the left), the side (1 left,
   2 right), the parent's station range, the alignment's own station
   range, the first and last element ID.
-- **Partly read (S256, S257, S262):** the head is `1, 2, 1` with a
-  parent and `2, 2, 2` after the parent is deleted (nothing else in the
-  record changes, S262); then a list of regions (stretches
-  at one offset: offset, parent and own station ranges, nominal or
-  widening, first and last element as made — not renumbered) and a list
-  of widening transitions (kind, length, element, values); then
-  `BL k, k × {BL i, BL −1, BL count, count × BL element}`.
-- **Open:** the 2 bits and the BL after the side (`11, 1` in S255, `00,
-  1` later); the region tail `BL 0 × 5, BL 3`; the values after each
-  transition's element ID (linear `BD 0, BD 0, BL 2, BD 0`, the leading
-  `BD 0` of the curved types, type 5's `B`); transition type 3; the
-  transition length 74.988 stored for an entered 75 ending on an arc
-  (S258); the B ending a type-38 record (1 in, 0 out);
-  the element list after the transitions (S257: one entry with three
-  elements); the rest (`BL 2, BD, GUID, BD, GUID`, …).
+- **Read (S256–S265):** the head's first BL is the update mode (1
+  dynamic, 2 static), the third 1 with a parent and 2 after it is
+  deleted; the two bits after the side are the start/end locks to the
+  parent; then the regions, the transitions, a per-element list and the
+  two GUIDs that name the parent's station anchors for the range.
+- **Open:** the head's middle `2` and the `BL 1` after the lock bits;
+  which lock bit is start and which end (always equal so far); the
+  region tail `BL 0 × 5, BL 3`; the values after each transition's
+  element ID (linear `BD 0, BD 0, BL 2, BD 0`, the leading `BD 0` of the
+  curved types, type 5's `B`); transition type 3; the length 74.988
+  stored for an entered 75 ending on an arc (S258); the B ending a
+  type-38 record; the per-element list after the transitions; the
+  parent's anchor `kind` values (0 / 90 / 237 / 6) and its second
+  start/end anchor pair; where lock mode ("Geometry Locking") and
+  superelevation type are stored.
 - **Next samples:** transition type 3 (if the list has one more type);
-  the offset value edited in its properties; a static offset.
+  one lock box set and the other clear; the lock mode and the
+  superelevation type changed; the parent edited after the offsets
+  exist.
 
 ## Not sampled yet (not mysteries, just gaps)
 
