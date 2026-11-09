@@ -552,7 +552,8 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   curved types, type 5's `B`); transition type 3; the length 74.988
   stored for an entered 75 ending on an arc (S258); the B ending a
   type-38 record; the `−1` of each element-map entry (275 for a free
-  spiral) and the BL 0 after the anchors (S258); the
+  spiral) and the BLs after the anchors (0, 0; 5, 5 with a large block
+  after Add Automatic Widening, S278); the
   end anchor's `kind` 90 vs 237 (0 locked start, 6 a station); the
   parent's second start/end anchor pair (made with the offset, follows
   nothing, S266); the superelevation type's own field (S271 changes

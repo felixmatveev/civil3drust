@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Widening added, edited, deleted and doubled (S276–S281, owner): all
+  decode, stations match Civil 3D's to 1e-6; deleting a widening
+  restores the offset's elements with their old IDs; widenings add only
+  parent anchors. Test `s276_s281_widening_steps`; the graphics check
+  skips closed frame polylines.
 - The rest of the offset block: `OffsetInfo::element_map` (offset
   elements per parent element), `anchors` (the parent's station anchors
   for the range and every transition end, by GUID) and the three BLs

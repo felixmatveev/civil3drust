@@ -3297,9 +3297,10 @@ BL m, m × {BD parent station, GUID}
                                   of the parent's intervals at that
                                   station (S258: 0, 37.17, 112.17, 260.54,
                                   335.54, 415.40)
-BL 0, BL 0, BL 3, 1 bit          (MIST19: 0; likely the masking count
-                                  and the PI display, 1 in S260, as on a
-                                  centerline)
+BL 0, BL 0, BL 3, 1 bit          (MIST19: 0, 0 — 5, 5 and a large block
+                                  after them once Add Automatic Widening
+                                  was used, S278; then likely the PI
+                                  display, 1 in S260)
 ```
 
 A copied offset with its copied parent (S258's 127B of 1277): the copy's
@@ -3539,8 +3540,28 @@ and the Curve – Curve – Reverse Curve (12C2) and Curve – Reverse Curve
   curve polylines lies within 0.01 of them (two-vertex polylines are
   tick marks and are not compared).
 
-**Not sampled.** A compound spiral in the parent; transition type 3; a
-static offset; the parent edited after the offsets were made.
+**Widening steps** (S276 → S281, owner; an offset of a tangent – arc –
+tangent parent): adding a widening (S277) splits the offset's first
+tangent into nominal tangent 7, transition 12, widened tangent 10,
+transition 13 and tangent 11 up to the arc; the region list grows to
+three and the parent gets four station anchors (kind 6) for the
+transition ends; no other object is added. Changing the widening's
+offset (S278) or a transition's type (S279: curve – reverse curve, a new
+element 14 replacing 12) rewrites those elements. Deleting the widening
+(S280) restores the elements as before (7, 8, 9 — the same IDs) and
+drops the four anchors. Two widenings (S281) make five regions and four
+transitions; the second runs over the arc and the next tangent (a
+widened arc concentric with the parent's, R 915.19). Every region's
+stations agree with the decoded elements to 1e-6, and the curve graphics
+to 0.01. In S278, where the owner had also tried Add Automatic Widening,
+the offset record grew by about 1000 bytes after the anchors (values
+0.6667, 12, 24 — criteria-like; the BLs after the anchors read 5, 5
+instead of 0, 0) and the two dependencies were replaced by new ones; not
+decoded (automatic widening is set aside).
+
+**Not sampled.** A compound spiral in the parent; transition type 3;
+automatic (criteria-based) widening; the parent edited after the offsets
+were made.
 
 **civil3drust.** Read-only. `SPIRAL_OFFSET` records decode and re-encode
 bit for bit; `SpiralGeometry::offset` (positive to the left) moves the

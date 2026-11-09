@@ -287,6 +287,12 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S273 | `S273_S268_audit_resaved.dwg` | Civil 3D 2024 | Owner: S268 opened, AUDIT run (it fixed the offset), saved. | 981732 | `552e864e261bd880` |
 | S274 | `S274_S260_roundtrip.dwg` | civil3drust | Experiment: S260 opened and saved by civil3drust (`fingerprint`), nothing changed; the associative networks and dictionaries re-encoded by acadrust 0.6.7. Owner: clean open, clean AUDIT, the offset follows parent edits (associativity kept). | 949061 | `4f78c69c2b0d2869` |
 | S275 | `S275_S274_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S274 opened, checked (AUDIT, parent edit) and saved; reads back as S260 (parent 1000, offset 10' left over 0–1000). | 968698 | `97cdf96921075cdb` |
+| S276 | `S276_offset_arc_base.dwg` | Civil 3D 2024 | Owner: a new base — centerline BASE (8C4A: tangent, arc R 875.19, tangent) with an offset alignment 8DB6 "BASE-Left-10.00", 10' left, dynamic, whole length. | 979515 | `42e7fa2e257fc268` |
+| S277 | `S277_S276_widening_added.dwg` | Civil 3D 2024 | Owner: S276 with one widening added (25 left, 2+97.19–5+80.66, curve – line – curve transitions L 100, R 25/25). | 977590 | `a889e0d3982e86ed` |
+| S278 | `S278_S277_widening_30.dwg` | Civil 3D 2024 | Owner: S277 with the widening's offset changed to 30 (Add Automatic Widening also tried in this session; it misbehaved). | 968344 | `3420e2e5c8b8bfe0` |
+| S279 | `S279_S278_curve_reverse_in.dwg` | Civil 3D 2024 | Owner: S278 with the transition in changed to Curve – Reverse Curve, R 25 (Civil 3D shows the reverse radius 235; owner's screenshot). | 967918 | `5744df35edf225ad` |
+| S280 | `S280_S279_widening_deleted.dwg` | Civil 3D 2024 | Owner: S279 with the widening deleted. | 971728 | `b9537c2324a52d4b` |
+| S281 | `S281_S280_two_widenings.dwg` | Civil 3D 2024 | Owner: S280 with two widenings added: 25 left 2+86.41–4+33.68 on the first tangent, 40 left 8+67.71–13+83.98 over the arc and the second tangent; curve – line – curve transitions L 100, R 25/25. | 967514 | `2883baa67fc0de36` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

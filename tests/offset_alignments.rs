@@ -50,8 +50,12 @@ fn stray_vertices(r: &raw::RawRecord, segs: &[Segment]) -> usize {
         .filter(|c| c.opcode == pg::OP_POLYLINE)
         .flat_map(|c| {
             let v = pg::poly_vertices(&r.data, c);
+            // Two-vertex polylines are tick marks; a closed five-vertex one
+            // is a frame (S276 draws the extents).
             let n = v.len();
-            v.into_iter().filter(move |_| n > 2).map(|v| v.1)
+            let closed = n == 5 && v[0].1 == v[4].1;
+            let keep = n > 2 && !closed;
+            v.into_iter().filter(move |_| keep).map(|v| v.1)
         })
         .map(|p| {
             let d = samples
@@ -815,6 +819,12 @@ fn offset_element_map_and_anchors() {
         "samples/S266_S260_parent_shortened.dwg",
         "samples/S270_S269_station_locking.dwg",
         "samples/S273_S268_audit_resaved.dwg",
+        "samples/S276_offset_arc_base.dwg",
+        "samples/S277_S276_widening_added.dwg",
+        "samples/S278_S277_widening_30.dwg",
+        "samples/S279_S278_curve_reverse_in.dwg",
+        "samples/S280_S279_widening_deleted.dwg",
+        "samples/S281_S280_two_widenings.dwg",
     ] {
         let o = raw::open(path).unwrap();
         let recs = raw::records(&o.doc, "AECC_ALIGNMENT");
@@ -858,7 +868,8 @@ fn offset_element_map_and_anchors() {
                 "{path} {:X}",
                 r.handle
             );
-            assert_eq!(info.tail[0], 0);
+            // 0, 0 — or 5, 5 once Add Automatic Widening was tried (S278).
+            assert_eq!(info.tail[0], info.tail[1]);
             if let Some(p) = offset_parent(&o.doc, r) {
                 let parent = recs.iter().find(|x| x.handle == p).unwrap();
                 let ivs = intervals_of(parent);
@@ -912,5 +923,90 @@ fn s274_roundtrip_keeps_offset() {
             ([1, 2, 1], 10.0, 1000.0)
         );
         assert_eq!(offset_parent(&o.doc, &r), Some(0x8C4A));
+    }
+}
+
+/// S276 → S281 (owner): a widening added to an offset of a tangent – arc –
+/// tangent parent, its offset changed to 30, its transition in changed to
+/// curve – reverse curve, deleted; then two widenings.
+#[test]
+fn s276_s281_widening_steps() {
+    use civil3drust::aecc_elements::Element;
+    let steps: [(&str, usize, Vec<i32>, Vec<i32>); 6] = [
+        ("samples/S276_offset_arc_base.dwg", 1, vec![], vec![7, 8, 9]),
+        (
+            "samples/S277_S276_widening_added.dwg",
+            3,
+            vec![2, 2],
+            vec![7, 12, 10, 13, 11, 8, 9],
+        ),
+        (
+            "samples/S278_S277_widening_30.dwg",
+            3,
+            vec![2, 2],
+            vec![7, 12, 10, 13, 11, 8, 9],
+        ),
+        (
+            "samples/S279_S278_curve_reverse_in.dwg",
+            3,
+            vec![5, 2],
+            vec![7, 14, 10, 13, 11, 8, 9],
+        ),
+        // Deleting the widening brings back the elements as before (7, 8, 9).
+        (
+            "samples/S280_S279_widening_deleted.dwg",
+            1,
+            vec![],
+            vec![7, 8, 9],
+        ),
+        (
+            "samples/S281_S280_two_widenings.dwg",
+            5,
+            vec![2, 2, 2, 2],
+            vec![7, 17, 15, 18, 16, 8, 21, 19, 9, 22, 20],
+        ),
+    ];
+    for (path, n_regions, kinds, chain) in steps {
+        let o = raw::open(path).unwrap();
+        let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == 0x8DB6)
+            .unwrap();
+        let info = offset_info(&r).unwrap().unwrap();
+        assert_eq!(info.regions.len(), n_regions, "{path}");
+        let t: Vec<i32> = info
+            .transitions
+            .as_ref()
+            .unwrap()
+            .iter()
+            .map(|t| t.kind)
+            .collect();
+        assert_eq!(t, kinds, "{path}");
+        let d = decode_elements(&r).unwrap();
+        let mut ids: Vec<i32> = d.elements.iter().map(|e| e.record.id()).collect();
+        ids.dedup();
+        assert_eq!(ids, chain, "{path}");
+        let st = element_stations(&d.elements, 0.0);
+        for g in &info.regions {
+            let (a, b) = (st[&g.first_element].0, st[&g.last_element].1);
+            assert!((a - g.start).abs() < 1e-6, "{path}: {a} vs {}", g.start);
+            assert!((b - g.end).abs() < 1e-6, "{path}: {b} vs {}", g.end);
+        }
+        let segs: Vec<Segment> = d.elements.iter().map(|e| e.segment).collect();
+        assert_eq!(stray_vertices(&r, &segs), 0, "{path}");
+        // The curve – reverse curve transition's derived reverse radius:
+        // 235 as Civil 3D shows.
+        if path.starts_with("samples/S279") {
+            let rev = d
+                .elements
+                .iter()
+                .filter(|e| matches!(e.record, Element::Widening(_)) && e.record.id() == 14)
+                .nth(1)
+                .unwrap();
+            let Segment::Arc { geometry: g, .. } = rev.segment else {
+                panic!()
+            };
+            assert!((g.radius - 235.0).abs() < 1e-6, "{}", g.radius);
+        }
     }
 }
