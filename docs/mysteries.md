@@ -545,8 +545,8 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   deleted; the two bits after the side are the start/end locks to the
   parent; then the regions, the transitions, a per-element list and the
   two GUIDs that name the parent's station anchors for the range.
-- **Open:** the head's middle `2` and the `BL 1` after the lock bits
-  (the lock bits' order is settled by S267: start first); the
+- **Open:** the head's middle `2` (the BL after the lock bits is the
+  lock mode, S270; the lock bits' order is settled by S267); the
   region tail `BL 0 × 5, BL 3`; the values after each transition's
   element ID (linear `BD 0, BD 0, BL 2, BD 0`, the leading `BD 0` of the
   curved types, type 5's `B`); transition type 3; the length 74.988
@@ -554,11 +554,11 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   type-38 record; the per-element list after the transitions; the
   end anchor's `kind` 90 vs 237 (0 locked start, 6 a station); the
   parent's second start/end anchor pair (made with the offset, follows
-  nothing, S266); where lock mode ("Geometry Locking") and
-  superelevation type are stored.
+  nothing, S266); the superelevation type's own field (S271 changes
+  section 2: a BD 0 → 4.92125 and 42 more bits, not decoded).
 - **Next samples:** transition type 3 (if the list has one more type);
-  the lock mode and the superelevation type changed; experiment S268
-  (a stale offset: does Civil 3D rebuild it on open?).
+  experiment S268 (a stale offset: does Civil 3D rebuild it on open?);
+  Cant set on a centerline, if Civil 3D offers it there.
 
 ## Not sampled yet (not mysteries, just gaps)
 

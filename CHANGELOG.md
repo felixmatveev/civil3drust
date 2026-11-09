@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Offset lock mode and superelevation type (S269–S271, owner):
+  `OffsetInfo::lock_mode` (1 Geometry Locking, 2 Station Locking); with
+  station locking both ends are anchored as stations (kind 6). Cant
+  shows in section 2 (a BD 0 → 4.92125, 1.5 m), not in the offset block.
 - Parent edited and one lock cleared (S266, S267, owner): Civil 3D saves
   a dynamic offset rebuilt after its parent changes; the first lock bit
   is the start's; anchor kinds 0 (locked start), 90 (locked end), 6 (a

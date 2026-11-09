@@ -12,7 +12,7 @@
 //!                              deleted)
 //! BD nominal offset            (negative to the left)
 //! BL side                      (1 left, 2 right)
-//! B lock start, B lock end, BL 1 (MIST19)
+//! B lock start, B lock end, BL lock mode (1 geometry, 2 station)
 //! BL n regions                 (stretches at one offset, S257)
 //! n × { BD offset, BD parent start, BD parent end, BD start, BD end,
 //!       BL kind (2 nominal, 1 widening), BL first element, BL last
@@ -87,6 +87,9 @@ pub struct OffsetInfo {
     /// parent" and "End station – lock to end of parent" (S263–S265).
     pub lock_start: bool,
     pub lock_end: bool,
+    /// The BL after the lock bits: lock mode, 1 Geometry Locking, 2
+    /// Station Locking (S270).
+    pub lock_mode: i32,
     /// The nominal offset as stored: negative to the left of the parent.
     pub offset: f64,
     pub side: Side,
@@ -146,7 +149,7 @@ pub fn offset_info(rec: &RawRecord) -> Result<Option<OffsetInfo>, BuildError> {
     };
     let lock_start = raw::get_bit(data, q) == 1;
     let lock_end = raw::get_bit(data, q + 1) == 1;
-    let (_, q) = bl(q + 2)?;
+    let (lock_mode, q) = bl(q + 2)?;
     let (n, mut q) = bl(q)?;
     if !(1..=1000).contains(&n) || !offset.is_finite() {
         return Err(bad("values out of shape"));
@@ -241,6 +244,7 @@ pub fn offset_info(rec: &RawRecord) -> Result<Option<OffsetInfo>, BuildError> {
         head,
         lock_start,
         lock_end,
+        lock_mode,
         offset,
         side,
         parent_start: first.parent_start,

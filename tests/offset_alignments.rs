@@ -720,3 +720,58 @@ fn s266_s267_parent_edit_and_locks() {
         assert_eq!(other, [(0, 0.0), (90, 1000.0)], "{path}");
     }
 }
+
+/// S269–S271 (owner): static, Station Locking, Cant.
+#[test]
+fn s269_s271_update_and_lock_modes() {
+    let get = |path: &str, h: u64| {
+        let o = raw::open(path).unwrap();
+        raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap()
+    };
+    for (path, head, lock_mode, start_kind, locked) in [
+        ("samples/S267_S266_end_unlocked.dwg", [1, 2, 1], 1, 0, None),
+        (
+            "samples/S269_S267_static_end_400.dwg",
+            [2, 2, 1],
+            1,
+            0,
+            Some(0x02),
+        ),
+        (
+            "samples/S270_S269_station_locking.dwg",
+            [1, 2, 1],
+            2,
+            6,
+            None,
+        ),
+        ("samples/S271_S270_cant.dwg", [1, 2, 1], 1, 0, None),
+    ] {
+        let r = get(path, 0x8D71);
+        let i = offset_info(&r).unwrap().unwrap();
+        assert_eq!((i.head, i.lock_mode), (head, lock_mode), "{path}");
+        assert_eq!((i.lock_start, i.lock_end), (true, false), "{path}");
+        let d = decode_elements(&r).unwrap();
+        let flags =
+            civil3drust::aecc_alignment::read_header(&r.data, d.elements[0].record.header_bit())
+                .unwrap()
+                .flags;
+        assert_eq!(flags, locked, "{path}");
+        let parent = get(path, 0x8C4A);
+        let mut anchors: Vec<(i32, f64)> = intervals_of(&parent)
+            .into_iter()
+            .filter(|(_, _, g)| holds_guid(&r, g))
+            .map(|(k, s, _)| (k, s))
+            .collect();
+        anchors.sort_by(|x, y| x.1.total_cmp(&y.1));
+        assert_eq!(anchors[0], (start_kind, 0.0), "{path}");
+        assert_eq!(anchors[1].0, 6, "{path}");
+    }
+    // Cant: a section-2 BD becomes 4.92125 (1.5 m).
+    let r = get("samples/S271_S270_cant.dwg", 0x8D71);
+    assert!(!raw::find_f64s(&r.data, &[4.92125], 0, raw::bit_len(&r.data)).is_empty());
+    let r = get("samples/S270_S269_station_locking.dwg", 0x8D71);
+    assert!(raw::find_f64s(&r.data, &[4.92125], 0, raw::bit_len(&r.data)).is_empty());
+}

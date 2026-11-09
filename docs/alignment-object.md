@@ -3270,7 +3270,8 @@ BL 1                             side: 1 left, 2 right
 B, B                             start / end station locked to the
                                   parent's start / end (S264; the first
                                   is the start, S267)
-BL 1                             (MIST19)
+BL 1                             lock mode: 1 Geometry Locking, 2
+                                  Station Locking (S270)
 BL 1                             number of regions (3 with a widening,
                                   S257: "Widenings" below); per region:
 BD −10                             its offset
@@ -3380,6 +3381,23 @@ Edits in the Properties dialog also switch the record to the Properties
 form with the author and a date (S264, S267; MIST3), as for any
 alignment.
 
+**Update mode, lock mode, superelevation type** (S267 → S269 → S270 →
+S271, owner):
+
+- **Static** again (S269; end station 4+00): update mode 2, the element
+  locked — as S265.
+- **Station Locking** (S270; the offset dynamic again): the BL after the
+  lock bits goes 1 → 2, so it is the lock mode. The parent's start
+  anchor turns from kind 0 to kind 6 although "lock to start of parent"
+  stays set: with station locking both ends are anchored as stations
+  (kinds 0 / 90 belong to geometry locking).
+- **Cant** (S271): the lock mode reads 1 again and the start anchor kind
+  0 again (whether the owner set Geometry Locking back is to be
+  confirmed). The offset record's section 2 changes: a BD just after
+  the value 2.25 goes from 0 to 4.92125 (1.5 m — a track gauge), and 42
+  more bits appear earlier in section 2 (not decoded). Superelevation
+  versus cant is stored there, not in the offset block.
+
 **Parent deleted, offset kept** (S260 → S262, owner). Removed: the
 parent with its label groups (its companion stays, D-062), and the
 whole association — action, body, both dependencies and bodies, both
@@ -3441,7 +3459,7 @@ and the Curve – Curve – Reverse Curve (12C2) and Curve – Reverse Curve
 
   ```text
   BL update mode, BL 2, BL 1, BD nominal offset, BL side, B lock start,
-  B lock end, BL 1,
+  B lock end, BL lock mode,
   BL n regions,
   n × { BD offset, BD parent start, BD parent end, BD start, BD end,
         BL kind (2 nominal, 1 widening), BL first, BL last element,
