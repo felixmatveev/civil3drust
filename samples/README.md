@@ -277,6 +277,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S263 | `S263_S260_offset_20.dwg` | Civil 3D 2024 | Owner: S260 with the offset alignment's nominal offset changed to 20' left (Offset Parameters tab). (The owner's files 01 and 02 of this series are S259 and S260, byte for byte.) | 980951 | `0f51e9e9586cdbfe` |
 | S264 | `S264_S263_offset_stations.dwg` | Civil 3D 2024 | Owner: S263 with the start and end stations set to 1+00 and 9+00, both "lock to start/end of parent" boxes cleared (owner's screenshot: update mode Dynamic, lock mode Geometry Locking, superelevation type Superelevation). | 978814 | `f251b1614c0272ae` |
 | S265 | `S265_S264_offset_static.dwg` | Civil 3D 2024 | Owner: S264 with the offset alignment converted from dynamic to static. | 979290 | `252f88392a28302d` |
+| S266 | `S266_S260_parent_shortened.dwg` | Civil 3D 2024 | Owner: S260 with the parent BASE edited — its tangent shortened from 1000 to 500 — while the offset (dynamic, both stations locked) exists. | 990546 | `1ab5fec8f6b5ad25` |
+| S267 | `S267_S266_end_unlocked.dwg` | Civil 3D 2024 | Owner: S266 with "Start station – lock to start of parent" kept and the end station's lock cleared (Offset Parameters tab; the screenshot shows 4+00 typed, the saved end is 5+00). | 983124 | `08d6ce43cfa2a9f3` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

@@ -671,3 +671,52 @@ fn s263_s265_offset_parameters() {
         assert!(inv.contains_key(&h), "{h:X} removed");
     }
 }
+
+/// S266 (owner): the parent shortened to 500 with a dynamic offset;
+/// S267: then only the end station's lock cleared.
+#[test]
+fn s266_s267_parent_edit_and_locks() {
+    let get = |path: &str, h: u64| {
+        let o = raw::open(path).unwrap();
+        raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap()
+    };
+    for (path, locks, end_kind) in [
+        ("samples/S266_S260_parent_shortened.dwg", (true, true), 90),
+        ("samples/S267_S266_end_unlocked.dwg", (true, false), 6),
+    ] {
+        let r = get(path, 0x8D71);
+        let i = offset_info(&r).unwrap().unwrap();
+        assert_eq!(i.head, [1, 2, 1]);
+        assert_eq!((i.lock_start, i.lock_end), locks, "{path}");
+        // The offset was rebuilt over the shortened parent and saved so.
+        assert_eq!(
+            (i.parent_start, i.parent_end, i.start, i.end),
+            (0.0, 500.0, 0.0, 500.0)
+        );
+        let d = decode_elements(&r).unwrap();
+        let Segment::Line { start, end } = d.elements[0].segment else {
+            panic!()
+        };
+        assert_eq!((start.x, start.y, end.x, end.y), (0.0, 10.0, 500.0, 10.0));
+        let parent = get(path, 0x8C4A);
+        let mut anchors: Vec<(i32, f64)> = intervals_of(&parent)
+            .into_iter()
+            .filter(|(_, _, g)| holds_guid(&r, g))
+            .map(|(k, s, _)| (k, s))
+            .collect();
+        anchors.sort_by(|x, y| x.1.total_cmp(&y.1));
+        // Locked start: kind 0; locked end: 90; a set station: 6.
+        assert_eq!(anchors, [(0, 0.0), (end_kind, 500.0)], "{path}");
+        // The parent's other start/end pair is not moved with the parent:
+        // its end stays at 1000, past the parent's new end.
+        let other: Vec<(i32, f64)> = intervals_of(&parent)
+            .into_iter()
+            .filter(|(_, _, g)| !holds_guid(&r, g))
+            .map(|(k, s, _)| (k, s))
+            .collect();
+        assert_eq!(other, [(0, 0.0), (90, 1000.0)], "{path}");
+    }
+}

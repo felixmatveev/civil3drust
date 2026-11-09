@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Parent edited and one lock cleared (S266, S267, owner): Civil 3D saves
+  a dynamic offset rebuilt after its parent changes; the first lock bit
+  is the start's; anchor kinds 0 (locked start), 90 (locked end), 6 (a
+  station). Experiment S268 prepared (a stale offset). Test
+  `s266_s267_parent_edit_and_locks`.
 - Offset parameters edited (S263–S265, owner): `OffsetInfo` gains the
   start/end lock bits; the block head's first value is the update mode
   (1 dynamic, 2 static; static also locks the elements). The station

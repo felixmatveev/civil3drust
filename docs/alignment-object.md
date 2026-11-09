@@ -3268,9 +3268,8 @@ BL 1, BL 2, BL 1                 update mode (1 dynamic, 2 static,
 BD −10                           offset, negative to the left
 BL 1                             side: 1 left, 2 right
 B, B                             start / end station locked to the
-                                  parent's start / end (both set or both
-                                  clear in every sample, so which is
-                                  which is assumed; S264)
+                                  parent's start / end (S264; the first
+                                  is the start, S267)
 BL 1                             (MIST19)
 BL 1                             number of regions (3 with a widening,
                                   S257: "Widenings" below); per region:
@@ -3352,7 +3351,8 @@ save in the Offset Parameters tab):
   stations whose GUIDs are the two in the offset's block (`BD parent
   start, GUID, BD parent end, GUID` after the transitions). Their
   `kind` field is 6 for set stations; with the locks set it was 0 at
-  the start and 90 at the end (S260, S263; S255's parent: 0 and 237).
+  the start and 90 at the end (S260, S263; S255's parent: 0 and 237;
+  S267 settles which is which).
   The parent also holds a second start/end pair (0 / 90) no other
   record names.
 - **Dynamic → static** (S265): the update mode becomes 2 and the
@@ -3360,6 +3360,25 @@ save in the Offset Parameters tab):
   the association objects and the rest of the record are unchanged.
   Civil 3D no longer rebuilds the elements from the parent, which the
   lock records.
+
+**Parent edited** (S260 → S266, owner: the parent's tangent shortened
+from 1000 to 500, the offset dynamic with both stations locked). Civil
+3D rebuilt the offset and saved the result: element 0–500, region and
+own stations 0–500, fresh anchor GUIDs on the parent (start kind 0 at 0,
+end kind 90 at 500). The parent's second start/end pair kept its end at
+1000, past the parent's new end — it follows nothing. Whether Civil 3D
+also rebuilds an offset saved stale (elements not matching the parent)
+is experiment S268 (the S266 offset's tangent set back to 1000;
+pending).
+
+**One lock cleared** (S266 → S267, owner): "Start station – lock to
+start of parent" kept, the end's lock cleared at 5+00. The first lock
+bit stays set, the second clears; the parent's start anchor keeps kind
+0, the end anchor becomes kind 6 at 500. So kind 0 = locked to the
+parent's start, 90 = locked to its end (237 in S255), 6 = a station.
+Edits in the Properties dialog also switch the record to the Properties
+form with the author and a date (S264, S267; MIST3), as for any
+alignment.
 
 **Parent deleted, offset kept** (S260 → S262, owner). Removed: the
 parent with its label groups (its companion stays, D-062), and the
