@@ -12,7 +12,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   two inputs after the check set); the objects Civil 3D adds (a curb
   return action body, three chained dependencies); the block after the
   type partly read (MIST20). `offset_parent` now answers only for
-  offset alignments. Test `connected_alignments`.
+  offset alignments. Test `connected_alignments`. S284 (radius changed):
+  each connection holds four regions in the offset region form; the
+  curve and spiral values live only in the elements.
 - Widening added, edited, deleted and doubled (S276–S281, owner): all
   decode, stations match Civil 3D's to 1e-6; deleting a widening
   restores the offset's elements with their old IDs; widenings add only

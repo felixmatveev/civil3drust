@@ -40,7 +40,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 | MIST17 | 128 bits after a `0x0D` element header | solved: group start point |
 | MIST18 | station equation and masking fields | solved; the equations' 18 leading bits are a fixed marker (owner) |
 | MIST19 | offset alignment block after the type | mostly read (regions, transitions) |
-| MIST20 | connected (curb return) alignment block after the type | partly read (S283) |
+| MIST20 | connected (curb return) alignment block after the type | partly read (S283, S284) |
 
 ## MIST1 — the 66-bit section-2 field — **PARTIALLY SOLVED (S142–S150, S214)**
 
@@ -562,17 +562,18 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
 - **Next samples:** transition type 3 (if the list has one more type);
   Cant set on a centerline, if Civil 3D offers it there.
 
-## MIST20 — the connected (curb return) alignment block after the type — **open (S283)**
+## MIST20 — the connected (curb return) alignment block after the type — **open (S283, S284)**
 
 - **Where:** after `BL type` 3 (alignment-object.md, "Connected (curb
   return) alignments").
-- **Read:** per connection the offset (−10), the tangent length (25),
-  the input station range of the tangent and the connected alignment's
-  own range (shrunk by 0.025 at each end), stored twice.
-- **Open:** the head (`BL 1, 1, 1, B 1, BL 1, 1`), the bits between,
-  the GUIDs (one GUID twice), the 73-bit gap between connections, the
-  spiral and curve parameters after them.
-- **Next samples:** the same connection with other values; one input
+- **Read (S283, S284):** per connection the offset, the tangent length
+  and four regions in the offset region form (the tangent's, two empty,
+  the tangent's again). The curve and spiral values are not in the
+  block — only in the elements (S284).
+- **Open:** the head (`BL 1, 1, 1, B 1, BL 1, 1`); the `B 0, BD 0, BD
+  0, B 0` after the tangent length; the two empty regions; the values
+  after the second connection (462.88, 473.38, 405.79, …).
+- **Next samples:** without spirals; other tangent lengths; one input
   edited; a connection between centerlines.
 
 ## Not sampled yet (not mysteries, just gaps)

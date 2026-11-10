@@ -3602,33 +3602,42 @@ name-template node's counter changes.
 **Handle stream.** Six soft pointers after the check set: input A, A,
 B, B, A, B (`aecc_alignment_refs::connected_inputs`).
 
-**After the type** (one sample, partly read):
+**After the type** (S283, S284; partly read). The block ends where the
+string data starts, about 2390 bits after the type:
 
 ```text
 BL 3 (type), BL 1, BL 1, BL 1, B 1, BL 1, BL 1
 per connection (two):
-  BD −10                     offset from the input (negative left?)
+  BD −10                     offset from the input
   B 1, BD 25                 the tangent length
   B 0, BD 0, BD 0, B 0
-  { BD 10, BD input station from, BD input station to,
-    BD own station from, BD own station to }   twice, with BL 1 and a
-                              GUID between the two copies (S283:
-                              188.90–213.90 on WEST-EAST-Left and 0.025–
-                              24.975 on the connected alignment; 121.32–
-                              146.32 on NORTH-SOUTH-Right and 460.64–
-                              485.59 — the tangent's stations shrunk by
-                              0.025 at each end)
-then more (spiral and curve parameters expected: L 200, R 150) — not
-read
+  4 regions, each in the offset region form
+    { BD offset, BD input station from, BD input station to,
+      BD own station from, BD own station to, BL kind, BL first
+      element, BL last element, BL 0 × 5, BL 3 }:
+    the tangent (S283: 10, 188.90–213.90 on WEST-EAST-Left, own
+    0.025–24.975, kind 1, element 1 — the second connection: −10,
+    121.32–146.32 on NORTH-SOUTH-Right, own 485.59–460.64, element 3),
+    two all-zero regions (kind 1, elements 0), the tangent's region again
+then BD 462.88, …, BD 473.38, BD 405.79, …   (not read)
 ```
 
-The inputs get no station anchors (unlike an offset's parent); the
-stations are stored as numbers. Not decoded: the head values, the
-73-bit gap between the two connection blocks, the GUIDs, the rest.
+The own stations run 0.025 inside the tangent's ends. **The curve and
+spiral values are not in the block**: changing the radius (S284: 150 →
+186.80, spirals kept at 200) changed only the element records (the arc
+and both spirals) and the stations where the tangents meet the inputs
+(188.90 → 153.69 and 121.32 → 86.11, with the own end stations 485.59 →
+543.41); nothing else in the block moved. So the elements are the
+model data, as for an offset's.
 
-**Next samples.** The same connection with other spiral/curve values
-(e.g. no spirals; R 100), then with one input edited; a connection
-between two centerlines instead of offsets.
+The inputs get no station anchors (unlike an offset's parent); the
+stations are stored as numbers. Not decoded: the head values, the three
+values after the tangent length, why each tangent region is stored with
+two empty ones and a copy, the values after the second connection, the
+one changed 32-bit value at about +2610.
+
+**Next samples.** The connection without spirals; with other tangent
+lengths; one input edited; a connection between two centerlines.
 
 ## MIST2: re-save field (partially solved, S151–S157)
 

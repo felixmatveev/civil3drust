@@ -29,3 +29,25 @@ fn s283_connected_alignment() {
     assert_eq!(offset_parent(&o.doc, off), Some(0x8C4A));
     assert_eq!(connected_inputs(off), None);
 }
+
+/// S284: the curve radius changed; the elements change, the inputs stay.
+#[test]
+fn s284_radius_changed() {
+    let o = raw::open("samples/S284_S283_connected_radius.dwg").unwrap();
+    let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0x8E38)
+        .unwrap();
+    let d = decode_elements(&r).unwrap();
+    let civil3drust::aecc_elements::Segment::Arc { geometry: g, .. } = d.elements[2].segment else {
+        panic!()
+    };
+    assert!((g.radius - 186.8048).abs() < 1e-4);
+    assert!((d.length() - 543.4323).abs() < 1e-4);
+    assert_eq!(connected_inputs(&r), Some(vec![0x8E1A, 0x8E2E]));
+    // The radius is not stored outside the elements.
+    for v in [150.0, g.radius] {
+        let hits = raw::find_f64s(&r.data, &[v], 0, raw::bit_len(&r.data));
+        assert!(hits.iter().all(|&h| h < 6000), "{v} at {hits:?}");
+    }
+}
