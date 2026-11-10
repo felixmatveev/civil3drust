@@ -448,6 +448,14 @@ versions follow [Semantic Versioning](https://semver.org/).
   their parents, connected alignments' inputs), which have an 8-bit
   longer reactor count; the curve-group JSON of a connected alignment is
   not taken for its name (S287).
+- `set_length` and `set_pis` refuse alignments that hold anything but
+  fixed tangents and free arcs (`EditError::NotPiLayout`). Before, only
+  three-point arcs were refused, so on a tangent followed by a fixed
+  spiral (S162 FD7), a floating curve (S117 FCB) or a line constrained
+  by the next element (S242 FEA) the tangent moved, the other element
+  stayed, the command reported success and the written alignment no
+  longer decoded (or, for the floating curve, did not change). Test
+  `pi_edits_refuse_alignments_with_other_elements`.
 - New alignments made from a template in the Alignment Properties form
   were named "felix" in Civil 3D: `to_plain_form` kept the form's user
   string, which the plain form reads as the name (S193, S227). It is now

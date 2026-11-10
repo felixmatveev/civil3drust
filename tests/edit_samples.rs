@@ -864,3 +864,39 @@ fn curve_criteria_values_s219_s222() {
     assert_eq!((c4[1].0, c4[1].1, c4[1].2), (40.0, 533.0, 83.0));
     assert!((c4[1].3 - 179.0367).abs() < 1e-3);
 }
+
+/// `set_length` / `set_pis` move the tangents and let free arcs follow.
+/// Any other element keeps its stored geometry, so the edit is refused
+/// instead of writing a chain with a gap: a fixed spiral after the tangent
+/// (S162 FD7), a line constrained by the next element before an open curve
+/// (S242 FEA), a floating curve (S117 FCB).
+#[test]
+fn pi_edits_refuse_alignments_with_other_elements() {
+    use civil3drust::aecc_alignment_edit::{set_pis, set_tangent_length, EditError};
+    for (path, handle) in [
+        ("samples/S162_S120_free_spirals.dwg", 0xFD7),
+        ("samples/S242_S24_open_centre_curves.dwg", 0xFEA),
+        ("samples/S117_S116_curve_methods.dwg", 0xFCB),
+    ] {
+        let o = raw::open(path).unwrap();
+        let rec = raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == handle)
+            .unwrap();
+        let d = decode_elements(&rec).unwrap();
+        let mut data = rec.data.clone();
+        let r = set_tangent_length(&mut data, &d, 0, 137.25);
+        assert!(
+            matches!(r, Err(EditError::NotPiLayout(_))),
+            "{path} {handle:X}: {r:?}"
+        );
+        let pis = [Point2::new(0.0, 0.0), Point2::new(50.0, 50.0)];
+        let r = set_pis(&mut data, &d, &pis);
+        assert!(
+            matches!(r, Err(EditError::NotPiLayout(_))),
+            "{path} {handle:X}: {r:?}"
+        );
+        // Nothing was written.
+        assert_eq!(data, rec.data);
+    }
+}

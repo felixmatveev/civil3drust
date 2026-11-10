@@ -17,7 +17,7 @@
 //! changes on every Civil 3D save, and label-group records. A file edited
 //! without them has been opened, used and re-saved by Civil 3D 2024.
 
-use crate::aecc_alignment::{DecodedAlignment, TangentRecord};
+use crate::aecc_alignment::{DecodedAlignment, Linked, TangentRecord};
 use crate::aecc_arc_edit::{elements_end_bit, find_station_copies, station_of};
 use crate::aecc_elements::{resolve, ArcDef, DecodedElements, Element, Segment};
 use crate::alignment::{Alignment, Point2};
@@ -32,6 +32,10 @@ pub enum EditError {
     /// Arcs by three points are fixed in place; editing around them is not
     /// supported yet.
     FixedArcs,
+    /// The alignment has an element that is not a fixed tangent or a free
+    /// arc (a spiral, a group, a floating line or curve …). It would stay
+    /// where it is while the tangents move (S162 FD7, S242 FEA).
+    NotPiLayout(String),
     /// Consecutive tangents don't share a PI.
     TangentsNotConnected,
     /// The edit leaves a free arc without room on a tangent.
@@ -50,6 +54,10 @@ impl fmt::Display for EditError {
             Self::FixedArcs => write!(
                 f,
                 "alignment has arcs defined by three points; only tangents and free arcs can be edited"
+            ),
+            Self::NotPiLayout(what) => write!(
+                f,
+                "alignment has {what}; only alignments of fixed tangents and free arcs can be edited by their PIs"
             ),
             Self::TangentsNotConnected => write!(f, "consecutive tangents don't share a PI"),
             Self::DoesNotFit(why) => write!(f, "edit doesn't fit: {why}"),
@@ -225,6 +233,20 @@ fn pi_polyline(decoded: &DecodedElements) -> Result<(Vec<TangentRecord>, Alignme
         .any(|e| matches!(&e.record, Element::Arc(a) if matches!(a.def, ArcDef::ThreePoint { .. })))
     {
         return Err(EditError::FixedArcs);
+    }
+    // Only fixed tangents and free arcs follow their PIs. Anything else
+    // keeps its own stored geometry, so moving the tangents around it
+    // would leave a gap (S162 FD7: a fixed spiral after the tangent).
+    for e in &decoded.elements {
+        let what = match &e.record {
+            Element::Tangent(t) if t.kind == crate::aecc_alignment::KIND_FIXED => continue,
+            Element::Arc(a) if matches!(a.def, ArcDef::Free { .. }) => continue,
+            Element::Tangent(t) => format!("a floating or free line (element {})", t.id),
+            Element::Arc(a) => format!("a curve that is not a free fillet (element {})", a.id),
+            Element::Widening(_) => "a widening transition".to_string(),
+            other => format!("a spiral or spiral group (element {})", other.id()),
+        };
+        return Err(EditError::NotPiLayout(what));
     }
     let tangents: Vec<TangentRecord> = decoded
         .elements
