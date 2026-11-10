@@ -40,7 +40,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 | MIST17 | 128 bits after a `0x0D` element header | solved: group start point |
 | MIST18 | station equation and masking fields | solved; the equations' 18 leading bits are a fixed marker (owner) |
 | MIST19 | offset alignment block after the type | mostly read (regions, transitions) |
-| MIST20 | connected (curb return) alignment block after the type | partly read (S283–S285) |
+| MIST20 | connected (curb return) alignment block after the type | partly read (S283–S286) |
 
 ## MIST1 — the 66-bit section-2 field — **PARTIALLY SOLVED (S142–S150, S214)**
 
@@ -573,8 +573,9 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
 - **Open:** the head (`BL 1, 1`); the per-connection offset's sign; the
   `B 0, BD 0, BD 0, B 0` after the tangent length; the two empty
   regions; the curve-group part after the connections (the type code
-  2 fillet / 4 SCS?, its regions, and values that look like pick
-  points) (S285).
+  and the < 180° bit are read, S286; the Three Centered Arc's values
+  75, 10, 40, 50, 10 and its prefix-22 element record; the trailing
+  values that look like pick points).
 - **Next samples:** one connected alignment per curve group type
   between the same centerlines; one input edited.
 

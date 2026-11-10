@@ -3622,10 +3622,15 @@ per connection (two):
     121.32–146.32 on NORTH-SOUTH-Right, own 485.59–460.64, element 3),
     two all-zero regions (kind 1, elements 0), the tangent's region again
   B 0, (B 0 after the second)
-B 1, B 1, BL curve group type?   (2 Circular Fillet, S285; 4 Spiral-
-                                  Curve-Spiral, S283)
+B 0, B degree of curvature, B 1  (1: < 180°, 0: > 180°, S286)
+BL curve group type              2 Circular Fillet, 3 Three Centered
+                                  Arc, 4 Spiral-Curve-Spiral (S286)
 fillet (S285): BL 2, then a region { BD 0, BD 0, BD 0, BD 25, BD 260.62
   (the arc's own stations), BL 1, BL 0, BL 0, BL 0 × 5, BL 3 }, …
+three centered arc (S286): BL 2, a region (own 25–94.50), then BD 75,
+  BD 10, BD 40, BD 50, BD 10 (its parameters; meaning not known)
+spiral – curve – spiral (S286): B 0, then the trailing values directly —
+  the radius and the spiral lengths are only in the elements
 then (both) a few more values (S283: 462.88, 473.38, 405.79; S285:
 482.88, 458.38, 390.79 — 0.5 off the second input's line, the end x,
 an input station 25 / 10 back: pick points?)        not read
@@ -3652,10 +3657,17 @@ the decoder now allows: the PI is where the tangents' lines cross ahead
 of both. The inputs are the centerlines, in the same A, A, B, B, A, B
 pointers.
 
-**Next samples.** One connected alignment per remaining curve group type
-(Reverse Spiral-Spiral-Curve-Spiral, Reverse Spiral-Curve-Spiral-Spiral,
-Reverse Spiral-Spiral-Curve-Spiral-Spiral, Three Centered Arc) between
-the same two centerlines; one input edited.
+**Curve group types** (S286, owner): Spiral-Curve-Spiral below 180°
+(spirals 200 / 200) and above 180° (spirals 100 / 150, a 222° arc)
+decode as ordinary tangent – spiral – arc – spiral – tangent elements.
+The Three Centered Arc's middle is one element record of prefix 22
+(locked header, flag 0x02) after the usual parameter block: `BL 1, BL
+id 2, BL before 1, BL after 3, BL 0, BL 1, BL 3, BD 75, BD 10, BD 40,
+BD 0, BD 50, BD 10, …` then points (the tangents' inner ends) — not
+decoded, so that alignment does not decode yet.
+
+**Next samples.** The Three Centered Arc's dialog values (to name 75,
+10, 40, 50, 10); the three Reverse Spiral types; one input edited.
 
 ## MIST2: re-save field (partially solved, S151–S157)
 

@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Connected alignment curve groups (S286, owner): Spiral-Curve-Spiral
+  below and above 180° decode; the block's curve group type code (2
+  fillet, 3 three centered arc, 4 spiral-curve-spiral) and the < 180°
+  bit located; the Three Centered Arc record (prefix 22) documented, not
+  decoded.
 - Connected alignment with a circular fillet between centerlines (S285,
   owner): a free arc between two tangents stored already trimmed (they
   don't meet at the PI) now decodes, the PI taken where the tangents'

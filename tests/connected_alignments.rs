@@ -78,3 +78,25 @@ fn s285_fillet_between_centerlines() {
     assert!((end.x - 458.3777491542559).abs() < 1e-9 && (end.y - 175.0).abs() < 1e-9);
     assert!((d.length() - (50.0 + 150.0 * std::f64::consts::FRAC_PI_2)).abs() < 1e-9);
 }
+
+/// S286: Spiral-Curve-Spiral below and above 180°; the Three Centered Arc
+/// does not decode yet.
+#[test]
+fn s286_curve_groups() {
+    let o = raw::open("samples/S286_connected_curve_groups.dwg").unwrap();
+    let recs = raw::records(&o.doc, "AECC_ALIGNMENT");
+    let get = |h: u64| recs.iter().find(|r| r.handle == h).unwrap();
+    for (h, len, sweep) in [(0x8E98, 485.6194, 13.6056), (0x8EC8, 881.8583, 222.2535)] {
+        let d = decode_elements(get(h)).unwrap();
+        assert!((d.length() - len).abs() < 1e-4, "{h:X}");
+        let civil3drust::aecc_elements::Segment::Arc { geometry: g, .. } = d.elements[2].segment
+        else {
+            panic!()
+        };
+        assert!((g.radius - 150.0).abs() < 1e-9);
+        assert!((g.sweep.to_degrees() - sweep).abs() < 1e-4, "{h:X}");
+        assert_eq!(connected_inputs(get(h)), Some(vec![0x8C4A, 0x8E11]));
+    }
+    assert!(decode_elements(get(0x8EA5)).is_err());
+    assert_eq!(alignment_type(get(0x8EA5)).ok(), None);
+}
