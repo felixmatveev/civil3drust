@@ -442,6 +442,14 @@ versions follow [Semantic Versioning](https://semver.org/).
   `s162_spirals_match_civil3d_drawing`; MIST16.
 
 ### Fixed
+- `set_length` / `set_pis` also refuse offset and connected alignments
+  (their block after the type keeps stations and element numbers, and
+  Civil 3D rebuilds a dynamic offset from its parent, S268) and
+  alignments with a spiral group held by the layout JSON (Civil 3D
+  follows the JSON's points; an unsolved group, S223, hid the rest of
+  the chain and the edit reported a wrong length). `DecodedElements`
+  carries the alignment type (`alignment_type`), read without decoding
+  twice (`aecc_design_speed::locate_with`).
 - Section-2 offsets are counted from the class data
   (`aecc_entity::section2_base`), so `section2_form`, the JSON flag and
   the plain-form conversion work on alignments with reactors (offsets,

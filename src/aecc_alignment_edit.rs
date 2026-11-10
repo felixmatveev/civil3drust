@@ -234,6 +234,28 @@ fn pi_polyline(decoded: &DecodedElements) -> Result<(Vec<TangentRecord>, Alignme
     {
         return Err(EditError::FixedArcs);
     }
+    // Offset and connected alignments follow their inputs: Civil 3D
+    // rebuilds a dynamic one from them (S268), and their block after the
+    // type keeps stations and element numbers an edit would leave stale.
+    match decoded.alignment_type {
+        Some(crate::aecc_offset::TYPE_OFFSET) => {
+            return Err(EditError::NotPiLayout("an offset alignment".to_string()))
+        }
+        Some(crate::aecc_offset::TYPE_CONNECTED) => {
+            return Err(EditError::NotPiLayout(
+                "a connected (curb return) alignment".to_string(),
+            ))
+        }
+        _ => {}
+    }
+    // A spiral group held by the JSON layout: Civil 3D follows the JSON's
+    // points, not the tangent records (S216 → S217), and an unsolved group
+    // hides the rest of the chain (S223).
+    if !decoded.layout_groups.is_empty() || !decoded.set_aside.is_empty() {
+        return Err(EditError::NotPiLayout(
+            "a spiral group held by the layout JSON".to_string(),
+        ));
+    }
     // Only fixed tangents and free arcs follow their PIs. Anything else
     // keeps its own stored geometry, so moving the tangents around it
     // would leave a gap (S162 FD7: a fixed spiral after the tangent).

@@ -748,6 +748,22 @@ pub(crate) fn type_bit(rec: &RawRecord, data: &[u8]) -> Result<usize, BuildError
         ..rec.clone()
     };
     let (_, end, _) = crate::aecc_design_speed::locate(&r).map_err(|e| layout(e.to_string()))?;
+    type_bit_after(data, end)
+}
+
+/// The alignment type of `rec` whose elements are already decoded as `d`
+/// (for [`crate::aecc_elements::decode_elements`] itself).
+pub(crate) fn alignment_type_with(
+    rec: &RawRecord,
+    d: &crate::aecc_elements::DecodedElements,
+) -> Option<i32> {
+    let (_, end, _) = crate::aecc_design_speed::locate_with(rec, d).ok()?;
+    let q = type_bit_after(&rec.data, end).ok()?;
+    raw::read_bl(&rec.data, q).map(|(v, _)| v)
+}
+
+/// The type BL's bit from the end of the design-speed table.
+fn type_bit_after(data: &[u8], end: usize) -> Result<usize, BuildError> {
     let bad = || layout("alignment-type field not found");
     let (_, q) = raw::read_bd(data, end).ok_or_else(bad)?;
     let (_, q) = raw::read_bl(data, q).ok_or_else(bad)?;

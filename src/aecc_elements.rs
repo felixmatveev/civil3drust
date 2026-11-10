@@ -3189,6 +3189,9 @@ pub struct DecodedElements {
     pub handle: u64,
     pub name: Option<String>,
     pub stored_start_station: Option<f64>,
+    /// The alignment type stored after the design speeds (1 centerline, 2
+    /// offset, 3 connected, 4 miscellaneous …), when found.
+    pub alignment_type: Option<i32>,
     /// The alignment proper: the chain starting at the first-element ID,
     /// in path order. Stations, length and design speeds refer to it only.
     pub elements: Vec<ResolvedElement>,
@@ -3373,15 +3376,18 @@ pub fn decode_elements_with(
         detached.iter_mut().flatten().for_each(fix);
     }
     let stored_start_station = aecc_alignment::start_station(&rec.data, first_stored);
-    Ok(DecodedElements {
+    let mut decoded = DecodedElements {
         handle: rec.handle,
         name: aecc_alignment::record_name(&rec.data),
         stored_start_station,
+        alignment_type: None,
         elements,
         detached,
         layout_groups: unsolved,
         set_aside,
-    })
+    };
+    decoded.alignment_type = crate::aecc_build::alignment_type_with(rec, &decoded);
+    Ok(decoded)
 }
 
 /// Solve `g` between the last element of `elements` (A) and the first of

@@ -869,7 +869,8 @@ fn curve_criteria_values_s219_s222() {
 /// Any other element keeps its stored geometry, so the edit is refused
 /// instead of writing a chain with a gap: a fixed spiral after the tangent
 /// (S162 FD7), a line constrained by the next element before an open curve
-/// (S242 FEA), a floating curve (S117 FCB).
+/// (S242 FEA), a floating curve (S117 FCB), a spiral group held by the
+/// JSON layout (S223), offset alignments (S260 dynamic, S265 static).
 #[test]
 fn pi_edits_refuse_alignments_with_other_elements() {
     use civil3drust::aecc_alignment_edit::{set_pis, set_tangent_length, EditError};
@@ -877,6 +878,11 @@ fn pi_edits_refuse_alignments_with_other_elements() {
         ("samples/S162_S120_free_spirals.dwg", 0xFD7),
         ("samples/S242_S24_open_centre_curves.dwg", 0xFEA),
         ("samples/S117_S116_curve_methods.dwg", 0xFCB),
+        // A group at the end held only by the JSON layout (unsolved).
+        ("samples/S223_S178_group_at_alignment_end.dwg", 0x1208),
+        // Offsets of a tangent: dynamic and static.
+        ("samples/S260_S259_offset_left_10.dwg", 0x8D71),
+        ("samples/S265_S264_offset_static.dwg", 0x8D71),
     ] {
         let o = raw::open(path).unwrap();
         let rec = raw::records(&o.doc, "AECC_ALIGNMENT")

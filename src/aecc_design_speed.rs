@@ -96,7 +96,16 @@ fn parse_body(data: &[u8], q: usize) -> Option<(Vec<DesignSpeed>, usize)> {
 /// element records; it must hold the identity GUID (copy 1, 16 bits after
 /// the last element record) in one entry.
 pub fn locate(rec: &RawRecord) -> Result<(usize, usize, Vec<DesignSpeed>), SpeedError> {
-    let (end, identity) = identity(rec)?;
+    let d = decode_elements(rec).map_err(|e| err(e.to_string()))?;
+    locate_with(rec, &d)
+}
+
+/// [`locate`] with the record's elements already decoded.
+pub fn locate_with(
+    rec: &RawRecord,
+    d: &crate::aecc_elements::DecodedElements,
+) -> Result<(usize, usize, Vec<DesignSpeed>), SpeedError> {
+    let (end, identity) = identity_with(rec, d)?;
     let data = &rec.data;
     // The direct path: intervals, station equations, table (S243).
     if let Some((_, after)) = crate::aecc_station_refs::intervals_at(data, end) {
@@ -173,6 +182,13 @@ fn end_of_elements(rec: &RawRecord) -> Result<usize, SpeedError> {
 /// after them).
 fn identity(rec: &RawRecord) -> Result<(usize, [u8; 16]), SpeedError> {
     let d = decode_elements(rec).map_err(|e| err(e.to_string()))?;
+    identity_with(rec, &d)
+}
+
+fn identity_with(
+    rec: &RawRecord,
+    d: &crate::aecc_elements::DecodedElements,
+) -> Result<(usize, [u8; 16]), SpeedError> {
     let end = d.records_end_bit().ok_or_else(|| err("no elements"))?;
     let mut id = [0u8; 16];
     for (i, b) in id.iter_mut().enumerate() {
