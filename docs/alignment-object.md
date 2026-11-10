@@ -3731,8 +3731,32 @@ centered arc, 4 spiral – curve – spiral; S288: 5, 6).
 8F18 has the Properties form and the JSON flag but no user string; the
 name is the string right after the curve-group JSON.
 
-**Next samples.** Reverse Spiral-Spiral-Curve-Spiral-Spiral; one input
-edited.
+**Reverse Spiral-Spiral-Curve-Spiral-Spiral** (S289, owner). Both
+inputs now have curves (WEST-EAST R 1961.50, NORTH-SOUTH R 1838.51), and
+8F9A runs from a curve 25 off one to a curve 25 off the other: its
+middle is the centerline group 2569 (Spiral1 50, Spiral2 70, ArcRadius
+100, Spiral3 60, Spiral4 80), solved as before (497.5844 long, the
+middle curve 107.10°, graphics on it). Its curve-group JSON is
+CurveType 7.
+
+So a connected alignment's curve group types are 2 Circular Fillet, 3
+Three Centered Arc, 4 Spiral-Curve-Spiral, 5 Reverse Spiral-Spiral-Curve-
+Spiral, 6 Reverse Spiral-Curve-Spiral-Spiral, 7 Reverse Spiral-Spiral-
+Curve-Spiral-Spiral. The curve-group JSON's lengths map onto the layout
+group in order: SpiralInLength → Spiral1, ReverseSpiralInLength →
+Spiral2, CurveRadius → ArcRadius, SpiralOutLength → Spiral3,
+ReverseSpiralOutLength → Spiral4 (S288, S289), each group taking the
+ones its shape has.
+
+| curve group | stored as |
+|---|---|
+| 2 fillet | elements (free arc between trimmed tangents) |
+| 3 three centered arc | elements (prefix-22 record, kind 1) |
+| 4 spiral – curve – spiral | elements |
+| 5, 6, 7 reverse spirals | JSON layout group 2562, 2566, 2569 |
+
+**Next samples.** One input edited (to see what the connected alignment
+and its block do).
 
 ## MIST2: re-save field (partially solved, S151–S157)
 

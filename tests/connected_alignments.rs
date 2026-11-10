@@ -270,3 +270,26 @@ fn s288_reverse_spiral_groups() {
         assert_eq!(connected_inputs(r).map(|v| v.len()), Some(2));
     }
 }
+
+#[test]
+fn s289_reverse_spiral_spiral_curve_spiral_spiral() {
+    // Between two curves (both inputs now have curves): the middle is the
+    // centerline group 2569, solved as before; the graphics lie on it.
+    let o = raw::open("samples/S289_connected_reverse_sscss.dwg").unwrap();
+    let recs = raw::records(&o.doc, "AECC_ALIGNMENT");
+    let r = recs.iter().find(|r| r.handle == 0x8F9A).unwrap();
+    let d = decode_elements(r).unwrap();
+    assert!(d.is_complete());
+    assert_eq!(d.alignment_type, Some(3));
+    assert_eq!(d.layout_groups[0].constraint_type, 2569);
+    assert!((d.length() - 497.5844).abs() < 1e-4, "{}", d.length());
+    let segs: Vec<Segment> = d.elements.iter().map(|e| e.segment).collect();
+    assert_eq!(segs.len(), 7);
+    let Segment::Arc { geometry: g, .. } = segs[3] else {
+        panic!()
+    };
+    assert!((g.radius - 100.0).abs() < 1e-9);
+    assert!((g.sweep.to_degrees() - 107.1006).abs() < 1e-4);
+    assert_eq!(stray_vertices(r, &segs), 0);
+    assert_eq!(connected_inputs(r), Some(vec![0x8C4A, 0x8E11]));
+}

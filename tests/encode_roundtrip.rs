@@ -41,6 +41,7 @@ const SAMPLES: &[&str] = &[
     "S285_connected_fillet_centerlines.dwg",
     "S286_connected_curve_groups.dwg",
     "S288_connected_reverse_spirals.dwg",
+    "S289_connected_reverse_sscss.dwg",
 ];
 
 fn bits(data: &[u8], from: usize, to: usize) -> String {

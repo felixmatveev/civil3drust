@@ -17,6 +17,11 @@ versions follow [Semantic Versioning](https://semver.org/).
   on a closed pipe.
 
 ### Added
+- Connected Reverse Spiral-Spiral-Curve-Spiral-Spiral (S289, owner):
+  decodes as the centerline group 2569; curve group types 2–7 and the
+  curve-group JSON's length names mapped to the layout group's. Test
+  `s289_reverse_spiral_spiral_curve_spiral_spiral`; S289 in
+  `encode_roundtrip`.
 - Connected alignments with reverse spirals (S288, owner): their JSON
   layout groups 2562 (reverse spiral – spiral – curve – spiral) and 2566
   (spiral – curve – spiral – reverse spiral) are solved with the pieces of
