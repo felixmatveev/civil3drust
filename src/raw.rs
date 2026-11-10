@@ -531,6 +531,14 @@ fn structured_name(data: &[u8]) -> Option<String> {
     // Properties-form flags), and Civil 3D empties it when it drops the
     // group (S223 → S224), so the slot is removed by position when the
     // flag says so.
+    // A connected alignment's curve-group JSON comes right before the
+    // name, after the user string if there is one (S287, S288: 8F18 has
+    // the Properties form without a user string).
+    if let Some(i) = strings.iter().position(|s| is_curve_group_json(s)) {
+        if let Some(name) = strings.get(i + 1).filter(|s| !s.is_empty()) {
+            return Some(name.clone());
+        }
+    }
     if layout_json_flag(data) && strings.len() > 3 {
         strings.remove(3);
     }

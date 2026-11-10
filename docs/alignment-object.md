@@ -3706,7 +3706,33 @@ offsets, offset parents and connected alignments (it returned `None` for
 them before). The curve-group JSON in the Properties form's JSON slot is
 no longer taken for the name.
 
-**Next samples.** The three Reverse Spiral types; one input edited.
+**Reverse spiral types** (S288, owner; sent without notes). The
+drawing keeps only WEST-EAST and NORTH-SOUTH (moved east to x = 893.51)
+and two connected alignments between them, both > 180°:
+
+| alignment | elements | JSON layout group | curve-group JSON |
+|---|---|---|---|
+| 8F18 "REVERSE SPIRAL SPIRAL CURVE SPIRAL" | curve R 569.62 (25 off WEST-EAST's R 544.62), group, tangent 25 | 2562: Spiral1 100, Spiral2 200, ArcRadius 150, Spiral3 150 | CurveType 5: SpiralIn 100, ReverseSpiralIn 200, Curve 150, SpiralOut 150, ReverseSpiralOut 200 |
+| 8F32 "REVERSE SPIRAL - CURVE - SPIRAL SPIRAL" | tangent 25, group, curve R 519.62 | 2566: Spiral1 25, ArcRadius 37.5, Spiral3 37.5, Spiral4 50 | CurveType 6: SpiralIn 25, ReverseSpiralIn 50, Curve 37.5, SpiralOut 37.5, ReverseSpiralOut 50 |
+
+Unlike the spiral – curve – spiral (elements only), these keep their
+middle as a JSON layout group without piece records (D-059), as
+centerlines do with the free reverse-spiral methods. The pieces are
+those of 2561 (S S C S, from a curve) and 2565 (S C S S, to a curve), and
+civil3drust solves 2562 and 2566 with the same pieces (D-061). The
+solutions meet both fixed elements as stored (no trimming needed): 8F18
+is 1058.9055 long with a 213.05° curve, 8F32 310.8924 with 228.48°, and
+the alignment graphics lie on them (no vertex farther than 0.01). The
+curve-group JSON gives every length of the dialog, used or not (8F18
+has no reverse spiral out, 8F32 no reverse spiral in). Its CurveType
+continues the block's curve group codes (S286: 2 fillet, 3 three
+centered arc, 4 spiral – curve – spiral; S288: 5, 6).
+
+8F18 has the Properties form and the JSON flag but no user string; the
+name is the string right after the curve-group JSON.
+
+**Next samples.** Reverse Spiral-Spiral-Curve-Spiral-Spiral; one input
+edited.
 
 ## MIST2: re-save field (partially solved, S151–S157)
 

@@ -17,6 +17,12 @@ versions follow [Semantic Versioning](https://semver.org/).
   on a closed pipe.
 
 ### Added
+- Connected alignments with reverse spirals (S288, owner): their JSON
+  layout groups 2562 (reverse spiral – spiral – curve – spiral) and 2566
+  (spiral – curve – spiral – reverse spiral) are solved with the pieces of
+  2561 and 2565, matching the alignment graphics; the name is read after
+  the curve-group JSON when there is no user string. Test
+  `s288_reverse_spiral_groups`; S288 in `encode_roundtrip`.
 - Connected alignment converted to static (S287, owner): the two BLs
   after the type go 1, 1 → 2, 2 (`aecc_offset::connected_head`); the
   associations stay; the last tangent is renumbered; section 2 takes the

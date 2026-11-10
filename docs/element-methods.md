@@ -73,6 +73,8 @@ the arcs and lines in each record's proxy graphics.
 | Free Reverse Spiral-Curve-Spiral-Spiral (from entity, end curve) | separate fixed elements + JSON layout string (ConstraintType 2565) | known, S177, S178 |
 | Free Reverse Spiral-Curve-Spiral-Curve (from curve, end entity) | separate fixed elements + JSON layout string (ConstraintType 2561) | known, S177, S178 |
 | Free Reverse Spiral-Spiral-Curve-Spiral-Spiral (between two curves) | separate fixed elements + JSON layout string (ConstraintType 2569) | known, S177, S178 |
+| Connected alignment, Reverse Spiral-Spiral-Curve-Spiral (from a curve to a line) | JSON layout group 2562, pieces as 2561 | known, S288 |
+| Connected alignment, Reverse Spiral-Curve-Spiral-Spiral (from a line to a curve) | JSON layout group 2566, pieces as 2565 | known, S288 |
 
 ## Spirals
 

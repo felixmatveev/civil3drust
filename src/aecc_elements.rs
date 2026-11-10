@@ -3391,8 +3391,8 @@ fn solve_layout_group(elements: &mut Vec<ResolvedElement>, g: &mut LayoutGroup) 
     use crate::aecc_layout_solve::{solve_group, trim_after, trim_before, Carrier};
     let method = match g.constraint_type {
         2569 => "SSCSS",
-        2561 => "SSCS",
-        2565 => "SCSS",
+        2561 | 2562 => "SSCS",
+        2565 | 2566 => "SCSS",
         _ => return false,
     };
     let (Some(a), Some(b)) = (elements.last(), g.following.first()) else {

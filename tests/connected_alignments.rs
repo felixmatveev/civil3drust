@@ -3,7 +3,69 @@
 use civil3drust::aecc_alignment_refs::{alignment_refs, connected_inputs, offset_parent};
 use civil3drust::aecc_build::alignment_type;
 use civil3drust::aecc_elements::decode_elements;
+use civil3drust::aecc_elements::Segment;
+use civil3drust::proxy_graphics as pg;
 use civil3drust::raw;
+
+/// Point at distance `t` along `seg`.
+fn point_on(seg: &Segment, t: f64) -> civil3drust::Point2 {
+    match *seg {
+        Segment::Spiral { geometry, .. } => geometry.point_at(t).0,
+        Segment::Line { start, end } => {
+            let f = t / seg.length();
+            civil3drust::Point2::new(
+                start.x + f * (end.x - start.x),
+                start.y + f * (end.y - start.y),
+            )
+        }
+        Segment::Arc {
+            start, geometry: g, ..
+        } => {
+            let a0 = (start.y - g.center.y).atan2(start.x - g.center.x);
+            let s = if g.counter_clockwise { 1.0 } else { -1.0 };
+            let a = a0 + s * t / g.radius;
+            civil3drust::Point2::new(
+                g.center.x + g.radius * a.cos(),
+                g.center.y + g.radius * a.sin(),
+            )
+        }
+    }
+}
+
+/// Vertices of the graphics' curve polylines (more than two vertices; the
+/// two-vertex ones are tick marks) farther than 0.01 from the decoded
+/// alignment (sampled every 0.01 along the curves).
+fn stray_vertices(r: &raw::RawRecord, segs: &[Segment]) -> usize {
+    let g = pg::find(&r.data, 4096).unwrap();
+    let mut samples = Vec::new();
+    for s in segs {
+        let n = (s.length() / 0.01).ceil() as usize;
+        for i in 0..=n {
+            samples.push(point_on(s, s.length() * i as f64 / n as f64));
+        }
+    }
+    g.chunks
+        .iter()
+        .filter(|c| c.opcode == pg::OP_POLYLINE)
+        .flat_map(|c| {
+            let v = pg::poly_vertices(&r.data, c);
+            // Two-vertex polylines are tick marks; a closed five-vertex one
+            // is a frame (S276 draws the extents).
+            let n = v.len();
+            let closed = n == 5 && v[0].1 == v[4].1;
+            let keep = n > 2 && !closed;
+            v.into_iter().filter(move |_| keep).map(|v| v.1)
+        })
+        .map(|p| {
+            let d = samples
+                .iter()
+                .map(|q| (p[0] - q.x).hypot(p[1] - q.y))
+                .fold(f64::MAX, f64::min);
+            d
+        })
+        .filter(|d| *d > 0.01)
+        .count()
+}
 
 #[test]
 fn s283_connected_alignment() {
@@ -161,4 +223,50 @@ fn s287_converted_to_static() {
         raw::object_name(&rb.data).as_deref(),
         Some("spiral - curve - spiral more than 180deg")
     );
+}
+
+#[test]
+fn s288_reverse_spiral_groups() {
+    // Connected alignments from WEST-EAST's 25' offset curve to
+    // NORTH-SOUTH's tangent: their middle is a JSON layout group (2562
+    // reverse spiral – spiral – curve – spiral, 2566 spiral – curve –
+    // spiral – reverse spiral), solved like 2561 and 2565.
+    let o = raw::open("samples/S288_connected_reverse_spirals.dwg").unwrap();
+    let recs = raw::records(&o.doc, "AECC_ALIGNMENT");
+    let get = |h: u64| recs.iter().find(|r| r.handle == h).unwrap();
+    for (h, ty, len, sweep, name) in [
+        (
+            0x8F18,
+            2562,
+            1058.9055,
+            213.0478,
+            "REVERSE SPIRAL SPIRAL CURVE SPIRAL",
+        ),
+        (
+            0x8F32,
+            2566,
+            310.8924,
+            228.4803,
+            "REVERSE SPIRAL - CURVE - SPIRAL SPIRAL",
+        ),
+    ] {
+        let r = get(h);
+        let d = decode_elements(r).unwrap();
+        assert!(d.is_complete(), "{h:X}");
+        assert_eq!(d.layout_groups[0].constraint_type, ty);
+        assert!((d.length() - len).abs() < 1e-4, "{h:X} {}", d.length());
+        let big = d
+            .elements
+            .iter()
+            .filter_map(|e| match e.segment {
+                Segment::Arc { geometry: g, .. } => Some(g.sweep.to_degrees()),
+                _ => None,
+            })
+            .fold(0.0, f64::max);
+        assert!((big - sweep).abs() < 1e-4, "{h:X} {big}");
+        let segs: Vec<Segment> = d.elements.iter().map(|e| e.segment).collect();
+        assert_eq!(stray_vertices(r, &segs), 0, "{h:X}");
+        assert_eq!(raw::object_name(&r.data).as_deref(), Some(name));
+        assert_eq!(connected_inputs(r).map(|v| v.len()), Some(2));
+    }
 }
