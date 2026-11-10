@@ -562,7 +562,7 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
 - **Next samples:** transition type 3 (if the list has one more type);
   Cant set on a centerline, if Civil 3D offers it there.
 
-## MIST20 — the connected (curb return) alignment block after the type — **open (S283, S284)**
+## MIST20 — the connected (curb return) alignment block after the type — **open (S283–S286)**
 
 - **Where:** after `BL type` 3 (alignment-object.md, "Connected (curb
   return) alignments").
@@ -574,8 +574,9 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   `B 0, BD 0, BD 0, B 0` after the tangent length; the two empty
   regions; the curve-group part after the connections (the type code
   and the < 180° bit are read, S286; the Three Centered Arc's values
-  75, 10, 40, 50, 10 and its prefix-22 element record; the trailing
-  values that look like pick points).
+  are its radius 1, length 1, radius 2, radius 3, length 3, read with
+  its prefix-22 element record; still open: the trailing values that
+  look like pick points).
 - **Next samples:** one connected alignment per curve group type
   between the same centerlines; one input edited.
 

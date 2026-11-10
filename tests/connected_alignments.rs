@@ -97,6 +97,27 @@ fn s286_curve_groups() {
         assert!((g.sweep.to_degrees() - sweep).abs() < 1e-4, "{h:X}");
         assert_eq!(connected_inputs(get(h)), Some(vec![0x8C4A, 0x8E11]));
     }
-    assert!(decode_elements(get(0x8EA5)).is_err());
-    assert_eq!(alignment_type(get(0x8EA5)).ok(), None);
+    // Three Centered Arc: one prefix-22 record (kind 1) with the dialog's
+    // R1 75, L1 10, R2 40, R3 50, L3 10; arc 2 takes the rest of the turn
+    // and the arcs meet tangent 3 where Civil 3D put it.
+    let d = decode_elements(get(0x8EA5)).unwrap();
+    assert!((d.length() - 119.4985).abs() < 1e-4);
+    let arcs: Vec<_> = d
+        .elements
+        .iter()
+        .filter_map(|e| match e.segment {
+            civil3drust::aecc_elements::Segment::Arc { geometry: g, .. } => Some(g),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(arcs.len(), 3);
+    for (g, (r, deg)) in arcs
+        .iter()
+        .zip([(75.0, 7.6394), (40.0, 70.9014), (50.0, 11.4592)])
+    {
+        assert!((g.radius - r).abs() < 1e-9);
+        assert!(g.counter_clockwise);
+        assert!((g.sweep.to_degrees() - deg).abs() < 1e-4);
+    }
+    assert_eq!(connected_inputs(get(0x8EA5)), Some(vec![0x8C4A, 0x8E11]));
 }

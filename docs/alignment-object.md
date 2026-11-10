@@ -3628,7 +3628,8 @@ BL curve group type              2 Circular Fillet, 3 Three Centered
 fillet (S285): BL 2, then a region { BD 0, BD 0, BD 0, BD 25, BD 260.62
   (the arc's own stations), BL 1, BL 0, BL 0, BL 0 × 5, BL 3 }, …
 three centered arc (S286): BL 2, a region (own 25–94.50), then BD 75,
-  BD 10, BD 40, BD 50, BD 10 (its parameters; meaning not known)
+  BD 10, BD 40, BD 50, BD 10 (the 3-Centered Arc Settings: radius 1,
+  length 1, radius 2, radius 3, length 3)
 spiral – curve – spiral (S286): B 0, then the trailing values directly —
   the radius and the spiral lengths are only in the elements
 then (both) a few more values (S283: 462.88, 473.38, 405.79; S285:
@@ -3661,13 +3662,21 @@ pointers.
 (spirals 200 / 200) and above 180° (spirals 100 / 150, a 222° arc)
 decode as ordinary tangent – spiral – arc – spiral – tangent elements.
 The Three Centered Arc's middle is one element record of prefix 22
-(locked header, flag 0x02) after the usual parameter block: `BL 1, BL
-id 2, BL before 1, BL after 3, BL 0, BL 1, BL 3, BD 75, BD 10, BD 40,
-BD 0, BD 50, BD 10, …` then points (the tangents' inner ends) — not
-decoded, so that alignment does not decode yet.
+(locked header, flag 0x02) after the usual parameter block: `BL 1
+(kind; a linear widening has 3), BL id 2, BL before 1, BL after 3, BL
+0, BL 1, BL 3, BD 75, BD 10, BD 40, BD 0, BD 50, BD 10`, and the
+record ends there. With the owner's 3-Centered Arc Settings (Radius 1
+75, Length 1 10, Angle 1 7.6394°, Radius 2 40, Radius 3 50, Length 3
+10, Angle 3 11.4592°) the six BDs are radius 1, length 1, radius 2,
+length 2 (0: not given), radius 3, length 3. The angles are not stored
+(L / R). Arc 1 starts at the first tangent's end, arc 3 ends at the
+second tangent's start, all three turn the way the direction turns,
+and arc 2 takes the rest of the turn (70.9014°, length 49.4985). Built
+forward from tangent 1 the arcs end on tangent 3's start within 1e-9,
+so the decoder places them that way (`aecc_widening::three_centered`);
+the alignment decodes, 119.4985 long like the stations.
 
-**Next samples.** The Three Centered Arc's dialog values (to name 75,
-10, 40, 50, 10); the three Reverse Spiral types; one input edited.
+**Next samples.** The three Reverse Spiral types; one input edited.
 
 ## MIST2: re-save field (partially solved, S151–S157)
 

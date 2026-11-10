@@ -36,6 +36,10 @@ const SAMPLES: &[&str] = &[
     "S256_offsets_partial_widening.dwg",
     "S257_widening_transitions.dwg",
     "S258_widening_curves.dwg",
+    "S283_S282_connected_alignment.dwg",
+    "S284_S283_connected_radius.dwg",
+    "S285_connected_fillet_centerlines.dwg",
+    "S286_connected_curve_groups.dwg",
 ];
 
 fn bits(data: &[u8], from: usize, to: usize) -> String {

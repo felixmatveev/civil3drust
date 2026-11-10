@@ -7,6 +7,13 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Three Centered Arc in connected alignments (S286, owner's dialog
+  values): the prefix-22 record of kind 1 reads and re-encodes bit for
+  bit (`WideningDef::ThreeCenteredArc`: radius 1, length 1, radius 2,
+  length 2, radius 3, length 3) and is placed between its tangents
+  (`aecc_widening::three_centered`, arc 2 taking the rest of the turn),
+  so all four S286 alignments decode. S283–S286 added to the
+  `encode_roundtrip` test.
 - Connected alignment curve groups (S286, owner): Spiral-Curve-Spiral
   below and above 180° decode; the block's curve group type code (2
   fillet, 3 three centered arc, 4 spiral-curve-spiral) and the < 180°

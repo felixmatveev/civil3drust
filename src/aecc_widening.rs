@@ -40,6 +40,9 @@ pub const PREFIX_WIDENING_REVERSE: u16 = 36;
 pub const PREFIX_WIDENING_COMPOUND_REVERSE: u16 = 38;
 /// The BL after the parameter block of a linear transition.
 pub const WIDENING_KIND: i32 = 3;
+/// The BL after the parameter block of a connected alignment's Three
+/// Centered Arc (S286; prefix 22 like a linear transition).
+pub const THREE_CENTERED_KIND: i32 = 1;
 /// The BL before each point list of a linear transition.
 pub const POINT_LIST_MARK: i32 = 0x1000;
 
@@ -61,6 +64,15 @@ pub enum WideningDef {
     Linear {
         params: ParamBlock,
         lists: Vec<(i32, Vec<Point2>)>,
+    },
+    /// Prefix 22, kind 1: a connected alignment's Three Centered Arc
+    /// (S286): `BL 0, BL 1, BL 3`, then radius 1, length 1, radius 2,
+    /// length 2 (0: the rest of the turn), radius 3, length 3 — the values
+    /// of the 3-Centered Arc Settings dialog.
+    ThreeCenteredArc {
+        params: ParamBlock,
+        head: [i32; 3],
+        values: [f64; 6],
     },
     /// Prefix 34: curve 1, a line, curve 2.
     CurveLineCurve {
@@ -139,6 +151,41 @@ pub fn widening_at(data: &[u8], bit: usize, prefix: u16) -> Option<WideningRecor
                 k = q;
             }
             let (kind, id, before, after, k) = ids(k)?;
+            if kind == THREE_CENTERED_KIND {
+                let params = ParamBlock {
+                    flag,
+                    p1,
+                    p2,
+                    values,
+                };
+                // BL 0, BL 1, BL 3, then R1, L1, R2, L2, R3, L3 (S286).
+                let mut head = [0; 3];
+                let mut k = k;
+                for h in &mut head {
+                    let (v, q) = raw::read_bl(data, k)?;
+                    *h = v;
+                    k = q;
+                }
+                let mut v = [0.0; 6];
+                for x in &mut v {
+                    let (y, q) = raw::read_bd(data, k)?;
+                    *x = y;
+                    k = q;
+                }
+                let ok = head == [0, 1, 3]
+                    && [v[0], v[2], v[4]].iter().all(|r| radius_ok(*r))
+                    && [v[1], v[3], v[5]]
+                        .iter()
+                        .all(|l| l.is_finite() && *l >= 0.0);
+                return ok.then(|| {
+                    let def = WideningDef::ThreeCenteredArc {
+                        params,
+                        head,
+                        values: v,
+                    };
+                    record(id, before, after, k, def)
+                });
+            }
             let (m, mut k) = raw::read_bl(data, k)?;
             if kind != WIDENING_KIND || !(1..=100).contains(&m) {
                 return None;
@@ -230,7 +277,7 @@ pub fn widening_at(data: &[u8], bit: usize, prefix: u16) -> Option<WideningRecor
 /// The kind prefix of a widening record.
 pub fn kind_prefix(def: &WideningDef) -> u16 {
     match def {
-        WideningDef::Linear { .. } => PREFIX_WIDENING,
+        WideningDef::Linear { .. } | WideningDef::ThreeCenteredArc { .. } => PREFIX_WIDENING,
         WideningDef::CurveLineCurve { .. } => PREFIX_WIDENING_CURVES,
         WideningDef::CurveReverseCurve { .. } => PREFIX_WIDENING_REVERSE,
         WideningDef::CurveCurveReverseCurve { .. } => PREFIX_WIDENING_COMPOUND_REVERSE,
@@ -262,6 +309,20 @@ pub fn encode_widening(w: &mut crate::aecc_build::Bits, r: &WideningRecord) {
                     w.rd(p.y);
                 }
             }
+        }
+        WideningDef::ThreeCenteredArc {
+            params,
+            head,
+            values,
+        } => {
+            w.bit(params.flag as u8);
+            w.bd(params.p1);
+            w.bd(params.p2);
+            w.bl(params.values.len() as i32);
+            params.values.iter().for_each(|v| w.bd(*v));
+            ids(w, THREE_CENTERED_KIND);
+            head.iter().for_each(|h| w.bl(*h));
+            values.iter().for_each(|v| w.bd(*v));
         }
         WideningDef::CurveLineCurve {
             lead,
@@ -489,6 +550,50 @@ pub fn curve_curve_reverse_curve(
     best.map(|(_, p)| p)
 }
 
+/// A Three Centered Arc from `p0` (direction `d0`) toward `p1`
+/// (direction `d1`): arc 1 of radius R1 over length L1, arc 2 of radius R2
+/// over L2 (or, when 0, the rest of the turn), arc 3 of radius R3 over L3,
+/// all turning the same way. Built forward from `p0`; the neighbouring
+/// tangents are placed so that it ends at `p1` (S286).
+pub fn three_centered(
+    p0: Point2,
+    d0: (f64, f64),
+    p1: Point2,
+    d1: (f64, f64),
+    v: [f64; 6],
+) -> Option<Vec<Segment>> {
+    let [r1, l1, r2, l2, r3, l3] = v;
+    // All three arcs turn the same way: the way the direction turns.
+    let cross = d0.0 * d1.1 - d0.1 * d1.0;
+    let dot = d0.0 * d1.0 + d0.1 * d1.1;
+    let s = if cross.abs() > 1e-12 {
+        cross.signum()
+    } else {
+        first_turn(p0, d0, p1, d1)
+    };
+    let mut total = s * cross.atan2(dot);
+    if total <= 0.0 {
+        total += std::f64::consts::TAU;
+    }
+    let (t1, t3) = (l1 / r1, l3 / r3);
+    let t2 = if l2 > 0.0 { l2 / r2 } else { total - t1 - t3 };
+    if t2 < 0.0 {
+        return None;
+    }
+    let mut out = Vec::new();
+    let (mut p, mut d) = (p0, d0);
+    for (r, t) in [(r1, t1), (r2, t2), (r3, t3)] {
+        let c = add(p, normal(d), s * r);
+        let a = (p.y - c.y).atan2(p.x - c.x) + s * t;
+        let e = Point2::new(c.x + r * a.cos(), c.y + r * a.sin());
+        out.push(arc(c, r, s > 0.0, p, e));
+        let (cs, sn) = (t.cos(), s * t.sin());
+        d = (d.0 * cs - d.1 * sn, d.0 * sn + d.1 * cs);
+        p = e;
+    }
+    Some(out)
+}
+
 /// The segments of a curved transition placed between the end of the
 /// element before (`p0`, `d0`) and the start of the one after (`p1`,
 /// `d1`).
@@ -501,6 +606,7 @@ pub fn curved_segments(
 ) -> Option<Vec<Segment>> {
     match *def {
         WideningDef::Linear { .. } => None,
+        WideningDef::ThreeCenteredArc { values, .. } => three_centered(p0, d0, p1, d1, values),
         WideningDef::CurveLineCurve {
             radius1, radius2, ..
         } => curve_line_curve(p0, d0, p1, d1, radius1, radius2),
