@@ -3602,13 +3602,15 @@ name-template node's counter changes.
 **Handle stream.** Six soft pointers after the check set: input A, A,
 B, B, A, B (`aecc_alignment_refs::connected_inputs`).
 
-**After the type** (S283, S284; partly read). The block ends where the
+**After the type** (S283–S285; partly read). The block ends where the
 string data starts, about 2390 bits after the type:
 
 ```text
-BL 3 (type), BL 1, BL 1, BL 1, B 1, BL 1, BL 1
+BL 3 (type), BL 1, BL 1
 per connection (two):
-  BD −10                     offset from the input
+  B 1, BL 1, BL connection number (1, 2)
+  BD offset                  (S283: −10, −10; S285: 25, 25 — not
+                              side-signed like a region's offset)
   B 1, BD 25                 the tangent length
   B 0, BD 0, BD 0, B 0
   4 regions, each in the offset region form
@@ -3619,7 +3621,14 @@ per connection (two):
     0.025–24.975, kind 1, element 1 — the second connection: −10,
     121.32–146.32 on NORTH-SOUTH-Right, own 485.59–460.64, element 3),
     two all-zero regions (kind 1, elements 0), the tangent's region again
-then BD 462.88, …, BD 473.38, BD 405.79, …   (not read)
+  B 0, (B 0 after the second)
+B 1, B 1, BL curve group type?   (2 Circular Fillet, S285; 4 Spiral-
+                                  Curve-Spiral, S283)
+fillet (S285): BL 2, then a region { BD 0, BD 0, BD 0, BD 25, BD 260.62
+  (the arc's own stations), BL 1, BL 0, BL 0, BL 0 × 5, BL 3 }, …
+then (both) a few more values (S283: 462.88, 473.38, 405.79; S285:
+482.88, 458.38, 390.79 — 0.5 off the second input's line, the end x,
+an input station 25 / 10 back: pick points?)        not read
 ```
 
 The own stations run 0.025 inside the tangent's ends. **The curve and
@@ -3636,8 +3645,17 @@ values after the tangent length, why each tangent region is stored with
 two empty ones and a copy, the values after the second connection, the
 one changed 32-bit value at about +2610.
 
-**Next samples.** The connection without spirals; with other tangent
-lengths; one input edited; a connection between two centerlines.
+**Fillet between centerlines** (S285). Circular Fillet: tangent 25,
+a free arc R 150 by radius, tangent 25. Civil 3D stores the two
+tangents already trimmed to the arc (they don't meet at the PI), which
+the decoder now allows: the PI is where the tangents' lines cross ahead
+of both. The inputs are the centerlines, in the same A, A, B, B, A, B
+pointers.
+
+**Next samples.** One connected alignment per remaining curve group type
+(Reverse Spiral-Spiral-Curve-Spiral, Reverse Spiral-Curve-Spiral-Spiral,
+Reverse Spiral-Spiral-Curve-Spiral-Spiral, Three Centered Arc) between
+the same two centerlines; one input edited.
 
 ## MIST2: re-save field (partially solved, S151–S157)
 

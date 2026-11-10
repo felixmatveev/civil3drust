@@ -51,3 +51,30 @@ fn s284_radius_changed() {
         assert!(hits.iter().all(|&h| h < 6000), "{v} at {hits:?}");
     }
 }
+
+/// S285: Circular Fillet between the centerlines; the tangents are stored
+/// already trimmed to the arc.
+#[test]
+fn s285_fillet_between_centerlines() {
+    let o = raw::open("samples/S285_connected_fillet_centerlines.dwg").unwrap();
+    let r = raw::records(&o.doc, "AECC_ALIGNMENT")
+        .into_iter()
+        .find(|r| r.handle == 0x8E82)
+        .unwrap();
+    assert_eq!(alignment_type(&r).unwrap(), 3);
+    assert_eq!(connected_inputs(&r), Some(vec![0x8C4A, 0x8E11]));
+    let d = decode_elements(&r).unwrap();
+    assert_eq!(d.elements.len(), 3);
+    let civil3drust::aecc_elements::Segment::Arc {
+        start,
+        end,
+        geometry: g,
+    } = d.elements[1].segment
+    else {
+        panic!()
+    };
+    assert_eq!(g.radius, 150.0);
+    assert!((start.x - 308.37774915425604).abs() < 1e-9 && (start.y - 25.0).abs() < 1e-9);
+    assert!((end.x - 458.3777491542559).abs() < 1e-9 && (end.y - 175.0).abs() < 1e-9);
+    assert!((d.length() - (50.0 + 150.0 * std::f64::consts::FRAC_PI_2)).abs() < 1e-9);
+}

@@ -230,6 +230,21 @@ pub fn arc_through(a: Point2, m: Point2, b: Point2) -> Option<ArcGeometry> {
 /// A curve of radius `radius` tangent to the line `pc_dir` arriving at
 /// `pi` and the line `pt_dir` leaving it: returns (PC, PT, geometry).
 /// `None` for parallel or degenerate directions.
+/// Where the line through `a0`→`a1` crosses the line through `b0`→`b1`,
+/// when it lies at or past `a1` along the first and at or before `b0`
+/// along the second.
+fn line_crossing(a0: Point2, a1: Point2, b0: Point2, b1: Point2) -> Option<Point2> {
+    let (dx, dy) = (a1.x - a0.x, a1.y - a0.y);
+    let (ex, ey) = (b1.x - b0.x, b1.y - b0.y);
+    let den = dx * ey - dy * ex;
+    if den.abs() < 1e-12 * dx.hypot(dy) * ex.hypot(ey) {
+        return None;
+    }
+    let t = ((b0.x - a0.x) * ey - (b0.y - a0.y) * ex) / den;
+    let u = ((b0.x - a0.x) * dy - (b0.y - a0.y) * dx) / den;
+    (t >= 1.0 - 1e-9 && u <= 1e-9).then(|| Point2::new(a0.x + t * dx, a0.y + t * dy))
+}
+
 pub fn fillet(
     pi: Point2,
     in_dir: (f64, f64),
@@ -2855,13 +2870,19 @@ fn resolve_with(
                     "free arc {id} is not between two tangents"
                 )));
             };
-            if a.end.distance_to(b.start) > 1e-6 * (1.0 + a.end.x.abs().max(a.end.y.abs())) {
-                return Err(unsupported(format!(
-                    "tangents around free arc {id} don't meet at a PI"
-                )));
-            }
+            // The PI: where the tangents meet, or — when Civil 3D stored
+            // them already trimmed to the fillet, as a connected alignment's
+            // fillet (S285) — where their lines cross ahead of both.
+            let pi =
+                if a.end.distance_to(b.start) <= 1e-6 * (1.0 + a.end.x.abs().max(a.end.y.abs())) {
+                    a.end
+                } else {
+                    line_crossing(a.start, a.end, b.start, b.end).ok_or_else(|| {
+                        unsupported(format!("tangents around free arc {id} don't meet at a PI"))
+                    })?
+                };
             let f = fillet(
-                a.end,
+                pi,
                 (a.end.x - a.start.x, a.end.y - a.start.y),
                 (b.end.x - b.start.x, b.end.y - b.start.y),
                 *radius,

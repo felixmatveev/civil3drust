@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Connected alignment with a circular fillet between centerlines (S285,
+  owner): a free arc between two tangents stored already trimmed (they
+  don't meet at the PI) now decodes, the PI taken where the tangents'
+  lines cross. The connected block's per-connection head and the
+  curve-group part after the connections partly read (MIST20).
 - Connected (curb return, type 3) alignments, first look (S282, S283,
   owner): elements decode; `aecc_alignment_refs::connected_inputs` (the
   two inputs after the check set); the objects Civil 3D adds (a curb
