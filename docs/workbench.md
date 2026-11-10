@@ -1,6 +1,6 @@
 # Workbench: a DWG research app
 
-Status: **built, steps 1–7** (D-073, D-074; how to use it:
+Status: **built, steps 1–8** (D-073, D-074, D-075; how to use it:
 [`workbench/README.md`](../workbench/README.md)). Replaces `viewer/` and `hexview/` (both frozen) when it can
 do everything they do; until then all three exist.
 
@@ -241,8 +241,14 @@ Differences from the sketch above, and what it settled:
   and Save As through the same state code), `--related` (the hex pane's
   record list), `--svg` (the view).
 
-Not done yet (step 8): hexview's whole-file offset tab and two-file
-compare, viewer's `--dump`; then `viewer/` and `hexview/` can go.
+Step 8 (2026-11-10): hexview's window became the **File (hex)** tab next
+to the drawing (`fileview.rs`: sections, record outlines and list,
+inspector, detail windows with acadrust's view, Compare with… and the
+copyable report); it follows the open file and reloads after Save As. The
+hex pane's `in file` button jumps there. Its `--dump` and `--diff` and
+the viewer's `--dump` (now `--objects`) and `--svg` options moved to the
+workbench's command line; `--compare other.dwg` opens the comparison at
+start. `viewer/` and `hexview/` are in `archive/` (D-075).
 
 ## Open questions
 

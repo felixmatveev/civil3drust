@@ -1519,3 +1519,25 @@ place to read, no extra dependency.
 duplicates every parser and keeps logic outside `src/`. Runtime plugin
 loading of the library: no stable Rust ABI.
 
+## D-075: Archive `viewer/` and `hexview/`; the workbench is the one research app
+Date: 2026-11-10 · Status: accepted
+
+**Context.** The owner tested the workbench (D-073) on round trips with
+Civil 3D: Save As, RON edits and commands work as planned. Step 8 of
+`docs/workbench.md` was to bring over what the two old tools still did
+and retire them.
+
+**Decision.** hexview's window lives on as the workbench's File (hex) tab
+(`fileview.rs`, with `compare.rs`; the file map was already `filemap.rs`),
+embedded next to the drawing and following the open file. Their command
+lines merge into the workbench's (`--dump`, `--diff`, `--objects`,
+`--svg …`, `--compare`). The old crates move to `archive/` with their
+history, unmaintained and not built (their path dependency points at the
+repo root so they still could be). The comparison report's header now
+says "civil3drust workbench"; its body is unchanged, so
+`tools/rebuild_from_report.py` reads it as before.
+
+**Alternatives.** Deleting them: git history keeps them anyway, but a
+visible archive is easier to find while the workbench is young.
+Keeping them maintained: three copies of the same view code.
+

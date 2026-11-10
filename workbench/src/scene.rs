@@ -19,7 +19,6 @@ use civil3drust::aecc_elements::{decode_elements, Segment};
 use civil3drust::{proxy_graphics as pg, raw};
 use std::collections::BTreeMap;
 use std::f64::consts::TAU;
-use std::path::Path;
 
 pub type P3 = [f64; 3];
 
@@ -103,12 +102,6 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn load(path: impl AsRef<Path>) -> Result<Scene, String> {
-        let path = path.as_ref();
-        let opened = raw::open(path).map_err(|e| e.to_string())?;
-        Ok(Scene::from_doc(&path.display().to_string(), &opened))
-    }
-
     /// Build the scene from an open document (the workbench rebuilds it
     /// after every edit, D-073).
     pub fn from_doc(path: &str, opened: &raw::Opened) -> Scene {

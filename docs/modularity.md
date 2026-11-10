@@ -261,9 +261,9 @@ unchanged fingerprint over every sample. Steps 1–7 change no output.
 9. **Facade and research split.** Public API: open, alignments, the
    model, operations, save. Bit tools, dumps and `exp_*` go behind a
    `research` feature (or a `civil3drust-research` crate) (W11).
-   `hexview/` and `viewer/` are frozen (CLAUDE.md), so the old module
-   paths stay as deprecated re-exports until the owner unfreezes them;
-   every earlier step must keep those paths compiling too.
+   `hexview/` and `viewer/` are archived (`archive/`, D-075) and no
+   longer need to compile against new module paths; `workbench/` does
+   and moves with the library.
 10. **Class contract**, written down with alignment as its only
     implementer, before starting profiles (W10). Not earlier — one
     implementer is enough to fix the shape without guessing at classes

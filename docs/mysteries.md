@@ -16,7 +16,8 @@ Bit positions are given for S24-based records unless stated. Sections:
 1 = object header + proxy graphics, 2 = from the end of the graphics to
 the element count (`docs/alignment-map.md` §1.1), then the element
 records, the speed-interval block and the post-cache block (§1.2).
-Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
+Tools: `workbench --diff a.dwg b.dwg --filter <handle>` (formerly
+`hexview --diff`), `dumprec`,
 `scan_elements`.
 
 | ID | subject | status |

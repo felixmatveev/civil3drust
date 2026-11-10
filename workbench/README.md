@@ -2,14 +2,18 @@
 
 A DWG research app (D-073): open a drawing, look at it, inspect any object
 as hex and RON, edit it with commands or by editing its RON, save a copy
-and open it in Civil 3D. It replaces `viewer/` and `hexview/` once it does
-everything they do. Ugly and unoptimised on purpose.
+and open it in Civil 3D. It replaced `viewer/` and `hexview/` (now in
+`archive/`, D-075). Ugly and unoptimised on purpose.
 
 ```
-cargo run -- ../samples/S11_100-200-300_r50.dwg          # window
+cargo run -- ../samples/S11_100-200-300_r50.dwg [--goto 8C5C] [--compare other.dwg]
 cargo run -- --script in.dwg [--save out.dwg] "cmd" ...  # same edits, headless
 cargo run -- --related in.dwg <handle> [depth]           # what the hex pane shows
-cargo run -- --svg out.svg in.dwg [--select <handle>]    # render the view
+cargo run -- --objects in.dwg                            # drawn objects (viewer --dump)
+cargo run -- --dump in.dwg                               # sections and records (hexview --dump)
+cargo run -- --diff a.dwg b.dwg [--show civil,opaque,unmapped,acad|all] [--filter text]
+cargo run -- --svg out.svg in.dwg [--select <handle>] [--3d] [--no-proxy] [--no-decoded]
+             [--placeholders] [--no-context] [--light] [--size WxH]
 ```
 
 Dependencies are built with `opt-level = 2` in the dev profile (see
@@ -23,7 +27,7 @@ further.
 +--------------------------------------------------------------------------+
 | Open  Save As  Reload  Undo  Redo | 2D 3D Fit | layers                    |
 +-----------+----------------------------------------+---------------------+
-| Objects   | View                                   | Details | RON | Form|
+| Objects   | [Drawing] [File (hex)]                 | Details | RON | Form|
 | (✎ edited)|  click: select   Ctrl+click: x,y       |                     |
 |           |  Alt+click: handle into command line   |                     |
 +-----------+----------------------------------------+---------------------+
@@ -33,6 +37,14 @@ further.
 +--------------------------------------------------------------------------+
 ```
 
+- **Drawing / File (hex)** tabs in the middle. File (hex) is hexview's
+  window: the saved file section by section (offset | hex | decoded),
+  every record outlined and coloured by who decodes it (blue acadrust,
+  red civil3drust, amber opaque, grey unmapped), a record list, the
+  inspector bar (u8…f64 at the cursor), detail windows with acadrust's
+  full view, and **Compare with…**: records of two drawings matched by
+  handle, differing regions as bit ranges, a report to copy (the same as
+  `--diff`). It shows the file on disk and reloads after Save As.
 - **Objects**: model-space custom objects by class; "other raw records"
   lists styles, sites, companions and everything else acadrust keeps as
   raw bytes. ✎ marks records changed since the file was opened.
@@ -43,7 +55,8 @@ further.
   records acadrust parses (layers, plain entities) show their bytes from
   the file on disk. Click a byte to see the values readable at that bit
   (RC, RS, RL, RD, BD, BL, the next 16 bits); step bit by bit. The field
-  list jumps to a field's bit; `→` selects the record a handle points to.
+  list jumps to a field's bit; `→` selects the record a handle points to;
+  `in file` shows the record in the File (hex) tab.
 - **RON**: *Model* is the decoded alignment (as in `examples/dump`);
   Apply turns your changes into commands (name, style, start station,
   moved lines → `set_pis`, arc radius → `set_radius`) and runs them as one

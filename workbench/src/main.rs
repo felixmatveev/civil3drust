@@ -2,23 +2,26 @@
 //! and RON, edit them with commands, save a copy (D-073, D-074).
 //!
 //! ```text
-//! civil3drust-workbench [file.dwg] [--goto <handle>]
+//! civil3drust-workbench [file.dwg] [--goto <handle>] [--compare other.dwg]
 //!                                                  open the window
 //! civil3drust-workbench --script file.dwg [--save out.dwg] "command" ...
 //!                                                  run commands headless, print the log
 //! civil3drust-workbench --related file.dwg <handle> [depth]
 //!                                                  list the records the hex pane shows
-//! civil3drust-workbench --svg out.svg file.dwg [--select <handle>] [--light]
-//!                                                  render the view to SVG
+//! civil3drust-workbench --objects file.dwg          list the drawn objects (viewer --dump)
+//! civil3drust-workbench --dump file.dwg             list sections and records (hexview --dump)
+//! civil3drust-workbench --diff a.dwg b.dwg [--show civil,opaque,unmapped,acad|all] [--filter text]
+//!                                                  record-by-record bit diff (hexview --diff)
+//! civil3drust-workbench --svg out.svg file.dwg [options]
+//!     --select <handle> --3d --no-proxy --no-decoded --placeholders
+//!     --no-context --light --size WxH               render the view to SVG
 //! ```
 
 mod app;
-// Copied whole from hexview/ (its file-offset view and compare come next,
-// docs/workbench.md); parts not used yet are kept for that.
-#[allow(dead_code)]
+mod compare;
 mod filemap;
+mod fileview;
 mod hex;
-#[allow(dead_code)]
 mod scene;
 mod state;
 mod svg;
@@ -30,12 +33,24 @@ use std::process::exit;
 
 fn usage() -> ! {
     eprintln!(
-        "usage: civil3drust-workbench [file.dwg] [--goto <handle>]\n       \
+        "usage: civil3drust-workbench [file.dwg] [--goto <handle>] [--compare other.dwg]\n       \
          civil3drust-workbench --script file.dwg [--save out.dwg] \"command\" ...\n       \
          civil3drust-workbench --related file.dwg <handle> [depth]\n       \
-         civil3drust-workbench --svg out.svg file.dwg [--select <handle>] [--light]"
+         civil3drust-workbench --objects file.dwg\n       \
+         civil3drust-workbench --dump file.dwg\n       \
+         civil3drust-workbench --diff a.dwg b.dwg [--show civil,opaque,unmapped,acad|all] [--filter text]\n       \
+         civil3drust-workbench --svg out.svg file.dwg [--select <handle>] [--3d] [--no-proxy] \
+         [--no-decoded] [--placeholders] [--no-context] [--light] [--size WxH]"
     );
     exit(2);
+}
+
+/// `println!` into a String.
+macro_rules! outln {
+    ($out:expr, $($t:tt)*) => {{
+        use std::fmt::Write as _;
+        let _ = writeln!($out, $($t)*);
+    }};
 }
 
 fn open_or_exit(path: &str) -> Workbench {
@@ -115,22 +130,39 @@ fn related(args: &[String]) {
     }
 }
 
+fn flag(args: &[String], name: &str) -> Option<String> {
+    args.iter()
+        .position(|a| a == name)
+        .and_then(|i| args.get(i + 1).cloned())
+}
+
 fn svg_cmd(args: &[String]) {
     let (Some(out), Some(file)) = (args.first(), args.get(1)) else {
         usage()
     };
     let mut layers = view::Layers::default();
+    let mut cam = view::Camera::new();
+    let (mut w, mut h) = (1200.0, 800.0);
     let mut it = args[2..].iter();
     while let Some(a) = it.next() {
         match a.as_str() {
             "--select" => layers.selected = it.next().and_then(|s| parse_handle(s)),
+            "--3d" => cam.mode = view::Mode::Orbit,
+            "--no-proxy" => layers.proxy = false,
+            "--no-decoded" => layers.decoded = false,
+            "--placeholders" => layers.placeholders = true,
+            "--no-context" => layers.context = false,
             "--light" => layers.dark = false,
+            "--size" => {
+                let v = it.next().unwrap_or_else(|| usage());
+                let (a, b) = v.split_once('x').unwrap_or_else(|| usage());
+                w = a.parse().unwrap_or_else(|_| usage());
+                h = b.parse().unwrap_or_else(|_| usage());
+            }
             _ => usage(),
         }
     }
     let wb = open_or_exit(file);
-    let (w, h) = (1200.0, 800.0);
-    let mut cam = view::Camera::new();
     cam.viewport = [0.0, 0.0, w, h];
     cam.fit(view::bounds(&wb.scene, &layers));
     let mut svg = svg::Svg::new(w, h, view::Palette::new(layers.dark).bg);
@@ -141,30 +173,170 @@ fn svg_cmd(args: &[String]) {
     }
 }
 
+/// The drawn objects (the viewer's `--dump`).
+fn objects(path: &str) {
+    let mut out = String::new();
+    use scene::{opcode_name, station_text, Decoded};
+    let s = &open_or_exit(path).scene;
+    outln!(out, "{}", s.path);
+    if let Some(r) = &s.failsafe {
+        outln!(out, "  read in failsafe mode: {r}");
+    }
+    outln!(
+        out,
+        "  {} custom object(s), {} plain AutoCAD primitive(s)",
+        s.objects.len(),
+        s.context.len()
+    );
+    if !s.context_skipped.is_empty() {
+        outln!(out, "  plain entities not drawn: {:?}", s.context_skipped);
+    }
+    for o in &s.objects {
+        let dec = match &o.decoded {
+            Decoded::None => "-".to_string(),
+            Decoded::Failed(e) => format!("decode failed: {e}"),
+            Decoded::Alignment(a) => format!(
+                "alignment, {} tangent(s) {} arc(s), L={:.3}, sta {}..{}",
+                a.tangents,
+                a.arcs,
+                a.length,
+                station_text(a.start_station),
+                station_text(a.start_station + a.length)
+            ),
+        };
+        let pg = match &o.proxy {
+            None => "no proxy graphics".to_string(),
+            Some(g) => {
+                let skipped: Vec<String> = g
+                    .skipped
+                    .iter()
+                    .map(|(op, n)| format!("{}×{n}", opcode_name(*op)))
+                    .collect();
+                format!(
+                    "proxy: {} chunk(s), {} drawn{}{}",
+                    g.chunk_count,
+                    g.prims.len(),
+                    if g.placeholder { ", placeholder" } else { "" },
+                    if skipped.is_empty() {
+                        String::new()
+                    } else {
+                        format!(", skipped [{}]", skipped.join(" "))
+                    }
+                )
+            }
+        };
+        outln!(
+            out,
+            "  [{:X}] {} {:?}\n      {dec}\n      {pg}",
+            o.handle,
+            o.class,
+            o.name.as_deref().unwrap_or("")
+        );
+    }
+    // Ignore a closed pipe (`| head`).
+    let _ = std::io::Write::write_all(&mut std::io::stdout(), out.as_bytes());
+}
+
+fn load_map(p: &str) -> filemap::Loaded {
+    filemap::load(p).unwrap_or_else(|e| {
+        eprintln!("failed to read {p}: {e}");
+        exit(1);
+    })
+}
+
+/// Sections and records of the file (hexview's `--dump`).
+fn file_dump(path: &str) {
+    let mut out = String::new();
+    let l = load_map(path);
+    outln!(out, "{} [{}]", l.path, l.version);
+    for w in &l.warnings {
+        outln!(out, "warning: {w}");
+    }
+    for p in &l.panes {
+        let covered: usize = p.spans.iter().map(|s| s.len).sum();
+        let bad_crc = p.spans.iter().filter(|s| !s.crc_ok).count();
+        outln!(
+            out,
+            "\n== {} ({} bytes, {} records covering {} bytes, {} CRC mismatches)",
+            p.title,
+            p.bytes.len(),
+            p.spans.len(),
+            covered,
+            bad_crc
+        );
+        if p.title != "AcDb:AcDbObjects" {
+            continue;
+        }
+        for s in &p.spans {
+            outln!(
+                out,
+                "{:>8X} {:>6} {:>8X} {:<9?} {}",
+                s.start,
+                s.len,
+                s.handle,
+                s.origin,
+                s.label()
+            );
+        }
+    }
+    // Ignore a closed pipe (`| head`).
+    let _ = std::io::Write::write_all(&mut std::io::stdout(), out.as_bytes());
+}
+
+/// Record-by-record comparison (hexview's `--diff`).
+fn diff(args: &[String]) {
+    let (Some(a), Some(b)) = (args.first(), args.get(1)) else {
+        usage()
+    };
+    let show = flag(args, "--show").unwrap_or_else(|| "civil,opaque,unmapped".into());
+    let filter = flag(args, "--filter").unwrap_or_default();
+    let (la, lb) = (load_map(a), load_map(b));
+    let c = compare::compare(&la, &lb);
+    let want: Vec<&str> = show.split(',').map(str::trim).collect();
+    let show = |o: filemap::Origin| {
+        let name = match o {
+            filemap::Origin::Acad => "acad",
+            filemap::Origin::Civil => "civil",
+            filemap::Origin::Opaque => "opaque",
+            filemap::Origin::Unmapped => "unmapped",
+        };
+        want.contains(&name) || want.contains(&"all")
+    };
+    let text = compare::report(&c, &la, &lb, &show, &filter);
+    // Ignore a closed pipe (`| head`).
+    let _ = std::io::Write::write_all(&mut std::io::stdout(), text.as_bytes());
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
         Some("--script") => script(&args[1..]),
         Some("--related") => related(&args[1..]),
         Some("--svg") => svg_cmd(&args[1..]),
+        Some("--objects") => objects(args.get(1).unwrap_or_else(|| usage())),
+        Some("--dump") => file_dump(args.get(1).unwrap_or_else(|| usage())),
+        Some("--diff") => diff(&args[1..]),
         Some("-h" | "--help") => usage(),
-        Some(s) if s.starts_with("--") && s != "--goto" => usage(),
+        Some(s) if s.starts_with("--") && s != "--goto" && s != "--compare" => usage(),
         _ => {
             let mut file = None;
             let mut goto = None;
+            let mut compare = None;
             let mut it = args.iter();
             while let Some(a) = it.next() {
-                if a == "--goto" {
-                    goto = Some(
-                        it.next()
-                            .and_then(|h| parse_handle(h))
-                            .unwrap_or_else(|| usage()),
-                    );
-                } else {
-                    file = Some(a.clone());
+                match a.as_str() {
+                    "--goto" => {
+                        goto = Some(
+                            it.next()
+                                .and_then(|h| parse_handle(h))
+                                .unwrap_or_else(|| usage()),
+                        )
+                    }
+                    "--compare" => compare = Some(it.next().unwrap_or_else(|| usage()).clone()),
+                    _ => file = Some(a.clone()),
                 }
             }
-            if let Err(e) = app::run(file, goto) {
+            if let Err(e) = app::run(file, goto, compare) {
                 eprintln!("workbench failed to start: {e}");
                 exit(1);
             }

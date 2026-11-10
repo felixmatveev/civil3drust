@@ -1,6 +1,5 @@
 /target
-/viewer/target
-/hexview/target
+/archive/*/target
 Cargo.lock.bak
 *.bak
 *.dwl

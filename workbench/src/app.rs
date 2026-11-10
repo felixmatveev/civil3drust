@@ -2,6 +2,7 @@
 //! command form and console around one selection (D-073).
 
 use crate::filemap;
+use crate::fileview::FileView;
 use crate::hex::{self, HexAction, HexState};
 use crate::scene::{opcode_name, station_text, Decoded};
 use crate::state::{LogKind, Workbench};
@@ -11,7 +12,7 @@ use eframe::egui::{self, Align2, Color32, FontId, Pos2, Sense, Stroke, Vec2};
 use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver};
 
-pub fn run(path: Option<String>, goto: Option<u64>) -> eframe::Result {
+pub fn run(path: Option<String>, goto: Option<u64>, compare: Option<String>) -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("civil3drust workbench")
@@ -28,6 +29,11 @@ pub fn run(path: Option<String>, goto: Option<u64>) -> eframe::Result {
                 app.open(p);
             }
             app.layers.selected = goto;
+            if let (Some(p), Some(b)) = (&app.loading, compare) {
+                app.fileview.open(p.0.clone());
+                app.fileview.open_compare(b);
+                app.central = Central::File;
+            }
             Ok(Box::new(app))
         }),
     )
@@ -39,6 +45,16 @@ enum RightTab {
     Details,
     Ron,
     Form,
+}
+
+/// What the central area shows.
+#[derive(PartialEq, Clone, Copy, Default)]
+enum Central {
+    /// The drawing (plan / 3D).
+    #[default]
+    View,
+    /// The file on disk as hex, section by section (hexview, D-075).
+    File,
 }
 
 #[derive(PartialEq, Clone, Copy, Default)]
@@ -110,6 +126,8 @@ struct App {
     history_pos: Option<usize>,
     focus_cmdline: bool,
     confirm_discard: bool,
+    central: Central,
+    fileview: FileView,
 }
 
 impl App {
@@ -241,6 +259,16 @@ impl App {
         }
         if created.is_some() {
             self.layers.selected = created;
+        }
+    }
+
+    /// Point the File tab at the open drawing's file.
+    fn sync_fileview(&mut self) {
+        if let Some(wb) = &self.wb {
+            let p = wb.path.display().to_string();
+            if self.fileview.path() != Some(p.as_str()) {
+                self.fileview.open(p);
+            }
         }
     }
 
@@ -1248,11 +1276,17 @@ impl eframe::App for App {
             .show(ui, |ui| {
                 ui.add_space(2.0);
                 if let Some(wb) = &self.wb {
-                    if let Some(HexAction::Select(h)) =
-                        hex::ui(ui, &mut self.hex, wb, self.layers.selected, self.generation)
-                    {
-                        self.layers.selected = Some(h);
-                        self.hex.cursor = None;
+                    match hex::ui(ui, &mut self.hex, wb, self.layers.selected, self.generation) {
+                        Some(HexAction::Select(h)) => {
+                            self.layers.selected = Some(h);
+                            self.hex.cursor = None;
+                        }
+                        Some(HexAction::ShowInFile(h)) => {
+                            self.central = Central::File;
+                            self.sync_fileview();
+                            self.fileview.goto_handle(h);
+                        }
+                        None => {}
                     }
                 } else {
                     ui.weak("Hex: open a drawing.");
@@ -1291,7 +1325,28 @@ impl eframe::App for App {
             });
         egui::CentralPanel::default()
             .frame(egui::Frame::NONE)
-            .show(ui, |ui| self.viewport(ui));
+            .show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    ui.add_space(6.0);
+                    ui.selectable_value(&mut self.central, Central::View, "Drawing");
+                    ui.selectable_value(&mut self.central, Central::File, "File (hex)")
+                        .on_hover_text("The saved file section by section, with record outlines and comparison");
+                    if self.central == Central::File {
+                        if let Some(wb) = &self.wb {
+                            if wb.dirty {
+                                ui.weak("shows the file on disk; unsaved edits are not in it");
+                            }
+                        }
+                    }
+                });
+                match self.central {
+                    Central::View => self.viewport(ui),
+                    Central::File => {
+                        self.sync_fileview();
+                        self.fileview.ui(ui);
+                    }
+                }
+            });
     }
 }
 

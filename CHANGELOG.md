@@ -6,6 +6,16 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- `viewer/` and `hexview/` moved to `archive/` (D-075), unmaintained.
+  The workbench took over what they did: hexview's window is its
+  **File (hex)** tab (sections, record overlay and list, inspector,
+  detail windows, Compare with… and the copyable report; `in file` from
+  the hex pane jumps there), and the command line gained `--dump`,
+  `--diff` (hexview), `--objects` (viewer `--dump`), the viewer's `--svg`
+  options and `--compare other.dwg`. `--dump`/`--objects` no longer panic
+  on a closed pipe.
+
 ### Added
 - Connected alignment converted to static (S287, owner): the two BLs
   after the type go 1, 1 → 2, 2 (`aecc_offset::connected_head`); the

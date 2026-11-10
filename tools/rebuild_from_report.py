@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rebuild drawing B's record from drawing A's record and a hexview --diff
+"""Rebuild drawing B's record from drawing A's record and a workbench --diff (formerly hexview --diff)
 report for one record (--filter <handle>).
 
 Usage: rebuild_from_report.py report.txt a_record.bin out.bin

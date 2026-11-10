@@ -35,10 +35,10 @@ samples and steps that produced it.
 - Civil 3D 2027 support is **low priority**. S123/S124 are 2027 drawings;
   use 2027 samples for information only, and keep `tests/civil3d_2027.rs`
   passing (`docs/civil3d-2027.md`).
-- `hexview/` and `viewer/` are **frozen**: leave them as they are (no
-  updates for library changes) until the owner says otherwise. Their
-  successor is `workbench/` (design in `docs/workbench.md`, D-073); both
-  are retired once it does everything they do.
+- `workbench/` is the research app (D-073, `docs/workbench.md`): keep it
+  building and its tests passing with library changes. `hexview/` and
+  `viewer/` are archived in `archive/` (D-075): don't update or build
+  them.
 - LandXML export is **low priority** for now.
 - End goal (D-049): open or create Civil 3D drawings, edit them, and write
   files that civil3drust and Civil 3D read the same. Write model data and
@@ -53,7 +53,8 @@ samples and steps that produced it.
 - Never ship Autodesk-provided styles or other template content (D-015).
 
 ## Tools
-- `cd workbench && cargo run -- [file.dwg] [--goto <handle>]` (DWG research app, D-073: view, hex/RON panes, commands, Save As; headless `--script file.dwg [--save out.dwg] "cmd" ...`, `--related file.dwg <handle>`, `--svg out.svg file.dwg`)
+- `cd workbench && cargo run -- [file.dwg] [--goto <handle>] [--compare other.dwg]` (DWG research app, D-073: drawing view, File (hex) tab with record overlay and two-drawing comparison, hex/RON panes, commands, Save As; headless `--script file.dwg [--save out.dwg] "cmd" ...`, `--related file.dwg <handle>`, `--objects file.dwg`, `--dump file.dwg`, `--svg out.svg file.dwg [--3d] ...`)
+- `cd workbench && cargo run -- --diff a.dwg b.dwg [--show civil,opaque,unmapped,acad|all] [--filter text]` (record-by-record bit diff of two drawings; was `hexview --diff`)
 - `cargo run --release --bin c3dr -- help [command]` (every edit as a command, D-074: `c3dr <command> in.dwg [out.dwg] args...`; `--spec` lists them as RON)
 - `cargo run --release --example rawdiff -- a.dwg b.dwg [AECC_CLASS]`
 - `cargo run --release --example alignments -- file.dwg`
@@ -84,8 +85,6 @@ samples and steps that produced it.
 - `cargo run --release --example exp_group_params -- target.dwg out.dwg <template hex> source.dwg:H:direct|group|end|start[:p1,p2,…] ...` (spiral group as typed parameters, no pieces; experiments S216, S223)
 - `cargo run --release --example exp_spiral_code -- in.dwg out.dwg <alignment hex>:<code> ...` (change only the spiral-type code, MIST10; experiments S233, S234)
 - `cargo run --release --example exp_companion -- in.dwg out.dwg <alignment hex> ...` (companions in the rebuilt form, edge 0x10, MIST12; experiments S238, S239)
-- `cd hexview && cargo run --release -- file.dwg [--goto <hex offset|#handle>] [--compare other.dwg]` (hex view with record overlay; `--dump file.dwg` for text)
-- `cd hexview && cargo run --release -- --diff a.dwg b.dwg [--show civil,opaque,unmapped,acad|all] [--filter text]` (record-by-record bit diff of two drawings)
 - `cargo run --release --example fingerprint -- file.dwg [roundtrip.dwg]` (raw-record hashes, for comparing acadrust versions; **writes** a round trip of file.dwg to roundtrip.dwg, overwriting it)
 - `cargo run --release --example edit_elements -- in.dwg out.dwg <alignment> remove <id> | curve <tangent id> <radius>`
 - `cargo run --release --example sites -- file.dwg` (sites and each alignment's site)

@@ -112,9 +112,10 @@ cargo run --release --example edit_elements -- in.dwg out.dwg "New" remove 1
 
 Tools: [`workbench/`](workbench/README.md) (view, inspect as hex and RON,
 edit with commands, save a copy; D-073), `c3dr` (every edit as a shell
-command: `cargo run --bin c3dr -- help`; D-074), [`hexview/`](hexview/README.md) (hex view and record-by-record bit
-diff of two drawings) and [`viewer/`](viewer/README.md) (2D/3D viewer for
-checking decoded objects against Civil 3D's graphics).
+command: `cargo run --bin c3dr -- help`; D-074). The workbench also holds
+what `hexview/` and `viewer/` did (File tab, `--diff`, `--dump`,
+`--objects`, `--svg`); both are kept, unmaintained, in
+[`archive/`](archive/README.md) (D-075).
 
 ## Cleanroom rules
 

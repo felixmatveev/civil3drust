@@ -246,6 +246,8 @@ enum Line {
 /// Action requested by the pane.
 pub enum HexAction {
     Select(u64),
+    /// Show the record in the File tab.
+    ShowInFile(u64),
 }
 
 const COLS: usize = 16;
@@ -401,6 +403,13 @@ pub fn ui(
                                 ui.label(t);
                                 if b.handle != sel && ui.small_button("select").clicked() {
                                     action = Some(HexAction::Select(b.handle));
+                                }
+                                if ui
+                                    .small_button("in file")
+                                    .on_hover_text("show this record in the File (hex) tab")
+                                    .clicked()
+                                {
+                                    action = Some(HexAction::ShowInFile(b.handle));
                                 }
                             });
                         }
