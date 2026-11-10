@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Connected alignment converted to static (S287, owner): the two BLs
+  after the type go 1, 1 → 2, 2 (`aecc_offset::connected_head`); the
+  associations stay; the last tangent is renumbered; section 2 takes the
+  Alignment Properties form. Test `s287_converted_to_static`.
 - Three Centered Arc in connected alignments (S286, owner's dialog
   values): the prefix-22 record of kind 1 reads and re-encodes bit for
   bit (`WideningDef::ThreeCenteredArc`: radius 1, length 1, radius 2,
@@ -422,6 +426,12 @@ versions follow [Semantic Versioning](https://semver.org/).
   `s162_spirals_match_civil3d_drawing`; MIST16.
 
 ### Fixed
+- Section-2 offsets are counted from the class data
+  (`aecc_entity::section2_base`), so `section2_form`, the JSON flag and
+  the plain-form conversion work on alignments with reactors (offsets,
+  their parents, connected alignments' inputs), which have an 8-bit
+  longer reactor count; the curve-group JSON of a connected alignment is
+  not taken for its name (S287).
 - New alignments made from a template in the Alignment Properties form
   were named "felix" in Civil 3D: `to_plain_form` kept the form's user
   string, which the plain form reads as the name (S193, S227). It is now

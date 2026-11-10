@@ -450,6 +450,13 @@ pub fn is_layout_json(s: &str) -> bool {
     s.trim_start().starts_with('{') && s.contains("\"JsonVersion\"")
 }
 
+/// True for the curve-group JSON a connected (curb return) alignment
+/// stores in the same slot (`{ "CurveType": 4, "CurveParameters": { … } }`,
+/// S286, S287).
+pub fn is_curve_group_json(s: &str) -> bool {
+    s.trim_start().starts_with('{') && s.contains("\"CurveType\"")
+}
+
 /// The two section-2 forms seen at bit 115 (MIST2–MIST4, D-057).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Section2Form {
@@ -462,8 +469,8 @@ pub enum Section2Form {
 
 /// The section-2 form of an alignment record, if recognised.
 pub fn section2_form(data: &[u8]) -> Option<Section2Form> {
-    let c = crate::aecc_entity::entity_common(data)?;
-    match read_bl(data, c.start_bit + 115)? {
+    let s2 = crate::aecc_entity::section2_base(data)?;
+    match read_bl(data, s2 + 115)? {
         (0x1148 | 0x1188, _) => Some(Section2Form::Plain),
         // Flags: 0x01 Properties header, 0x02 JSON, 0x40 MIST2; S243 FD7
         // also has 0x80 and 0x100 (0x1C1, meanings not known).
@@ -476,10 +483,10 @@ pub fn section2_form(data: &[u8]) -> Option<Section2Form> {
 /// Properties form's flags (first BL at section-2 bit 115, small values)
 /// have bit 0x02 (S177, S178: 3 or 0x43; without JSON 1 or 0x41).
 pub fn layout_json_flag(data: &[u8]) -> bool {
-    let Some(c) = crate::aecc_entity::entity_common(data) else {
+    let Some(s2) = crate::aecc_entity::section2_base(data) else {
         return false;
     };
-    matches!(read_bl(data, c.start_bit + 115), Some((v, _)) if (0..0x1000).contains(&v) && v & 0x01 != 0 && v & 0x02 != 0)
+    matches!(read_bl(data, s2 + 115), Some((v, _)) if (0..0x1000).contains(&v) && v & 0x01 != 0 && v & 0x02 != 0)
 }
 
 fn structured_name(data: &[u8]) -> Option<String> {
@@ -527,7 +534,7 @@ fn structured_name(data: &[u8]) -> Option<String> {
     if layout_json_flag(data) && strings.len() > 3 {
         strings.remove(3);
     }
-    strings.retain(|s| !is_layout_json(s));
+    strings.retain(|s| !is_layout_json(s) && !is_curve_group_json(s));
     // In those records the first description copy can be empty (S177 FD4).
     if strings.len() < 4
         || !strings[0].starts_with("AeccImp")

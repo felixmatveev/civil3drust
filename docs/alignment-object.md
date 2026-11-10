@@ -3676,6 +3676,36 @@ forward from tangent 1 the arcs end on tangent 3's start within 1e-9,
 so the decoder places them that way (`aecc_widening::three_centered`);
 the alignment decodes, 119.4985 long like the stations.
 
+**Converted to static** (S287, owner: S286 with 8EC8 converted, then
+saved). Only 8EC8's record changes for the conversion; the action, its
+body and the three dependencies stay byte for byte (the alignment keeps
+the reactor to its dependency, and its six input pointers). In the
+record:
+
+- the two BLs after the type go `1, 1` → `2, 2`
+  (`aecc_offset::connected_head`), like an offset's update mode (1
+  dynamic, 2 static); the rest of the block is unchanged — the second
+  connection's region still names element 3;
+- the elements keep their geometry, but the last tangent is renumbered
+  3 → 2 (the spiral before it links to 2), so the block's element
+  number is stale from then on;
+- section 2 switches to the Alignment Properties form (flags 0x41, the
+  user string and the date-modified block, as after a Properties edit,
+  D-057) — the conversion is a Properties-style edit;
+- a few bits at the end of the data section (before the handle stream).
+
+The same save also gave 8E82 and 8EA5 their MIST2 re-save field (0x1148
+→ 0x1188), and changed 8E98's form BL to `0x703DC8` with 34 more bits —
+not a value seen before; not read (8E98 was not edited).
+
+A reading found on the way: these alignments have reactors, and a
+reactor count of 1 is a 10-bit BL where 0 is 2 bits, so everything in
+section 2 sits 8 bits later. Section-2 offsets are now counted from the
+class data (`aecc_entity::section2_base`), which recognises the form of
+offsets, offset parents and connected alignments (it returned `None` for
+them before). The curve-group JSON in the Properties form's JSON slot is
+no longer taken for the name.
+
 **Next samples.** The three Reverse Spiral types; one input edited.
 
 ## MIST2: re-save field (partially solved, S151–S157)

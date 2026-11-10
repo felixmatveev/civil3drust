@@ -831,7 +831,7 @@ pub const GEOMETRY_KEY_BITS: usize = 66;
 /// alignment's geometry (its shape and its placement; S142–S150). `None`
 /// if the record has no common entity data or the anchor is missing.
 pub fn geometry_key_bit(data: &[u8]) -> Option<usize> {
-    let s2 = crate::aecc_entity::entity_common(data)?.start_bit;
+    let s2 = crate::aecc_entity::section2_base(data)?;
     let n = GEOMETRY_KEY_ANCHOR.len();
     let last = raw::bit_len(data).saturating_sub(n + GEOMETRY_KEY_BITS);
     (s2 + 140..(s2 + 330).min(last))
@@ -893,7 +893,7 @@ pub fn resave_field_bit(data: &[u8]) -> Option<usize> {
 /// new bytes and handle-stream size.
 pub fn remove_resave_field(data: &[u8], handle_bits: usize) -> Option<(Vec<u8>, usize)> {
     let at = resave_field_bit(data)?;
-    let s2 = crate::aecc_entity::entity_common(data)?.start_bit;
+    let s2 = crate::aecc_entity::section2_base(data)?;
     let m = s2 + 115;
     let marker: String = (m..m + 10)
         .map(|b| char::from(b'0' + raw::get_bit(data, b)))
@@ -952,7 +952,7 @@ pub const DATE_MODIFIED_TAG: u32 = 0x1600_101F;
 /// forms of S59 and S177–S183 are left alone). Returns the new bytes and
 /// handle-stream size.
 pub fn to_plain_form(data: &[u8], handle_bits: usize) -> Option<(Vec<u8>, usize)> {
-    let s2 = crate::aecc_entity::entity_common(data)?.start_bit;
+    let s2 = crate::aecc_entity::section2_base(data)?;
     let key = geometry_key_bit(data)?;
     let region = s2 + 115..key - GEOMETRY_KEY_ANCHOR.len();
     let bits: String = region

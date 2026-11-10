@@ -51,6 +51,8 @@ other records shift by the sizes of the variable parts.
 
 ### 1.1 Section 2 (graphics end → element count)
 
+Offsets are counted from the class data's start less 37 bits (the usual common entity data, `aecc_entity::section2_base`): an entity with reactors has a 10-bit reactor count and everything sits 8 bits later (S287).
+
 | bits (relative) | content | status |
 |---|---|---|
 | 0–114 | class header `BL 80, 0, 80, 80, 0` and common entity data (layer colour, linetype …; `aecc_entity`) | decoded |

@@ -332,3 +332,22 @@ fn after_transitions(data: &[u8], q: usize) -> Result<AfterTransitions, BuildErr
     let (pi_display, _) = bl(q)?;
     Ok((element_map, anchors, [after0, masks, pi_display]))
 }
+
+/// Alignment type of a connected (curb return) alignment (S283).
+pub const TYPE_CONNECTED: i32 = 3;
+
+/// The two BLs after a connected alignment's type: `[1, 1]` while it is
+/// dynamic, `[2, 2]` once converted to static (S286 → S287), like an
+/// offset's update mode. `None` for other alignment types.
+pub fn connected_head(rec: &RawRecord) -> Result<Option<[i32; 2]>, BuildError> {
+    let data = &rec.data;
+    let q = aecc_build::type_bit(rec, data)?;
+    let bl = |q: usize| raw::read_bl(data, q).ok_or_else(|| bad("truncated"));
+    let (ty, q) = bl(q)?;
+    if ty != TYPE_CONNECTED {
+        return Ok(None);
+    }
+    let (a, q) = bl(q)?;
+    let (b, _) = bl(q)?;
+    Ok(Some([a, b]))
+}

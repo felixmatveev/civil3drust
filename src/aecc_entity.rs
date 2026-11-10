@@ -141,3 +141,17 @@ pub fn entity_common(data: &[u8]) -> Option<EntityCommon> {
         invisibility_bit,
     })
 }
+
+/// Length of the common entity data in the usual case: no reactors,
+/// colour, linetype and lineweight BYLAYER, linetype scale 1.
+pub const USUAL_COMMON_BITS: usize = 37;
+
+/// The bit that section-2 offsets are counted from (docs/alignment-map.md
+/// 1.1, "bits (relative)"): the class data's start less the usual common
+/// data length. It is the common data's start when that data has the
+/// usual length; an entity with reactors (an offset's parent, an offset,
+/// a connected alignment's inputs, S255–S287) has a longer reactor count
+/// (`BL 1` is 10 bits, `BL 0` 2), which moves everything after it.
+pub fn section2_base(data: &[u8]) -> Option<usize> {
+    entity_common(data).map(|c| c.end_bit - USUAL_COMMON_BITS)
+}

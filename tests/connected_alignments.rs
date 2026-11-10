@@ -121,3 +121,44 @@ fn s286_curve_groups() {
     }
     assert_eq!(connected_inputs(get(0x8EA5)), Some(vec![0x8C4A, 0x8E11]));
 }
+
+#[test]
+fn s287_converted_to_static() {
+    use civil3drust::aecc_alignment::Linked;
+    use civil3drust::aecc_offset::connected_head;
+    let a = raw::open("samples/S286_connected_curve_groups.dwg").unwrap();
+    let b = raw::open("samples/S287_S286_connected_static.dwg").unwrap();
+    let get = |o: &raw::Opened, h: u64| {
+        raw::records(&o.doc, "AECC_ALIGNMENT")
+            .into_iter()
+            .find(|r| r.handle == h)
+            .unwrap()
+    };
+    let (ra, rb) = (get(&a, 0x8EC8), get(&b, 0x8EC8));
+    // Still type 3 with the same inputs; the head goes 1, 1 → 2, 2.
+    assert_eq!(connected_head(&ra).unwrap(), Some([1, 1]));
+    assert_eq!(connected_head(&rb).unwrap(), Some([2, 2]));
+    assert_eq!(connected_inputs(&rb), Some(vec![0x8C4A, 0x8E11]));
+    assert_eq!(connected_head(&get(&b, 0x8E98)).unwrap(), Some([1, 1]));
+    // Same geometry; the last tangent is renumbered 3 → 2.
+    let (da, db) = (decode_elements(&ra).unwrap(), decode_elements(&rb).unwrap());
+    assert_eq!(da.elements.len(), db.elements.len());
+    for (x, y) in da.elements.iter().zip(&db.elements) {
+        assert_eq!(x.segment, y.segment);
+    }
+    let ids = |d: &civil3drust::aecc_elements::DecodedElements| {
+        d.elements.iter().map(|e| e.id()).collect::<Vec<_>>()
+    };
+    assert_eq!(ids(&da), [1, 4, 5, 6, 3]);
+    assert_eq!(ids(&db), [1, 4, 5, 6, 2]);
+    // Converted through the Alignment Properties form (user string); the
+    // curve-group JSON in the JSON slot is not the name.
+    assert_eq!(
+        raw::section2_form(&rb.data),
+        Some(raw::Section2Form::Properties)
+    );
+    assert_eq!(
+        raw::object_name(&rb.data).as_deref(),
+        Some("spiral - curve - spiral more than 180deg")
+    );
+}
