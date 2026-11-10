@@ -74,8 +74,13 @@ pub fn alignment_refs(rec: &RawRecord) -> Option<AlignmentRefs> {
 }
 
 /// The parent of an offset alignment (S255): the soft pointer after the
-/// check set that points to an `AECC_ALIGNMENT`.
+/// check set that points to an `AECC_ALIGNMENT`. `None` for other types —
+/// a connected (curb return) alignment points to its two inputs there
+/// ([`connected_inputs`]).
 pub fn offset_parent(doc: &CadDocument, rec: &RawRecord) -> Option<u64> {
+    if crate::aecc_build::alignment_type(rec).ok()? != 2 {
+        return None;
+    }
     let a = alignment_refs(rec)?;
     let refs = handle_refs::of_record(rec);
     refs[refs.len() - a.trailing..]
@@ -83,6 +88,24 @@ pub fn offset_parent(doc: &CadDocument, rec: &RawRecord) -> Option<u64> {
         .map(|r| r.handle)
         .filter(|h| *h != 0)
         .find(|h| raw::class_of(doc, *h).as_deref() == Some("AECC_ALIGNMENT"))
+}
+
+/// The alignments a connected (curb return, type 3) alignment joins (S283):
+/// the soft pointers after the check set, in order of first appearance
+/// (stored `A, A, B, B, A, B`).
+pub fn connected_inputs(rec: &RawRecord) -> Option<Vec<u64>> {
+    if crate::aecc_build::alignment_type(rec).ok()? != 3 {
+        return None;
+    }
+    let a = alignment_refs(rec)?;
+    let refs = handle_refs::of_record(rec);
+    let mut out: Vec<u64> = Vec::new();
+    for r in &refs[refs.len() - a.trailing..] {
+        if r.handle != 0 && !out.contains(&r.handle) {
+            out.push(r.handle);
+        }
+    }
+    Some(out)
 }
 
 #[derive(Debug, Clone, PartialEq)]

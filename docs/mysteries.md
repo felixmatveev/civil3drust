@@ -40,6 +40,7 @@ Tools: `hexview --diff a.dwg b.dwg --filter <handle>`, `dumprec`,
 | MIST17 | 128 bits after a `0x0D` element header | solved: group start point |
 | MIST18 | station equation and masking fields | solved; the equations' 18 leading bits are a fixed marker (owner) |
 | MIST19 | offset alignment block after the type | mostly read (regions, transitions) |
+| MIST20 | connected (curb return) alignment block after the type | partly read (S283) |
 
 ## MIST1 — the 66-bit section-2 field — **PARTIALLY SOLVED (S142–S150, S214)**
 
@@ -561,6 +562,19 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
 - **Next samples:** transition type 3 (if the list has one more type);
   Cant set on a centerline, if Civil 3D offers it there.
 
+## MIST20 — the connected (curb return) alignment block after the type — **open (S283)**
+
+- **Where:** after `BL type` 3 (alignment-object.md, "Connected (curb
+  return) alignments").
+- **Read:** per connection the offset (−10), the tangent length (25),
+  the input station range of the tangent and the connected alignment's
+  own range (shrunk by 0.025 at each end), stored twice.
+- **Open:** the head (`BL 1, 1, 1, B 1, BL 1, 1`), the bits between,
+  the GUIDs (one GUID twice), the 73-bit gap between connections, the
+  spiral and curve parameters after them.
+- **Next samples:** the same connection with other values; one input
+  edited; a connection between centerlines.
+
 ## Not sampled yet (not mysteries, just gaps)
 
 - Real-world alignments. A 2020 production drawing (checked locally
@@ -573,7 +587,7 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   three alignments made from feature lines (section-2 form `BL 0x40, BL
   0, …` without the MIST1 anchor; two extra strings per element; one
   start station not found). The offset form is read since S255 (MIST19);
-  a curb return sample would settle the rest; the feature-line form
+  curb returns are being read since S283 (MIST20); the feature-line form
   needs one alignment created from a feature line.
 - Other alignment types (S1-style imports have no element records and a
   22-bit gap after the elements instead of 161 bits).

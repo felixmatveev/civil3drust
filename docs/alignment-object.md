@@ -3573,6 +3573,63 @@ read and re-encoded bit for bit; not editable.
 `aecc_alignment_refs::offset_parent` is the parent (none after it is
 deleted). Test `offset_alignments`.
 
+## Connected (curb return) alignments (S282, S283)
+
+**Sample.** S282 (owner): WEST-EAST (tangent, arc R 544.62, tangent) and
+NORTH-SOUTH (one tangent) crossing, offsets 20' left of WEST-EAST and
+20' left and right of NORTH-SOUTH. S283: a connected alignment added,
+"Connected Alignment - (1)" (8E38), joining WEST-EAST-Left-20.00 (8E1A)
+and NORTH-SOUTH-Right-20.00 (8E2E). Type **3** (the API's CurbReturn).
+
+**Elements.** Ordinary fixed records: tangent 25, inward spiral 200 to
+R 150, arc R 150, outward spiral 200, tangent 25 — starting 10 off its
+first input (y = 10, the input at y = 20) and ending 10 off the second
+(x = 473.38, the input at 463.38). civil3drust decodes them like any
+alignment.
+
+**Objects added** (inventory S282 → S283): the alignment and its
+companion, three label groups (station, geometry point, minor station),
+an `AECC_ASSOC_ACTION` in the model space's network owning an
+`AECC_ASSOC_CURBRETURN_ALIGNMENT_ACTION_BODY` (14 bytes: a hard pointer
+to the connected alignment) and three dependencies with bodies — one on
+each input and one on the output. A dependency on an object that
+already has one is chained to it: the dependency records carry previous
+and next soft pointers (WEST-EAST-Left's new dependency points back to
+its offset dependency; NORTH-SOUTH-Right's old dependency points on to
+the new one). The two inputs gain a reactor (and nothing else); the
+name-template node's counter changes.
+
+**Handle stream.** Six soft pointers after the check set: input A, A,
+B, B, A, B (`aecc_alignment_refs::connected_inputs`).
+
+**After the type** (one sample, partly read):
+
+```text
+BL 3 (type), BL 1, BL 1, BL 1, B 1, BL 1, BL 1
+per connection (two):
+  BD −10                     offset from the input (negative left?)
+  B 1, BD 25                 the tangent length
+  B 0, BD 0, BD 0, B 0
+  { BD 10, BD input station from, BD input station to,
+    BD own station from, BD own station to }   twice, with BL 1 and a
+                              GUID between the two copies (S283:
+                              188.90–213.90 on WEST-EAST-Left and 0.025–
+                              24.975 on the connected alignment; 121.32–
+                              146.32 on NORTH-SOUTH-Right and 460.64–
+                              485.59 — the tangent's stations shrunk by
+                              0.025 at each end)
+then more (spiral and curve parameters expected: L 200, R 150) — not
+read
+```
+
+The inputs get no station anchors (unlike an offset's parent); the
+stations are stored as numbers. Not decoded: the head values, the
+73-bit gap between the two connection blocks, the GUIDs, the rest.
+
+**Next samples.** The same connection with other spiral/curve values
+(e.g. no spirals; R 100), then with one input edited; a connection
+between two centerlines instead of offsets.
+
 ## MIST2: re-save field (partially solved, S151–S157)
 
 `BL 0x0D00D773, BL n` (44 bits) right after MIST1, or 98 bits after it in

@@ -293,6 +293,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S279 | `S279_S278_curve_reverse_in.dwg` | Civil 3D 2024 | Owner: S278 with the transition in changed to Curve – Reverse Curve, R 25 (Civil 3D shows the reverse radius 235; owner's screenshot). | 967918 | `5744df35edf225ad` |
 | S280 | `S280_S279_widening_deleted.dwg` | Civil 3D 2024 | Owner: S279 with the widening deleted. | 971728 | `b9537c2324a52d4b` |
 | S281 | `S281_S280_two_widenings.dwg` | Civil 3D 2024 | Owner: S280 with two widenings added: 25 left 2+86.41–4+33.68 on the first tangent, 40 left 8+67.71–13+83.98 over the arc and the second tangent; curve – line – curve transitions L 100, R 25/25. | 967514 | `2883baa67fc0de36` |
+| S282 | `S282_connected_base.dwg` | Civil 3D 2024 | Owner: base for connected alignments — WEST-EAST (8C4A: tangent, arc R 544.62, tangent) and NORTH-SOUTH (8E11: one tangent) crossing, with offsets 20' left of WEST-EAST (8E1A) and 20' left and right of NORTH-SOUTH (8E26, 8E2E). | 977694 | `eb6e6673fe98bd68` |
+| S283 | `S283_S282_connected_alignment.dwg` | Civil 3D 2024 | Owner: S282 with a connected (curb return) alignment added, "Connected Alignment - (1)" (8E38), joining WEST-EAST-Left-20.00 and NORTH-SOUTH-Right-20.00: tangent 25, spiral 200, arc R 150, spiral 200, tangent 25 (read from the drawing). | 988922 | `e5065e4f3bec3f16` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

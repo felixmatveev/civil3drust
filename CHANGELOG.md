@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Connected (curb return, type 3) alignments, first look (S282, S283,
+  owner): elements decode; `aecc_alignment_refs::connected_inputs` (the
+  two inputs after the check set); the objects Civil 3D adds (a curb
+  return action body, three chained dependencies); the block after the
+  type partly read (MIST20). `offset_parent` now answers only for
+  offset alignments. Test `connected_alignments`.
 - Widening added, edited, deleted and doubled (S276–S281, owner): all
   decode, stations match Civil 3D's to 1e-6; deleting a widening
   restores the offset's elements with their old IDs; widenings add only
