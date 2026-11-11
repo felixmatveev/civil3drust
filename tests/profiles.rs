@@ -140,3 +140,41 @@ fn curve_length_typed() {
     assert_eq!(c.length, 150.0);
     assert_eq!(tangents(&els).len(), 2);
 }
+
+#[test]
+fn layout_matches_civil3d_api() {
+    // C3DDUMP on S306 (owner; samples/S306_profile_curve_length_150.api.txt).
+    use civil3drust::aecc_profile::layout;
+    let o = open("S306");
+    let l = layout(&profile_elements(&profile(&o, 0x8D72).data)).unwrap();
+    let want = [(-100.0, -20.0), (822.01097503767369, 0.0), (1900.0, -10.0)];
+    assert_eq!(l.pvis.len(), 3);
+    for (p, (x, y)) in l.pvis.iter().zip(want) {
+        assert!((p.x - x).abs() < 1e-9 && (p.y - y).abs() < 1e-9);
+    }
+    assert_eq!(l.station_range(), (-100.0, 1900.0));
+    let c = l.curves[0];
+    assert_eq!(c.id, 3);
+    assert!((c.grade_in - 0.021691715762041527).abs() < 1e-12);
+    assert!((c.grade_out + 0.0092765322915504579).abs() < 1e-12);
+    assert!((c.grade_change() + 0.030968248053591985).abs() < 1e-12);
+    assert!((c.k() - 48.436708379633892).abs() < 1e-9);
+    let (s, e) = (c.start(), c.end());
+    assert!((s.x - 747.01097503767369).abs() < 1e-9 && (s.y + 1.6268786821531145).abs() < 1e-9);
+    assert!((e.x - 897.01097503767369).abs() < 1e-9 && (e.y + 0.69573992186628431).abs() < 1e-9);
+    // The high point.
+    let hp = c.start().x - c.grade_in * c.length / c.grade_change();
+    assert!((hp - 852.078506099665).abs() < 1e-9);
+    assert!((c.elevation_at(hp) + 0.48733117234502177).abs() < 1e-9);
+
+    let l = layout(&profile_elements(&profile(&o, 0x8D91).data)).unwrap();
+    let want = [
+        (-100.0, -32.5),
+        (885.34017744899984, -10.0),
+        (1900.0, -30.0),
+    ];
+    for (p, (x, y)) in l.pvis.iter().zip(want) {
+        assert!((p.x - x).abs() < 1e-9 && (p.y - y).abs() < 1e-9);
+    }
+    assert!(l.curves.is_empty());
+}

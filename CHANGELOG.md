@@ -29,6 +29,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   between alignment, profiles and profile views
   (`pointers_to`, `parent_alignment`); `docs/profile-object.md`; test
   `profiles`. S306: the vertical curve's BD is its length (typed 150).
+  `aecc_profile::layout` resolves PVIs and symmetric parabolas (BVC,
+  EVC, K, elevation along it); checked to 1e-9 against the first
+  `C3DDUMP` profile output (S306).
 - `C3DDUMP` also writes each alignment's profiles (every simple property,
   each PVI and entity) and profile views, read by reflection, for the
   profile samples.

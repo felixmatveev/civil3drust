@@ -58,3 +58,6 @@ at that version's folder.
 - `CreationMode` against the companion's edge flag `0x20` (MIST12).
 - `Constraint1`/`Constraint2` against our line kinds and arc `n2` codes
   (`docs/element-methods.md`, `docs/class-catalog.md`).
+- Profiles: PVIs, entities (through points, curve length, K, BVC/EVC)
+  against `aecc_profile::layout` (`docs/profile-object.md`; first run on
+  S306, all values agree).

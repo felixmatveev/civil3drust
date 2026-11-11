@@ -177,3 +177,111 @@ pub fn parent_alignment(doc: &CadDocument, rec: &RawRecord) -> Option<u64> {
         .first()
         .copied()
 }
+
+/// A symmetric parabola placed at a PVI (S300, S306).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PlacedCurve {
+    pub id: i32,
+    /// The PVI: station, elevation.
+    pub pvi: Point2,
+    pub length: f64,
+    pub grade_in: f64,
+    pub grade_out: f64,
+}
+
+impl PlacedCurve {
+    /// Start (BVC) station and elevation.
+    pub fn start(&self) -> Point2 {
+        let h = self.length / 2.0;
+        Point2::new(self.pvi.x - h, self.pvi.y - self.grade_in * h)
+    }
+    /// End (EVC) station and elevation.
+    pub fn end(&self) -> Point2 {
+        let h = self.length / 2.0;
+        Point2::new(self.pvi.x + h, self.pvi.y + self.grade_out * h)
+    }
+    /// Grade change (out − in).
+    pub fn grade_change(&self) -> f64 {
+        self.grade_out - self.grade_in
+    }
+    /// K: length per unit (percent) of grade change, as Civil 3D shows it.
+    pub fn k(&self) -> f64 {
+        self.length / (100.0 * self.grade_change().abs())
+    }
+    /// Elevation at `station` on the curve.
+    pub fn elevation_at(&self, station: f64) -> f64 {
+        let s = self.start();
+        let x = station - s.x;
+        s.y + self.grade_in * x + self.grade_change() / (2.0 * self.length) * x * x
+    }
+}
+
+/// A layout profile resolved from its element records: PVIs in order (the
+/// tangents' through points) and the curves placed at them.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ProfileLayout {
+    pub pvis: Vec<Point2>,
+    pub curves: Vec<PlacedCurve>,
+}
+
+impl ProfileLayout {
+    /// Start and end station (first and last PVI).
+    pub fn station_range(&self) -> (f64, f64) {
+        (self.pvis[0].x, self.pvis[self.pvis.len() - 1].x)
+    }
+}
+
+/// Follow the links from the first tangent: each tangent gives a PVI, a
+/// curve between two tangents sits on their shared point. `None` when the
+/// chain is broken or a tangent does not start where the previous one ends.
+pub fn layout(elements: &[ProfileElement]) -> Option<ProfileLayout> {
+    let by_id = |id: i32| elements.iter().find(|e| e.id() == id);
+    let first = elements.iter().find(|e| match e {
+        ProfileElement::Tangent(t) => t.before == 0,
+        _ => false,
+    })?;
+    let grade = |t: &ProfileTangent| (t.end.y - t.start.y) / (t.end.x - t.start.x);
+    let mut pvis = Vec::new();
+    let mut curves = Vec::new();
+    let mut prev: Option<&ProfileTangent> = None;
+    let mut pending: Option<&ProfileCurve> = None;
+    let mut cur = Some(first);
+    let mut guard = 0;
+    while let Some(e) = cur {
+        guard += 1;
+        if guard > elements.len() {
+            return None;
+        }
+        let next = match e {
+            ProfileElement::Tangent(t) => {
+                match prev {
+                    None => pvis.push(t.start),
+                    Some(p) => {
+                        let tol = 1e-6 * (1.0 + t.start.x.abs());
+                        if (p.end.x - t.start.x).abs() > tol || (p.end.y - t.start.y).abs() > tol {
+                            return None;
+                        }
+                        if let Some(c) = pending.take() {
+                            curves.push(PlacedCurve {
+                                id: c.id,
+                                pvi: t.start,
+                                length: c.length,
+                                grade_in: grade(p),
+                                grade_out: grade(t),
+                            });
+                        }
+                    }
+                }
+                pvis.push(t.end);
+                prev = Some(t);
+                t.after
+            }
+            ProfileElement::Curve(c) => {
+                pending = Some(c);
+                c.after
+            }
+        };
+        cur = if next == 0 { None } else { Some(by_id(next)?) };
+    }
+    (pending.is_none() && !pvis.is_empty()).then_some(ProfileLayout { pvis, curves })
+}

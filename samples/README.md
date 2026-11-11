@@ -317,7 +317,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S303 | `S303_profile_second_profile.dwg` | Civil 3D 2024 | Owner: S302 + a second layout profile `test2` (8D91) in the same view. | 972186 | `c176ece0d9420916` |
 | S304 | `S304_profile_second_view.dwg` | Civil 3D 2024 | Owner: S303 + a second profile view (8DA9). | 978070 | `f16db1330ee90a12` |
 | S305 | `S305_profile_view_deleted.dwg` | Civil 3D 2024 | Owner: S304 with the first view (8D70) deleted. | 969270 | `450efe74e53b6059` |
-| S306 | `S306_profile_curve_length_150.dwg` | Civil 3D 2024 | Owner: S305 with the vertical curve's length set to 150 (the only value asked). | 966458 | `c2486da7b75598b5` |
+| S306 | `S306_profile_curve_length_150.dwg` | Civil 3D 2024 | Owner: S305 with the vertical curve's length set to 150 (the only value asked). `C3DDUMP` output next to it (`.api.txt`). | 966458 | `c2486da7b75598b5` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

@@ -92,6 +92,31 @@ keeps the PVI at the same place relative to the alignment geometry
 before it; the profile record is rewritten, the view keeps its station
 range.
 
+## Checked against the Civil 3D API (S306)
+
+`C3DDUMP` on S306 (owner; `samples/S306_profile_curve_length_150.api.txt`)
+agrees with the decoded records to 1e-9 (test
+`layout_matches_civil3d_api`, `aecc_profile::layout`):
+
+- PVIs: the tangents' through points — (−100, −20), (822.0110, 0),
+  (1900, −10); `test2`: (−100, −32.5), (885.3402, −10), (1900, −30).
+  The profile itself runs −100 to 1900 (`StartingStation`,
+  `EndingStation`, `Length` 2000): it is **not** clipped to the
+  alignment (0–1770.68).
+- Tangents: `Constraint1 Fixed`, `Constraint2 PassThroughPt1AndPt2`, the
+  through points as stored; their start and end are trimmed by the curve.
+- Curve: `ProfileParabolaSymmetric`, `Constraint1 Free`, `Constraint2
+  CurveLength`, length 150 at the PVI; BVC 747.0110 / −1.6269, EVC
+  897.0110 / −0.6957, K = L / (100 |A|) = 48.4367, high point 852.0785 /
+  −0.4873 — all derived from the tangents and the length, none stored.
+- `ProfileType FG`, `UpdateMode Static` (a layout profile).
+- The `FingerPrint` values (profiles, alignment) are not stored in the
+  records as 64-bit values.
+- View `prpfile2`: `StationRangeMode Automatic`, stations −100 to 1900
+  (the profiles' extent), `ElevationRangeMode Automatic`, elevations
+  −32.5 to −0.4873 (the profiles' lowest and highest point); the dialog's
+  −60 / 20 are the user-specified fields.
+
 ## Profile view record (`AECC_PROFILE_VIEW`)
 
 Its station and elevation ranges appear as BDs (−100, −40, 1900, 30 in
@@ -117,4 +142,3 @@ the whole view.
 - The data after the element records in the profile.
 - The view's fields (ranges, auto/user height, bands).
 - The seven helper objects' role.
-- Asked of the owner: `C3DDUMP` on S299–S303 and the values typed in.
