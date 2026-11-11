@@ -17,6 +17,12 @@ versions follow [Semantic Versioning](https://semver.org/).
   on a closed pipe.
 
 ### Added
+- Profiles, first look (S298–S305, owner): `aecc_profile` reads a
+  layout profile's tangent and vertical-curve records (alignment-like
+  element records with (station, elevation) points) and the links
+  between alignment, profiles and profile views
+  (`pointers_to`, `parent_alignment`); `docs/profile-object.md`; test
+  `profiles`.
 - `C3DDUMP` also writes each alignment's profiles (every simple property,
   each PVI and entity) and profile views, read by reflection, for the
   profile samples.

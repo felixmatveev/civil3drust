@@ -309,6 +309,14 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S295 | `S295_S287_input_moved_stale.dwg` | civil3drust | Experiment: S287 with only NORTH-SOUTH (8E11) moved 20' east (`set_pis … 8E11 "503.377749154256,415.7936617538271 503.3777491542558,-454.1855850308484"`); its offsets and the connected alignments keep their old geometry. Civil 3D's own result of the same move is S290. | 963082 | `fe69181584a9a6d0` |
 | S296 | `S296_S295_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S295 opened (clean) and saved without AUDIT; stale geometry shown (screenshot). | 991098 | `83853c16bb63fb94` |
 | S297 | `S297_S295_audit_resaved.dwg` | Civil 3D 2024 | Owner: S295 opened, AUDIT (clean), saved. | 991286 | `a1d30ecd4f081f1a` |
+| S298 | `S298_profile_base.dwg` | Civil 3D 2024 | Owner: profile base — one alignment `prpfile` (8C4A: tangent, free curve R 430.15, tangent). | 979313 | `30e9f892e690a5f2` |
+| S299 | `S299_profile_layout.dwg` | Civil 3D 2024 | Owner: S298 + profile view (8D70) and layout profile `test` (8D72), two tangents. | 964243 | `b7d7a1db5373946f` |
+| S300 | `S300_profile_v_curve.dwg` | Civil 3D 2024 | Owner: S299 + a vertical curve at the middle PVI. | 970199 | `e8dbe99d301e83b8` |
+| S301 | `S301_profile_pvi_edit.dwg` | Civil 3D 2024 | Owner: S300 with the middle PVI edited (elevation 10 → 0). | 970069 | `477e6a642605663c` |
+| S302 | `S302_profile_alignment_edit.dwg` | Civil 3D 2024 | Owner: S301 with the alignment's curve radius changed (430.15 → 605.96). | 965530 | `0cf5daafe7662056` |
+| S303 | `S303_profile_second_profile.dwg` | Civil 3D 2024 | Owner: S302 + a second layout profile `test2` (8D91) in the same view. | 972186 | `c176ece0d9420916` |
+| S304 | `S304_profile_second_view.dwg` | Civil 3D 2024 | Owner: S303 + a second profile view (8DA9). | 978070 | `f16db1330ee90a12` |
+| S305 | `S305_profile_view_deleted.dwg` | Civil 3D 2024 | Owner: S304 with the first view (8D70) deleted. | 969270 | `450efe74e53b6059` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

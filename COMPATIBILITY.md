@@ -73,8 +73,8 @@ alignment record itself.
 | PI display | `aecc_build::pi_display`, `set_pi_display` | Supported |
 | Display (proxy graphics) | `proxy_graphics`; `aecc_build::replace_graphics`, `strip_graphics` | Supported — written for lines and arcs |
 | Superelevation | — | Passthrough |
-| Profiles | — | Passthrough |
-| Profile Views | — | Passthrough |
+| Profiles | Layout tangents and vertical-curve records, links to alignment and views (S298–S305; curve parameters not named) | Partial |
+| Profile Views | Links to alignment and profiles (S304) | Partial |
 | Sample Line Groups | — | Passthrough |
 | Station equation label group | `aecc_create` (`AECC_ALIGNMENT_STAEQU_LABEL_GROUP`) | Partial — optionally created with a new alignment |
 | Other label groups (station, minor station, geometry point, design speed) | — | Passthrough — not created for new alignments |
