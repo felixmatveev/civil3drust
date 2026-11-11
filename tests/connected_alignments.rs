@@ -461,3 +461,19 @@ fn s294_audit_keeps_the_static_alignment() {
         assert!(x.iter().zip(&y).all(|(s, t)| close(s, t)), "{h:X}");
     }
 }
+
+#[test]
+fn s295_stale_experiment_input() {
+    // civil3drust moved only NORTH-SOUTH: it matches Civil 3D's S290, and
+    // every other alignment is still S287's.
+    let (a, b, c) = (
+        decoded(BASE),
+        decoded("samples/S295_S287_input_moved_stale.dwg"),
+        decoded("samples/S290_S287_input_moved_east.dwg"),
+    );
+    let ns = (segments_of(&b, 0x8E11), segments_of(&c, 0x8E11));
+    assert!(ns.0.iter().zip(&ns.1).all(|(s, t)| close(s, t)));
+    for h in DYNAMIC.into_iter().chain([STATIC, 0x8E26, 0x8E2E, 0x8C4A]) {
+        assert_eq!(segments_of(&a, h), segments_of(&b, h), "{h:X}");
+    }
+}

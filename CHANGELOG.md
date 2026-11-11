@@ -17,6 +17,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   on a closed pipe.
 
 ### Added
+- Stale experiment S295 (civil3drust): S287 with only NORTH-SOUTH moved
+  20' east, its offsets and the connected alignments left stale, to see
+  whether Civil 3D rebuilds connected alignments on open or on AUDIT.
+  S292's Spiral-curve-spiral disappeared in Civil 3D (owner).
 - Connected alignments after their inputs or parameters change (S290–
   S294, owner): moved input (rebuilt), input start station (block
   stations follow), input curve reaching the connection (a fixed curve

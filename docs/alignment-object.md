@@ -3800,9 +3800,15 @@ offsets (S268). A writer that edits an input has to rebuild the
 dynamic connected alignments (or leave the work to Civil 3D, which did
 it on the edit here — not yet tested on open).
 
-**Next samples.** What Civil 3D shows for S292's 8E98 (gone, or an
-error?); and whether a dynamic connected alignment with stale elements
-is rebuilt on open or only on AUDIT (as S268 for offsets).
+In S292 the Spiral-curve-spiral **disappeared** in Civil 3D once the
+input's curve reached its connection (owner): an alignment record with
+no elements.
+
+**Stale experiment** (S295, civil3drust): S287 with only NORTH-SOUTH
+moved 20' east, its two offsets and the three dynamic connected
+alignments left as they were. Civil 3D's own result of the same move is
+S290, so a rebuild can be compared with it. Waiting for the owner:
+open (errors? drawn where?), save; AUDIT, save.
 
 ## MIST2: re-save field (partially solved, S151–S157)
 
