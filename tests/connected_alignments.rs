@@ -477,3 +477,37 @@ fn s295_stale_experiment_input() {
         assert_eq!(segments_of(&a, h), segments_of(&b, h), "{h:X}");
     }
 }
+
+#[test]
+fn s296_s297_stale_connected_rebuilt_by_audit() {
+    let s290 = decoded("samples/S290_S287_input_moved_east.dwg");
+    let (stale, saved, audited) = (
+        decoded("samples/S295_S287_input_moved_stale.dwg"),
+        decoded("samples/S296_S295_civ3d_resaved.dwg"),
+        decoded("samples/S297_S295_audit_resaved.dwg"),
+    );
+    let same = |a: &[Segment], b: &[Segment]| {
+        a.len() == b.len() && a.iter().zip(b).all(|(s, t)| close(s, t))
+    };
+    // Open and save: only 8E98 rebuilt; the others still stale.
+    for h in [0x8E82, 0x8EA5, 0x8E26, 0x8E2E] {
+        assert!(
+            same(&segments_of(&stale, h), &segments_of(&saved, h)),
+            "{h:X}"
+        );
+    }
+    assert!(same(
+        &segments_of(&s290, 0x8E98),
+        &segments_of(&saved, 0x8E98)
+    ));
+    // AUDIT: everything as Civil 3D's own move; the static one kept.
+    for h in DYNAMIC
+        .into_iter()
+        .chain([STATIC, 0x8E11, 0x8E26, 0x8E2E, 0x8C4A])
+    {
+        assert!(
+            same(&segments_of(&s290, h), &segments_of(&audited, h)),
+            "{h:X}"
+        );
+    }
+}

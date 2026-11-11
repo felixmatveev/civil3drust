@@ -3807,8 +3807,23 @@ no elements.
 **Stale experiment** (S295, civil3drust): S287 with only NORTH-SOUTH
 moved 20' east, its two offsets and the three dynamic connected
 alignments left as they were. Civil 3D's own result of the same move is
-S290, so a rebuild can be compared with it. Waiting for the owner:
-open (errors? drawn where?), save; AUDIT, save.
+S290, so a rebuild can be compared with it. Owner: it opens cleanly
+and AUDIT is clean.
+
+- **Opened and saved** (S296): only the Spiral-curve-spiral (8E98) was
+  rebuilt (20' east, as in S290); the Fillet, the Three Centered Arc and
+  NORTH-SOUTH's two offsets were saved stale, and drawn stale before
+  AUDIT (owner's screenshot). Why 8E98 alone is not known.
+- **AUDIT, saved** (S297): every alignment decodes as in S290, Civil
+  3D's own result of the move — the offsets and all dynamic connected
+  alignments rebuilt; the static 8EC8 unchanged.
+
+So, as for offsets (S268 → S272, S273), Civil 3D accepts a dynamic
+connected alignment left stale by an input edit and repairs it on AUDIT,
+but does not reliably rebuild it on open. A writer that edits an input
+should rebuild the dependent offsets and connected alignments itself;
+writing them stale is accepted but shows wrong geometry until AUDIT
+(docs/civil3d-rebuilds.md).
 
 ## MIST2: re-save field (partially solved, S151–S157)
 

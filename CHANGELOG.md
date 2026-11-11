@@ -17,6 +17,11 @@ versions follow [Semantic Versioning](https://semver.org/).
   on a closed pipe.
 
 ### Added
+- Stale experiment results (S296, S297, owner): S295 opens cleanly;
+  saving without AUDIT rebuilt only one connected alignment, AUDIT (clean)
+  rebuilt every offset and dynamic connected alignment exactly as Civil
+  3D's own move (S290). A writer editing an input should rebuild them
+  (civil3d-rebuilds.md). Test `s296_s297_stale_connected_rebuilt_by_audit`.
 - Stale experiment S295 (civil3drust): S287 with only NORTH-SOUTH moved
   20' east, its offsets and the connected alignments left stale, to see
   whether Civil 3D rebuilds connected alignments on open or on AUDIT.

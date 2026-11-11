@@ -307,6 +307,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S293 | `S293_S287_connection_offset_overlap.dwg` | Civil 3D 2024 | Owner: S287 with Spiral-curve-spiral's (8E98) Connection Parameters changed: offset in 25 → 30 (Left), overlap in 25 → 40, overlap out 25 → 50 (screenshot; step 4). | 992794 | `4355945aee87c244` |
 | S294 | `S294_S287_audit_resaved.dwg` | Civil 3D 2024 | Owner: S287 re-saved after AUDIT (step 5). | 995290 | `a0787c22c03ade2c` |
 | S295 | `S295_S287_input_moved_stale.dwg` | civil3drust | Experiment: S287 with only NORTH-SOUTH (8E11) moved 20' east (`set_pis … 8E11 "503.377749154256,415.7936617538271 503.3777491542558,-454.1855850308484"`); its offsets and the connected alignments keep their old geometry. Civil 3D's own result of the same move is S290. | 963082 | `fe69181584a9a6d0` |
+| S296 | `S296_S295_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S295 opened (clean) and saved without AUDIT; stale geometry shown (screenshot). | 991098 | `83853c16bb63fb94` |
+| S297 | `S297_S295_audit_resaved.dwg` | Civil 3D 2024 | Owner: S295 opened, AUDIT (clean), saved. | 991286 | `a1d30ecd4f081f1a` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8
