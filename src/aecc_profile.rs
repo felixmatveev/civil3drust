@@ -1112,7 +1112,7 @@ pub fn sample_3d(
         first.start.x.max(a0),
         last.end.x.min(a0 + alignment.length()),
     );
-    if !(step > 0.0) || hi <= lo {
+    if step.is_nan() || step <= 0.0 || hi <= lo {
         return Vec::new();
     }
     let mut stations: Vec<f64> = Vec::new();
