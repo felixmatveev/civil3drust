@@ -18,7 +18,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 - Stale experiment results (S296, S297, owner): S295 opens cleanly;
-  saving without AUDIT rebuilt only one connected alignment, AUDIT (clean)
+  saving without AUDIT rebuilt only one connected alignment (on its own,
+  owner), AUDIT (clean)
   rebuilt every offset and dynamic connected alignment exactly as Civil
   3D's own move (S290). A writer editing an input should rebuild them
   (civil3d-rebuilds.md). Test `s296_s297_stale_connected_rebuilt_by_audit`.

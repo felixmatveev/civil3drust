@@ -3813,7 +3813,10 @@ and AUDIT is clean.
 - **Opened and saved** (S296): only the Spiral-curve-spiral (8E98) was
   rebuilt (20' east, as in S290); the Fillet, the Three Centered Arc and
   NORTH-SOUTH's two offsets were saved stale, and drawn stale before
-  AUDIT (owner's screenshot). Why 8E98 alone is not known.
+  AUDIT (owner's screenshot). The owner did nothing to 8E98: Civil 3D
+  rebuilt it on its own. Why that one alone is not known (it is the
+  only dynamic one with spirals; not tested), so a writer cannot count
+  on a rebuild before AUDIT.
 - **AUDIT, saved** (S297): every alignment decodes as in S290, Civil
   3D's own result of the move — the offsets and all dynamic connected
   alignments rebuilt; the static 8EC8 unchanged.
