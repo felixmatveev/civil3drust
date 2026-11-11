@@ -4,7 +4,10 @@ A read-only Civil 3D add-in. The `C3DDUMP` command writes the public API
 values of every alignment in the current drawing (`AlignmentType`,
 `CreationMode`, `FingerPrint`, design speeds, entities and their
 constraints, …) to `<drawing>.api.txt` next to the drawing, and prints
-them on the command line.
+them on the command line. After each alignment come its profiles (every
+simple property, then each PVI and each entity) and its profile views
+(every simple property), read by reflection so that the add-in builds
+against any Civil 3D version.
 
 Cleanroom: it reads our own sample drawings through Civil 3D's public
 API, so its output is observed Civil 3D behaviour (CLAUDE.md). Autodesk's

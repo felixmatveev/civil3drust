@@ -17,6 +17,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   on a closed pipe.
 
 ### Added
+- `C3DDUMP` also writes each alignment's profiles (every simple property,
+  each PVI and entity) and profile views, read by reflection, for the
+  profile samples.
 - Stale experiment results (S296, S297, owner): S295 opens cleanly;
   saving without AUDIT rebuilt only one connected alignment (on its own,
   owner), AUDIT (clean)

@@ -1,9 +1,15 @@
 // C3DDUMP: write the public API values of every alignment in the current
-// drawing to <drawing>.api.txt, to compare with what civil3drust decodes.
+// drawing, with its profiles and profile views, to <drawing>.api.txt, to
+// compare with what civil3drust decodes.
 // Read-only: it opens objects for read and changes nothing.
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -47,6 +53,8 @@ namespace C3dApiDump
                         continue;
                     }
                     DumpAlignment(sb, al);
+                    DumpChildren(sb, tr, al, "GetProfileIds", "Profile", new[] { "PVIs", "Entities" });
+                    DumpChildren(sb, tr, al, "GetProfileViewIds", "ProfileView", new string[0]);
                 }
                 tr.Commit();
             }
@@ -117,6 +125,136 @@ namespace C3dApiDump
             {
                 sb.AppendLine("  Entities: <" + e.GetType().Name + ": " + e.Message + ">");
             }
+        }
+
+        // Profiles and profile views are reached through the alignment's
+        // public methods; their properties are read by reflection so the
+        // add-in builds whatever members a Civil 3D version has.
+        static void DumpChildren(StringBuilder sb, Transaction tr, Alignment al,
+            string method, string label, string[] collections)
+        {
+            MethodInfo m = al.GetType().GetMethod(method, Type.EmptyTypes);
+            if (m == null)
+            {
+                sb.AppendLine("  " + method + ": <not in this API>");
+                return;
+            }
+            IEnumerable ids;
+            try
+            {
+                ids = m.Invoke(al, null) as IEnumerable;
+            }
+            catch (System.Exception e)
+            {
+                sb.AppendLine("  " + method + ": <" + Inner(e) + ">");
+                return;
+            }
+            if (ids == null)
+            {
+                return;
+            }
+            foreach (object o in ids)
+            {
+                if (!(o is ObjectId id))
+                {
+                    continue;
+                }
+                DBObject obj = tr.GetObject(id, OpenMode.ForRead);
+                sb.AppendLine();
+                sb.AppendLine("  " + label + " [" + obj.Handle + "] " + obj.GetType().Name);
+                DumpSimple(sb, obj, "    ");
+                foreach (string c in collections)
+                {
+                    PropertyInfo p = obj.GetType().GetProperty(c);
+                    if (p == null)
+                    {
+                        continue;
+                    }
+                    object coll;
+                    try
+                    {
+                        coll = p.GetValue(obj, null);
+                    }
+                    catch (System.Exception e)
+                    {
+                        sb.AppendLine("    " + c + ": <" + Inner(e) + ">");
+                        continue;
+                    }
+                    if (!(coll is IEnumerable items))
+                    {
+                        continue;
+                    }
+                    int i = 0;
+                    foreach (object item in items)
+                    {
+                        sb.AppendLine("    " + c + "[" + i++ + "] " + item.GetType().Name);
+                        DumpSimple(sb, item, "      ");
+                    }
+                }
+            }
+        }
+
+        static readonly HashSet<string> SkipProperties = new HashSet<string>
+        {
+            "Database", "Bounds", "GeometricExtents", "AcadObject", "ClassID",
+            "UnmanagedObject", "AutoDelete", "IsDisposed", "DrawStream",
+        };
+
+        // Every readable property of a simple type (numbers, strings, enums,
+        // points, object IDs as handles), sorted by name.
+        static void DumpSimple(StringBuilder sb, object o, string indent)
+        {
+            IEnumerable<PropertyInfo> props = o.GetType()
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(p => p.CanRead && p.GetIndexParameters().Length == 0
+                    && !SkipProperties.Contains(p.Name))
+                .OrderBy(p => p.Name, StringComparer.Ordinal);
+            foreach (PropertyInfo p in props)
+            {
+                Type t = p.PropertyType;
+                bool simple = t.IsPrimitive || t.IsEnum || t == typeof(string)
+                    || t == typeof(ObjectId) || t.Name == "Point2d"
+                    || t.Name == "Point3d" || t.Name == "Vector2d" || t.Name == "Vector3d";
+                if (!simple)
+                {
+                    continue;
+                }
+                string v;
+                try
+                {
+                    v = Format(p.GetValue(o, null));
+                }
+                catch (System.Exception e)
+                {
+                    v = "<" + Inner(e) + ">";
+                }
+                sb.AppendLine(indent + p.Name + ": " + v);
+            }
+        }
+
+        static string Format(object v)
+        {
+            if (v == null)
+            {
+                return "null";
+            }
+            if (v is double d)
+            {
+                return d.ToString("R", CultureInfo.InvariantCulture);
+            }
+            if (v is ObjectId id)
+            {
+                return id.IsNull ? "null" : id.Handle.ToString();
+            }
+            return Convert.ToString(v, CultureInfo.InvariantCulture);
+        }
+
+        static string Inner(System.Exception e)
+        {
+            System.Exception x = e is TargetInvocationException && e.InnerException != null
+                ? e.InnerException
+                : e;
+            return x.GetType().Name + ": " + x.Message;
         }
 
         static object Constraint2(AlignmentEntity ent)
