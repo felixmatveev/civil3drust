@@ -23,6 +23,7 @@ versions follow [Semantic Versioning](https://semver.org/).
   by the owner with .NET SDK 8.0.428.
 
 ### Added
+- FUTURE.md FRT-3: station equations with profiles (owner).
 - Workbench: profiles drawn in 3D over their alignments (sampled every
   unit and at entity boundaries; x, y from the alignment, z from the
   profile) with a vertical exaggeration control (Z ×, `--z-scale`).

@@ -56,3 +56,22 @@ writes a DWG from it.
 - Model-space entities only so far; blocks, paper space, layers and
   other tables are not in the dump.
 
+
+## FRT-3: Station equations with profiles
+
+**Status:** open (2026-11-11, owner).
+
+**What civil3drust does now.** Profile entities are stored in the
+alignment's stations (S299–S312, none with station equations).
+`aecc_profile::sample_3d` (the workbench's 3D profile layer) and
+`DecodedElements::point_at_station` treat a station as the start station
+plus the distance along the alignment: station equations are not
+applied.
+
+**Needed.**
+- A sample: an alignment with station equations (increasing and
+  decreasing) and a layout profile across them, with `C3DDUMP`, to see
+  whether profile records keep raw (distance) stations or equation
+  stations, and what the API's `Station` / `RawStation` report.
+- Apply the answer in `point_at_station` / `sample_3d` and in a profile
+  writer.

@@ -259,7 +259,7 @@ units) and at every entity boundary by `aecc_profile::sample_3d` —
 x, y from the alignment at the station, z the elevation — with a marker
 at each entity's start and end. Only the stretch where both the profile
 and the alignment exist is drawn (a layout profile can run past the
-alignment's ends). Station equations are not applied yet.
+alignment's ends). Station equations are not applied yet (FRT-3).
 
 Elevations are small next to plan distances, so the toolbar's **Z ×**
 (and `--z-scale <n>` for `--svg`) exaggerates every z in the 3D view.
