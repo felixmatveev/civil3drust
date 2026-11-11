@@ -345,7 +345,9 @@ fn api_entities(path: &str) -> Vec<ApiProfile> {
             flush(&mut out, &mut cur);
             let h = u64::from_str_radix(&rest[..rest.find(']').unwrap()], 16).unwrap();
             out.push((h, Vec::new()));
-        } else if line.starts_with("  ProfileView [") {
+        } else if line.starts_with("  ProfileView [") || !line.starts_with(' ') {
+            // A view, a new alignment or a later section (`== Sites` …)
+            // ends the current entity.
             flush(&mut out, &mut cur);
         } else if t.starts_with("Entities[") {
             flush(&mut out, &mut cur);

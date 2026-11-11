@@ -23,6 +23,13 @@ versions follow [Semantic Versioning](https://semver.org/).
   by the owner with .NET SDK 8.0.428.
 
 ### Added
+- `tools/c3d_api_dump`: `C3DDUMP` now also dumps sites, feature lines
+  and every other `AECC_*` entity (simple properties plus each `Get…()`
+  and `Get…(enum)` result, e.g. a feature line's points per point type);
+  new `C3DDUMPALL` writes every Civil 3D object in the database (owner
+  and simple properties) to `<drawing>.api-all.txt`. Not built here (no
+  Civil 3D); the owner builds it. The profile test's dump parser ends an
+  entity at any new section.
 - `docs/open-blocks.md`: the unread blocks of alignments, profiles,
   feature lines and the objects around them, with a proposed order for a
   typed skeleton. MIST21 parked (a Civil 3D copy-paste problem, owner).

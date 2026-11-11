@@ -1,7 +1,11 @@
 // C3DDUMP: write the public API values of every alignment in the current
-// drawing, with its profiles and profile views, to <drawing>.api.txt, to
-// compare with what civil3drust decodes.
-// Read-only: it opens objects for read and changes nothing.
+// drawing, with its profiles and profile views, then every site and
+// feature line and the other Civil 3D entities in model space, to
+// <drawing>.api.txt, to compare with what civil3drust decodes.
+// C3DDUMPALL: every Civil 3D object in the database (entities, styles,
+// sites, helpers, label groups …), simple properties only, to
+// <drawing>.api-all.txt: the public names and values per class.
+// Read-only: both open objects for read and change nothing.
 
 using System;
 using System.Collections;
@@ -14,7 +18,9 @@ using System.Text;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
+using Autodesk.Civil.ApplicationServices;
 using Autodesk.Civil.DatabaseServices;
 using AcApp = Autodesk.AutoCAD.ApplicationServices.Application;
 using DBObject = Autodesk.AutoCAD.DatabaseServices.DBObject;
@@ -33,33 +39,118 @@ namespace C3dApiDump
             var sb = new StringBuilder();
             sb.AppendLine("drawing: " + doc.Name);
             sb.AppendLine("written: " + DateTime.UtcNow.ToString("u"));
-
-            var filter = new SelectionFilter(new[]
-            {
-                new TypedValue((int)DxfCode.Start, "AECC_ALIGNMENT"),
-            });
-            PromptSelectionResult sel = ed.SelectAll(filter);
-            if (sel.Status != PromptStatus.OK)
-            {
-                ed.WriteMessage("\nC3DDUMP: no alignments found.\n");
-                return;
-            }
+            var done = new HashSet<Handle>();
 
             using (Transaction tr = doc.Database.TransactionManager.StartTransaction())
             {
-                foreach (ObjectId id in sel.Value.GetObjectIds())
+                foreach (ObjectId id in SelectAll(ed, "AECC_ALIGNMENT"))
                 {
                     if (!(tr.GetObject(id, OpenMode.ForRead) is Alignment al))
                     {
                         continue;
                     }
+                    done.Add(al.Handle);
                     DumpAlignment(sb, al);
-                    DumpChildren(sb, tr, al, "GetProfileIds", "Profile", new[] { "PVIs", "Entities" });
-                    DumpChildren(sb, tr, al, "GetProfileViewIds", "ProfileView", new string[0]);
+                    DumpChildren(sb, tr, al, "GetProfileIds", "Profile", new[] { "PVIs", "Entities" }, done);
+                    DumpChildren(sb, tr, al, "GetProfileViewIds", "ProfileView", new string[0], done);
+                }
+
+                sb.AppendLine();
+                sb.AppendLine("== Sites");
+                try
+                {
+                    foreach (ObjectId id in CivilApplication.ActiveDocument.GetSiteIds())
+                    {
+                        DumpObject(sb, tr, id, "Site", done);
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    sb.AppendLine("  <" + Inner(e) + ">");
+                }
+
+                sb.AppendLine();
+                sb.AppendLine("== Feature lines");
+                foreach (ObjectId id in SelectAll(ed, "AECC_FEATURE_LINE"))
+                {
+                    DumpObject(sb, tr, id, "FeatureLine", done);
+                }
+
+                sb.AppendLine();
+                sb.AppendLine("== Other Civil 3D entities");
+                foreach (ObjectId id in SelectAll(ed, "AECC_*"))
+                {
+                    if (!done.Contains(id.Handle))
+                    {
+                        DumpObject(sb, tr, id, "Entity", done);
+                    }
                 }
                 tr.Commit();
             }
+            Write(doc, ed, sb, ".api.txt", true);
+        }
 
+        [CommandMethod("C3DDUMPALL")]
+        public void DumpAll()
+        {
+            Document doc = AcApp.DocumentManager.MdiActiveDocument;
+            Editor ed = doc.Editor;
+            Database db = doc.Database;
+            var sb = new StringBuilder();
+            sb.AppendLine("drawing: " + doc.Name);
+            sb.AppendLine("written: " + DateTime.UtcNow.ToString("u"));
+            int n = 0;
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                long seed = db.Handseed.Value;
+                for (long h = 1; h < seed; h++)
+                {
+                    ObjectId id;
+                    if (!db.TryGetObjectId(new Handle(h), out id) || id.IsNull || id.IsErased)
+                    {
+                        continue;
+                    }
+                    string dxf = id.ObjectClass.DxfName ?? "";
+                    if (!dxf.StartsWith("AECC_", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+                    DBObject obj;
+                    try
+                    {
+                        obj = tr.GetObject(id, OpenMode.ForRead);
+                    }
+                    catch (System.Exception e)
+                    {
+                        sb.AppendLine();
+                        sb.AppendLine("[" + id.Handle + "] " + dxf + " <" + Inner(e) + ">");
+                        continue;
+                    }
+                    sb.AppendLine();
+                    sb.AppendLine("[" + obj.Handle + "] " + dxf + " " + obj.GetType().Name
+                        + " owner " + Format(obj.OwnerId));
+                    DumpSimple(sb, obj, "  ");
+                    n++;
+                }
+                tr.Commit();
+            }
+            sb.AppendLine();
+            sb.AppendLine("objects: " + n);
+            Write(doc, ed, sb, ".api-all.txt", false);
+        }
+
+        static ObjectId[] SelectAll(Editor ed, string dxfName)
+        {
+            var filter = new SelectionFilter(new[]
+            {
+                new TypedValue((int)DxfCode.Start, dxfName),
+            });
+            PromptSelectionResult sel = ed.SelectAll(filter);
+            return sel.Status == PromptStatus.OK ? sel.Value.GetObjectIds() : new ObjectId[0];
+        }
+
+        static void Write(Document doc, Editor ed, StringBuilder sb, string suffix, bool echo)
+        {
             string folder = Path.GetDirectoryName(doc.Database.Filename);
             if (string.IsNullOrEmpty(folder))
             {
@@ -67,9 +158,111 @@ namespace C3dApiDump
             }
             string path = Path.Combine(
                 folder,
-                Path.GetFileNameWithoutExtension(doc.Name) + ".api.txt");
+                Path.GetFileNameWithoutExtension(doc.Name) + suffix);
             File.WriteAllText(path, sb.ToString());
-            ed.WriteMessage("\n" + sb + "\nC3DDUMP: written to " + path + "\n");
+            ed.WriteMessage((echo ? "\n" + sb : "") + "\nC3DDUMP: written to " + path + "\n");
+        }
+
+        // One object: header line, every simple property, then the values
+        // of its parameterless Get… methods (and of Get…(enum) for every
+        // value of the enum), e.g. a feature line's GetPoints(PIPoints).
+        static void DumpObject(StringBuilder sb, Transaction tr, ObjectId id, string label,
+            HashSet<Handle> done)
+        {
+            DBObject obj;
+            try
+            {
+                obj = tr.GetObject(id, OpenMode.ForRead);
+            }
+            catch (System.Exception e)
+            {
+                sb.AppendLine("  " + label + " [" + id.Handle + "] <" + Inner(e) + ">");
+                return;
+            }
+            done.Add(obj.Handle);
+            sb.AppendLine();
+            sb.AppendLine("  " + label + " [" + obj.Handle + "] " + obj.GetType().Name
+                + " (" + id.ObjectClass.DxfName + ")");
+            DumpSimple(sb, obj, "    ");
+            DumpGetters(sb, obj, "    ");
+        }
+
+        static readonly HashSet<string> SkipMethods = new HashSet<string>
+        {
+            "GetType", "GetHashCode", "GetRXClass", "GetObjectSaveVersion",
+            "GetField", "GetFields", "GetPersistentReactorIds", "GetTransientReactors",
+            "GetXDataForApplication", "GetObjectBirthVersion", "GetAcGeCurve",
+            "GetGeCurve", "GetOrthoProjectedCurve", "GetPlane", "GetSubentityGeometry",
+            "GetGripPoints", "GetStretchPoints", "GetOsnapPoints", "GetTransformedCopy",
+            "GetHyperlinkCollection", "GetAnonymousBlockIds", "GetAnnotativeScaleContexts",
+        };
+
+        static void DumpGetters(StringBuilder sb, object o, string indent)
+        {
+            IEnumerable<MethodInfo> methods = o.GetType()
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Where(m => m.Name.StartsWith("Get", StringComparison.Ordinal)
+                    && !m.IsSpecialName && !m.ContainsGenericParameters
+                    && m.ReturnType != typeof(void) && !SkipMethods.Contains(m.Name))
+                .OrderBy(m => m.Name, StringComparer.Ordinal);
+            foreach (MethodInfo m in methods)
+            {
+                ParameterInfo[] ps = m.GetParameters();
+                if (ps.Length == 0)
+                {
+                    Invoke(sb, o, m, null, m.Name + "()", indent);
+                }
+                else if (ps.Length == 1 && ps[0].ParameterType.IsEnum)
+                {
+                    foreach (object v in Enum.GetValues(ps[0].ParameterType))
+                    {
+                        Invoke(sb, o, m, new[] { v }, m.Name + "(" + v + ")", indent);
+                    }
+                }
+            }
+        }
+
+        static void Invoke(StringBuilder sb, object o, MethodInfo m, object[] args, string name,
+            string indent)
+        {
+            object r;
+            try
+            {
+                r = m.Invoke(o, args);
+            }
+            catch (System.Exception e)
+            {
+                sb.AppendLine(indent + name + ": <" + Inner(e) + ">");
+                return;
+            }
+            if (IsSimple(r == null ? typeof(string) : r.GetType()))
+            {
+                sb.AppendLine(indent + name + ": " + Format(r));
+                return;
+            }
+            if (r is IEnumerable items && !(r is string))
+            {
+                var vals = new List<string>();
+                foreach (object item in items)
+                {
+                    if (item == null || IsSimple(item.GetType()))
+                    {
+                        vals.Add(Format(item));
+                    }
+                    else
+                    {
+                        vals.Add(item.GetType().Name);
+                    }
+                }
+                sb.AppendLine(indent + name + " [" + vals.Count + "]: " + string.Join(", ", vals));
+            }
+        }
+
+        static bool IsSimple(Type t)
+        {
+            return t.IsPrimitive || t.IsEnum || t == typeof(string) || t == typeof(decimal)
+                || t == typeof(ObjectId) || t == typeof(Handle) || t == typeof(Point2d)
+                || t == typeof(Point3d) || t == typeof(Vector2d) || t == typeof(Vector3d);
         }
 
         static void DumpAlignment(StringBuilder sb, Alignment al)
@@ -132,7 +325,7 @@ namespace C3dApiDump
         // public methods; their properties are read by reflection so the
         // add-in builds whatever members a Civil 3D version has.
         static void DumpChildren(StringBuilder sb, Transaction tr, Alignment al,
-            string method, string label, string[] collections)
+            string method, string label, string[] collections, HashSet<Handle> done)
         {
             MethodInfo m = al.GetType().GetMethod(method, Type.EmptyTypes);
             if (m == null)
@@ -161,6 +354,7 @@ namespace C3dApiDump
                     continue;
                 }
                 DBObject obj = tr.GetObject(id, OpenMode.ForRead);
+                done.Add(obj.Handle);
                 sb.AppendLine();
                 sb.AppendLine("  " + label + " [" + obj.Handle + "] " + obj.GetType().Name);
                 DumpSimple(sb, obj, "    ");
@@ -212,11 +406,7 @@ namespace C3dApiDump
                 .OrderBy(p => p.Name, StringComparer.Ordinal);
             foreach (PropertyInfo p in props)
             {
-                Type t = p.PropertyType;
-                bool simple = t.IsPrimitive || t.IsEnum || t == typeof(string)
-                    || t == typeof(ObjectId) || t.Name == "Point2d"
-                    || t.Name == "Point3d" || t.Name == "Vector2d" || t.Name == "Vector3d";
-                if (!simple)
+                if (!IsSimple(p.PropertyType))
                 {
                     continue;
                 }
@@ -246,6 +436,14 @@ namespace C3dApiDump
             if (v is ObjectId id)
             {
                 return id.IsNull ? "null" : id.Handle.ToString();
+            }
+            if (v is Point3d p3)
+            {
+                return "(" + Format(p3.X) + ", " + Format(p3.Y) + ", " + Format(p3.Z) + ")";
+            }
+            if (v is Point2d p2)
+            {
+                return "(" + Format(p2.X) + ", " + Format(p2.Y) + ")";
             }
             return Convert.ToString(v, CultureInfo.InvariantCulture);
         }
