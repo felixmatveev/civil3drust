@@ -202,8 +202,29 @@ Basic, `DesignSpeedBased` True).
 
 ## Open
 
-- The vertical curve's first BD (0) and the 3 bits (curve type?
-  parabola vs circular, symmetric vs asymmetric — not sampled).
-- The data after the element records in the profile.
-- The view's fields (ranges, auto/user height, bands).
-- The seven helper objects' role.
+- **Element header:** five bits after `00 0x08 0x00`, always 0 (a lock
+  flag, as on alignment elements, is the guess).
+- **Curve tails:** after a parabola's value, `BL 0x1001` (crest; sag
+  0x1000 only seen in kind 13), `BL 0`, 3 bits, then three BDs — −1
+  without criteria, **151 and 357 in S312's 8FE3** = the API's
+  `MinimumKValueSSD` and `MinimumKValuePSD` (the third is most likely HSD);
+  the 3 bits and the BL 0 not known. The circular and asymmetric records'
+  remainder after their parameters is not mapped.
+- **Before the elements:** the part between the graphics and the first
+  element (newer copies have a prefix-2 record with ID 0 at 2998), and
+  bit 21 before the first element (1 in every sample).
+- **After the elements:** not mapped. How a PVI is anchored to the
+  alignment's geometry points (S302: it moved with the first curve's
+  start) must be kept somewhere — here, or derived on each edit; offset
+  alignments keep such anchors as GUIDs of the parent's intervals.
+- **Parameter codes:** 0x2000 K, 0x2002 radius; 0x2001 (length?) not seen.
+- **Circular high/low point curve** (S309 8F84): no record in the file.
+- **Helper objects:** six of the seven hold nothing seen;
+  `AECC_NOTIFICATIONINFOS`' 18 constant bits.
+- **Strings:** the label point names (`A`, `HP`, `BVC`, …) and the user
+  string's place.
+- **Profile view record:** ranges (seen as values, not mapped field by
+  field), Automatic / user-specified modes, insertion point, bands, split
+  views.
+- **Other profile kinds:** surface (EG), offset, superimposed, from a
+  feature line or corridor — none sampled (`ProfileType` FG only).
