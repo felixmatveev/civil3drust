@@ -29,7 +29,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   topology's edge. `aecc_topology::graph` reads the list after each edge
   (`Edge::after`, non-empty with an elevation point). Experiment
   `exp_site_name` (S318) for the pasted copy that Civil 3D will not edit
-  (MIST21).
+  (MIST21). S319/S320 (owner's re-save and explode-and-rebuild) rule
+  out the site name and the null references.
 - FUTURE.md FRT-3: station equations with profiles (owner).
 - Workbench: profiles drawn in 3D over their alignments (sampled every
   unit and at entity boundaries; x, y from the alignment, z from the

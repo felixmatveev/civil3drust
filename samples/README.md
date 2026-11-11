@@ -330,6 +330,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S316 | `S316_fl_edit.dwg` | Civil 3D 2024 | Owner: S315 edited: one elevation set to 200, an elevation point inserted. | 986828 | `26c423e4dc402aa9` |
 | S317 | `S317_fl_pasted.dwg` | Civil 3D 2024 | Owner: S316 with the feature line copied and pasted (8DAA, into a new site `TEST|1`); the copy cannot be edited in Civil 3D. | 972147 | `eb139fe794c896ee` |
 | S318 | `S318_fl_pasted_site_renamed.dwg` | civil3drust | `exp_site_name S317 … 'TEST|1' TEST1`: the pasted copy's site renamed in its record and the site list, nothing else (MIST21). | 946398 | `c65c8bb2f1025ae9` |
+| S319 | `S319_S318_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S318 opened (clean open and AUDIT) and saved; the pasted copy still cannot be quick-edited (grips and the tabular elevation editor work). | 974148 | `aeb47f658bfeee41` |
+| S320 | `S320_S319_explode_rebuilt.dwg` | Civil 3D 2024 | Owner: S319 with the pasted copy exploded to a 3D polyline and converted back to a feature line (8E0E), which can be edited. | 968352 | `0128036e49ef4228` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

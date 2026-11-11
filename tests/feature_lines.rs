@@ -124,3 +124,58 @@ fn pasted_copy_s317_s318() {
         }
     }
 }
+
+/// S319 (Civil 3D's re-save of S318, copy still not editable): the
+/// original's container lost the same null references the copy's had, so
+/// both containers now have the same references apart from their own
+/// site and feature line, and the same data after the edges.
+#[test]
+fn resave_normalises_containers_s319() {
+    use civil3drust::{aecc_topology::graph, handle_refs};
+    let d = open("samples/S319_S318_civ3d_resaved.dwg");
+    let recs = raw::records(&d, "AECC_FEATURE_STYLE");
+    let get = |h: u64| recs.iter().find(|r| r.handle == h).unwrap();
+    let (a, b) = (get(0x8C43), get(0x8DA9));
+    let styles = |r: &raw::RawRecord| -> Vec<u64> {
+        handle_refs::of_record(r)
+            .iter()
+            .skip(5)
+            .map(|h| h.handle)
+            .collect()
+    };
+    assert_eq!(handle_refs::of_record(a).len(), 25);
+    assert_eq!(styles(a), styles(b));
+    let tail = |r: &raw::RawRecord| -> Vec<u8> {
+        let g = graph(&r.data).unwrap();
+        let end = raw::bit_len(&r.data) - r.handle_bits;
+        (g.edges_end..end)
+            .map(|b| raw::get_bit(&r.data, b))
+            .collect()
+    };
+    assert_eq!(tail(a), tail(b));
+}
+
+/// S320: the copy exploded to a 3D polyline and turned back into a
+/// feature line (editable). The new line (8E0E) has no name or style, is
+/// in the first site's container, the arc became three chords, and the
+/// elevation point became an ordinary vertex.
+#[test]
+fn explode_rebuilt_s320() {
+    use civil3drust::handle_refs;
+    let d = open("samples/S320_S319_explode_rebuilt.dwg");
+    let fl = feature_lines(&d);
+    let n = fl.iter().find(|l| l.handle == 0x8E0E).unwrap();
+    assert_eq!(n.name, "");
+    assert_eq!(n.container, Some(0x8C43));
+    let rec = raw::records(&d, "AECC_FEATURE_LINE")
+        .into_iter()
+        .find(|r| r.handle == 0x8E0E)
+        .unwrap();
+    assert_eq!(handle_refs::of_record(&rec)[5].handle, 0);
+    let v = vertices(&d, n).unwrap();
+    assert_eq!(v.len(), 7);
+    assert!(v
+        .iter()
+        .all(|v| v.bulge.is_none() && !v.is_elevation_point()));
+    assert_eq!((v[0].z, v[4].z, v[6].z), (100.0, 200.0, 103.0));
+}

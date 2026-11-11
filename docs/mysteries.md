@@ -590,17 +590,21 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
 - **Next samples:** one connected alignment per curve group type
   between the same centerlines; one input edited.
 
-## MIST21 — a pasted feature line cannot be edited — **open (S317, S318)**
+## MIST21 — a pasted feature line cannot be edited — **open (S317–S320)**
 
 - **Where:** S317 (docs/feature-line-object.md, "The pasted copy").
-- **Seen:** the copy went into a new site `TEST|1` with its own
-  container; the container lost two null hard pointers and a null style
-  slot; node IDs, a vertex's flags and the face entry differ a little.
-- **Guess:** the `|` (AutoCAD's xref-dependent name separator) makes
-  Civil 3D treat the site as read-only.
-- **Next:** the owner opens S318 (site renamed `TEST1`, nothing else
-  changed) and tries to edit the copy; also try *Move to Site* on the
-  copy in S317.
+- **Ruled out:** the `|` in the new site's name (S318 renamed it to
+  `TEST1`, and the copy is still not editable, S319); the container's
+  dropped null references (Civil 3D's save drops the original's too,
+  S319). The feature line records differ only in strings and graphics.
+- **Remaining differences:** the copy is alone in a second site with its
+  own container; node IDs (elevation point 8, next free 9).
+- **Seen:** exploded and rebuilt, it works (S320). The rebuilt line
+  lands in the first site `TEST` with its arc tessellated, and has no
+  name or style.
+- **Next:** the owner, in S319, moves the copy to site `TEST` (*Move to
+  Site*), and draws a new feature line in `TEST1`; then tries quick edit
+  on both.
 
 ## Not sampled yet (not mysteries, just gaps)
 

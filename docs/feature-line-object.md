@@ -1,4 +1,4 @@
-# Feature lines — first look (S313–S318)
+# Feature lines — first look (S313–S320)
 
 Samples from the owner (Civil 3D 2024), one change per step:
 
@@ -10,6 +10,8 @@ Samples from the owner (Civil 3D 2024), one change per step:
 | S316 | edits: an elevation changed to 200, an elevation point inserted |
 | S317 | the feature line copied and pasted; the copy (8DAA) cannot be edited in Civil 3D (owner) |
 | S318 | experiment: S317 with the new site `TEST|1` renamed `TEST1` (`exp_site_name`) |
+| S319 | S318 opened and saved by the owner: clean open and AUDIT; the copy still cannot be quick-edited |
+| S320 | S319 with the copy exploded to a 3D polyline and turned back into a feature line (8E0E): editable |
 
 ## Objects
 
@@ -81,13 +83,36 @@ edited with the GUI. What the paste did (S316 → S317):
 - **Other objects.** Two anonymous blocks (`*U63`, `*U64`: lines,
   polylines, hatches) came with the paste; nothing references them.
 
-The `|` in `TEST|1` is the character AutoCAD reserves for names that
-come from an external reference (`xref|name`), and a paste inserts the
-clipboard's drawing like a block; the leading guess is that Civil 3D
-treats a site with such a name, and what is in it, as read-only. S318
-renames the site to `TEST1` and changes nothing else, to test that
-(MIST21). If S318's copy is still not editable, the dropped null
-references are the next suspect.
+**Not the site name, not the references (S318, S319).** The `|` is
+AutoCAD's separator for names from an external reference, so S318
+renamed the site to `TEST1` and changed nothing else. Civil 3D opened it
+cleanly (clean AUDIT), but the copy still cannot be edited with quick
+edit; its grips move and the tabular editor changes its elevations
+(owner). Civil 3D's save (S319) also dropped the original container's
+null references, so the two containers now have the same references
+apart from their own site and feature line, and the same data after
+the edges (test `resave_normalises_containers_s319`). The two
+feature line records differ only in their strings and graphics. In the
+file, the original and the copy differ only in:
+
+- their site (`TEST` vs `TEST1`, each with its own container);
+- coordinates, the name, and node IDs (the copy's elevation point is
+  node 8, and its next free ID is 9 where the original's is 7).
+
+**Exploded and rebuilt (S320, editable).** The owner exploded the copy
+to a 3D polyline and converted it back. The new feature line (8E0E) has
+no name, no style (null reference) and empty descriptions. It went into
+the **first site's** container (8C43, beside the original), not the
+copy's `TEST1`. The arc became three chords (nodes 9–12, elevations
+interpolated 104.85 → 200), and the elevation point became an ordinary
+vertex. The first vertex's flags are 178, the others 50, and the last 2
+and 10, as in Civil 3D's other rebuilt records (MIST12).
+
+So the leading suspect is now **the second site**. The copy is the
+only object in `TEST1`, and S320's working line is in `TEST`. Tests for
+the owner (MIST21): in S319, *Move to Site* the copy into `TEST`; and
+draw a new feature line directly in `TEST1`. Either result locates the
+cause.
 
 ## Open
 
