@@ -1,4 +1,6 @@
 //! Profiles and profile views (S298–S305): element records and links.
+// Values copied verbatim from the C3DDUMP output.
+#![allow(clippy::excessive_precision)]
 
 use civil3drust::aecc_profile::{parent_alignment, pointers_to, profile_elements, ProfileElement};
 use civil3drust::{raw, Point2};
