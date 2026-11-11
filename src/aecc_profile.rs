@@ -18,7 +18,11 @@
 //! prefix 6 fixed parabola:      kind 11 BD 0, 3 × (RD station, RD elevation);
 //!                               kind 13 BD 0, 2 points, BL curve (0x1000 sag,
 //!                               0x1001 crest), BL parameter (0x2000 K), BD value
-//! prefix 6 floating parabola:   kind 32 BD 0, point, BL −1, BL 0x2000, BD K
+//!                               kind 12 BD 0, 2 points, BL end (0 start, 1
+//!                               end), BD grade (%) there
+//! prefix 6 floating parabola:   kind 32 BD 0, point, BL −1, BL parameter
+//!                               (0x2000 K, 0x2002 radius), BD value;
+//!                               kind 34 BD 0, point, BL 1, BD grade (%) there
 //! prefix 2 floating tangent:    kind 4 end point; free tangent: kind 9, nothing
 //! ```
 
@@ -88,10 +92,26 @@ pub enum CurveDef {
         param: i32,
         value: f64,
     },
+    /// Fixed parabola from a start to an end point with the grade at one
+    /// end, in percent (kind 12, `TwoPassPointsAndGrade`, S309): `at_end`
+    /// false for the start ("grade at start point", "entity end, through
+    /// point" — the grade of the element before), true for the end.
+    ParabolaTwoPointsGrade {
+        start: Point2,
+        end: Point2,
+        at_end: bool,
+        grade_percent: f64,
+    },
+    /// Floating parabola tangent to the element before, ending at a point
+    /// with a grade there, in percent (kind 34,
+    /// `PreviousSubEntPassPtWithGrade`, S309).
+    ParabolaFloatingGrade { through: Point2, grade_percent: f64 },
 }
 
 /// The parameter code of K (S308).
 pub const PARAM_K: i32 = 0x2000;
+/// The parameter code of the radius (S309: R = 100 K for a parabola).
+pub const PARAM_RADIUS: i32 = 0x2002;
 /// The curve code of a sag (crest is this + 1, S300, S308).
 pub const CURVE_SAG: i32 = 0x1000;
 
@@ -237,6 +257,39 @@ fn element_at(data: &[u8], h: usize, prefix: u32) -> Option<(ProfileElement, usi
                 value: positive(value)?,
             };
             (def, k)
+        }
+        (PREFIX_PARABOLA, 12) => {
+            let (lead, k) = raw::read_bd(data, k)?;
+            let (start, k) = rd_point(data, k)?;
+            let (end, k) = rd_point(data, k)?;
+            let (which, k) = raw::read_bl(data, k)?;
+            let (grade_percent, k) = raw::read_bd(data, k)?;
+            if lead != 0.0 || !(0..=1).contains(&which) || !grade_percent.is_finite() {
+                return None;
+            }
+            let def = CurveDef::ParabolaTwoPointsGrade {
+                start,
+                end,
+                at_end: which == 1,
+                grade_percent,
+            };
+            (def, k)
+        }
+        (PREFIX_PARABOLA, 34) => {
+            let (lead, k) = raw::read_bd(data, k)?;
+            let (through, k) = rd_point(data, k)?;
+            let (which, k) = raw::read_bl(data, k)?;
+            let (grade_percent, k) = raw::read_bd(data, k)?;
+            if lead != 0.0 || which != 1 || !grade_percent.is_finite() {
+                return None;
+            }
+            (
+                CurveDef::ParabolaFloatingGrade {
+                    through,
+                    grade_percent,
+                },
+                k,
+            )
         }
         (PREFIX_PARABOLA, 32) => {
             let (lead, k) = raw::read_bd(data, k)?;
@@ -688,6 +741,17 @@ fn parabola_3(p: [Point2; 3]) -> Option<SegmentShape> {
     Some(SegmentShape::Parabola { a, b, c })
 }
 
+/// The parabola's `a` (elevation'' = 2a) from a parameter: K or radius
+/// (R = 100 K), `sag` choosing the sign.
+fn curvature(param: i32, value: f64, sag: bool) -> Option<f64> {
+    let k = match param {
+        PARAM_K => value,
+        PARAM_RADIUS => value / 100.0,
+        _ => return None,
+    };
+    Some(if sag { 1.0 } else { -1.0 } / (200.0 * k))
+}
+
 /// The parabola with curvature `a` (elevation'' = 2a) through `p` with
 /// grade `g` at `p`.
 fn parabola_at(p: Point2, g: f64, a: f64) -> SegmentShape {
@@ -800,14 +864,29 @@ pub fn segments(elements: &[ProfileElement]) -> Option<Vec<ProfileSegment>> {
                     param,
                     value,
                 } => {
-                    if param != PARAM_K {
-                        return None;
-                    }
                     let l = q.x - p.x;
-                    let a = if curve == CURVE_SAG { 1.0 } else { -1.0 } / (200.0 * value);
+                    let a = curvature(param, value, curve == CURVE_SAG)?;
                     // Chord grade = grade at the middle.
                     let g = (q.y - p.y) / l - a * l;
                     shape[i] = Some(parabola_at(p, g, a));
+                    start[i] = Some(p);
+                    end[i] = Some(q);
+                }
+                CurveDef::ParabolaTwoPointsGrade {
+                    start: p,
+                    end: q,
+                    at_end,
+                    grade_percent,
+                } => {
+                    let (l, g) = (q.x - p.x, grade_percent / 100.0);
+                    let chord = (q.y - p.y) / l;
+                    let a = if at_end {
+                        (g - chord) / l
+                    } else {
+                        (chord - g) / l
+                    };
+                    let g0 = if at_end { g - 2.0 * a * l } else { g };
+                    shape[i] = Some(parabola_at(p, g0, a));
                     start[i] = Some(p);
                     end[i] = Some(q);
                 }
@@ -828,13 +907,10 @@ pub fn segments(elements: &[ProfileElement]) -> Option<Vec<ProfileSegment>> {
                     ..
                 } => {
                     let line = shape[prev?]?;
-                    if param != PARAM_K {
-                        return None;
-                    }
                     // Hangs from the line: elevation = line + a (s − s0)²,
                     // through the point; a's sign from which side it lies.
                     let off = through.y - line.elevation_at(through.x);
-                    let a = off.signum() / (200.0 * value);
+                    let a = curvature(param, value, off > 0.0)?;
                     let s0 = through.x - (off / a).sqrt();
                     let p0 = Point2::new(s0, line.elevation_at(s0));
                     shape[i] = Some(parabola_at(p0, line.grade_at(s0), a));
@@ -842,7 +918,29 @@ pub fn segments(elements: &[ProfileElement]) -> Option<Vec<ProfileSegment>> {
                     end[i] = Some(through);
                     end[prev?] = Some(p0);
                 }
-                CurveDef::ParabolaThreePoints(_) | CurveDef::ParabolaTwoPoints { .. } => {}
+                CurveDef::ParabolaFloatingGrade {
+                    through,
+                    grade_percent,
+                } => {
+                    // Hangs from the line, reaching the point with the
+                    // grade: a = (gP − g) / (2 d), d = 2 (yP − line) / (gP − g).
+                    let line = shape[prev?]?;
+                    let (g, gp) = (line.grade_at(through.x), grade_percent / 100.0);
+                    let d = 2.0 * (through.y - line.elevation_at(through.x)) / (gp - g);
+                    let a = (gp - g) / (2.0 * d);
+                    let s0 = through.x - d;
+                    let p0 = Point2::new(s0, line.elevation_at(s0));
+                    if !(d > 0.0 && a.is_finite()) {
+                        return None;
+                    }
+                    shape[i] = Some(parabola_at(p0, g, a));
+                    start[i] = Some(p0);
+                    end[i] = Some(through);
+                    end[prev?] = Some(p0);
+                }
+                CurveDef::ParabolaThreePoints(_)
+                | CurveDef::ParabolaTwoPoints { .. }
+                | CurveDef::ParabolaTwoPointsGrade { .. } => {}
                 _ => {
                     // A free curve between two fixed tangents.
                     let (ProfileElement::Tangent(a), Some(ProfileElement::Tangent(b))) =

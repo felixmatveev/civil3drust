@@ -23,6 +23,11 @@ versions follow [Semantic Versioning](https://semver.org/).
   by the owner with .NET SDK 8.0.428.
 
 ### Added
+- Profile curves by grade and by radius (S309, owner, with `C3DDUMP`):
+  fixed parabola by two points and a grade at either end (kind 12,
+  grades in percent), floating parabola by a point and its grade (kind
+  34), parameter 0x2002 = radius. Every S309 entity agrees with the API
+  to 1e-6; the circular high/low point curve has no record in the file.
 - Profile entities of the fixed, floating and free methods (S308, owner,
   with `C3DDUMP`): fixed parabola by three points or two points and K,
   floating parabola by a point and K, floating tangent to a point (also

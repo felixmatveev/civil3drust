@@ -379,7 +379,7 @@ fn every_entity_matches_civil3d_api() {
     // Every entity of every profile in the samples with a C3DDUMP: start
     // and end as Civil 3D reports them (S306, S307, S308).
     use civil3drust::aecc_profile::segments;
-    for id in ["S306", "S307", "S308"] {
+    for id in ["S306", "S307", "S308", "S309"] {
         let api_path = std::fs::read_dir("samples")
             .unwrap()
             .map(|e| e.unwrap().path())
@@ -390,8 +390,14 @@ fn every_entity_matches_civil3d_api() {
             .unwrap();
         let o = open(id);
         for (h, ents) in api_entities(api_path.to_str().unwrap()) {
-            let segs = segments(&profile_elements(&profile(&o, h).data))
-                .unwrap_or_else(|| panic!("{id} {h:X}: not resolved"));
+            let els = profile_elements(&profile(&o, h).data);
+            if (id, h) == ("S309", 0x8F84) {
+                // Circular, high/low point: Civil 3D kept no element record
+                // (its API reports a half circle with invalid grades).
+                assert!(els.is_empty());
+                continue;
+            }
+            let segs = segments(&els).unwrap_or_else(|| panic!("{id} {h:X}: not resolved"));
             assert_eq!(segs.len(), ents.len(), "{id} {h:X}");
             for (eid, [ss, se, es, ee]) in ents {
                 let s = segs.iter().find(|s| s.id == eid).unwrap();

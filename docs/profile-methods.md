@@ -22,20 +22,20 @@ row is filled in from a sample and its `C3DDUMP` output.
 |---|---|---|
 | Fixed Vertical Curve (Three points) | prefix 6, kind 11: BD 0, three points (start, on the curve, end); the parabola through them, trimmed by dependent neighbours; API `Fixed`, `ThreePassPoints` | known, S308 |
 | Fixed Vertical Curve (Two points, parameter) | prefix 6, kind 13: BD 0, start point, end point, BL 0x1000 sag / 0x1001 crest, BL 0x2000 (K), BD K; API `Fixed`, `TwoPassPointsAndParameter` | known (K), S308 |
-| Fixed Vertical Curve (Entity end, through point) | | |
-| Fixed Vertical Curve (Two points, grade at start point) | | |
-| Fixed Vertical Curve (Two points, grade at end point) | | |
-| Fixed Vertical Curve (Parabolic, high/low point, parameter, length) | | |
-| Fixed Vertical Curve (Circular, high/low point, parameter, length) | | |
+| Fixed Vertical Curve (Entity end, through point) | prefix 6, kind 12 (as "grade at start point"): the start is the element before's end, the grade there that element's grade; API `TwoPassPointsAndGrade` | known, S309 |
+| Fixed Vertical Curve (Two points, grade at start point) | prefix 6, kind 12: BD 0, start, end, BL 0, BD grade in percent (0.2 = 0.002); API `TwoPassPointsAndGrade`, `GradeAtThroughPoint1` | known, S309 |
+| Fixed Vertical Curve (Two points, grade at end point) | prefix 6, kind 12: …, BL 1, BD grade in percent; API `GradeAtThroughPoint2` | known, S309 |
+| Fixed Vertical Curve (Parabolic, high/low point, parameter, length) | stored as kind 13 (two points and a parameter): start, end, crest, BL 0x2002 (radius), BD 500 — Civil 3D reports `HighLowPoints` | known, S309 |
+| Fixed Vertical Curve (Circular, high/low point, parameter, length) | S309's profile has **no element record** (its API reports a half circle R 50 from 850 to 950 with invalid grades, `Constraint2` 533): not readable from the file | open, S309 |
 | Fixed Vertical Curve - Best Fit | | |
-| Floating Vertical Curve (Parameter, through point) | prefix 6, kind 32: BD 0, end point, BL −1, BL 0x2000 (K), BD K; hangs from the tangent before (its start solved); API `FloatOnPrev`, `PreviousSubEntPassPtAndParameter` | known (K), S308 |
-| Floating Vertical Curve (Through point, grade) | | |
+| Floating Vertical Curve (Parameter, through point) | prefix 6, kind 32: BD 0, end point, BL −1, BL parameter (0x2000 K, 0x2002 radius — S309), BD value; hangs from the tangent before (its start solved); API `FloatOnPrev`, `PreviousSubEntPassPtAndParameter` | known (K), S308 |
+| Floating Vertical Curve (Through point, grade) | prefix 6, kind 34: BD 0, end point, BL 1, BD grade in percent there; hangs from the tangent before; API `PreviousSubEntPassPtWithGrade` | known, S309 |
 | Floating Vertical Curve - Best Fit | | |
 | Free Vertical Curve (Parabola) | | |
 | Free Vertical Curve (Circular) | | |
 | Free Vertical Parabola (PVI based) | see the curve table below | known, S300, S306, S307 |
-| Free Asymmetrical Parabola (PVI based) | | |
-| Free Circular Curve (PVI based) | | |
+| Free Asymmetrical Parabola (PVI based) | prefix 8, kind 10, as the asymmetric curve drawn with the tangents | known, S309 |
+| Free Circular Curve (PVI based) | prefix 4, kind 9 (radius), as drawn with the tangents | known, S309 |
 | Free Vertical Curve - Best Fit | | |
 
 The helper objects every profile owns name four of these families:
@@ -108,8 +108,11 @@ resolves every entity, and each start and end agrees with Civil 3D's to
 The curve code (0x1000 sag, 0x1001 crest) is the BL after a free
 parabola's value too: every free parabola sampled was a crest.
 
-Not seen yet: Fixed Vertical Curve (Entity end, through point), (Two
-points, grade at start / end point), (Parabolic / Circular, high/low
-point, parameter, length), Floating Vertical Curve (Through point,
-grade), the parameter codes other than K, the Best Fit methods, fixed
-circular curves.
+S309 (owner, with `C3DDUMP`) adds the PVI-based free curves, the grade
+methods and the parameter code 0x2002 (radius; a parabola's radius is
+100 K). Grades are stored **in percent**. Every entity of S309 agrees
+with the API to 1e-6, except the circular high/low point curve, which
+has no record.
+
+Not seen yet: the length parameter (0x2001?), the Best Fit methods,
+fixed circular curves by other methods.
