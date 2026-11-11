@@ -319,6 +319,7 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S305 | `S305_profile_view_deleted.dwg` | Civil 3D 2024 | Owner: S304 with the first view (8D70) deleted. | 969270 | `450efe74e53b6059` |
 | S306 | `S306_profile_curve_length_150.dwg` | Civil 3D 2024 | Owner: S305 with the vertical curve's length set to 150 (the only value asked). `C3DDUMP` output next to it (`.api.txt`). | 966458 | `c2486da7b75598b5` |
 | S307 | `S307_profile_curve_types.dwg` | Civil 3D 2024 | Owner: S306 drawing with five profiles, one per vertical curve type: parabolic-K (K 50), circular-length (L 200), circular-radius (R 500), circular-pass-thru (through a point), asymmetric (L1 100, L2 150). `C3DDUMP` output next to it (`.api.txt`). | 985458 | `f680b1fe03c573ec` |
+| S308 | `S308_profile_other_methods.dwg` | Civil 3D 2024 | Owner: eight profiles, one per method: float vertical curve thru point, fixed vertical curve three points, fixed vertical curve two points and parameter (crest K 50, sag K 50), float tangent thru point, float tangent grade length (100 ft at 2 %), free tangent, tangent intersection. `C3DDUMP` output next to it (`.api.txt`). | 991069 | `d870beaaefc7fc9f` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

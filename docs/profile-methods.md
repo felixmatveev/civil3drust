@@ -10,25 +10,25 @@ row is filled in from a sample and its `C3DDUMP` output.
 |---|---|---|
 | Fixed Tangent (Two points) | prefix 2, kind 0: through points (station, elevation) × 2; API `Fixed`, `PassThroughPt1AndPt2` | known, S299–S306 |
 | Fixed Tangent - Best Fit | | |
-| Float Tangent (Grade, length) | | |
-| Float Tangent (Through point) | | |
+| Float Tangent (Grade, length) | prefix 2, kind 4: RD end point only — the same record as "through point" (the grade and length are not kept: S308 `float tangemt grade length`, 2 % over 100, stores its end 283.635 / −35.864); API `FloatOnPrev`, `Constraint2` 534 | known, S308 |
+| Float Tangent (Through point) | prefix 2, kind 4: RD end point; tangent to the element before (its tangency point solved); API `FloatOnPrev`, `PassThroughPt2` | known, S308 |
 | Float Tangent - Best Fit | | |
-| Free Tangent | | |
-| Solve Tangent Intersection (a command, not a method?) | | |
+| Free Tangent | prefix 2, kind 9: no data; touches the curves before and after (common tangent solved); API `Free`, `NoConstraints` | known, S308 |
+| Solve Tangent Intersection | a command: the result is two fixed tangents sharing their point (S308 `tangent intersection`) | known, S308 |
 
 ## Vertical curves
 
 | method | record | status |
 |---|---|---|
-| Fixed Vertical Curve (Three points) | | |
-| Fixed Vertical Curve (Two points, parameter) | | |
+| Fixed Vertical Curve (Three points) | prefix 6, kind 11: BD 0, three points (start, on the curve, end); the parabola through them, trimmed by dependent neighbours; API `Fixed`, `ThreePassPoints` | known, S308 |
+| Fixed Vertical Curve (Two points, parameter) | prefix 6, kind 13: BD 0, start point, end point, BL 0x1000 sag / 0x1001 crest, BL 0x2000 (K), BD K; API `Fixed`, `TwoPassPointsAndParameter` | known (K), S308 |
 | Fixed Vertical Curve (Entity end, through point) | | |
 | Fixed Vertical Curve (Two points, grade at start point) | | |
 | Fixed Vertical Curve (Two points, grade at end point) | | |
 | Fixed Vertical Curve (Parabolic, high/low point, parameter, length) | | |
 | Fixed Vertical Curve (Circular, high/low point, parameter, length) | | |
 | Fixed Vertical Curve - Best Fit | | |
-| Floating Vertical Curve (Parameter, through point) | | |
+| Floating Vertical Curve (Parameter, through point) | prefix 6, kind 32: BD 0, end point, BL −1, BL 0x2000 (K), BD K; hangs from the tangent before (its start solved); API `FloatOnPrev`, `PreviousSubEntPassPtAndParameter` | known (K), S308 |
 | Floating Vertical Curve (Through point, grade) | | |
 | Floating Vertical Curve - Best Fit | | |
 | Free Vertical Curve (Parabola) | | |
@@ -90,5 +90,26 @@ Civil 3D's values to 1e-7 (test `curve_types_match_civil3d_api`):
 - K = horizontal length / (100 |A|) for all three; the high/low point
   where the grade is 0.
 
-Not seen yet: the fixed and floating curve methods, the other tangent
-methods.
+## Fixed, floating and free entities (S308)
+
+S308 (owner, with `C3DDUMP`): one profile per method. The fixed entities
+stand on their stored points; a floating one hangs from the element
+before; a free one touches both neighbours. `aecc_profile::segments`
+resolves every entity, and each start and end agrees with Civil 3D's to
+1e-6 (test `every_entity_matches_civil3d_api`, also over S306 and S307):
+
+- floating parabola: elevation = tangent line + a (s − s₀)², a = ±1 /
+  (200 K) (sign: the side of the line the point is on), s₀ from the
+  point;
+- floating tangent: the station where the curve's tangent passes through
+  the point;
+- free tangent: the line touching both curves.
+
+The curve code (0x1000 sag, 0x1001 crest) is the BL after a free
+parabola's value too: every free parabola sampled was a crest.
+
+Not seen yet: Fixed Vertical Curve (Entity end, through point), (Two
+points, grade at start / end point), (Parabolic / Circular, high/low
+point, parameter, length), Floating Vertical Curve (Through point,
+grade), the parameter codes other than K, the Best Fit methods, fixed
+circular curves.

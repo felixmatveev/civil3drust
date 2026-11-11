@@ -15,6 +15,11 @@
 //! prefix 4 circular:            kind 0 BD length, 9 BD radius,
 //!                               7 RD station, RD elevation (through point)
 //! prefix 8 asymmetric parabola: kind 10 BD length 1, BD length 2
+//! prefix 6 fixed parabola:      kind 11 BD 0, 3 × (RD station, RD elevation);
+//!                               kind 13 BD 0, 2 points, BL curve (0x1000 sag,
+//!                               0x1001 crest), BL parameter (0x2000 K), BD value
+//! prefix 6 floating parabola:   kind 32 BD 0, point, BL −1, BL 0x2000, BD K
+//! prefix 2 floating tangent:    kind 4 end point; free tangent: kind 9, nothing
 //! ```
 
 use acadrust::document::CadDocument;
@@ -31,7 +36,8 @@ pub const PREFIX_CIRCULAR: u32 = 4;
 pub const PREFIX_PARABOLA: u32 = 6;
 /// Kind prefix of an asymmetric parabola (S307).
 pub const PREFIX_ASYMMETRIC: u32 = 8;
-/// The BL after a symmetric parabola's two BDs (S300).
+/// The BL after a free symmetric parabola's two BDs: [`CURVE_SAG`] + 1,
+/// a crest, in every sample (S300, S306, S307).
 pub const PARABOLA_MARK: i32 = 0x1001;
 
 /// A profile tangent: `x` is the station, `y` the elevation.
@@ -60,7 +66,34 @@ pub enum CurveDef {
     CircularThrough(Point2),
     /// Asymmetric parabola by its two lengths (kind 10).
     Asymmetric { length1: f64, length2: f64 },
+    /// Fixed parabola through three points: start, a point on it, end
+    /// (prefix 6, kind 11, `ThreePassPoints`, S308).
+    ParabolaThreePoints([Point2; 3]),
+    /// Fixed parabola from a start to an end point with a parameter
+    /// (kind 13, `TwoPassPointsAndParameter`, S308): `curve` is 0x1000 for a
+    /// sag, 0x1001 for a crest; `param` 0x2000 is K.
+    ParabolaTwoPoints {
+        start: Point2,
+        end: Point2,
+        curve: i32,
+        param: i32,
+        value: f64,
+    },
+    /// Floating parabola tangent to the element before, ending at a point,
+    /// with a parameter (kind 32, `PreviousSubEntPassPtAndParameter`, S308):
+    /// `curve` −1 (not given), `param` 0x2000 is K.
+    ParabolaFloating {
+        through: Point2,
+        curve: i32,
+        param: i32,
+        value: f64,
+    },
 }
+
+/// The parameter code of K (S308).
+pub const PARAM_K: i32 = 0x2000;
+/// The curve code of a sag (crest is this + 1, S300, S308).
+pub const CURVE_SAG: i32 = 0x1000;
 
 /// A vertical curve between two tangents.
 #[derive(Debug, Clone, PartialEq)]
@@ -71,10 +104,24 @@ pub struct ProfileCurve {
     pub def: CurveDef,
 }
 
+/// A tangent that is not fixed by two points (S308).
+#[derive(Debug, Clone, PartialEq)]
+pub struct DependentTangent {
+    pub id: i32,
+    pub before: i32,
+    pub after: i32,
+    /// Floating (kind 4): tangent to the element before, ending at this
+    /// point (`FloatOnPrev`: Civil 3D's "through point" and "grade, length"
+    /// methods both store it). `None` for a free tangent (kind 9, between
+    /// two curves, `NoConstraints`).
+    pub through: Option<Point2>,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum ProfileElement {
     Tangent(ProfileTangent),
     Curve(ProfileCurve),
+    Dependent(DependentTangent),
 }
 
 impl ProfileElement {
@@ -82,6 +129,21 @@ impl ProfileElement {
         match self {
             Self::Tangent(t) => t.id,
             Self::Curve(c) => c.id,
+            Self::Dependent(t) => t.id,
+        }
+    }
+    pub fn before(&self) -> i32 {
+        match self {
+            Self::Tangent(t) => t.before,
+            Self::Curve(c) => c.before,
+            Self::Dependent(t) => t.before,
+        }
+    }
+    pub fn after(&self) -> i32 {
+        match self {
+            Self::Tangent(t) => t.after,
+            Self::Curve(c) => c.after,
+            Self::Dependent(t) => t.after,
         }
     }
 }
@@ -132,11 +194,72 @@ fn element_at(data: &[u8], h: usize, prefix: u32) -> Option<(ProfileElement, usi
             };
             return Some((ProfileElement::Tangent(t), k));
         }
+        (PREFIX_TANGENT, 4 | 9) => {
+            let (through, k) = if kind == 4 {
+                let (p, k) = rd_point(data, k)?;
+                (Some(p), k)
+            } else {
+                (None, k)
+            };
+            let t = DependentTangent {
+                id,
+                before,
+                after,
+                through,
+            };
+            return Some((ProfileElement::Dependent(t), k));
+        }
+        (PREFIX_PARABOLA, 11) => {
+            let (lead, k) = raw::read_bd(data, k)?;
+            let (a, k) = rd_point(data, k)?;
+            let (b, k) = rd_point(data, k)?;
+            let (c, k) = rd_point(data, k)?;
+            if lead != 0.0 {
+                return None;
+            }
+            (CurveDef::ParabolaThreePoints([a, b, c]), k)
+        }
+        (PREFIX_PARABOLA, 13) => {
+            let (lead, k) = raw::read_bd(data, k)?;
+            if lead != 0.0 {
+                return None;
+            }
+            let (start, k) = rd_point(data, k)?;
+            let (end, k) = rd_point(data, k)?;
+            let (curve, k) = raw::read_bl(data, k)?;
+            let (param, k) = raw::read_bl(data, k)?;
+            let (value, k) = raw::read_bd(data, k)?;
+            let def = CurveDef::ParabolaTwoPoints {
+                start,
+                end,
+                curve,
+                param,
+                value: positive(value)?,
+            };
+            (def, k)
+        }
+        (PREFIX_PARABOLA, 32) => {
+            let (lead, k) = raw::read_bd(data, k)?;
+            if lead != 0.0 {
+                return None;
+            }
+            let (through, k) = rd_point(data, k)?;
+            let (curve, k) = raw::read_bl(data, k)?;
+            let (param, k) = raw::read_bl(data, k)?;
+            let (value, k) = raw::read_bd(data, k)?;
+            let def = CurveDef::ParabolaFloating {
+                through,
+                curve,
+                param,
+                value: positive(value)?,
+            };
+            (def, k)
+        }
         (PREFIX_PARABOLA, 0 | 2) => {
             let (lead, k) = raw::read_bd(data, k)?;
             let (v, k) = raw::read_bd(data, k)?;
             let (mark, k) = raw::read_bl(data, k)?;
-            if lead != 0.0 || mark != PARABOLA_MARK {
+            if lead != 0.0 || !(CURVE_SAG..=CURVE_SAG + 1).contains(&mark) {
                 return None;
             }
             let v = positive(v)?;
@@ -487,8 +610,290 @@ pub fn layout(elements: &[ProfileElement]) -> Option<ProfileLayout> {
                 pending = Some(c);
                 c.after
             }
+            // Only PVI layouts (fixed tangents, free curves); see
+            // [`segments`] for the rest.
+            ProfileElement::Dependent(_) => return None,
         };
         cur = if next == 0 { None } else { Some(by_id(next)?) };
     }
     (pending.is_none() && !pvis.is_empty()).then_some(ProfileLayout { pvis, curves })
+}
+
+/// The shape of a resolved profile segment (S308).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum SegmentShape {
+    /// A straight grade line: elevation = `y0 + grade · (station − x0)`.
+    Line { x0: f64, y0: f64, grade: f64 },
+    /// A parabola: elevation = `a · s² + b · s + c` (s = station).
+    Parabola { a: f64, b: f64, c: f64 },
+    /// A free curve placed at its PVI (any type).
+    Placed(PlacedCurve),
+}
+
+impl SegmentShape {
+    pub fn elevation_at(&self, x: f64) -> f64 {
+        match *self {
+            Self::Line { x0, y0, grade } => y0 + grade * (x - x0),
+            Self::Parabola { a, b, c } => (a * x + b) * x + c,
+            Self::Placed(p) => p.elevation_at(x),
+        }
+    }
+    pub fn grade_at(&self, x: f64) -> f64 {
+        match *self {
+            Self::Line { grade, .. } => grade,
+            Self::Parabola { a, b, .. } => 2.0 * a * x + b,
+            Self::Placed(p) => {
+                let h = 1e-6;
+                (p.elevation_at(x + h) - p.elevation_at(x - h)) / (2.0 * h)
+            }
+        }
+    }
+    fn line(p: Point2, q: Point2) -> Self {
+        Self::Line {
+            x0: p.x,
+            y0: p.y,
+            grade: (q.y - p.y) / (q.x - p.x),
+        }
+    }
+    fn tangent_at(&self, x: f64) -> Self {
+        Self::Line {
+            x0: x,
+            y0: self.elevation_at(x),
+            grade: self.grade_at(x),
+        }
+    }
+}
+
+/// One resolved profile entity: from `start` to `end` (station, elevation).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ProfileSegment {
+    pub id: i32,
+    pub start: Point2,
+    pub end: Point2,
+    pub shape: SegmentShape,
+}
+
+/// The parabola through three points (stations distinct).
+fn parabola_3(p: [Point2; 3]) -> Option<SegmentShape> {
+    let [p0, p1, p2] = p;
+    let d = (p0.x - p1.x) * (p0.x - p2.x) * (p1.x - p2.x);
+    if d == 0.0 {
+        return None;
+    }
+    let a = (p2.x * (p1.y - p0.y) + p1.x * (p0.y - p2.y) + p0.x * (p2.y - p1.y)) / d;
+    let b =
+        (p2.x * p2.x * (p0.y - p1.y) + p1.x * p1.x * (p2.y - p0.y) + p0.x * p0.x * (p1.y - p2.y))
+            / d;
+    let c = p0.y - (a * p0.x + b) * p0.x;
+    Some(SegmentShape::Parabola { a, b, c })
+}
+
+/// The parabola with curvature `a` (elevation'' = 2a) through `p` with
+/// grade `g` at `p`.
+fn parabola_at(p: Point2, g: f64, a: f64) -> SegmentShape {
+    let b = g - 2.0 * a * p.x;
+    let c = p.y - (a * p.x + b) * p.x;
+    SegmentShape::Parabola { a, b, c }
+}
+
+/// The station where a tangent from `curve` passes through `p`, searched
+/// on `[lo, hi]` (S308's floating tangent).
+fn tangent_from(curve: &SegmentShape, p: Point2, lo: f64, hi: f64) -> Option<f64> {
+    let f = |t: f64| curve.elevation_at(t) + curve.grade_at(t) * (p.x - t) - p.y;
+    root(f, lo, hi)
+}
+
+/// A root of `f` on `[lo, hi]`: scan for a sign change, then bisect.
+fn root(f: impl Fn(f64) -> f64, lo: f64, hi: f64) -> Option<f64> {
+    let n = 400;
+    let mut prev = (lo, f(lo));
+    for i in 1..=n {
+        let x = lo + (hi - lo) * i as f64 / n as f64;
+        let cur = (x, f(x));
+        if prev.1 == 0.0 {
+            return Some(prev.0);
+        }
+        if prev.1.is_finite() && cur.1.is_finite() && prev.1.signum() != cur.1.signum() {
+            let (mut a, mut b) = (prev.0, cur.0);
+            let fa = prev.1;
+            for _ in 0..200 {
+                let m = 0.5 * (a + b);
+                let fm = f(m);
+                if !fm.is_finite() {
+                    break;
+                }
+                if (fm > 0.0) == (fa > 0.0) {
+                    a = m;
+                } else {
+                    b = m;
+                }
+            }
+            return Some(0.5 * (a + b));
+        }
+        prev = cur;
+    }
+    None
+}
+
+/// The stations where one line touches both `c1` (on `[lo1, hi1]`) and
+/// `c2`: the free tangent between two curves (S308).
+fn common_tangent(
+    c1: &SegmentShape,
+    (lo1, hi1): (f64, f64),
+    c2: &SegmentShape,
+    (lo2, hi2): (f64, f64),
+) -> Option<(f64, f64)> {
+    // For t1 on curve 1, the tangent line touches curve 2 where curve 2's
+    // grade equals it; solve that point's offset from the line.
+    let touch = |t1: f64| -> Option<(f64, f64)> {
+        let g = c1.grade_at(t1);
+        let t2 = root(|t| c2.grade_at(t) - g, lo2, hi2)?;
+        let gap = c2.elevation_at(t2) - (c1.elevation_at(t1) + g * (t2 - t1));
+        Some((t2, gap))
+    };
+    let t1 = root(|t| touch(t).map_or(f64::NAN, |v| v.1), lo1, hi1)?;
+    Some((t1, touch(t1)?.0))
+}
+
+/// Resolve every entity of a profile into a segment with its start and end
+/// (S299–S308): fixed tangents and fixed curves stand on their own points,
+/// free curves sit at their PVI, a floating curve hangs from the tangent
+/// before it, a floating tangent leaves the curve before it towards its
+/// point, a free tangent touches the curves on both sides. `None` when the
+/// chain cannot be followed or a constraint has no solution.
+pub fn segments(elements: &[ProfileElement]) -> Option<Vec<ProfileSegment>> {
+    // The chain in link order.
+    let mut chain = Vec::new();
+    let mut cur = elements.iter().find(|e| e.before() == 0)?;
+    loop {
+        chain.push(cur);
+        if chain.len() > elements.len() {
+            return None;
+        }
+        match cur.after() {
+            0 => break,
+            n => cur = elements.iter().find(|e| e.id() == n)?,
+        }
+    }
+    let n = chain.len();
+    // Shapes and natural ends of the elements that stand on their own.
+    let mut shape: Vec<Option<SegmentShape>> = vec![None; n];
+    let mut start: Vec<Option<Point2>> = vec![None; n];
+    let mut end: Vec<Option<Point2>> = vec![None; n];
+    for (i, e) in chain.iter().enumerate() {
+        match e {
+            ProfileElement::Tangent(t) => {
+                shape[i] = Some(SegmentShape::line(t.start, t.end));
+                start[i] = Some(t.start);
+                end[i] = Some(t.end);
+            }
+            ProfileElement::Curve(c) => match c.def {
+                CurveDef::ParabolaThreePoints(p) => {
+                    shape[i] = Some(parabola_3(p)?);
+                    start[i] = Some(p[0]);
+                    end[i] = Some(p[2]);
+                }
+                CurveDef::ParabolaTwoPoints {
+                    start: p,
+                    end: q,
+                    curve,
+                    param,
+                    value,
+                } => {
+                    if param != PARAM_K {
+                        return None;
+                    }
+                    let l = q.x - p.x;
+                    let a = if curve == CURVE_SAG { 1.0 } else { -1.0 } / (200.0 * value);
+                    // Chord grade = grade at the middle.
+                    let g = (q.y - p.y) / l - a * l;
+                    shape[i] = Some(parabola_at(p, g, a));
+                    start[i] = Some(p);
+                    end[i] = Some(q);
+                }
+                _ => {}
+            },
+            ProfileElement::Dependent(t) => end[i] = t.through,
+        }
+    }
+    // Elements that depend on their neighbours, in chain order.
+    for i in 0..n {
+        let prev = i.checked_sub(1);
+        match chain[i] {
+            ProfileElement::Curve(c) => match c.def {
+                CurveDef::ParabolaFloating {
+                    through,
+                    param,
+                    value,
+                    ..
+                } => {
+                    let line = shape[prev?]?;
+                    if param != PARAM_K {
+                        return None;
+                    }
+                    // Hangs from the line: elevation = line + a (s − s0)²,
+                    // through the point; a's sign from which side it lies.
+                    let off = through.y - line.elevation_at(through.x);
+                    let a = off.signum() / (200.0 * value);
+                    let s0 = through.x - (off / a).sqrt();
+                    let p0 = Point2::new(s0, line.elevation_at(s0));
+                    shape[i] = Some(parabola_at(p0, line.grade_at(s0), a));
+                    start[i] = Some(p0);
+                    end[i] = Some(through);
+                    end[prev?] = Some(p0);
+                }
+                CurveDef::ParabolaThreePoints(_) | CurveDef::ParabolaTwoPoints { .. } => {}
+                _ => {
+                    // A free curve between two fixed tangents.
+                    let (ProfileElement::Tangent(a), Some(ProfileElement::Tangent(b))) =
+                        (chain[prev?], chain.get(i + 1))
+                    else {
+                        return None;
+                    };
+                    let p = place(c, a.end, a, b)?;
+                    shape[i] = Some(SegmentShape::Placed(p));
+                    start[i] = Some(p.start());
+                    end[i] = Some(p.end());
+                    end[prev?] = start[i];
+                    start[i + 1] = end[i];
+                }
+            },
+            ProfileElement::Dependent(t) => {
+                let before = shape[prev?]?;
+                match t.through {
+                    Some(p) => {
+                        let lo = start[prev?]?.x;
+                        let s = tangent_from(&before, p, lo, p.x)?;
+                        let q = Point2::new(s, before.elevation_at(s));
+                        shape[i] = Some(SegmentShape::line(q, p));
+                        start[i] = Some(q);
+                        end[prev?] = Some(q);
+                    }
+                    None => {
+                        let after = shape.get(i + 1).copied().flatten()?;
+                        let r1 = (start[prev?]?.x, end[prev?]?.x);
+                        let r2 = (start[i + 1]?.x, end[i + 1]?.x);
+                        let (t1, t2) = common_tangent(&before, r1, &after, r2)?;
+                        let p = Point2::new(t1, before.elevation_at(t1));
+                        let q = Point2::new(t2, after.elevation_at(t2));
+                        shape[i] = Some(before.tangent_at(t1));
+                        (start[i], end[i]) = (Some(p), Some(q));
+                        end[prev?] = Some(p);
+                        start[i + 1] = Some(q);
+                    }
+                }
+            }
+            ProfileElement::Tangent(_) => {}
+        }
+    }
+    (0..n)
+        .map(|i| {
+            Some(ProfileSegment {
+                id: chain[i].id(),
+                start: start[i]?,
+                end: end[i]?,
+                shape: shape[i]?,
+            })
+        })
+        .collect()
 }

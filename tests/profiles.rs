@@ -322,3 +322,96 @@ fn curve_types_match_civil3d_api() {
         }
     }
 }
+
+/// An entity in a `C3DDUMP` file: id, [start station, start elevation, end
+/// station, end elevation].
+type ApiEntity = (i32, [f64; 4]);
+/// A profile in a `C3DDUMP` file: handle and its entities.
+type ApiProfile = (u64, Vec<ApiEntity>);
+
+/// Each profile's entities in a `C3DDUMP` file.
+fn api_entities(path: &str) -> Vec<ApiProfile> {
+    let text = std::fs::read_to_string(path).unwrap();
+    let mut out: Vec<ApiProfile> = Vec::new();
+    let mut cur: Option<ApiEntity> = None;
+    let flush = |out: &mut Vec<ApiProfile>, cur: &mut Option<ApiEntity>| {
+        if let (Some(e), Some(last)) = (cur.take(), out.last_mut()) {
+            last.1.push(e);
+        }
+    };
+    for line in text.lines() {
+        let t = line.trim();
+        if let Some(rest) = line.strip_prefix("  Profile [") {
+            flush(&mut out, &mut cur);
+            let h = u64::from_str_radix(&rest[..rest.find(']').unwrap()], 16).unwrap();
+            out.push((h, Vec::new()));
+        } else if line.starts_with("  ProfileView [") {
+            flush(&mut out, &mut cur);
+        } else if t.starts_with("Entities[") {
+            flush(&mut out, &mut cur);
+            cur = Some((0, [f64::NAN; 4]));
+        } else if let Some(e) = cur.as_mut() {
+            let num = |p: &str| t.strip_prefix(p).and_then(|v| v.parse::<f64>().ok());
+            if let Some(v) = num("EntityId: ") {
+                e.0 = v as i32;
+            }
+            for (i, key) in [
+                "StartStation: ",
+                "StartElevation: ",
+                "EndStation: ",
+                "EndElevation: ",
+            ]
+            .iter()
+            .enumerate()
+            {
+                if let Some(v) = num(key) {
+                    e.1[i] = v;
+                }
+            }
+        }
+    }
+    flush(&mut out, &mut cur);
+    out
+}
+
+#[test]
+fn every_entity_matches_civil3d_api() {
+    // Every entity of every profile in the samples with a C3DDUMP: start
+    // and end as Civil 3D reports them (S306, S307, S308).
+    use civil3drust::aecc_profile::segments;
+    for id in ["S306", "S307", "S308"] {
+        let api_path = std::fs::read_dir("samples")
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .find(|p| {
+                let n = p.file_name().unwrap().to_str().unwrap();
+                n.starts_with(&format!("{id}_")) && n.ends_with(".api.txt")
+            })
+            .unwrap();
+        let o = open(id);
+        for (h, ents) in api_entities(api_path.to_str().unwrap()) {
+            let segs = segments(&profile_elements(&profile(&o, h).data))
+                .unwrap_or_else(|| panic!("{id} {h:X}: not resolved"));
+            assert_eq!(segs.len(), ents.len(), "{id} {h:X}");
+            for (eid, [ss, se, es, ee]) in ents {
+                let s = segs.iter().find(|s| s.id == eid).unwrap();
+                let ok = |a: f64, b: f64| (a - b).abs() < 1e-6;
+                assert!(
+                    ok(s.start.x, ss) && ok(s.start.y, se) && ok(s.end.x, es) && ok(s.end.y, ee),
+                    "{id} {h:X} entity {eid}: {:?} → {:?}, Civil 3D ({ss}, {se}) → ({es}, {ee})",
+                    s.start,
+                    s.end
+                );
+                // The shape passes through both ends.
+                assert!(
+                    ok(s.shape.elevation_at(s.start.x), s.start.y),
+                    "{id} {h:X} {eid}"
+                );
+                assert!(
+                    ok(s.shape.elevation_at(s.end.x), s.end.y),
+                    "{id} {h:X} {eid}"
+                );
+            }
+        }
+    }
+}

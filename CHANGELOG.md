@@ -23,6 +23,12 @@ versions follow [Semantic Versioning](https://semver.org/).
   by the owner with .NET SDK 8.0.428.
 
 ### Added
+- Profile entities of the fixed, floating and free methods (S308, owner,
+  with `C3DDUMP`): fixed parabola by three points or two points and K,
+  floating parabola by a point and K, floating tangent to a point (also
+  what "grade, length" stores), free tangent between two curves.
+  `aecc_profile::segments` resolves every entity's start and end; all
+  entities of S306–S308 agree with Civil 3D's API to 1e-6.
 - Profile vertical curves of every free type (S307, owner, with
   `C3DDUMP`): symmetric parabola by length or K (prefix 6, kinds 0, 2),
   circular by length, radius or through point (prefix 4, kinds 0, 9, 7),
