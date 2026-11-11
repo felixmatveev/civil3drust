@@ -23,6 +23,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   by the owner with .NET SDK 8.0.428.
 
 ### Added
+- Profile Locking settings (S310, owner): anchor to alignment geometry
+  points or start, modify or delete affected entities, notify, and the
+  list of entities waiting to be reported (S302) — kept in the profile's
+  `AECC_NOTIFICATIONINFOS` object. `aecc_profile::profile_locking`.
 - Profile curves by grade and by radius (S309, owner, with `C3DDUMP`):
   fixed parabola by two points and a grade at either end (kind 12,
   grades in percent), floating parabola by a point and its grade (kind

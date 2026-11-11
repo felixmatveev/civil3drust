@@ -995,3 +995,56 @@ pub fn segments(elements: &[ProfileElement]) -> Option<Vec<ProfileSegment>> {
         })
         .collect()
 }
+
+/// A profile's Profile Locking settings and pending notifications, kept in
+/// its `AECC_NOTIFICATIONINFOS` object (S310; S302 for the list).
+#[derive(Debug, Clone, PartialEq)]
+pub struct ProfileLocking {
+    /// "Anchor profile geometry points to alignment geometry points" (the
+    /// default); false: "Anchor profile to alignment start".
+    pub anchor_to_geometry: bool,
+    /// "Modify affected entities" (the default); false: "Delete affected
+    /// entities".
+    pub modify_affected: bool,
+    /// "Notify which entities are affected" (the default).
+    pub notify: bool,
+    /// Entities waiting to be reported as affected (S302: 3, 1, 2 after the
+    /// alignment edit), by ID.
+    pub affected: Vec<i32>,
+}
+
+/// The locking settings of profile `rec`, from the
+/// `AECC_NOTIFICATIONINFOS` object it owns. After the common object data
+/// (EED, reactors, two bits): 18 bits (the same in every sample), `BL n`,
+/// `n × BL entity ID`, `B anchor to geometry`, `B modify`, `B notify`.
+pub fn profile_locking(doc: &CadDocument, rec: &RawRecord) -> Option<ProfileLocking> {
+    let h = *pointers_to(doc, rec, "AECC_NOTIFICATIONINFOS", Some(3)).first()?;
+    let n = raw::records(doc, "AECC_NOTIFICATIONINFOS")
+        .into_iter()
+        .find(|r| r.handle == h)?;
+    let data = &n.data;
+    let eed = crate::aecc_entity::eed_bit(data)?;
+    // EED size 0, no reactors (both BS / BL `10`).
+    if bits(data, eed, 4) != 0b1010 {
+        return None;
+    }
+    let (count, mut k) = raw::read_bl(data, eed + 24)?;
+    if !(0..10_000).contains(&count) {
+        return None;
+    }
+    let mut affected = Vec::new();
+    for _ in 0..count {
+        let (id, q) = raw::read_bl(data, k)?;
+        affected.push(id);
+        k = q;
+    }
+    if k + 3 > raw::bit_len(data) - n.handle_bits {
+        return None;
+    }
+    Some(ProfileLocking {
+        anchor_to_geometry: raw::get_bit(data, k) == 1,
+        modify_affected: raw::get_bit(data, k + 1) == 1,
+        notify: raw::get_bit(data, k + 2) == 1,
+        affected,
+    })
+}

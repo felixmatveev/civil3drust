@@ -17,6 +17,7 @@ without dialog values:
 | S307 | five profiles, one per curve type and parameter (`profile-methods.md`) |
 | S308 | eight profiles, fixed / floating / free methods (`profile-methods.md`) |
 | S309 | S308 plus eleven profiles: PVI-based free curves, grade methods, high/low point (`profile-methods.md`) |
+| S310 | four copies of one profile with different Profile Locking settings |
 
 ## Objects
 
@@ -137,6 +138,29 @@ kept while Automatic is on, and Civil 3D picked it (the owner typed
 nothing; both modes are automatic by default with a user override). The
 profile's outer points sit on it because the profile was drawn across
 the whole view.
+
+## Profile Locking (S310)
+
+The Profile Properties → Profile Locking tab is kept in the profile's
+`AECC_NOTIFICATIONINFOS` object (one of the seven it owns), not in the
+profile record. S310 has four copies of one profile (owner's
+screenshots): default (anchor to alignment geometry points, modify
+affected entities, notify), anchor to alignment start, modify without
+notifying, delete affected entities. After the object's common data
+(EED and reactor counts 0, two bits) and 18 bits that never change:
+
+```text
+BL n, n × BL entity ID      entities waiting to be reported as affected
+B  anchor to alignment geometry points (0: anchor to alignment start)
+B  modify affected entities (0: delete them)
+B  notify which entities are affected
+```
+
+The settings the dialog greys out are stored as 0 (alignment start: modify
+1, notify 0; delete: notify 0). S302, saved right after the alignment
+edit, lists 3, 1, 2 — the curve and both tangents — which Civil 3D clears
+once it has reported them (S303). `aecc_profile::profile_locking` reads
+it (test `profile_locking_settings`).
 
 ## Open
 

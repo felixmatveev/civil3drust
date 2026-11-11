@@ -379,7 +379,7 @@ fn every_entity_matches_civil3d_api() {
     // Every entity of every profile in the samples with a C3DDUMP: start
     // and end as Civil 3D reports them (S306, S307, S308).
     use civil3drust::aecc_profile::segments;
-    for id in ["S306", "S307", "S308", "S309"] {
+    for id in ["S306", "S307", "S308", "S309", "S310"] {
         let api_path = std::fs::read_dir("samples")
             .unwrap()
             .map(|e| e.unwrap().path())
@@ -420,4 +420,36 @@ fn every_entity_matches_civil3d_api() {
             }
         }
     }
+}
+
+#[test]
+fn profile_locking_settings() {
+    use civil3drust::aecc_profile::{profile_locking, ProfileLocking};
+    // S310 (owner's Profile Locking tab for each copy of the same profile).
+    let o = open("S310");
+    let want = |a, m, n| ProfileLocking {
+        anchor_to_geometry: a,
+        modify_affected: m,
+        notify: n,
+        affected: vec![],
+    };
+    for (h, w) in [
+        (0x8E87, want(true, true, true)), // geometry points, modify, notify
+        (0x8FBB, want(false, true, false)), // alignment start
+        (0x8FC4, want(true, true, false)), // modify, no notify
+        (0x8FCD, want(true, false, false)), // delete affected entities
+    ] {
+        assert_eq!(profile_locking(&o.doc, &profile(&o, h)), Some(w), "{h:X}");
+    }
+    // S302: right after the alignment edit, three entities wait to be
+    // reported (the curve and both tangents).
+    let o = open("S302");
+    let l = profile_locking(&o.doc, &profile(&o, 0x8D72)).unwrap();
+    assert_eq!(l.affected, [3, 1, 2]);
+    assert!(l.anchor_to_geometry && l.modify_affected && l.notify);
+    let o = open("S303");
+    assert_eq!(
+        profile_locking(&o.doc, &profile(&o, 0x8D91)),
+        Some(want(true, true, true))
+    );
 }
