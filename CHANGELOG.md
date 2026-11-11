@@ -16,6 +16,12 @@ versions follow [Semantic Versioning](https://semver.org/).
   options and `--compare other.dwg`. `--dump`/`--objects` no longer panic
   on a closed pipe.
 
+### Fixed
+- `tools/c3d_api_dump`: `Commands.cs` did not build against Civil 3D 2024
+  (CS0104: `DBObject` exists in both `Autodesk.AutoCAD.DatabaseServices`
+  and `Autodesk.Civil.DatabaseServices`); an alias picks AutoCAD's. Built
+  by the owner with .NET SDK 8.0.428.
+
 ### Added
 - Profiles, first look (S298–S305, owner): `aecc_profile` reads a
   layout profile's tangent and vertical-curve records (alignment-like

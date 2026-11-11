@@ -17,6 +17,7 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.Civil.DatabaseServices;
 using AcApp = Autodesk.AutoCAD.ApplicationServices.Application;
+using DBObject = Autodesk.AutoCAD.DatabaseServices.DBObject;
 
 [assembly: CommandClass(typeof(C3dApiDump.Commands))]
 
