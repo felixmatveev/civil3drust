@@ -27,6 +27,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   points or start, modify or delete affected entities, notify, and the
   list of entities waiting to be reported (S302) — kept in the profile's
   `AECC_NOTIFICATIONINFOS` object. `aecc_profile::profile_locking`.
+  S311: after an alignment edit, the "delete affected entities" profile
+  lost its entities; the others kept theirs.
 - Profile curves by grade and by radius (S309, owner, with `C3DDUMP`):
   fixed parabola by two points and a grade at either end (kind 12,
   grades in percent), floating parabola by a point and its grade (kind

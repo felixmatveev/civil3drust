@@ -379,7 +379,7 @@ fn every_entity_matches_civil3d_api() {
     // Every entity of every profile in the samples with a C3DDUMP: start
     // and end as Civil 3D reports them (S306, S307, S308).
     use civil3drust::aecc_profile::segments;
-    for id in ["S306", "S307", "S308", "S309", "S310"] {
+    for id in ["S306", "S307", "S308", "S309", "S310", "S311"] {
         let api_path = std::fs::read_dir("samples")
             .unwrap()
             .map(|e| e.unwrap().path())
@@ -391,6 +391,10 @@ fn every_entity_matches_civil3d_api() {
         let o = open(id);
         for (h, ents) in api_entities(api_path.to_str().unwrap()) {
             let els = profile_elements(&profile(&o, h).data);
+            if els.is_empty() && ents.is_empty() {
+                // S311 8FCD: its entities deleted by the alignment edit.
+                continue;
+            }
             if (id, h) == ("S309", 0x8F84) {
                 // Circular, high/low point: Civil 3D kept no element record
                 // (its API reports a half circle with invalid grades).
@@ -452,4 +456,23 @@ fn profile_locking_settings() {
         profile_locking(&o.doc, &profile(&o, 0x8D91)),
         Some(want(true, true, true))
     );
+}
+
+#[test]
+fn alignment_edit_under_each_locking_setting() {
+    // S311 (owner): S310 with the alignment's start moved 500 along it
+    // (the first tangent 639.04 → 135.31). Three profiles are unchanged —
+    // they lie between the start and the first curve, anchored to the start
+    // or to the alignment start; the one set to "delete affected entities"
+    // lost both entities.
+    let (a, b) = (open("S310"), open("S311"));
+    for h in [0x8E87, 0x8FBB, 0x8FC4] {
+        assert_eq!(
+            profile_elements(&profile(&a, h).data),
+            profile_elements(&profile(&b, h).data),
+            "{h:X}"
+        );
+    }
+    assert_eq!(profile_elements(&profile(&a, 0x8FCD).data).len(), 2);
+    assert!(profile_elements(&profile(&b, 0x8FCD).data).is_empty());
 }

@@ -18,6 +18,7 @@ without dialog values:
 | S308 | eight profiles, fixed / floating / free methods (`profile-methods.md`) |
 | S309 | S308 plus eleven profiles: PVI-based free curves, grade methods, high/low point (`profile-methods.md`) |
 | S310 | four copies of one profile with different Profile Locking settings |
+| S311 | S310 after an alignment edit (its start moved 500 along it) |
 
 ## Objects
 
@@ -161,6 +162,20 @@ The settings the dialog greys out are stored as 0 (alignment start: modify
 edit, lists 3, 1, 2 — the curve and both tangents — which Civil 3D clears
 once it has reported them (S303). `aecc_profile::profile_locking` reads
 it (test `profile_locking_settings`).
+
+**Alignment edited under each setting** (S311, owner: S310 with the
+alignment's start moved 500 along it, the first tangent 639.04 → 135.31,
+the length 1770.68 → 1270.65). All four profiles lie between the start
+and the first curve (35.6 to 628.8):
+
+- anchored to geometry points, modify (8E87, 8FC4), and anchored to the
+  alignment start (8FBB): unchanged — the start is the geometry point
+  they follow, and their stations from it stay (S302: a PVI after the
+  first curve's start moved with it);
+- delete affected entities (8FCD): both entities deleted, the profile
+  left with no element records (API: length 0).
+
+No entity waits to be reported in any of them.
 
 ## Open
 
