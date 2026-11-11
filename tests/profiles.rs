@@ -379,7 +379,7 @@ fn every_entity_matches_civil3d_api() {
     // Every entity of every profile in the samples with a C3DDUMP: start
     // and end as Civil 3D reports them (S306, S307, S308).
     use civil3drust::aecc_profile::segments;
-    for id in ["S306", "S307", "S308", "S309", "S310", "S311"] {
+    for id in ["S306", "S307", "S308", "S309", "S310", "S311", "S312"] {
         let api_path = std::fs::read_dir("samples")
             .unwrap()
             .map(|e| e.unwrap().path())
@@ -475,4 +475,44 @@ fn alignment_edit_under_each_locking_setting() {
     }
     assert_eq!(profile_elements(&profile(&a, 0x8FCD).data).len(), 2);
     assert!(profile_elements(&profile(&b, 0x8FCD).data).is_empty());
+}
+
+#[test]
+fn design_criteria_settings() {
+    use civil3drust::aecc_profile::{profile_criteria, ProfileCriteria};
+    // S312 (owner's Design Criteria tab): 8E87 all off, 8FE3 all on with
+    // the 2011 roadway standards file, AASHTO 2011 K table and check set
+    // Basic (33A0).
+    let o = open("S312");
+    assert_eq!(
+        profile_criteria(&o.doc, &profile(&o, 0x8E87)),
+        Some(ProfileCriteria {
+            criteria_based: false,
+            criteria_file: false,
+            check_set: false,
+            check_set_handle: None,
+        })
+    );
+    let r = profile(&o, 0x8FE3);
+    assert_eq!(
+        profile_criteria(&o.doc, &r),
+        Some(ProfileCriteria {
+            criteria_based: true,
+            criteria_file: true,
+            check_set: true,
+            check_set_handle: Some(0x33A0),
+        })
+    );
+    let ss = civil3drust::string_stream::parse(&r.data, r.handle_bits).unwrap();
+    let texts: Vec<&str> = ss.strings.iter().map(|s| s.text.as_str()).collect();
+    assert!(texts
+        .iter()
+        .any(|t| t.starts_with("<DATADIR>Corridor Design Standards")));
+    assert_eq!(
+        texts
+            .iter()
+            .filter(|t| **t == "AASHTO 2011 Standard")
+            .count(),
+        2
+    );
 }

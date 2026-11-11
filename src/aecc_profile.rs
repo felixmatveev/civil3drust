@@ -1048,3 +1048,42 @@ pub fn profile_locking(doc: &CadDocument, rec: &RawRecord) -> Option<ProfileLock
         affected,
     })
 }
+
+/// Bit of the first element record's header (after its 11-bit prefix).
+pub fn first_element_bit(data: &[u8]) -> Option<usize> {
+    let n = raw::bit_len(data);
+    (11..n.saturating_sub(23)).find(|&bit| {
+        header_at(data, bit) && element_at(data, bit, bits(data, bit - 11, 11)).is_some()
+    })
+}
+
+/// A profile's Design Criteria tab (S312).
+#[derive(Debug, Clone, PartialEq)]
+pub struct ProfileCriteria {
+    /// "Use criteria-based design", "Use design criteria file", "Use design
+    /// check set": the three bits 24, 23 and 22 before the first element
+    /// record's header (all three on or off together in S312; the order is
+    /// assumed from the alignment's, `aecc_criteria`).
+    pub criteria_based: bool,
+    pub criteria_file: bool,
+    pub check_set: bool,
+    /// The `AECC_PROFILE_DESIGN_CHECK_SET` pointed to (a hard pointer after
+    /// the alignment's; null when unused).
+    pub check_set_handle: Option<u64>,
+}
+
+/// The Design Criteria settings of profile `rec`. With criteria on, the
+/// string stream also holds the criteria file (its path, the same with
+/// `<DATADIR>`) and the Minimum K Table name twice, after the name.
+pub fn profile_criteria(doc: &CadDocument, rec: &RawRecord) -> Option<ProfileCriteria> {
+    let h = first_element_bit(&rec.data)?;
+    let b = |k: usize| raw::get_bit(&rec.data, h - k) == 1;
+    Some(ProfileCriteria {
+        criteria_based: b(24),
+        criteria_file: b(23),
+        check_set: b(22),
+        check_set_handle: pointers_to(doc, rec, "AECC_PROFILE_DESIGN_CHECK_SET", Some(5))
+            .first()
+            .copied(),
+    })
+}

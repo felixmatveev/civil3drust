@@ -73,7 +73,7 @@ alignment record itself.
 | PI display | `aecc_build::pi_display`, `set_pi_display` | Supported |
 | Display (proxy graphics) | `proxy_graphics`; `aecc_build::replace_graphics`, `strip_graphics` | Supported — written for lines and arcs |
 | Superelevation | — | Passthrough |
-| Profiles | Layout profiles read: fixed, floating and free tangents; free vertical curves of every type (parabola by length/K, circular by length/radius/through point, asymmetric); fixed parabolas (three points, two points + K or radius, two points + grade); floating parabolas (point + K or radius, point + grade); Profile Locking settings; links to alignment and views (S298–S310) | Partial |
+| Profiles | Layout profiles read: fixed, floating and free tangents; free vertical curves of every type (parabola by length/K, circular by length/radius/through point, asymmetric); fixed parabolas (three points, two points + K or radius, two points + grade); floating parabolas (point + K or radius, point + grade); Profile Locking and Design Criteria settings; links to alignment and views (S298–S312) | Partial |
 | Profile Views | Links to alignment and profiles (S304) | Partial |
 | Sample Line Groups | — | Passthrough |
 | Station equation label group | `aecc_create` (`AECC_ALIGNMENT_STAEQU_LABEL_GROUP`) | Partial — optionally created with a new alignment |

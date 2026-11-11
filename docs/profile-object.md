@@ -19,6 +19,7 @@ without dialog values:
 | S309 | S308 plus eleven profiles: PVI-based free curves, grade methods, high/low point (`profile-methods.md`) |
 | S310 | four copies of one profile with different Profile Locking settings |
 | S311 | S310 after an alignment edit (its start moved 500 along it) |
+| S312 | a copy of a profile with Design Criteria on (8FE3) beside one with it off (8E87) |
 
 ## Objects
 
@@ -176,6 +177,28 @@ and the first curve (35.6 to 628.8):
   left with no element records (API: length 0).
 
 No entity waits to be reported in any of them.
+
+## Design Criteria (S312)
+
+S312 (owner's screenshots): 8E87 with every Design Criteria box off,
+8FE3 with "Use criteria-based design", "Use design criteria file" (the
+2011 Imperial roadway standards, Minimum K Table "AASHTO 2011 Standard")
+and "Use design check set" (Basic) on. In the profile record:
+
+- three bits, 24, 23 and 22 before the first element record's header,
+  turn on together (the order criteria / file / check set is assumed
+  from the alignment's, `aecc_criteria`); bit 21 is 1 in both;
+- the string stream gains, after the name, the file's path, the same
+  path with `<DATADIR>`, and the Minimum K Table name twice;
+- a hard pointer after the alignment's points at the
+  `AECC_PROFILE_DESIGN_CHECK_SET` (33A0; null when off).
+
+8FE3 also points at a new feature style (8FEB) instead of 8C49, and both
+edited copies (8FCD, 8FE3) carry the user string of the Properties form
+(as alignments do after a Properties edit). `aecc_profile::profile_criteria`
+reads the settings (test `design_criteria_settings`); the API agrees
+(`UseDesignCheckSet`, `UseDesignCriteriaFile`, `DesignCheckSetName`
+Basic, `DesignSpeedBased` True).
 
 ## Open
 

@@ -23,6 +23,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   by the owner with .NET SDK 8.0.428.
 
 ### Added
+- Profile Design Criteria settings (S312, owner): three bits before the
+  first element record, the criteria file and Minimum K Table strings,
+  and a pointer to the profile design check set.
+  `aecc_profile::profile_criteria`, `first_element_bit`.
 - Profile Locking settings (S310, owner): anchor to alignment geometry
   points or start, modify or delete affected entities, notify, and the
   list of entities waiting to be reported (S302) — kept in the profile's
