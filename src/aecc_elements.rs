@@ -2473,6 +2473,31 @@ impl Segment {
             Self::Spiral { geometry, .. } => geometry.curve_length(),
         }
     }
+    /// The point at distance `t` from the start, along the segment.
+    pub fn point_at(&self, t: f64) -> Point2 {
+        match *self {
+            Self::Spiral { geometry, .. } => geometry.point_at(t).0,
+            Self::Line { start, end } => {
+                let l = start.distance_to(end);
+                let f = if l > 0.0 { t / l } else { 0.0 };
+                Point2::new(
+                    start.x + f * (end.x - start.x),
+                    start.y + f * (end.y - start.y),
+                )
+            }
+            Self::Arc {
+                start, geometry: g, ..
+            } => {
+                let a0 = (start.y - g.center.y).atan2(start.x - g.center.x);
+                let s = if g.counter_clockwise { 1.0 } else { -1.0 };
+                let a = a0 + s * t / g.radius;
+                Point2::new(
+                    g.center.x + g.radius * a.cos(),
+                    g.center.y + g.radius * a.sin(),
+                )
+            }
+        }
+    }
 }
 
 /// A spiral from `start_radius` to `radius` over `length` (a clothoid
@@ -3292,6 +3317,23 @@ impl DecodedElements {
     /// Bit offset just after the last record in storage order.
     pub fn records_end_bit(&self) -> Option<usize> {
         self.stored_records().iter().map(|r| r.end_bit()).max()
+    }
+    /// The plan point at `station` (the stored start station, 0 if none,
+    /// plus the distance along the elements; station equations not
+    /// applied). `None` outside the alignment.
+    pub fn point_at_station(&self, station: f64) -> Option<Point2> {
+        let mut d = station - self.stored_start_station.unwrap_or(0.0);
+        if d < -1e-9 {
+            return None;
+        }
+        for e in &self.elements {
+            let l = e.segment.length();
+            if d <= l + 1e-9 {
+                return Some(e.segment.point_at(d.clamp(0.0, l)));
+            }
+            d -= l;
+        }
+        None
     }
 }
 

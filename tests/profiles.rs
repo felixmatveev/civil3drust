@@ -516,3 +516,34 @@ fn design_criteria_settings() {
         2
     );
 }
+
+#[test]
+fn names_and_3d_samples() {
+    use civil3drust::aecc_elements::decode_elements;
+    use civil3drust::aecc_profile::{profile_name, sample_3d, segments};
+    let o = open("S306");
+    let r = profile(&o, 0x8D72);
+    assert_eq!(profile_name(&r).as_deref(), Some("test"));
+    assert_eq!(profile_name(&profile(&o, 0x8D91)).as_deref(), Some("test2"));
+    // Sampled every foot over the alignment (0 – 1770.68 of −100 – 1900):
+    // x, y on the alignment, z the profile's elevation.
+    let al = decode_elements(&raw::records(&o.doc, "AECC_ALIGNMENT").remove(0)).unwrap();
+    let segs = segments(&profile_elements(&r.data)).unwrap();
+    let pts = sample_3d(&al, &segs, 1.0);
+    assert!(pts.len() > 1770 && pts.len() < 1780, "{}", pts.len());
+    assert_eq!(&pts[0][..2], &[0.0, 0.0]);
+    let last = pts[pts.len() - 1];
+    let end = al.point_at_station(al.length()).unwrap();
+    assert!((last[0] - end.x).abs() < 1e-9 && (last[1] - end.y).abs() < 1e-9);
+    // The PVI (822.011, 0) lies under the curve's top, 0.58 below it.
+    let at = |st: f64| {
+        pts.iter()
+            .find(|p| {
+                let q = al.point_at_station(st).unwrap();
+                (p[0] - q.x).abs() < 1e-6 && (p[1] - q.y).abs() < 1e-6
+            })
+            .copied()
+    };
+    let top = at(822.0).unwrap()[2];
+    assert!(top < 0.0 && top > -0.6, "{top}");
+}

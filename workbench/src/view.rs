@@ -4,7 +4,7 @@
 //! implements it with egui's painter and `--svg` with an SVG writer, so both
 //! show exactly the same picture.
 
-use crate::scene::{Colored, Decoded, Prim, Scene, P3};
+use crate::scene::{Colored, Prim, Scene, P3};
 
 /// Screen-space point, pixels, y down.
 pub type S2 = [f32; 2];
@@ -226,6 +226,9 @@ pub struct Layers {
     /// Lift the proxy layer by this many units in 3D so it sits above
     /// the decoded geometry instead of on top of it.
     pub proxy_lift: f64,
+    /// Vertical exaggeration in 3D: every z is multiplied by it (profiles
+    /// drawn over their alignments are flat at true scale).
+    pub z_scale: f64,
     /// Classes switched off in the object list.
     pub hidden_classes: std::collections::BTreeSet<String>,
     pub selected: Option<u64>,
@@ -242,6 +245,7 @@ impl Default for Layers {
             text: true,
             grid: true,
             proxy_lift: 0.0,
+            z_scale: 1.0,
             hidden_classes: Default::default(),
             selected: None,
             dark: true,
@@ -383,11 +387,12 @@ fn visit<'a>(scene: &'a Scene, layers: &Layers, mut f: impl FnMut(Item<'a>)) {
     }
     if layers.decoded {
         for o in scene.objects.iter().filter(visible) {
-            let Decoded::Alignment(a) = &o.decoded else {
+            let prims = o.decoded.prims();
+            if prims.is_empty() {
                 continue;
-            };
+            }
             let sel = layers.selected == Some(o.handle);
-            for (i, prim) in a.prims.iter().enumerate() {
+            for (i, prim) in prims.iter().enumerate() {
                 let is_text = matches!(prim, Prim::Text { .. });
                 if is_text && !layers.text {
                     continue;
@@ -438,7 +443,7 @@ pub fn draw(
     }
     let mut pick = Vec::new();
     visit(scene, layers, |it| {
-        let lift = |p: &P3| [p[0], p[1], p[2] + it.lift];
+        let lift = |p: &P3| [p[0], p[1], p[2] * layers.z_scale + it.lift];
         match it.prim {
             Prim::Line { pts, closed } => {
                 // Split where points fall behind the camera.

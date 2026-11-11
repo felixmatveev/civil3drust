@@ -23,6 +23,11 @@ versions follow [Semantic Versioning](https://semver.org/).
   by the owner with .NET SDK 8.0.428.
 
 ### Added
+- Workbench: profiles drawn in 3D over their alignments (sampled every
+  unit and at entity boundaries; x, y from the alignment, z from the
+  profile) with a vertical exaggeration control (Z ×, `--z-scale`).
+  Library: `Segment::point_at`, `DecodedElements::point_at_station`,
+  `aecc_profile::{elevation_at, sample_3d, profile_name}`.
 - Profile Design Criteria settings (S312, owner): three bits before the
   first element record, the criteria file and Minimum K Table strings,
   and a pointer to the profile design check set.

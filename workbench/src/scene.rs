@@ -66,7 +66,37 @@ pub enum Decoded {
     /// Decoding was tried and failed.
     Failed(String),
     Alignment(AlignmentView),
+    Profile(ProfileView),
 }
+
+impl Decoded {
+    /// The decoded geometry to draw (empty when not decoded).
+    pub fn prims(&self) -> &[Prim] {
+        match self {
+            Decoded::Alignment(a) => &a.prims,
+            Decoded::Profile(p) => &p.prims,
+            _ => &[],
+        }
+    }
+}
+
+/// A profile drawn in 3D over its alignment: x, y from the alignment at
+/// each station, z the profile's elevation, sampled every
+/// [`PROFILE_STEP`] (and at every entity boundary).
+#[derive(Debug, Clone)]
+pub struct ProfileView {
+    pub name: Option<String>,
+    pub alignment: u64,
+    pub entities: usize,
+    /// Stations covered (profile ∩ alignment).
+    pub stations: (f64, f64),
+    pub elevations: (f64, f64),
+    /// The 3D polyline, then a marker at every entity boundary.
+    pub prims: Vec<Prim>,
+}
+
+/// Sampling step of the 3D profile, in drawing units (1 ft in US units).
+pub const PROFILE_STEP: f64 = 1.0;
 
 #[derive(Debug, Clone)]
 pub struct AlignmentView {
@@ -111,14 +141,22 @@ impl Scene {
             failsafe: opened.failsafe_reason.clone(),
             ..Default::default()
         };
-        // Decoded alignments, by handle.
+        // Decoded alignments and profiles, by handle.
         let mut alignments: BTreeMap<u64, Decoded> = BTreeMap::new();
+        let mut decoded_alignments = BTreeMap::new();
         for rec in raw::records(doc, "AECC_ALIGNMENT") {
             let d = match decode_elements(&rec) {
-                Ok(d) => Decoded::Alignment(alignment_view(&d)),
+                Ok(d) => {
+                    let v = Decoded::Alignment(alignment_view(&d));
+                    decoded_alignments.insert(rec.handle, d);
+                    v
+                }
                 Err(e) => Decoded::Failed(e.to_string()),
             };
             alignments.insert(rec.handle, d);
+        }
+        for rec in raw::records(doc, "AECC_PROFILE") {
+            alignments.insert(rec.handle, profile_view(doc, &rec, &decoded_alignments));
         }
         for e in doc.model_space_entities() {
             match e {
@@ -130,6 +168,7 @@ impl Scene {
                     let decoded = alignments.remove(&handle).unwrap_or(Decoded::None);
                     let name = match &decoded {
                         Decoded::Alignment(a) => a.name.clone(),
+                        Decoded::Profile(p) => p.name.clone(),
                         _ => raw::object_name(data),
                     };
                     scene.objects.push(Object {
@@ -184,6 +223,61 @@ pub fn station_text(sta: f64) -> String {
     let s = sta.abs();
     let hundreds = (s / 100.0).floor();
     format!("{sign}{}+{:05.2}", hundreds as i64, s - hundreds * 100.0)
+}
+
+/// A profile over its alignment (see [`ProfileView`]).
+fn profile_view(
+    doc: &acadrust::document::CadDocument,
+    rec: &raw::RawRecord,
+    alignments: &BTreeMap<u64, civil3drust::aecc_elements::DecodedElements>,
+) -> Decoded {
+    use civil3drust::aecc_profile as ap;
+    let Some(h) = ap::parent_alignment(doc, rec) else {
+        return Decoded::Failed("no alignment found".into());
+    };
+    let Some(al) = alignments.get(&h) else {
+        return Decoded::Failed(format!("alignment {h:X} not decoded"));
+    };
+    let els = ap::profile_elements(&rec.data);
+    if els.is_empty() {
+        return Decoded::Failed("no element records".into());
+    }
+    let Some(segs) = ap::segments(&els) else {
+        return Decoded::Failed("entities not resolved".into());
+    };
+    let pts = ap::sample_3d(al, &segs, PROFILE_STEP);
+    if pts.len() < 2 {
+        return Decoded::Failed("profile outside its alignment".into());
+    }
+    let (zmin, zmax) = pts
+        .iter()
+        .fold((f64::MAX, f64::MIN), |(a, b), p| (a.min(p[2]), b.max(p[2])));
+    let mut prims = vec![Prim::Line {
+        pts: pts.clone(),
+        closed: false,
+    }];
+    for s in &segs {
+        for st in [s.start.x, s.end.x] {
+            if let (Some(p), Some(z)) = (al.point_at_station(st), ap::elevation_at(&segs, st)) {
+                prims.push(Prim::Marker { at: [p.x, p.y, z] });
+            }
+        }
+    }
+    let name = ap::profile_name(rec);
+    Decoded::Profile(ProfileView {
+        name,
+        alignment: h,
+        entities: segs.len(),
+        stations: (
+            segs[0].start.x.max(al.stored_start_station.unwrap_or(0.0)),
+            segs[segs.len() - 1]
+                .end
+                .x
+                .min(al.stored_start_station.unwrap_or(0.0) + al.length()),
+        ),
+        elevations: (zmin, zmax),
+        prims,
+    })
 }
 
 fn alignment_view(d: &civil3drust::aecc_elements::DecodedElements) -> AlignmentView {

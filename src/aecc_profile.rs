@@ -1087,3 +1087,63 @@ pub fn profile_criteria(doc: &CadDocument, rec: &RawRecord) -> Option<ProfileCri
             .copied(),
     })
 }
+
+/// The elevation at `station` on a resolved profile, `None` outside it.
+pub fn elevation_at(segments: &[ProfileSegment], station: f64) -> Option<f64> {
+    segments
+        .iter()
+        .find(|s| s.start.x - 1e-9 <= station && station <= s.end.x + 1e-9)
+        .map(|s| s.shape.elevation_at(station))
+}
+
+/// The profile as a 3D polyline over its alignment: a point every `step`
+/// (and at every entity boundary) where both exist, `[x, y, elevation]`
+/// (x, y from the alignment at the station, elevation from the profile).
+pub fn sample_3d(
+    alignment: &crate::aecc_elements::DecodedElements,
+    segments: &[ProfileSegment],
+    step: f64,
+) -> Vec<[f64; 3]> {
+    let (Some(first), Some(last)) = (segments.first(), segments.last()) else {
+        return Vec::new();
+    };
+    let a0 = alignment.stored_start_station.unwrap_or(0.0);
+    let (lo, hi) = (
+        first.start.x.max(a0),
+        last.end.x.min(a0 + alignment.length()),
+    );
+    if !(step > 0.0) || hi <= lo {
+        return Vec::new();
+    }
+    let mut stations: Vec<f64> = Vec::new();
+    let mut s = (lo / step).ceil() * step;
+    stations.push(lo);
+    while s < hi {
+        stations.push(s);
+        s += step;
+    }
+    stations.push(hi);
+    stations.extend(
+        segments
+            .iter()
+            .flat_map(|g| [g.start.x, g.end.x])
+            .filter(|x| (lo..=hi).contains(x)),
+    );
+    stations.sort_by(f64::total_cmp);
+    stations.dedup_by(|a, b| (*a - *b).abs() < 1e-9);
+    stations
+        .into_iter()
+        .filter_map(|st| {
+            let p = alignment.point_at_station(st)?;
+            Some([p.x, p.y, elevation_at(segments, st)?])
+        })
+        .collect()
+}
+
+/// The profile's name: the string after the label point names, which end
+/// with `PVI` (S299–S312; the generic name lookup finds a label name).
+pub fn profile_name(rec: &RawRecord) -> Option<String> {
+    let ss = crate::string_stream::parse(&rec.data, rec.handle_bits).ok()?;
+    let i = ss.strings.iter().position(|s| s.text == "PVI")?;
+    ss.strings.get(i + 1).map(|s| s.text.clone())
+}

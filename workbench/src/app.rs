@@ -392,6 +392,13 @@ impl App {
             ui.toggle_value(&mut self.layers.context, "AutoCAD");
             ui.toggle_value(&mut self.layers.text, "Text");
             ui.toggle_value(&mut self.layers.grid, "Grid");
+            ui.add(
+                egui::DragValue::new(&mut self.layers.z_scale)
+                    .range(0.1..=100.0)
+                    .speed(0.1)
+                    .prefix("Z ×"),
+            )
+            .on_hover_text("Vertical exaggeration in 3D (profiles over their alignments)");
             ui.separator();
             if ui
                 .button(if self.layers.dark { "Light" } else { "Dark" })
@@ -469,7 +476,7 @@ impl App {
                 });
                 for o in objs {
                     let badge = match (&o.decoded, &o.proxy) {
-                        (Decoded::Alignment(_), _) => "◆",
+                        (Decoded::Alignment(_), _) | (Decoded::Profile(_), _) => "◆",
                         (Decoded::Failed(_), _) => "✖",
                         (_, Some(g)) if g.placeholder => "□",
                         (_, Some(_)) => "▣",
@@ -596,6 +603,24 @@ impl App {
                                 station_text(a.start_station),
                                 station_text(a.start_station + a.length)
                             ));
+                            ui.end_row();
+                        }
+                        Decoded::Profile(p) => {
+                            ui.label("Decoded");
+                            ui.label(format!(
+                                "profile: {} entities, drawn in 3D over alignment {:X}",
+                                p.entities, p.alignment
+                            ));
+                            ui.end_row();
+                            ui.label("Stations");
+                            ui.label(format!(
+                                "{} – {}",
+                                station_text(p.stations.0),
+                                station_text(p.stations.1)
+                            ));
+                            ui.end_row();
+                            ui.label("Elevations");
+                            ui.label(format!("{:.3} – {:.3}", p.elevations.0, p.elevations.1));
                             ui.end_row();
                         }
                         Decoded::Failed(e) => {

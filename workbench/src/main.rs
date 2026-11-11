@@ -13,7 +13,7 @@
 //! civil3drust-workbench --diff a.dwg b.dwg [--show civil,opaque,unmapped,acad|all] [--filter text]
 //!                                                  record-by-record bit diff (hexview --diff)
 //! civil3drust-workbench --svg out.svg file.dwg [options]
-//!     --select <handle> --3d --no-proxy --no-decoded --placeholders
+//!     --select <handle> --3d --z-scale <n> --no-proxy --no-decoded --placeholders
 //!     --no-context --light --size WxH               render the view to SVG
 //! ```
 
@@ -39,7 +39,7 @@ fn usage() -> ! {
          civil3drust-workbench --objects file.dwg\n       \
          civil3drust-workbench --dump file.dwg\n       \
          civil3drust-workbench --diff a.dwg b.dwg [--show civil,opaque,unmapped,acad|all] [--filter text]\n       \
-         civil3drust-workbench --svg out.svg file.dwg [--select <handle>] [--3d] [--no-proxy] \
+         civil3drust-workbench --svg out.svg file.dwg [--select <handle>] [--3d] [--z-scale <n>] [--no-proxy] \
          [--no-decoded] [--placeholders] [--no-context] [--light] [--size WxH]"
     );
     exit(2);
@@ -148,6 +148,7 @@ fn svg_cmd(args: &[String]) {
         match a.as_str() {
             "--select" => layers.selected = it.next().and_then(|s| parse_handle(s)),
             "--3d" => cam.mode = view::Mode::Orbit,
+            "--z-scale" => layers.z_scale = it.next().and_then(|s| s.parse().ok()).unwrap_or(1.0),
             "--no-proxy" => layers.proxy = false,
             "--no-decoded" => layers.decoded = false,
             "--placeholders" => layers.placeholders = true,
@@ -202,6 +203,19 @@ fn objects(path: &str) {
                 a.length,
                 station_text(a.start_station),
                 station_text(a.start_station + a.length)
+            ),
+            Decoded::Profile(p) => format!(
+                "profile over {:X}, {} entities, sta {}..{}, elev {:.3}..{:.3}, {} points",
+                p.alignment,
+                p.entities,
+                station_text(p.stations.0),
+                station_text(p.stations.1),
+                p.elevations.0,
+                p.elevations.1,
+                p.prims.first().map_or(0, |l| match l {
+                    scene::Prim::Line { pts, .. } => pts.len(),
+                    _ => 0,
+                })
             ),
         };
         let pg = match &o.proxy {

@@ -250,6 +250,23 @@ the viewer's `--dump` (now `--objects`) and `--svg` options moved to the
 workbench's command line; `--compare other.dwg` opens the comparison at
 start. `viewer/` and `hexview/` are in `archive/` (D-075).
 
+## Profiles in 3D (2026-11-11)
+
+Profiles (`AECC_PROFILE`) are drawn in the **Decoded** layer as 3D
+polylines over their alignments: the profile's entities resolved by
+`aecc_profile::segments`, sampled every 1 drawing unit (1 ft in US
+units) and at every entity boundary by `aecc_profile::sample_3d` —
+x, y from the alignment at the station, z the elevation — with a marker
+at each entity's start and end. Only the stretch where both the profile
+and the alignment exist is drawn (a layout profile can run past the
+alignment's ends). Station equations are not applied yet.
+
+Elevations are small next to plan distances, so the toolbar's **Z ×**
+(and `--z-scale <n>` for `--svg`) exaggerates every z in the 3D view.
+The object list shows the profile's name, entity count, stations and
+elevation range; `--objects` prints the same. Drawing profiles in their
+profile views (2D) comes later, once the view's fields are mapped.
+
 ## Open questions
 
 - Names for reference kinds (companion, style, label set, site,
