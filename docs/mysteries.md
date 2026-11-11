@@ -42,6 +42,7 @@ Tools: `workbench --diff a.dwg b.dwg --filter <handle>` (formerly
 | MIST18 | station equation and masking fields | solved; the equations' 18 leading bits are a fixed marker (owner) |
 | MIST19 | offset alignment block after the type | mostly read (regions, transitions) |
 | MIST20 | connected (curb return) alignment block after the type | partly read (S283–S286) |
+| MIST21 | pasted feature line not quick-editable | parked: Civil 3D copy-paste problem |
 
 ## MIST1 — the 66-bit section-2 field — **PARTIALLY SOLVED (S142–S150, S214)**
 
@@ -590,7 +591,7 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
 - **Next samples:** one connected alignment per curve group type
   between the same centerlines; one input edited.
 
-## MIST21 — a pasted feature line cannot be edited — **open (S317–S320)**
+## MIST21 — a pasted feature line cannot be edited — **parked: a Civil 3D copy-paste problem (owner)**
 
 - **Where:** S317 (docs/feature-line-object.md, "The pasted copy").
 - **Ruled out:** the `|` in the new site's name (S318 renamed it to
@@ -602,9 +603,9 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
 - **Seen:** exploded and rebuilt, it works (S320). The rebuilt line
   lands in the first site `TEST` with its arc tessellated, and has no
   name or style.
-- **Next:** the owner, in S319, moves the copy to site `TEST` (*Move to
-  Site*), and draws a new feature line in `TEST1`; then tries quick edit
-  on both.
+- **Parked (owner):** a copy-paste problem in Civil 3D, not something a
+  writer has to reproduce; civil3drust does not paste. Untested: *Move to
+  Site* on the copy, a new feature line drawn in `TEST1`.
 
 ## Not sampled yet (not mysteries, just gaps)
 

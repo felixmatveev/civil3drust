@@ -23,6 +23,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   by the owner with .NET SDK 8.0.428.
 
 ### Added
+- `docs/open-blocks.md`: the unread blocks of alignments, profiles,
+  feature lines and the objects around them, with a proposed order for a
+  typed skeleton. MIST21 parked (a Civil 3D copy-paste problem, owner).
 - Feature lines (S313–S318, docs/feature-line-object.md):
   `aecc_feature_line` reads name, description, site container and the
   vertices (x, y, elevation, arc bulges, elevation points) from the site
