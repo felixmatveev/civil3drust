@@ -68,8 +68,8 @@ fn layout_profile_tangents_and_curve() {
         })
         .unwrap();
     assert_eq!((c.id, c.before, c.after), (3, 1, 2));
-    assert_eq!(c.values[0], 0.0);
-    assert!((c.values[1] - 488.7677).abs() < 1e-4);
+    assert_eq!(c.lead, 0.0);
+    assert!((c.length - 488.7677).abs() < 1e-4);
     assert_eq!(c.tail, [-1.0; 3]);
 }
 
@@ -123,4 +123,20 @@ fn links_between_alignment_profiles_and_views() {
         pointers_to(&o.doc, &al, "AECC_PROFILE_VIEW", Some(4)),
         [0x8DA9]
     );
+}
+
+#[test]
+fn curve_length_typed() {
+    // S306: S305 with the vertical curve's length set to 150 (owner).
+    let o = open("S306");
+    let els = profile_elements(&profile(&o, 0x8D72).data);
+    let c = els
+        .iter()
+        .find_map(|e| match e {
+            ProfileElement::Curve(c) => Some(c),
+            _ => None,
+        })
+        .unwrap();
+    assert_eq!(c.length, 150.0);
+    assert_eq!(tangents(&els).len(), 2);
 }

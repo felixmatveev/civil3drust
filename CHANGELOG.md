@@ -22,7 +22,7 @@ versions follow [Semantic Versioning](https://semver.org/).
   element records with (station, elevation) points) and the links
   between alignment, profiles and profile views
   (`pointers_to`, `parent_alignment`); `docs/profile-object.md`; test
-  `profiles`.
+  `profiles`. S306: the vertical curve's BD is its length (typed 150).
 - `C3DDUMP` also writes each alignment's profiles (every simple property,
   each PVI and entity) and profile views, read by reflection, for the
   profile samples.

@@ -13,6 +13,7 @@ without dialog values:
 | S303 | second layout profile `test2` (8D91), two tangents, same view |
 | S304 | second profile view (8DA9) |
 | S305 | first view (8D70) deleted |
+| S306 | S305 with the vertical curve's length set to 150 |
 
 ## Objects
 
@@ -66,7 +67,7 @@ prefix 2, tangent:  BL 0, BL id, BL before, BL after,
                     RD station, RD elevation   (start)
                     RD station, RD elevation   (end)
 prefix 6, curve:    BL 0, BL id, BL before, BL after,
-                    BD 0, BD 488.7677 (S300; not named yet),
+                    BD 0, BD length (S300 488.7677; S306 150),
                     BL 0x1001, BL 0, 3 bits, BD −1, BD −1, BD −1, BL 0
 ```
 
@@ -76,9 +77,10 @@ edges (the view spans stations −100 to 1900), not clipped to the
 alignment (0 to 1742.48). The vertical curve (S300) joins tangents 1 and
 2 (their links become 1 → 3 → 2); its record keeps no points, so it is
 placed from the tangents like a free curve. Civil 3D asks only for the
-curve length (owner); 488.7677 is most likely it (BVC 626.85, EVC
-1115.62 around the PVI; the crest label sits near 620): a sample with a
-typed length of 150 is to confirm it.
+curve length (owner), and that BD is it: S306 (S305 with the length set
+to 150) stores exactly 150 there and nothing else in the profile
+changes. S300's 488.7677 was the length as first drawn (BVC 626.85, EVC
+1115.62 around the PVI).
 
 **PVI edit** (S301): both tangents' shared point changes (elevation 10
 → 0); the curve record does not change.
@@ -110,8 +112,8 @@ the whole view.
 
 ## Open
 
-- The vertical curve's two BDs and the 3 bits (curve type and
-  parameter: length or K).
+- The vertical curve's first BD (0) and the 3 bits (curve type?
+  parabola vs circular, symmetric vs asymmetric — not sampled).
 - The data after the element records in the profile.
 - The view's fields (ranges, auto/user height, bands).
 - The seven helper objects' role.

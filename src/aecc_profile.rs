@@ -11,8 +11,9 @@
 //! tangent (prefix 2): RD station, RD elevation (start), RD station, RD
 //!                     elevation (end) — the points it was drawn through,
 //!                     not clipped to the alignment (S299: −100 … 1900)
-//! curve (prefix 6):   BD 0, BD value (S300: 488.7677, meaning not known
-//!                     yet), BL 0x1001, BL 0, 3 bits, BD −1 × 3, BL 0
+//! curve (prefix 6):   BD 0, BD length (the only value Civil 3D asks for:
+//!                     S306 typed 150), BL 0x1001, BL 0, 3 bits, BD −1 × 3,
+//!                     BL 0
 //! ```
 
 use acadrust::document::CadDocument;
@@ -38,15 +39,17 @@ pub struct ProfileTangent {
     pub end: Point2,
 }
 
-/// A vertical curve between two tangents (S300; its parameters are not
-/// named yet).
+/// A vertical curve between two tangents (S300, S306), placed from them by
+/// its length.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ProfileCurve {
     pub id: i32,
     pub before: i32,
     pub after: i32,
-    /// The two BDs after the links: 0 and 488.7677 in S300.
-    pub values: [f64; 2],
+    /// The BD after the links: 0 in every sample.
+    pub lead: f64,
+    /// The curve length (S306: typed 150; S300 488.7677).
+    pub length: f64,
     /// The three BDs after the mark: −1 in every sample.
     pub tail: [f64; 3],
 }
@@ -127,7 +130,8 @@ fn element_at(data: &[u8], h: usize, prefix: u32) -> Option<(ProfileElement, usi
                 id,
                 before,
                 after,
-                values: [a, b],
+                lead: a,
+                length: b,
                 tail,
             };
             Some((ProfileElement::Curve(c), k))
