@@ -85,6 +85,7 @@ samples and steps that produced it.
 - `cargo run --release --example exp_group_params -- target.dwg out.dwg <template hex> source.dwg:H:direct|group|end|start[:p1,p2,…] ...` (spiral group as typed parameters, no pieces; experiments S216, S223)
 - `cargo run --release --example exp_spiral_code -- in.dwg out.dwg <alignment hex>:<code> ...` (change only the spiral-type code, MIST10; experiments S233, S234)
 - `cargo run --release --example exp_companion -- in.dwg out.dwg <alignment hex> ...` (companions in the rebuilt form, edge 0x10, MIST12; experiments S238, S239)
+- `cargo run --release --example exp_site_name -- in.dwg out.dwg <old> <new>` (rename a site in its record and the site list; experiment S318, MIST21)
 - `cargo run --release --example fingerprint -- file.dwg [roundtrip.dwg]` (raw-record hashes, for comparing acadrust versions; **writes** a round trip of file.dwg to roundtrip.dwg, overwriting it)
 - `cargo run --release --example edit_elements -- in.dwg out.dwg <alignment> remove <id> | curve <tangent id> <radius>`
 - `cargo run --release --example sites -- file.dwg` (sites and each alignment's site)

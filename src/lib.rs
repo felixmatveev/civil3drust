@@ -45,6 +45,7 @@ pub mod aecc_element_edit;
 pub mod aecc_elements;
 pub mod aecc_encode;
 pub mod aecc_entity;
+pub mod aecc_feature_line;
 pub mod aecc_layout;
 pub mod aecc_layout_solve;
 pub mod aecc_offset;

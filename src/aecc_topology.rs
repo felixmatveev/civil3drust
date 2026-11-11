@@ -155,6 +155,10 @@ pub struct Vertex {
 pub struct Edge {
     pub flags: i32,
     pub vertices: Vec<Vertex>,
+    /// The list after a site container's edge (`BL m, m × BL`): empty for
+    /// alignments; `[1]` on a feature line with one elevation point
+    /// (S316). Not read for companions.
+    pub after: Vec<i32>,
 }
 
 /// A companion's decoded graph (single-edge records).
@@ -205,13 +209,21 @@ fn edge_at(data: &[u8], bit: usize) -> Option<(Edge, usize)> {
         });
         p = q;
     }
-    Some((Edge { flags, vertices }, p))
+    Some((
+        Edge {
+            flags,
+            vertices,
+            after: Vec::new(),
+        },
+        p,
+    ))
 }
 
 /// Decode the graph of a companion or site container: node list, then
 /// the edge list (`BL next free edge ID, BL count, BL 0, BL first edge
-/// ID`), edges one after another. Each edge ends with `BL 0 ×4`; between
-/// edges come `BL 0` and the next edge's ID (S104, S112).
+/// ID`), edges one after another. Each edge ends with `BL m, m × BL`
+/// ([`Edge::after`]; m = 0 for alignments) and `BL 0 ×3`; between edges
+/// come `BL 0` and the next edge's ID (S104, S112, S316).
 pub fn graph(data: &[u8]) -> Option<Graph> {
     let nodes = node_list(data)?;
     let p = nodes.end_bit;
@@ -233,9 +245,18 @@ pub fn graph(data: &[u8]) -> Option<Graph> {
         {
             return None;
         }
+        let mut edge = edge;
+        let (m, mut q) = raw::read_bl(data, q)?;
+        if !(0..=10_000).contains(&m) {
+            return None;
+        }
+        for _ in 0..m {
+            let (v, r) = raw::read_bl(data, q)?;
+            edge.after.push(v);
+            q = r;
+        }
         edges.push(edge);
-        let mut q = q;
-        for _ in 0..4 {
+        for _ in 0..3 {
             let (z, r) = raw::read_bl(data, q)?;
             if z != 0 {
                 return None;

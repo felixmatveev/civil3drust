@@ -1541,3 +1541,22 @@ says "civil3drust workbench"; its body is unchanged, so
 visible archive is easier to find while the workbench is young.
 Keeping them maintained: three copies of the same view code.
 
+
+## D-076: Feature lines are read from the site topology, not as a model of their own
+Date: 2026-11-11 · Status: accepted
+
+**Context.** S314–S316 show that an `AECC_FEATURE_LINE` record keeps no
+points: they are nodes and an edge of its site container's topology
+graph, the graph `aecc_topology` already reads for alignments in sites
+(z is the elevation; arcs are bulges; elevation points are flagged
+vertices).
+
+**Decision.** `aecc_feature_line` reads the record's name, description
+and container, and takes the vertices from `aecc_topology::graph`,
+finding the line's edge by its place among the container's soft
+pointers. The graph reader was generalised once (`BL m, m × BL` after an
+edge, `Edge::after`) rather than given a feature-line variant.
+
+**Alternatives.** A separate feature-line parser for the container: it
+would duplicate the node and edge reading and drift from the alignment
+side, while a writer will have to keep both kinds of edges in one graph.

@@ -590,6 +590,18 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
 - **Next samples:** one connected alignment per curve group type
   between the same centerlines; one input edited.
 
+## MIST21 — a pasted feature line cannot be edited — **open (S317, S318)**
+
+- **Where:** S317 (docs/feature-line-object.md, "The pasted copy").
+- **Seen:** the copy went into a new site `TEST|1` with its own
+  container; the container lost two null hard pointers and a null style
+  slot; node IDs, a vertex's flags and the face entry differ a little.
+- **Guess:** the `|` (AutoCAD's xref-dependent name separator) makes
+  Civil 3D treat the site as read-only.
+- **Next:** the owner opens S318 (site renamed `TEST1`, nothing else
+  changed) and tries to edit the copy; also try *Move to Site* on the
+  copy in S317.
+
 ## Not sampled yet (not mysteries, just gaps)
 
 - Real-world alignments. A 2020 production drawing (checked locally

@@ -324,6 +324,12 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S310 | `S310_profile_locking.dwg` | Civil 3D 2024 | Owner: profile `float vertical curve thru point` (8E87) copied three times with different Profile Locking settings: 8E87 default (geometry points, modify, notify), 8FBB anchor to alignment start, 8FC4 modify without notify, 8FCD delete affected entities (screenshots). `C3DDUMP` output next to it (`.api.txt`). | 974682 | `c7226ab584c00f07` |
 | S311 | `S311_profile_locking_alignment_edit.dwg` | Civil 3D 2024 | Owner: S310 after an alignment edit (its start moved 500 along the first tangent; length 1770.68 → 1270.65), to see each Profile Locking setting at work. `C3DDUMP` output next to it (`.api.txt`). | 974202 | `8ccee03d4f9e91d2` |
 | S312 | `S312_profile_design_criteria.dwg` | Civil 3D 2024 | Owner: S311 with a copy of 8E87 (8FE3) set to use criteria-based design, the 2011 Imperial roadway design standards file (Minimum K Table AASHTO 2011 Standard) and check set Basic; 8E87 left off (screenshots). `C3DDUMP` output next to it (`.api.txt`). | 984507 | `68350084c314e472` |
+| S313 | `S313_fl_empty.dwg` | Civil 3D 2024 | Owner: empty drawing with a site `TEST` (description `felix`), the start of the feature line series. | 983861 | `a9f2ce48f383dda7` |
+| S314 | `S314_fl_3pts.dwg` | Civil 3D 2024 | Owner: S313 with a feature line `TEST FEATURE LINE` (8D60) of three points, description "3 points". | 987244 | `032eaaff0c504d38` |
+| S315 | `S315_fl_curve.dwg` | Civil 3D 2024 | Owner: S314 with a fillet at the middle point (description "4 points + curve R=50"; the stored radius is 10). | 985874 | `ba9c13bb6c05f392` |
+| S316 | `S316_fl_edit.dwg` | Civil 3D 2024 | Owner: S315 edited: one elevation set to 200, an elevation point inserted. | 986828 | `26c423e4dc402aa9` |
+| S317 | `S317_fl_pasted.dwg` | Civil 3D 2024 | Owner: S316 with the feature line copied and pasted (8DAA, into a new site `TEST|1`); the copy cannot be edited in Civil 3D. | 972147 | `eb139fe794c896ee` |
+| S318 | `S318_fl_pasted_site_renamed.dwg` | civil3drust | `exp_site_name S317 … 'TEST|1' TEST1`: the pasted copy's site renamed in its record and the site list, nothing else (MIST21). | 946398 | `c65c8bb2f1025ae9` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

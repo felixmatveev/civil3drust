@@ -29,7 +29,7 @@ Anything not listed is Passthrough.
 | &nbsp;&nbsp;Rail Alignments | — (API value 5) | Rejected the same way (S61, S63) |
 | &nbsp;&nbsp;Rail Diverted Alignments | — (no API value known) | Passthrough |
 | &nbsp;&nbsp;Miscellaneous Alignments | `aecc_build::TYPE_MISCELLANEOUS` (4; API "Utility") | Supported |
-| Feature Lines | — | Passthrough |
+| Feature Lines | Read: name, description, site, points with elevations, arcs (bulges), elevation points, from the site topology (S313–S317) | Partial |
 | Sites | `aecc_site::sites`, `membership` | Read-only — new alignments are siteless; deleting is siteless only (D-038, D-062) |
 | Turnouts and Crossovers | — | Passthrough |
 | &nbsp;&nbsp;Crossover Groups | — | Passthrough |

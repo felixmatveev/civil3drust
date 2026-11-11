@@ -23,6 +23,13 @@ versions follow [Semantic Versioning](https://semver.org/).
   by the owner with .NET SDK 8.0.428.
 
 ### Added
+- Feature lines (S313–S318, docs/feature-line-object.md):
+  `aecc_feature_line` reads name, description, site container and the
+  vertices (x, y, elevation, arc bulges, elevation points) from the site
+  topology's edge. `aecc_topology::graph` reads the list after each edge
+  (`Edge::after`, non-empty with an elevation point). Experiment
+  `exp_site_name` (S318) for the pasted copy that Civil 3D will not edit
+  (MIST21).
 - FUTURE.md FRT-3: station equations with profiles (owner).
 - Workbench: profiles drawn in 3D over their alignments (sampled every
   unit and at entity boundaries; x, y from the alignment, z from the
