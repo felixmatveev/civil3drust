@@ -114,5 +114,5 @@ methods and the parameter code 0x2002 (radius; a parabola's radius is
 with the API to 1e-6, except the circular high/low point curve, which
 has no record.
 
-Not seen yet: the length parameter (0x2001?), the Best Fit methods,
-fixed circular curves by other methods.
+Not seen yet: the length parameter (0x2001?), fixed circular curves by
+other methods. The Best Fit methods are set aside (owner, 2026-11-11).
