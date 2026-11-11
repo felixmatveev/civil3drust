@@ -2,7 +2,9 @@
 // Values copied verbatim from the C3DDUMP output.
 #![allow(clippy::excessive_precision)]
 
-use civil3drust::aecc_profile::{parent_alignment, pointers_to, profile_elements, ProfileElement};
+use civil3drust::aecc_profile::{
+    layout, parent_alignment, pointers_to, profile_elements, CurveDef, ProfileElement,
+};
 use civil3drust::{raw, Point2};
 
 fn open(id: &str) -> raw::Opened {
@@ -10,11 +12,8 @@ fn open(id: &str) -> raw::Opened {
         .unwrap()
         .map(|e| e.unwrap().path())
         .find(|p| {
-            p.file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .starts_with(&format!("{id}_"))
+            let n = p.file_name().unwrap().to_str().unwrap();
+            n.starts_with(&format!("{id}_")) && n.ends_with(".dwg")
         })
         .unwrap();
     raw::open(path.to_str().unwrap()).unwrap()
@@ -70,9 +69,10 @@ fn layout_profile_tangents_and_curve() {
         })
         .unwrap();
     assert_eq!((c.id, c.before, c.after), (3, 1, 2));
-    assert_eq!(c.lead, 0.0);
-    assert!((c.length - 488.7677).abs() < 1e-4);
-    assert_eq!(c.tail, [-1.0; 3]);
+    let CurveDef::ParabolaLength(l) = c.def else {
+        panic!("{:?}", c.def)
+    };
+    assert!((l - 488.7677).abs() < 1e-4);
 }
 
 #[test]
@@ -139,14 +139,13 @@ fn curve_length_typed() {
             _ => None,
         })
         .unwrap();
-    assert_eq!(c.length, 150.0);
+    assert_eq!(c.def, CurveDef::ParabolaLength(150.0));
     assert_eq!(tangents(&els).len(), 2);
 }
 
 #[test]
 fn layout_matches_civil3d_api() {
     // C3DDUMP on S306 (owner; samples/S306_profile_curve_length_150.api.txt).
-    use civil3drust::aecc_profile::layout;
     let o = open("S306");
     let l = layout(&profile_elements(&profile(&o, 0x8D72).data)).unwrap();
     let want = [(-100.0, -20.0), (822.01097503767369, 0.0), (1900.0, -10.0)];
@@ -165,9 +164,9 @@ fn layout_matches_civil3d_api() {
     assert!((s.x - 747.01097503767369).abs() < 1e-9 && (s.y + 1.6268786821531145).abs() < 1e-9);
     assert!((e.x - 897.01097503767369).abs() < 1e-9 && (e.y + 0.69573992186628431).abs() < 1e-9);
     // The high point.
-    let hp = c.start().x - c.grade_in * c.length / c.grade_change();
-    assert!((hp - 852.078506099665).abs() < 1e-9);
-    assert!((c.elevation_at(hp) + 0.48733117234502177).abs() < 1e-9);
+    let hp = c.high_low_point();
+    assert!((hp.x - 852.078506099665).abs() < 1e-9);
+    assert!((hp.y + 0.48733117234502177).abs() < 1e-9);
 
     let l = layout(&profile_elements(&profile(&o, 0x8D91).data)).unwrap();
     let want = [
@@ -179,4 +178,147 @@ fn layout_matches_civil3d_api() {
         assert!((p.x - x).abs() < 1e-9 && (p.y - y).abs() < 1e-9);
     }
     assert!(l.curves.is_empty());
+}
+
+/// Civil 3D's values for one curve (C3DDUMP, S307).
+struct Api {
+    handle: u64,
+    def: CurveDef,
+    pvi: (f64, f64),
+    start: (f64, f64),
+    end: (f64, f64),
+    length: f64,
+    k: f64,
+    high_low: (f64, f64),
+    radius: Option<f64>,
+}
+
+#[test]
+fn curve_types_match_civil3d_api() {
+    // S307 (owner; samples/S307_profile_curve_types.api.txt): one profile per
+    // curve type and parameter, each tangent – curve – tangent.
+    let cases = [
+        Api {
+            handle: 0x8D91, // parabolic-K, K = 50
+            def: CurveDef::ParabolaK(50.0),
+            pvi: (885.34017744899984, -10.0),
+            start: (778.975694724823, -12.428806737070099),
+            end: (991.70466017317665, -12.096554537002586),
+            length: 212.72896544835362,
+            k: 49.999999999999979,
+            high_low: (893.14946189146508, -11.125241826167837),
+            radius: None,
+        },
+        Api {
+            handle: 0x8E1B, // circular-length, L = 200
+            def: CurveDef::CircularLength(200.0),
+            pvi: (576.79917525866222, -25.207147029689715),
+            start: (476.787864089877, -27.598719305224677),
+            end: (676.78786408987628, -28.407785319687264),
+            length: 199.99999999999926,
+            k: 35.763446710745136,
+            high_low: (562.32013250177727, -26.57619812866551),
+            radius: Some(3577.8302968068811),
+        },
+        Api {
+            handle: 0x8E20, // circular-radius, R = 500
+            def: CurveDef::CircularRadius(500.0),
+            pvi: (446.13909273603713, -33.793881967703513),
+            start: (425.23281973748431, -34.772706766578096),
+            end: (467.0540338709568, -34.565624152476516),
+            length: 41.821214133472495,
+            k: 4.9954415073601268,
+            high_low: (448.61703861929527, -34.22558573243964),
+            radius: Some(500.0),
+        },
+        Api {
+            handle: 0x8E2A, // circular-pass-thru
+            def: CurveDef::CircularThrough(Point2::new(437.9567524160084, -44.94837421430729)),
+            pvi: (439.30625092072842, -43.2167551340659),
+            start: (359.1574018969136, -47.181190670514752),
+            end: (519.499889567922, -46.138239258380281),
+            length: 160.34248767100837,
+            k: 18.667530926451128,
+            high_low: (451.47149898806435, -44.899500323904476),
+            radius: Some(1868.5924330747932),
+        },
+        Api {
+            handle: 0x8E4D, // asymmetric, L1 = 100, L2 = 150
+            def: CurveDef::Asymmetric {
+                length1: 100.0,
+                length2: 150.0,
+            },
+            pvi: (1368.5474882013423, -26.842869344524935),
+            start: (1268.5474882013423, -33.836947014937195),
+            end: (1518.5474882013423, -34.676315480019191),
+            length: 250.0,
+            k: 20.464335621230973,
+            high_low: (1363.9669234068581, -30.500092309465956),
+            radius: None,
+        },
+    ];
+    let o = open("S307");
+    let near = |a: f64, b: f64, tol: f64| (a - b).abs() < tol;
+    for c in cases {
+        let h = c.handle;
+        let els = profile_elements(&profile(&o, h).data);
+        let curve = els
+            .iter()
+            .find_map(|e| match e {
+                ProfileElement::Curve(c) => Some(c),
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("{h:X}: no curve"));
+        let close_def = |a: CurveDef, b: CurveDef| {
+            use CurveDef::*;
+            let n = |x: f64, y: f64| (x - y).abs() < 1e-9;
+            match (a, b) {
+                (ParabolaLength(x), ParabolaLength(y))
+                | (ParabolaK(x), ParabolaK(y))
+                | (CircularLength(x), CircularLength(y))
+                | (CircularRadius(x), CircularRadius(y)) => n(x, y),
+                (CircularThrough(p), CircularThrough(q)) => n(p.x, q.x) && n(p.y, q.y),
+                (
+                    Asymmetric { length1, length2 },
+                    Asymmetric {
+                        length1: m1,
+                        length2: m2,
+                    },
+                ) => n(length1, m1) && n(length2, m2),
+                _ => false,
+            }
+        };
+        assert!(close_def(curve.def, c.def), "{h:X} {:?}", curve.def);
+        let l = layout(&els).unwrap_or_else(|| panic!("{h:X}: no layout"));
+        let p = l.curves[0];
+        assert!(
+            near(p.pvi.x, c.pvi.0, 1e-9) && near(p.pvi.y, c.pvi.1, 1e-9),
+            "{h:X}"
+        );
+        let (s, e) = (p.start(), p.end());
+        assert!(
+            near(s.x, c.start.0, 1e-7) && near(s.y, c.start.1, 1e-7),
+            "{h:X} start {s:?}"
+        );
+        assert!(
+            near(e.x, c.end.0, 1e-7) && near(e.y, c.end.1, 1e-7),
+            "{h:X} end {e:?}"
+        );
+        assert!(
+            near(p.length(), c.length, 1e-7),
+            "{h:X} length {}",
+            p.length()
+        );
+        assert!(near(p.k(), c.k, 1e-7), "{h:X} K {}", p.k());
+        let hl = p.high_low_point();
+        assert!(
+            near(hl.x, c.high_low.0, 1e-7) && near(hl.y, c.high_low.1, 1e-7),
+            "{h:X} high/low {hl:?}"
+        );
+        if let (Some(r), civil3drust::aecc_profile::CurveShape::Circular { radius, .. }) =
+            (c.radius, p.shape)
+        {
+            assert!(near(radius, r, 1e-6), "{h:X} radius {radius}");
+        }
+    }
 }

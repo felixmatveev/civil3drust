@@ -23,6 +23,12 @@ versions follow [Semantic Versioning](https://semver.org/).
   by the owner with .NET SDK 8.0.428.
 
 ### Added
+- Profile vertical curves of every free type (S307, owner, with
+  `C3DDUMP`): symmetric parabola by length or K (prefix 6, kinds 0, 2),
+  circular by length, radius or through point (prefix 4, kinds 0, 9, 7),
+  asymmetric parabola (prefix 8, kind 10). `aecc_profile::CurveDef`,
+  `CurveShape`; `layout` places them and reproduces Civil 3D's BVC, EVC,
+  length, K, radius and high/low point to 1e-7.
 - Profiles, first look (S298–S305, owner): `aecc_profile` reads a
   layout profile's tangent and vertical-curve records (alignment-like
   element records with (station, elevation) points) and the links

@@ -14,6 +14,7 @@ without dialog values:
 | S304 | second profile view (8DA9) |
 | S305 | first view (8D70) deleted |
 | S306 | S305 with the vertical curve's length set to 150 |
+| S307 | five profiles, one per curve type and parameter (`profile-methods.md`) |
 
 ## Objects
 
