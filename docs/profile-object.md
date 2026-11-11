@@ -75,9 +75,10 @@ S299's tangents are (−100, −20) → (871.2385, 10) and (871.2385, 10) →
 edges (the view spans stations −100 to 1900), not clipped to the
 alignment (0 to 1742.48). The vertical curve (S300) joins tangents 1 and
 2 (their links become 1 → 3 → 2); its record keeps no points, so it is
-placed from the tangents like a free curve. 488.7677 is most likely its
-length (BVC 626.85, EVC 1115.62 around the PVI; the crest label sits
-near 620): to confirm with the dialog values or `C3DDUMP`.
+placed from the tangents like a free curve. Civil 3D asks only for the
+curve length (owner); 488.7677 is most likely it (BVC 626.85, EVC
+1115.62 around the PVI; the crest label sits near 620): a sample with a
+typed length of 150 is to confirm it.
 
 **PVI edit** (S301): both tangents' shared point changes (elevation 10
 → 0); the curve record does not change.
@@ -95,6 +96,17 @@ Its station and elevation ranges appear as BDs (−100, −40, 1900, 30 in
 S299–S301: elevation range 70 drawn 700 high, vertical exaggeration
 10), with the view's insertion point (1698.18, 165.82); not mapped
 field by field yet. The name is `prpfile1` (the alignment's name + 1).
+
+The owner's Profile View Properties for the second view `prpfile2`
+(on the current drawing, after S304): station range **Automatic** 0+00.00
+to 17+70.68 (the alignment), with the **User specified range** fields
+showing −1+00.00 to 19+00.00; elevation range **Automatic height**
+−60.00 to 20.00, user fields −60.00, 20.00, height 80.00. So the
+station pair −100 / 1900 in the record is the user-specified range,
+kept while Automatic is on, and Civil 3D picked it (the owner typed
+nothing; both modes are automatic by default with a user override). The
+profile's outer points sit on it because the profile was drawn across
+the whole view.
 
 ## Open
 
