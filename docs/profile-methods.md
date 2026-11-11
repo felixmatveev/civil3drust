@@ -43,3 +43,19 @@ The helper objects every profile owns name four of these families:
 `AECC_DB_FIXED_PARABOLA_HLPT`, `AECC_DB_FIXED_PARABOLA_HLPTPATSPEAK`
 (fixed parabola by high/low point), `AECC_DB_FIXED_ARC_HLPT` (fixed
 circular curve by high/low point).
+
+## Vertical Curve Settings (curves drawn with the tangents)
+
+The owner's Vertical Curve Settings dialog (used when tangents are drawn
+with curves), with its defaults: curve type **Parabolic**, **Circular**
+or **Asymmetric**; separately for crest and sag curves:
+
+| type | parameters (defaults) |
+|---|---|
+| Parabolic | Length (150) or K value (50) |
+| Circular | Length (200) or Default Radius (50) |
+| Asymmetric | Length1 (100), Length2 (100) |
+
+S306's curve is a symmetric parabola by length (API `Constraint2
+CurveLength`). The vertical curve record's first BD (0) and its three
+bits are the likely place for the type and for length versus K / radius.
