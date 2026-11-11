@@ -3755,8 +3755,54 @@ ones its shape has.
 | 4 spiral – curve – spiral | elements |
 | 5, 6, 7 reverse spirals | JSON layout group 2562, 2566, 2569 |
 
-**Next samples.** One input edited (to see what the connected alignment
-and its block do).
+**Inputs and connection parameters edited** (S290–S294, owner; all
+from S287, which has three dynamic connected alignments and the static
+8EC8 between WEST-EAST and NORTH-SOUTH):
+
+- **Input moved** (S290: NORTH-SOUTH 20' east). The dynamic ones are
+  rebuilt 20' east, element by element; the block's stations on
+  WEST-EAST follow (8E98: 173.90–198.90 → 193.90–218.90), the stations
+  on NORTH-SOUTH don't change (it only moved), and the trailing values
+  move with it (8E82: 482.88 → 502.88, 458.38 → 478.38). The static 8EC8
+  is left as it was.
+- **Input stations** (S291: WEST-EAST's start 0 → 1000+00). Geometry
+  unchanged; the block's stations on WEST-EAST are rewritten in the new
+  stationing (8E98: 173.90 → 100173.90; 8EA5's 413.53 → 100413.53; the
+  trailing 458.38 of 8E82 → 100458.38, so that one is a WEST-EAST
+  station and 482.88 a coordinate). The static 8EC8's stations stay in
+  the old stationing. So the block's input stations are plain numbers
+  in the input's stationing, kept up to date for dynamic alignments.
+- **Input curve** (S292: WEST-EAST's curve R 544.62 → 2222.48, long
+  enough to reach the connections). The fillet and the three centered
+  arc now start with a fixed three-point curve 25' off the input's curve
+  (R 2247.48, 25.28 long) instead of the tangent, and the next part is
+  placed from it: the fillet is a free curve between that curve and the
+  tangent, stored trimmed like S285's (civil3drust now decodes a free
+  curve between a three-point curve and a line, its centre on the line's
+  normal; joints tangent), the three centered arc starts from the
+  curve's end. The spiral – curve – spiral (8E98) is stored **without
+  elements** (Civil 3D did not rebuild it; its block keeps the old
+  values). The static 8EC8 is unchanged.
+- **Connection parameters** (S293: 8E98 offset in 25 → 30, overlap in
+  25 → 40, overlap out 25 → 50). Per connection, the first BD is the
+  offset and the BD after `B 1` the **connection overlap** (until now
+  called the tangent length): the regions' offset follows (−25 → −30)
+  and their own stations stay 0.1 % of the overlap inside its ends
+  (0.025–24.975 → 0.04–39.96). The elements are rebuilt: tangent 40 at
+  30 off, tangent 50 at the end. The design speed at station 0 moved to
+  15 (= 40 − 25: Civil 3D kept it at the same place).
+- **AUDIT** (S294: S287 re-saved after AUDIT). No change to any
+  connected alignment's geometry; the static one stays.
+
+So a dynamic connected alignment is rebuilt by Civil 3D from its inputs
+and its connection parameters, and a static one is left alone, like
+offsets (S268). A writer that edits an input has to rebuild the
+dynamic connected alignments (or leave the work to Civil 3D, which did
+it on the edit here — not yet tested on open).
+
+**Next samples.** What Civil 3D shows for S292's 8E98 (gone, or an
+error?); and whether a dynamic connected alignment with stale elements
+is rebuilt on open or only on AUDIT (as S268 for offsets).
 
 ## MIST2: re-save field (partially solved, S151–S157)
 

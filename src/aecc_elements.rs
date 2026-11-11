@@ -2865,6 +2865,14 @@ fn resolve_with(
         {
             let prev = i.checked_sub(1).and_then(|j| chain.get(j));
             let next = chain.get(i + 1);
+            // A connected alignment's fillet between a curve and a line
+            // (S292: the input's curve reaches the connection): both stored
+            // trimmed, so the arc runs from one's end to the other's start,
+            // its centre on the line's normal.
+            if let Some(f) = fillet_curve_line(prev, next, *radius) {
+                free[i] = Some(f);
+                continue;
+            }
             let (Some(Element::Tangent(a)), Some(Element::Tangent(b))) = (prev, next) else {
                 return Err(unsupported(format!(
                     "free arc {id} is not between two tangents"
@@ -3750,6 +3758,66 @@ fn tangent_between(c1: &ArcGeometry, c3: &ArcGeometry) -> Option<(Point2, Point2
 }
 
 /// An arc on the circle of `g` from `start` to `end` in `g`'s sense.
+/// A free arc of `radius` between a three-point curve and a tangent (either
+/// order), both stored already trimmed to it: from the element before's end
+/// to the element after's start, with its centre on the tangent's normal at
+/// its end there and `radius` from the other point (S292).
+fn fillet_curve_line(
+    prev: Option<&Element>,
+    next: Option<&Element>,
+    radius: f64,
+) -> Option<(Point2, Point2, ArcGeometry)> {
+    let curve_end = |e: &Element, at_end: bool| match e {
+        Element::Arc(ArcRecord {
+            def: ArcDef::ThreePoint { start, end, .. },
+            ..
+        }) => Some(if at_end { *end } else { *start }),
+        _ => None,
+    };
+    // (the line's point at the arc, the line's direction of travel, the
+    // other point, the line comes after the arc)
+    let (lp, dir, other, line_after) = match (prev?, next?) {
+        (c, Element::Tangent(t)) => (
+            t.start,
+            (t.end.x - t.start.x, t.end.y - t.start.y),
+            curve_end(c, true)?,
+            true,
+        ),
+        (Element::Tangent(t), c) => (
+            t.end,
+            (t.end.x - t.start.x, t.end.y - t.start.y),
+            curve_end(c, false)?,
+            false,
+        ),
+        _ => return None,
+    };
+    let l = dir.0.hypot(dir.1);
+    if l <= 0.0 {
+        return None;
+    }
+    let n = (-dir.1 / l, dir.0 / l);
+    let tol = 1e-6 * (1.0 + lp.x.abs().max(lp.y.abs()));
+    for side in [1.0, -1.0] {
+        let center = Point2::new(lp.x + side * radius * n.0, lp.y + side * radius * n.1);
+        if (center.distance_to(other) - radius).abs() > tol {
+            continue;
+        }
+        // Travelling along the line, the centre on its left means a left
+        // turn; the arc before a line turns the same way it ends.
+        let ccw = side > 0.0;
+        let (start, end) = if line_after { (other, lp) } else { (lp, other) };
+        let g = ArcGeometry {
+            center,
+            radius,
+            counter_clockwise: ccw,
+            sweep: 0.0,
+            length: 0.0,
+        };
+        return Some((start, end, arc_on(&g, start, end)));
+    }
+    None
+}
+
 fn arc_on(g: &ArcGeometry, start: Point2, end: Point2) -> ArcGeometry {
     let tau = std::f64::consts::TAU;
     let ang = |p: Point2| (p.y - g.center.y).atan2(p.x - g.center.x);

@@ -301,6 +301,11 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S287 | `S287_S286_connected_static.dwg` | Civil 3D 2024 | Owner: S286 with "spiral - curve - spiral more than 180deg" (8EC8) converted to static, re-saved. | 999550 | `49b48555a4260a23` |
 | S288 | `S288_connected_reverse_spirals.dwg` | Civil 3D 2024 | Owner: the S287 drawing reworked (sent without notes): only WEST-EAST and NORTH-SOUTH (moved to x = 893.51) are left, joined by two connected alignments, "REVERSE SPIRAL SPIRAL CURVE SPIRAL" (8F18: from a curve 25 off WEST-EAST's, curve-group JSON CurveType 5) and "REVERSE SPIRAL - CURVE - SPIRAL SPIRAL" (8F32: to it, CurveType 6). Both store their middle as a JSON layout group (2562, 2566). | 1000093 | `1af8d8f126991ba2` |
 | S289 | `S289_connected_reverse_sscss.dwg` | Civil 3D 2024 | Owner: "reverse spiral - spiral - curve - spiral - spiral" (8F9A), a connected alignment between WEST-EAST (now with a curve R 1961.50) and NORTH-SOUTH (now with a curve R 1838.51); curve-group JSON CurveType 7. A second copy sent with it was a re-save with the same alignment records (not kept). | 994937 | `1282bd2224f7ac20` |
+| S290 | `S290_S287_input_moved_east.dwg` | Civil 3D 2024 | Owner: S287 with NORTH-SOUTH moved 20' east (step 1). The three dynamic connected alignments are rebuilt 20' east; the static 8EC8 stays. | 993026 | `8c0bc62aacb1c690` |
+| S291 | `S291_S287_input_start_station.dwg` | Civil 3D 2024 | Owner: S287 with WEST-EAST's start station set to 1000+00 (100000.00) in Alignment Properties (step 2). | 993914 | `ddc4fe0c4ada435c` |
+| S292 | `S292_S287_input_radius.dwg` | Civil 3D 2024 | Owner: S287 with WEST-EAST's curve radius changed (R 544.62 → 2222.48; step 3 done on S287 instead of S289). The curve now reaches the connections. | 995450 | `f45b597402e3158d` |
+| S293 | `S293_S287_connection_offset_overlap.dwg` | Civil 3D 2024 | Owner: S287 with Spiral-curve-spiral's (8E98) Connection Parameters changed: offset in 25 → 30 (Left), overlap in 25 → 40, overlap out 25 → 50 (screenshot; step 4). | 992794 | `4355945aee87c244` |
+| S294 | `S294_S287_audit_resaved.dwg` | Civil 3D 2024 | Owner: S287 re-saved after AUDIT (step 5). | 995290 | `a0787c22c03ade2c` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8

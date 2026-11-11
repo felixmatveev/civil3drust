@@ -563,7 +563,7 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
 - **Next samples:** transition type 3 (if the list has one more type);
   Cant set on a centerline, if Civil 3D offers it there.
 
-## MIST20 — the connected (curb return) alignment block after the type — **open (S283–S289)**
+## MIST20 — the connected (curb return) alignment block after the type — **open (S283–S294)**
 
 - **Where:** after `BL type` 3 (alignment-object.md, "Connected (curb
   return) alignments").
@@ -573,6 +573,10 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   block — only in the elements (S284).
 - **Read (S287):** the head after the type: `1, 1` dynamic, `2, 2`
   static.
+- **Read (S290–S293):** the BD after the per-connection `B 1` is the
+  connection overlap; the block's input stations are numbers in the
+  input's stationing, kept up to date for dynamic alignments; one
+  trailing value is a station on the first input.
 - **Read (S288, S289):** reverse spiral types keep their middle as a
   JSON layout group (2562, 2566, 2569); the curve-group JSON's
   CurveType (5, 6, 7) continues the block's type codes.

@@ -293,3 +293,171 @@ fn s289_reverse_spiral_spiral_curve_spiral_spiral() {
     assert_eq!(stray_vertices(r, &segs), 0);
     assert_eq!(connected_inputs(r), Some(vec![0x8C4A, 0x8E11]));
 }
+
+fn decoded(
+    path: &str,
+) -> Vec<(
+    u64,
+    Result<civil3drust::aecc_elements::DecodedElements, String>,
+)> {
+    let o = raw::open(path).unwrap();
+    raw::records(&o.doc, "AECC_ALIGNMENT")
+        .iter()
+        .map(|r| (r.handle, decode_elements(r).map_err(|e| e.to_string())))
+        .collect()
+}
+
+fn segments_of(
+    all: &[(
+        u64,
+        Result<civil3drust::aecc_elements::DecodedElements, String>,
+    )],
+    h: u64,
+) -> Vec<Segment> {
+    let d = all
+        .iter()
+        .find(|(x, _)| *x == h)
+        .unwrap()
+        .1
+        .as_ref()
+        .unwrap();
+    d.elements.iter().map(|e| e.segment).collect()
+}
+
+fn moved(s: &Segment, dx: f64) -> Segment {
+    let m = |p: civil3drust::Point2| civil3drust::Point2::new(p.x + dx, p.y);
+    match *s {
+        Segment::Line { start, end } => Segment::Line {
+            start: m(start),
+            end: m(end),
+        },
+        Segment::Arc {
+            start,
+            end,
+            mut geometry,
+        } => {
+            geometry.center = m(geometry.center);
+            Segment::Arc {
+                start: m(start),
+                end: m(end),
+                geometry,
+            }
+        }
+        Segment::Spiral {
+            start,
+            end,
+            mut geometry,
+        } => {
+            geometry.start = m(geometry.start);
+            Segment::Spiral {
+                start: m(start),
+                end: m(end),
+                geometry,
+            }
+        }
+    }
+}
+
+fn close(a: &Segment, b: &Segment) -> bool {
+    let d = |p: civil3drust::Point2, q: civil3drust::Point2| p.distance_to(q) < 1e-6;
+    d(a.start(), b.start()) && d(a.end(), b.end()) && (a.length() - b.length()).abs() < 1e-6
+}
+
+const BASE: &str = "samples/S287_S286_connected_static.dwg";
+const DYNAMIC: [u64; 3] = [0x8E82, 0x8E98, 0x8EA5];
+const STATIC: u64 = 0x8EC8;
+
+#[test]
+fn s290_input_moved_east() {
+    // NORTH-SOUTH moved 20' east: the dynamic connected alignments are
+    // rebuilt 20' east, the static one stays.
+    let (a, b) = (
+        decoded(BASE),
+        decoded("samples/S290_S287_input_moved_east.dwg"),
+    );
+    for h in DYNAMIC {
+        let (x, y) = (segments_of(&a, h), segments_of(&b, h));
+        assert_eq!(x.len(), y.len());
+        for (s, t) in x.iter().zip(&y) {
+            assert!(close(&moved(s, 20.0), t), "{h:X}");
+        }
+    }
+    assert_eq!(segments_of(&a, STATIC), segments_of(&b, STATIC));
+}
+
+#[test]
+fn s291_input_start_station() {
+    // WEST-EAST's start station 0 → 1000+00: the connected alignments keep
+    // their geometry (the block's stations on WEST-EAST follow).
+    let (a, b) = (
+        decoded(BASE),
+        decoded("samples/S291_S287_input_start_station.dwg"),
+    );
+    for h in DYNAMIC.into_iter().chain([STATIC]) {
+        let (x, y) = (segments_of(&a, h), segments_of(&b, h));
+        assert!(x.iter().zip(&y).all(|(s, t)| close(s, t)), "{h:X}");
+    }
+}
+
+#[test]
+fn s292_input_radius() {
+    // WEST-EAST's curve grows (R 544.62 → 2222.48) and reaches the
+    // connections: the fillet and the three centered arc start with a
+    // fixed curve 25' off the input's curve instead of a tangent; the
+    // spiral – curve – spiral is left without elements; the static one
+    // stays.
+    let (a, b) = (decoded(BASE), decoded("samples/S292_S287_input_radius.dwg"));
+    for (h, len) in [(0x8E82, 292.9941), (0x8EA5, 123.6059)] {
+        let d = b.iter().find(|(x, _)| *x == h).unwrap().1.as_ref().unwrap();
+        assert!((d.length() - len).abs() < 1e-4, "{h:X} {}", d.length());
+        let segs = segments_of(&b, h);
+        let Segment::Arc { geometry: g, .. } = segs[0] else {
+            panic!("{h:X}")
+        };
+        assert!((g.radius - 2247.4846).abs() < 1e-4);
+        // Each joint is tangent: the direction carries over.
+        let h_ = 1e-4;
+        for w in segs.windows(2) {
+            let (l0, l1) = (w[0].length(), w[1].length());
+            let (p0, p1) = (point_on(&w[0], l0 - h_), point_on(&w[0], l0));
+            let (q0, q1) = (point_on(&w[1], 0.0), point_on(&w[1], h_.min(l1)));
+            let p = ((p1.x - p0.x) / h_, (p1.y - p0.y) / h_);
+            let q = ((q1.x - q0.x) / h_, (q1.y - q0.y) / h_);
+            assert!(
+                (p.0 - q.0).abs() < 1e-3 && (p.1 - q.1).abs() < 1e-3,
+                "{h:X} {p:?} {q:?}"
+            );
+            assert!(p1.distance_to(q0) < 1e-6, "{h:X}");
+        }
+    }
+    let scs = &b.iter().find(|(x, _)| *x == 0x8E98).unwrap().1;
+    assert!(scs
+        .as_ref()
+        .is_err_and(|e| e.contains("no element records")));
+    assert_eq!(segments_of(&a, STATIC), segments_of(&b, STATIC));
+}
+
+#[test]
+fn s293_connection_offset_and_overlap() {
+    // Spiral-curve-spiral: offset in 25 → 30, overlap in 25 → 40, overlap
+    // out 25 → 50 (owner's screenshot).
+    let b = decoded("samples/S293_S287_connection_offset_overlap.dwg");
+    let segs = segments_of(&b, 0x8E98);
+    assert!((segs[0].length() - 40.0).abs() < 1e-9);
+    assert!((segs[0].start().y - 30.0).abs() < 1e-9);
+    assert!((segs[4].length() - 50.0).abs() < 1e-9);
+    let total: f64 = segs.iter().map(Segment::length).sum();
+    assert!((total - 525.6194).abs() < 1e-4);
+}
+
+#[test]
+fn s294_audit_keeps_the_static_alignment() {
+    let (a, b) = (
+        decoded(BASE),
+        decoded("samples/S294_S287_audit_resaved.dwg"),
+    );
+    for h in DYNAMIC.into_iter().chain([STATIC]) {
+        let (x, y) = (segments_of(&a, h), segments_of(&b, h));
+        assert!(x.iter().zip(&y).all(|(s, t)| close(s, t)), "{h:X}");
+    }
+}

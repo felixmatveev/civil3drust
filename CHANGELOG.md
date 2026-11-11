@@ -17,6 +17,13 @@ versions follow [Semantic Versioning](https://semver.org/).
   on a closed pipe.
 
 ### Added
+- Connected alignments after their inputs or parameters change (S290–
+  S294, owner): moved input (rebuilt), input start station (block
+  stations follow), input curve reaching the connection (a fixed curve
+  replaces the first tangent; the spiral – curve – spiral is left
+  without elements), offset and overlaps edited, AUDIT. A free curve
+  between a three-point curve and a line now decodes (S292's fillet).
+  Tests `s290_…` to `s294_…`.
 - Connected Reverse Spiral-Spiral-Curve-Spiral-Spiral (S289, owner):
   decodes as the centerline group 2569; curve group types 2–7 and the
   curve-group JSON's length names mapped to the layout group's. Test
