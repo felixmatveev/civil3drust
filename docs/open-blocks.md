@@ -58,10 +58,12 @@ views — **opaque as a record**.
 
 | object | status | where |
 |---|---|---|
-| Site (`AECC_PARCEL`, `AeccImpFace`): data apart from graphics, name, description, references | opaque | aecc_site |
-| Site container (`AECC_FEATURE_STYLE`): header before the nodes, the face list after the edges, the style slot list (20 → 19 slots after a re-save) | partial | aecc_topology, feature-line-object.md |
+| Site (`AECC_PARCEL`, `AeccImpFace`): the 760-bit block apart from key, date stamp and two defaults; the parcel counters | partial (S321–S331) | site-object.md, MIST23 |
+| Site container (`AECC_FEATURE_STYLE`): read to the last bit (nodes, edge slots, faces, tail); open: the loop selector, flag bits, the counter pairs | mapped (S321–S331; readers not updated yet) | site-object.md |
 | Alignment companion: tail after the edge | seen, constant | aecc_topology |
-| Site list (`AECC_PARCEL_NODE`), alignment list (`AECC_ALIGNMENT_PARCEL_NODE`) | references read | aecc_site |
+| Site list (`AECC_PARCEL_NODE`): keys, names, order, last-created pointer | mapped; unnamed sites open | site-object.md, MIST22 |
+| Alignment list (`AECC_ALIGNMENT_PARCEL_NODE`) | references read | aecc_site |
+| Parcels (`AECC_PARCEL` per closed region): tail and references read, the rest opaque | partial | site-object.md |
 | Profile helpers (`AECC_DB_FLOAT_TANGENT_GRADELEN`, `…FIXED_PARABOLA_HLPT`, `…HLPTPATSPEAK`, `AECC_ENTITYCIRCLEINFOS`, `AECC_ENTITYEXTENDPARAM`, `…FIXED_ARC_HLPT`): 11 bytes, empty so far | seen | profile-object.md |
 | `AECC_NOTIFICATIONINFOS`: 18 constant bits | partial | profile-object.md |
 | Label groups (alignment station/geometry/design speed/station equation/…; profile line/PVI/sag/crest; view data band) | references read; bodies copied | alignment-map.md §2, profile-object.md |

@@ -6,6 +6,18 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Site study, first batch (docs and samples only): S321–S331, the
+  owner's eleven-step site series (empty site, alignment moved in,
+  created in the site, crossings, a parcel, a feature line, rename,
+  second site, move out, site deleted). `docs/site-object.md` maps the
+  site record's tail, the site list, the parcels' tail and the whole
+  container/companion record (nodes, edge slots with free slots, faces
+  with loops, counters and lists), checked on all 105 container records
+  of S101–S112 and S313–S331. New open questions MIST22 (sites without
+  a name string) and MIST23 (parcel counters). Reader gaps found are
+  listed there; the library is unchanged until the round closes.
+
 ### Changed
 - `viewer/` and `hexview/` moved to `archive/` (D-075), unmaintained.
   The workbench took over what they did: hexview's window is its

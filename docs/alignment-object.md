@@ -1699,6 +1699,9 @@ as stored; elements of a detached piece can't be edited.
 
 ## Sites (O7: S101–S103)
 
+The layout of the site record, container, site list and parcels is now
+in `site-object.md` (S321–S331); this section keeps the first samples.
+
 **Samples** (owner): S101 = S98 with the four generated alignments
 deleted, `Alignment - (1)` renamed `TEST`, and an empty site `TEST SITE`
 (description on two lines); S102 = `TEST` moved into the site; S103 = a

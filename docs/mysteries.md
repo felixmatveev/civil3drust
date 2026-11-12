@@ -607,6 +607,26 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   writer has to reproduce; civil3drust does not paste. Untested: *Move to
   Site* on the copy, a new feature line drawn in `TEST1`.
 
+## MIST22 — sites without a name string — **open (S321–S330)**
+
+- **What:** the two sites of the S321 series were saved with no name:
+  four strings in the site record instead of five, no string in the site
+  list, and a key without the high bit (`0200D214`, `00000101`) where a
+  named site has `0x8000_0000 | id`. Renaming one to `B` (S328) gave it
+  the string and a normal key (`docs/site-object.md`, "Site list").
+- **To settle:** what Prospector shows as the name of such a site (the
+  owner's `C3DDUMP` `Name`), and whether the key values mean anything.
+
+## MIST23 — a site's parcel counters — **open (S112, S326)**
+
+- **What:** with parcels in a site, the site record's last values change
+  (`1, 1, 1` → `1, 1, 3` with two parcels in S112, `2, 2, 1, 1` with one
+  in S326) and so does the container's tail: the first counter pair
+  (1, 1) → (1, 3) / (1, 2) and the first list `{1, 2}` / `{1}`. The
+  dialog of S328 shows next automatic area counter 2, next manual 1.
+- **To settle:** one sample with both Numbering counters set to distinct
+  values (say 7 and 5) in a site with a parcel.
+
 ## Not sampled yet (not mysteries, just gaps)
 
 - Real-world alignments. A 2020 production drawing (checked locally

@@ -332,6 +332,17 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S318 | `S318_fl_pasted_site_renamed.dwg` | civil3drust | `exp_site_name S317 … 'TEST|1' TEST1`: the pasted copy's site renamed in its record and the site list, nothing else (MIST21). | 946398 | `c65c8bb2f1025ae9` |
 | S319 | `S319_S318_civ3d_resaved.dwg` | Civil 3D 2024 | Owner: S318 opened (clean open and AUDIT) and saved; the pasted copy still cannot be quick-edited (grips and the tabular elevation editor work). `C3DDUMPALL` output (control classes) next to it (`.api-all.txt`). | 974148 | `aeb47f658bfeee41` |
 | S320 | `S320_S319_explode_rebuilt.dwg` | Civil 3D 2024 | Owner: S319 with the pasted copy exploded to a 3D polyline and converted back to a feature line (8E0E), which can be edited. | 968352 | `0128036e49ef4228` |
+| S321 | `S321_site_empty_site.dwg` | Civil 3D 2024 | Owner: site series (`docs/site-object.md`), one drawing saved after each step. Step 1: new drawing with one empty site (8D58, container 8D59). The site has no name string (MIST22). | 974607 | `f6f9e8e8c4a19648` |
+| S322 | `S322_site_alignment_siteless.dwg` | Civil 3D 2024 | Owner: S321 + `Alignment - (1)` (8D6A), two tangents (2480.30, 7321.78) → (2548.82, 7405.54) → (2598.69, 7316.58), siteless (companion 8D69). | 981452 | `469f3e36ae7e4c76` |
+| S323 | `S323_site_alignment_into_site.dwg` | Civil 3D 2024 | Owner: S322 with 8D6A moved into the site. | 983762 | `fd772519f6afe449` |
+| S324 | `S324_site_second_alignment_in_site.dwg` | Civil 3D 2024 | Owner: S323 + `Alignment - (2)` (8D8C), two tangents, created in the site, crossing nothing. | 963791 | `ead476e3c4406d73` |
+| S325 | `S325_site_crossing_alignment.dwg` | Civil 3D 2024 | Owner: S324 + `Alignment - (3)` (8DA4), one tangent crossing `Alignment - (1)` once (no closed region). | 965132 | `b1630ee9b57e2644` |
+| S326 | `S326_site_closed_region_parcel.dwg` | Civil 3D 2024 | Owner: S325 + `Alignment - (4)` (8DB7), one tangent crossing (1) and (3): a closed region (a quadrilateral through (1)'s PI); Civil 3D created parcel 8DBF. | 971088 | `0adb8ee6ffaf30ce` |
+| S327 | `S327_site_feature_line_crossing.dwg` | Civil 3D 2024 | Owner: S326 + a feature line (8DD4) in the site, two points (elevations 0 and 5.47), crossing `Alignment - (3)`. | 988154 | `411df4d70693aef8` |
+| S328 | `S328_site_renamed_b.dwg` | Civil 3D 2024 | Owner: S327 with the site renamed `B` in Site Properties. Screenshots of the three tabs (description `Test site`; display mode Use elevation, elevation 5.000, mid-ordinate 0.100, construction layers 0; next automatic area counter 2, next manual 1) — only the name differs in the file. | 989490 | `d73f00ec3460a00d` |
+| S329 | `S329_site_second_site_fl_moved.dwg` | Civil 3D 2024 | Owner: S328 + a second site (8DEB, container 8DEC; no name string) with the feature line moved into it. | 980402 | `a0ac940ad84e35ea` |
+| S330 | `S330_site_alignment_back_to_none.dwg` | Civil 3D 2024 | Owner: S329 with `Alignment - (1)` moved back to `<None>` (new companion 8DFB); Civil 3D deleted the parcel. | 993594 | `3ad33f01f4d07b4b` |
+| S331 | `S331_site_second_site_deleted.dwg` | Civil 3D 2024 | Owner: S330 with the second site deleted; its feature line was deleted with it (owner). | 976562 | `55b69c5394cedcf6` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
 S5→S6 (segment 2 +10 ft), S7 vs S6 (generated vs Civil 3D), S7→S8
