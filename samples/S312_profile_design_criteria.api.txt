@@ -1,0 +1,1851 @@
+drawing: C:\Users\felix\Downloads\S312_profile_design_criteria.dwg
+written: 2026-11-12 00:00:58Z
+
+[8C4A] prpfile
+  AlignmentType: Centerline
+  CreationMode: ManuallyCreation
+  FingerPrint: 0x3C3B3333DAC03915 (4340118963707984149)
+  Description: 
+  StyleName: Proposed
+  IsSiteless: True
+  SiteName: 
+  StartingStation: 0
+  EndingStation: 1270.65099583324
+  ReferencePointStation: 0
+  Length: 1270.65099583324
+  UseDesignSpeed: False
+  UseDesignCriteriaFile: False
+  CriteriaFileName: 
+  UseDesignCheckSet: False
+  DesignCheckSetName: 
+  StationEquations.Count: 0
+  DesignSpeed #1: station 0, value 60, comment ""
+  Entity 1 (before <EntityNotFoundException: NoPrevAlignmentEntity,>, after 3): Line, Constraint1 Fixed, Constraint2 TwoPoints, sub-entities 1
+  Entity 2 (before 3, after <EntityNotFoundException: NoNextAlignmentEntity,>): Line, Constraint1 Fixed, Constraint2 TwoPoints, sub-entities 1
+  Entity 3 (before 1, after 2): Arc, Constraint1 Free, Constraint2 PassThrough, sub-entities 1
+
+  Profile [8E87] Profile
+    AlignmentId: 8C4A
+    Annotative: NotApplicable
+    Area: 0
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DataSourceId: <InvalidOperationException: No support for this ProfileType of profile.>
+    DataSourceName: <InvalidOperationException: No support for this ProfileType of profile.>
+    Description: 
+    DesignCheckSetId: <InvalidOperationException: You must use DesignSpeedBase first.>
+    DesignCheckSetName: <InvalidOperationException: No DesignCheckSet is available.>
+    DesignSpeedBased: False
+    DisplayName: Profile
+    DrawableType: Geometry
+    EdgeStyleId: null
+    ElevationMax: -2.6319689285531247
+    ElevationMin: -4.8625360808383444
+    EndParam: 1
+    EndPoint: <Exception: eNotApplicable>
+    EndingStation: 172.06997306219273
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FingerPrint: 18239020795570616329
+    FolderId: null
+    ForceAnnoAllVisible: True
+    Handle: 8E87
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8E87
+    IsAProxy: False
+    IsCancelling: False
+    IsEditable: True
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: True
+    IsWriteEnabled: False
+    Layer: C-ROAD-PROF
+    LayerId: 3AD
+    LayerKey: 
+    Length: 136.47644449629115
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: float vertical curve thru point
+    NeedsPromoting: False
+    ObjectId: 8E87
+    Offset: 0
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    Plinegen: True
+    PlotStyleName: ByLayer
+    ProfileType: FG
+    ProjectState: New
+    ReceiveShadows: True
+    ShowToolTip: True
+    StartParam: 0
+    StartPoint: <Exception: eNotApplicable>
+    StartingStation: 35.593528565901579
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    UpdateMode: Static
+    UseDesignCheckSet: False
+    UseDesignCriteriaFile: False
+    Visible: True
+    VisualStyleId: null
+    PVIs[0] ProfilePVI
+      Elevation: -4.8625360808383444
+      EntityAfter: 1
+      EntityBefore: <InvalidOperationException: Cannot find entity before current PVI.>
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: 0.023992725032014765
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 35.593528565901579
+      Station: 35.593528565901579
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    PVIs[1] ProfilePVI
+      Elevation: -2.8137648426324282
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: 1
+      GradeIn: 0.023992725032014779
+      GradeOut: 0.0035586881928454822
+      HeadlightSightDistance: <InvalidOperationException: Value is out of range.>
+      PVIType: ParabolaSymmetric
+      PassingSightDistance: 807.843261420055
+      RawStation: 120.98488096426948
+      Station: 120.98488096426948
+      StoppingSightDistance: 376.31457873198769
+    PVIs[2] ProfilePVI
+      Elevation: -2.6319689285531247
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: 2
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: <InvalidOperationException: GradeOut is invalid for the last PVI in the profile.>
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 172.06997306219273
+      Station: 172.06997306219273
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    Entities[0] ProfileTangent
+      Constraint1: Fixed
+      Constraint2: PassThroughPt1AndPt2
+      EndElevation: -4.0394354105730521
+      EndStation: 69.899788866346213
+      EntityAfter: 2
+      EntityBefore: <EntityNotFoundException: There is no ProfileEntity before.>
+      EntityId: 1
+      EntityType: Tangent
+      Grade: 0.023992725032014765
+      HighestDesignSpeed: 60
+      Length: 34.306260300444634
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValueSSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      StartElevation: -4.8625360808383444
+      StartStation: 35.593528565901579
+      ThroughPoint1Elevation: -4.8625360808383444
+      ThroughPoint1Station: 35.593528565901579
+      ThroughPoint2Elevation: -2.3239649336254828
+      ThroughPoint2Station: 141.39939862966094
+    Entities[1] ProfileParabolaSymmetric
+      Constraint1: FloatOnPrev
+      Constraint2: PreviousSubEntPassPtAndParameter
+      CurveType: Crest
+      EndElevation: -2.6319689285531247
+      EndStation: 172.06997306219273
+      EntityAfter: <EntityNotFoundException: There is no ProfileEntity after.>
+      EntityBefore: 1
+      EntityId: 2
+      EntityType: ParabolaSymmetric
+      GradeAtThroughPoint1: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeAtThroughPoint2: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeChange: -0.020434036839169296
+      GradeIn: 0.023992725032014779
+      GradeOut: 0.0035586881928454822
+      HighLowPointElevation: -2.6319689285531247
+      HighLowPointStation: 172.06997306219273
+      HighestDesignSpeed: 60
+      K: 50.000000000000021
+      Length: 102.17018419584652
+      M: 1.9999999999999993
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: -1
+      MinimumKValueSSD: -1
+      PVIElevation: -2.8137648426324282
+      PVIStation: 120.98488096426948
+      Radius: 5000.0000000000018
+      StartElevation: -4.0394354105730521
+      StartStation: 69.899788866346213
+      TangentOffsetAtPVI: 0.26096866346533004
+      ThroughPoint1Elevation: -2.6319689285531247
+      ThroughPoint1Station: 172.06997306219273
+      ThroughPoint2Elevation: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      ThroughPoint2Station: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      ThroughPoint3Elevation: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      ThroughPoint3Station: <InvalidOperationException: Cannot set this property according to current constraint type.>
+
+  Profile [8FCD] Profile
+    AlignmentId: 8C4A
+    Annotative: NotApplicable
+    Area: 0
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DataSourceId: <InvalidOperationException: No support for this ProfileType of profile.>
+    DataSourceName: <InvalidOperationException: No support for this ProfileType of profile.>
+    Description: 
+    DesignCheckSetId: <InvalidOperationException: You must use DesignSpeedBase first.>
+    DesignCheckSetName: <InvalidOperationException: No DesignCheckSet is available.>
+    DesignSpeedBased: False
+    DisplayName: Profile
+    DrawableType: Geometry
+    EdgeStyleId: null
+    ElevationMax: 0
+    ElevationMin: 0
+    EndParam: 1
+    EndPoint: <Exception: eNotApplicable>
+    EndingStation: 0
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FingerPrint: 280238009697504062
+    FolderId: null
+    ForceAnnoAllVisible: True
+    Handle: 8FCD
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8FCD
+    IsAProxy: False
+    IsCancelling: False
+    IsEditable: True
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: True
+    IsWriteEnabled: False
+    Layer: C-ROAD-PROF
+    LayerId: 3AD
+    LayerKey: 
+    Length: 0
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: float vertical curve thru point (1) (1) (1)
+    NeedsPromoting: False
+    ObjectId: 8FCD
+    Offset: 0
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    Plinegen: True
+    PlotStyleName: ByLayer
+    ProfileType: FG
+    ProjectState: New
+    ReceiveShadows: True
+    ShowToolTip: True
+    StartParam: 0
+    StartPoint: <Exception: eNotApplicable>
+    StartingStation: 0
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    UpdateMode: Static
+    UseDesignCheckSet: False
+    UseDesignCriteriaFile: False
+    Visible: True
+    VisualStyleId: null
+
+  Profile [8FE3] Profile
+    AlignmentId: 8C4A
+    Annotative: NotApplicable
+    Area: 0
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DataSourceId: <InvalidOperationException: No support for this ProfileType of profile.>
+    DataSourceName: <InvalidOperationException: No support for this ProfileType of profile.>
+    Description: 
+    DesignCheckSetId: 33A0
+    DesignCheckSetName: Basic
+    DesignSpeedBased: True
+    DisplayName: Profile
+    DrawableType: Geometry
+    EdgeStyleId: null
+    ElevationMax: -2.6319689285531247
+    ElevationMin: -4.8625360808383444
+    EndParam: 1
+    EndPoint: <Exception: eNotApplicable>
+    EndingStation: 342.67381076714446
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FingerPrint: 4467593356567579693
+    FolderId: null
+    ForceAnnoAllVisible: True
+    Handle: 8FE3
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8FE3
+    IsAProxy: False
+    IsCancelling: False
+    IsEditable: True
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: True
+    IsWriteEnabled: False
+    Layer: C-ROAD-PROF
+    LayerId: 3AD
+    LayerKey: 
+    Length: 136.47644449629115
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: float vertical curve thru point (1)
+    NeedsPromoting: False
+    ObjectId: 8FE3
+    Offset: 0
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    Plinegen: True
+    PlotStyleName: ByLayer
+    ProfileType: FG
+    ProjectState: New
+    ReceiveShadows: True
+    ShowToolTip: True
+    StartParam: 0
+    StartPoint: <Exception: eNotApplicable>
+    StartingStation: 206.19736627085331
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    UpdateMode: Static
+    UseDesignCheckSet: True
+    UseDesignCriteriaFile: True
+    Visible: True
+    VisualStyleId: null
+    PVIs[0] ProfilePVI
+      Elevation: -4.8625360808383444
+      EntityAfter: 1
+      EntityBefore: <InvalidOperationException: Cannot find entity before current PVI.>
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: 0.023992725032014779
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 206.19736627085331
+      Station: 206.19736627085331
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    PVIs[1] ProfilePVI
+      Elevation: -2.8137648426324264
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: 1
+      GradeIn: 0.023992725032014765
+      GradeOut: 0.0035586881928454531
+      HeadlightSightDistance: <InvalidOperationException: Value is out of range.>
+      PVIType: ParabolaSymmetric
+      PassingSightDistance: 807.84326142005432
+      RawStation: 291.58871866922129
+      Station: 291.58871866922129
+      StoppingSightDistance: 376.31457873198735
+    PVIs[2] ProfilePVI
+      Elevation: -2.6319689285531247
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: 2
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: <InvalidOperationException: GradeOut is invalid for the last PVI in the profile.>
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 342.67381076714446
+      Station: 342.67381076714446
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    Entities[0] ProfileTangent
+      Constraint1: Fixed
+      Constraint2: PassThroughPt1AndPt2
+      EndElevation: -4.0394354105730486
+      EndStation: 240.50362657129807
+      EntityAfter: 2
+      EntityBefore: <EntityNotFoundException: There is no ProfileEntity before.>
+      EntityId: 1
+      EntityType: Tangent
+      Grade: 0.023992725032014779
+      HighestDesignSpeed: 60
+      Length: 34.306260300444762
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValueSSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      StartElevation: -4.8625360808383444
+      StartStation: 206.19736627085331
+      ThroughPoint1Elevation: -4.8625360808383444
+      ThroughPoint1Station: 206.19736627085331
+      ThroughPoint2Elevation: -2.3239649336254828
+      ThroughPoint2Station: 312.00323633461267
+    Entities[1] ProfileParabolaSymmetric
+      Constraint1: FloatOnPrev
+      Constraint2: PreviousSubEntPassPtAndParameter
+      CurveType: Crest
+      EndElevation: -2.6319689285531247
+      EndStation: 342.67381076714446
+      EntityAfter: <EntityNotFoundException: There is no ProfileEntity after.>
+      EntityBefore: 1
+      EntityId: 2
+      EntityType: ParabolaSymmetric
+      GradeAtThroughPoint1: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeAtThroughPoint2: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeChange: -0.020434036839169313
+      GradeIn: 0.023992725032014765
+      GradeOut: 0.0035586881928454531
+      HighLowPointElevation: -2.6319689285531247
+      HighLowPointStation: 342.67381076714446
+      HighestDesignSpeed: 60
+      K: 49.999999999999915
+      Length: 102.17018419584639
+      M: 2.0000000000000031
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: 357
+      MinimumKValueSSD: 151
+      PVIElevation: -2.8137648426324264
+      PVIStation: 291.58871866922129
+      Radius: 4999.9999999999918
+      StartElevation: -4.0394354105730486
+      StartStation: 240.50362657129807
+      TangentOffsetAtPVI: 0.26096866346532993
+      ThroughPoint1Elevation: -2.6319689285531247
+      ThroughPoint1Station: 342.67381076714446
+      ThroughPoint2Elevation: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      ThroughPoint2Station: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      ThroughPoint3Elevation: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      ThroughPoint3Station: <InvalidOperationException: Cannot set this property according to current constraint type.>
+
+  ProfileView [8DA9] ProfileView
+    AlignmentId: 8C4A
+    AlignmentName: prpfile
+    Annotative: NotApplicable
+    Area: 0
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    Description: 
+    DisplayName: Profile View
+    DrawableType: Geometry
+    EdgeStyleId: null
+    ElevationMax: -2.6319689285531247
+    ElevationMin: -4.8625360808383444
+    ElevationRangeMode: Automatic
+    EndParam: 1
+    EndPoint: (1722.0432475839916, 1249.483742143073, 1)
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FingerPrint: 0
+    FolderId: null
+    ForceAnnoAllVisible: True
+    Handle: 8DA9
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8DA9
+    IsAProxy: False
+    IsCancelling: False
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: True
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: True
+    IsWriteEnabled: False
+    Layer: C-ROAD-PROF-VIEW
+    LayerId: 8D6F
+    LayerKey: AeccGraphProfile
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Location: (1722.0432475839916, 1249.483742143073, 0)
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: prpfile2
+    NeedsPromoting: False
+    ObjectId: 8DA9
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    PlotStyleName: ByLayer
+    ProjectState: New
+    ReceiveShadows: True
+    ShowToolTip: True
+    SplitDatumRounding: ExactElevation
+    SplitHeight: 0
+    SplitProfileView: False
+    SplitStationMode: Manual
+    SplitStationRounding: ExactStation
+    StartParam: 0
+    StartPoint: (1722.0432475839916, 1249.483742143073, 0)
+    StationEnd: 1400
+    StationRangeMode: Automatic
+    StationStart: -100
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    Visible: True
+    VisualStyleId: null
+
+== Sites
+
+== Feature lines
+
+== Other Civil 3D entities
+
+  Entity [8E8B] ProfileCrestCurveLabelGroup (AECC_VALIGNMENT_CRESTCURVE_LABEL_GROUP)
+    AllowsAnchorMarker: False
+    AllowsDimensionAnchors: True
+    AllowsDragging: True
+    AllowsFlipping: True
+    AllowsLeaderAttachment: False
+    AllowsPinning: True
+    AllowsReversing: False
+    Annotative: NotApplicable
+    Area: 0
+    AutoStagger: None
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DefaultDimensionAnchorOption: ViewTop
+    DefaultDimensionAnchorValue: 0.083333333333333329
+    Description: <CivilException: Retrieve attribute failed.>
+    DisplayName: Vertical Alignment Crest Curve Label Group
+    DrawableType: Geometry
+    EdgeStyleId: null
+    EndParam: 1
+    EndPoint: (1, 0, 0)
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FeatureId: 8E87
+    FingerPrint: 0
+    FolderId: null
+    ForceAnnoAllVisible: True
+    Handle: 8E8B
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8E8B
+    IsAProxy: False
+    IsCancelling: False
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: False
+    IsWriteEnabled: False
+    LabelType: ProfileCrestCurve
+    Layer: C-ROAD-PROF-TEXT
+    LayerId: 3CE
+    LayerKey: 
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Mask: FromLabelStyle
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: <CivilException: Retrieve attribute failed.>
+    NeedsPromoting: False
+    ObjectId: 8E8B
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    PlotStyleName: ByLayer
+    ProjectState: New
+    RangeEnd: 172.06997306219273
+    RangeEndFromFeature: True
+    RangeStart: 35.593528565901579
+    RangeStartFromFeature: True
+    ReceiveShadows: True
+    RotationType: NotSupported
+    ShowToolTip: <CivilException: Retrieve attribute failed.>
+    StartParam: 0
+    StartPoint: (0, 0, 0)
+    StyleId: 3958
+    StyleName: Crest & Sag w HP and LP
+    SubEntityCount: 1
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    ViewId: 8DA9
+    Visible: True
+    VisualStyleId: null
+    GetLifetimeService(): null
+    GetReactors() [1]: ImpRXObject
+    GetReferenceInfo(): <InvalidOperationException: It is not a reference entity.>
+
+  Entity [8E8A] ProfileSagCurveLabelGroup (AECC_VALIGNMENT_SAGCURVE_LABEL_GROUP)
+    AllowsAnchorMarker: False
+    AllowsDimensionAnchors: True
+    AllowsDragging: True
+    AllowsFlipping: True
+    AllowsLeaderAttachment: False
+    AllowsPinning: True
+    AllowsReversing: False
+    Annotative: NotApplicable
+    Area: 0
+    AutoStagger: None
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DefaultDimensionAnchorOption: ViewTop
+    DefaultDimensionAnchorValue: 0.083333333333333329
+    Description: <CivilException: Retrieve attribute failed.>
+    DisplayName: Vertical Alignment Sag Curve Label Group
+    DrawableType: Geometry
+    EdgeStyleId: null
+    EndParam: 1
+    EndPoint: (1, 0, 0)
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FeatureId: 8E87
+    FingerPrint: 0
+    FolderId: null
+    ForceAnnoAllVisible: True
+    Handle: 8E8A
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8E8A
+    IsAProxy: False
+    IsCancelling: False
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: False
+    IsWriteEnabled: False
+    LabelType: ProfileSagCurve
+    Layer: C-ROAD-PROF-TEXT
+    LayerId: 3CE
+    LayerKey: 
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Mask: FromLabelStyle
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: <CivilException: Retrieve attribute failed.>
+    NeedsPromoting: False
+    ObjectId: 8E8A
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    PlotStyleName: ByLayer
+    ProjectState: New
+    RangeEnd: 172.06997306219273
+    RangeEndFromFeature: True
+    RangeStart: 35.593528565901579
+    RangeStartFromFeature: True
+    ReceiveShadows: True
+    RotationType: NotSupported
+    ShowToolTip: <CivilException: Retrieve attribute failed.>
+    StartParam: 0
+    StartPoint: (0, 0, 0)
+    StyleId: 3958
+    StyleName: Crest & Sag w HP and LP
+    SubEntityCount: 0
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    ViewId: 8DA9
+    Visible: True
+    VisualStyleId: null
+    GetLifetimeService(): null
+    GetReactors() [1]: ImpRXObject
+    GetReferenceInfo(): <InvalidOperationException: It is not a reference entity.>
+
+  Entity [8E89] ProfilePVILabelGroup (AECC_VALIGNMENT_PVI_LABEL_GROUP)
+    AllowsAnchorMarker: False
+    AllowsDimensionAnchors: True
+    AllowsDragging: True
+    AllowsFlipping: True
+    AllowsLeaderAttachment: False
+    AllowsPinning: True
+    AllowsReversing: False
+    Annotative: NotApplicable
+    Area: 0
+    AutoStagger: Both
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DefaultDimensionAnchorOption: Above
+    DefaultDimensionAnchorValue: 0.25
+    Description: <CivilException: Retrieve attribute failed.>
+    DisplayName: Vertical Alignment PVI Label Group
+    DrawableType: Geometry
+    EdgeStyleId: null
+    EndParam: 1
+    EndPoint: (1, 0, 0)
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FeatureId: 8E87
+    FingerPrint: 0
+    FolderId: null
+    ForceAnnoAllVisible: True
+    Handle: 8E89
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8E89
+    IsAProxy: False
+    IsCancelling: False
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: False
+    IsWriteEnabled: False
+    LabelType: ProfileGradeBreaks
+    Layer: C-ROAD-PROF-TEXT
+    LayerId: 3CE
+    LayerKey: 
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Mask: FromLabelStyle
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: <CivilException: Retrieve attribute failed.>
+    NeedsPromoting: False
+    ObjectId: 8E89
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    PlotStyleName: ByLayer
+    ProjectState: New
+    RangeEnd: 172.06997306219273
+    RangeEndFromFeature: True
+    RangeStart: 35.593528565901579
+    RangeStartFromFeature: True
+    ReceiveShadows: True
+    RotationType: NotSupported
+    ShowToolTip: <CivilException: Retrieve attribute failed.>
+    StaggerLineHeight1: 0.083333333333333329
+    StaggerLineHeight2: 0.16666666666666666
+    StartParam: 0
+    StartPoint: (0, 0, 0)
+    StyleId: 23E9
+    StyleName: Station over Elevation
+    SubEntityCount: 2
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    ViewId: 8DA9
+    Visible: True
+    VisualStyleId: null
+    Weeding: 100
+    GetLifetimeService(): null
+    GetReactors() [1]: ImpRXObject
+    GetReferenceInfo(): <InvalidOperationException: It is not a reference entity.>
+
+  Entity [8E88] ProfileLineLabelGroup (AECC_VALIGNMENT_LINE_LABEL_GROUP)
+    AllowsAnchorMarker: False
+    AllowsDimensionAnchors: True
+    AllowsDragging: True
+    AllowsFlipping: True
+    AllowsLeaderAttachment: False
+    AllowsPinning: True
+    AllowsReversing: False
+    Annotative: NotApplicable
+    Area: 0
+    AutoStagger: None
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DefaultDimensionAnchorOption: Above
+    DefaultDimensionAnchorValue: 0.25
+    Description: <CivilException: Retrieve attribute failed.>
+    DisplayName: Vertical Alignment Line Label Group
+    DrawableType: Geometry
+    EdgeStyleId: null
+    EndParam: 1
+    EndPoint: (1, 0, 0)
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FeatureId: 8E87
+    FingerPrint: 0
+    FolderId: null
+    ForceAnnoAllVisible: True
+    Handle: 8E88
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8E88
+    IsAProxy: False
+    IsCancelling: False
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: False
+    IsWriteEnabled: False
+    LabelType: ProfileLine
+    Layer: C-ROAD-PROF-TEXT
+    LayerId: 3CE
+    LayerKey: 
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Mask: FromLabelStyle
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: <CivilException: Retrieve attribute failed.>
+    NeedsPromoting: False
+    ObjectId: 8E88
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    PlotStyleName: ByLayer
+    ProjectState: New
+    RangeEnd: 172.06997306219273
+    RangeEndFromFeature: True
+    RangeStart: 35.593528565901579
+    RangeStartFromFeature: True
+    ReceiveShadows: True
+    RotationType: NotSupported
+    ShowToolTip: <CivilException: Retrieve attribute failed.>
+    StartParam: 0
+    StartPoint: (0, 0, 0)
+    StyleId: 241E
+    StyleName: Percent Grade
+    SubEntityCount: 1
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    ViewId: 8DA9
+    Visible: True
+    VisualStyleId: null
+    Weeding: 0
+    GetLifetimeService(): null
+    GetReactors() [1]: ImpRXObject
+    GetReferenceInfo(): <InvalidOperationException: It is not a reference entity.>
+
+  Entity [8DAA] ProfileDataBandLabelGroup (AECC_PROFILEDATABAND_LABELGROUP)
+    AllowsAnchorMarker: False
+    AllowsDimensionAnchors: False
+    AllowsDragging: True
+    AllowsFlipping: False
+    AllowsLeaderAttachment: False
+    AllowsPinning: True
+    AllowsReversing: False
+    Annotative: NotApplicable
+    Area: 0
+    AutoStagger: Right
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DefaultDimensionAnchorOption: <InvalidOperationException: This type of LabelGroup doesn't support this property.>
+    DefaultDimensionAnchorValue: 3.64447593682178E-312
+    Description: <CivilException: Retrieve attribute failed.>
+    DisplayName: Profile Data Band Label Group
+    DrawableType: Geometry
+    EdgeStyleId: null
+    EndParam: 1
+    EndPoint: (1, 0, 0)
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FeatureId: 8DA9
+    FingerPrint: 0
+    FolderId: null
+    ForceAnnoAllVisible: True
+    Handle: 8DAA
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8DAA
+    IsAProxy: False
+    IsCancelling: False
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: True
+    IsWriteEnabled: False
+    LabelType: ProfileDataBand
+    Layer: C-ROAD-PROF-TEXT
+    LayerId: 3CE
+    LayerKey: 
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Mask: FromLabelStyle
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: <CivilException: Retrieve attribute failed.>
+    NeedsPromoting: False
+    ObjectId: 8DAA
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    PlotStyleName: ByLayer
+    ProjectState: New
+    RangeEnd: 0
+    RangeEndFromFeature: True
+    RangeStart: 0
+    RangeStartFromFeature: True
+    ReceiveShadows: True
+    RotationType: NotSupported
+    ShowToolTip: <CivilException: Retrieve attribute failed.>
+    StartParam: 0
+    StartPoint: (0, 0, 0)
+    StyleId: <InvalidOperationException: Label style is invalid for a band label group.>
+    StyleName: <InvalidOperationException: Label style is invalid for a band label group.>
+    SubEntityCount: 0
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    ViewId: 8DA9
+    Visible: True
+    VisualStyleId: null
+    GetLifetimeService(): null
+    GetReactors() [1]: ImpRXObject
+    GetReferenceInfo(): <InvalidOperationException: It is not a reference entity.>
+
+  Entity [8C51] AlignmentMinorStationLabelGroup (AECC_ALIGNMENT_MINOR_STATION_LABEL_GROUP)
+    AllowsAnchorMarker: False
+    AllowsDimensionAnchors: False
+    AllowsDragging: True
+    AllowsFlipping: True
+    AllowsLeaderAttachment: False
+    AllowsPinning: True
+    AllowsReversing: False
+    Annotative: NotApplicable
+    Area: 0
+    AutoStagger: None
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DefaultDimensionAnchorOption: <InvalidOperationException: This type of LabelGroup doesn't support this property.>
+    DefaultDimensionAnchorValue: 3.64447593682178E-312
+    Description: <CivilException: Retrieve attribute failed.>
+    DisplayName: Alignment Minor Station Label Group
+    DrawableType: Geometry
+    EdgeStyleId: null
+    EndParam: 1
+    EndPoint: (1, 0, 0)
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FeatureId: 8C4A
+    FingerPrint: 0
+    FolderId: null
+    ForceAnnoAllVisible: True
+    Handle: 8C51
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8C51
+    Increment: 50
+    IsAProxy: False
+    IsCancelling: False
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: False
+    IsWriteEnabled: False
+    LabelType: AlignmentMinorStation
+    Layer: C-ROAD-TEXT
+    LayerId: 2187
+    LayerKey: 
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    MajorStationLabelGroup: 8C4B
+    Mask: FromLabelStyle
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: <CivilException: Retrieve attribute failed.>
+    NeedsPromoting: False
+    ObjectId: 8C51
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    PlotStyleName: ByLayer
+    ProjectState: New
+    ReceiveShadows: True
+    RotationType: NotSupported
+    ShowToolTip: <CivilException: Retrieve attribute failed.>
+    StartParam: 0
+    StartPoint: (0, 0, 0)
+    StyleId: 1FCC
+    StyleName: Tick
+    SubEntityCount: 13
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    ViewId: null
+    Visible: True
+    VisualStyleId: null
+    GetLifetimeService(): null
+    GetReactors() [1]: ImpRXObject
+    GetReferenceInfo(): <InvalidOperationException: It is not a reference entity.>
+
+  Entity [8C50] AlignmentSuperelevationLabelGroup (AECC_ALIGNMENT_SUPERELEVATION_LABEL_GROUP)
+    AllowsAnchorMarker: False
+    AllowsDimensionAnchors: False
+    AllowsDragging: True
+    AllowsFlipping: True
+    AllowsLeaderAttachment: False
+    AllowsPinning: True
+    AllowsReversing: False
+    Annotative: NotApplicable
+    Area: 0
+    AutoStagger: None
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DefaultDimensionAnchorOption: <InvalidOperationException: This type of LabelGroup doesn't support this property.>
+    DefaultDimensionAnchorValue: 3.64447593682178E-312
+    Description: <CivilException: Retrieve attribute failed.>
+    DisplayName: Alignment Superelevation Label Group
+    DrawableType: Geometry
+    EdgeStyleId: null
+    EndParam: 1
+    EndPoint: (1, 0, 0)
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FeatureId: 8C4A
+    FingerPrint: 0
+    FolderId: null
+    ForceAnnoAllVisible: True
+    Handle: 8C50
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8C50
+    IsAProxy: False
+    IsCancelling: False
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: False
+    IsWriteEnabled: False
+    LabelType: AlignmentSuperelevationCriticalPoints
+    Layer: C-ROAD-TEXT
+    LayerId: 2187
+    LayerKey: 
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Mask: FromLabelStyle
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: <CivilException: Retrieve attribute failed.>
+    NeedsPromoting: False
+    ObjectId: 8C50
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    PlotStyleName: ByLayer
+    ProjectState: New
+    RangeEnd: 1270.650995833241
+    RangeEndFromFeature: True
+    RangeStart: 0
+    RangeStartFromFeature: True
+    ReceiveShadows: True
+    RotationType: NotSupported
+    ShowToolTip: <CivilException: Retrieve attribute failed.>
+    StartParam: 0
+    StartPoint: (0, 0, 0)
+    StyleId: 3535
+    StyleName: Superelevation Symbols
+    SubEntityCount: 0
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    ViewId: null
+    Visible: True
+    VisualStyleId: null
+    GetLifetimeService(): null
+    GetReactors() [1]: ImpRXObject
+    GetReferenceInfo(): <InvalidOperationException: It is not a reference entity.>
+
+  Entity [8C4F] AlignmentVerticalGeometryPointLabelGroup (AECC_ALIGNMENT_VAGEOMPOINT_LABELING)
+    AllowsAnchorMarker: False
+    AllowsDimensionAnchors: False
+    AllowsDragging: True
+    AllowsFlipping: True
+    AllowsLeaderAttachment: False
+    AllowsPinning: True
+    AllowsReversing: False
+    Annotative: NotApplicable
+    Area: 0
+    AutoStagger: None
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DefaultDimensionAnchorOption: <InvalidOperationException: This type of LabelGroup doesn't support this property.>
+    DefaultDimensionAnchorValue: 3.64447593682178E-312
+    Description: <CivilException: Retrieve attribute failed.>
+    DisplayName: Alignment Vertical Geometry Point Label Group
+    DrawableType: Geometry
+    EdgeStyleId: null
+    EndParam: 1
+    EndPoint: (1, 0, 0)
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FeatureId: 8C4A
+    FingerPrint: 0
+    FolderId: null
+    ForceAnnoAllVisible: True
+    Handle: 8C4F
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8C4F
+    IsAProxy: False
+    IsCancelling: False
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: False
+    IsWriteEnabled: False
+    LabelType: AlignmentProfileGeometryPoint
+    Layer: C-ROAD-TEXT
+    LayerId: 2187
+    LayerKey: 
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Mask: FromLabelStyle
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: <CivilException: Retrieve attribute failed.>
+    NeedsPromoting: False
+    ObjectId: 8C4F
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    PlotStyleName: ByLayer
+    ProjectState: New
+    RangeEnd: 1270.650995833241
+    RangeEndFromFeature: True
+    RangeStart: 0
+    RangeStartFromFeature: True
+    ReceiveShadows: True
+    RotationType: NotSupported
+    ShowToolTip: <CivilException: Retrieve attribute failed.>
+    StartParam: 0
+    StartPoint: (0, 0, 0)
+    StyleId: 202E
+    StyleName: Code and Station
+    SubEntityCount: 0
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    VerticalAlignment: null
+    ViewId: null
+    Visible: True
+    VisualStyleId: null
+    GetLifetimeService(): null
+    GetReactors() [1]: ImpRXObject
+    GetReferenceInfo(): <InvalidOperationException: It is not a reference entity.>
+
+  Entity [8C4E] AlignmentDesignSpeedLabelGroup (AECC_ALIGNMENT_DESIGNSPEED_LABEL_GROUP)
+    AllowsAnchorMarker: False
+    AllowsDimensionAnchors: False
+    AllowsDragging: True
+    AllowsFlipping: True
+    AllowsLeaderAttachment: False
+    AllowsPinning: True
+    AllowsReversing: False
+    Annotative: NotApplicable
+    Area: 0
+    AutoStagger: None
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DefaultDimensionAnchorOption: <InvalidOperationException: This type of LabelGroup doesn't support this property.>
+    DefaultDimensionAnchorValue: 3.64447593682178E-312
+    Description: <CivilException: Retrieve attribute failed.>
+    DisplayName: Alignment Design Speed Label Group
+    DrawableType: Geometry
+    EdgeStyleId: null
+    EndParam: 1
+    EndPoint: (1, 0, 0)
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FeatureId: 8C4A
+    FingerPrint: 0
+    FolderId: null
+    ForceAnnoAllVisible: True
+    Handle: 8C4E
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8C4E
+    IsAProxy: False
+    IsCancelling: False
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: False
+    IsWriteEnabled: False
+    LabelType: AlignmentDesignSpeed
+    Layer: C-ROAD-TEXT
+    LayerId: 2187
+    LayerKey: 
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Mask: FromLabelStyle
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: <CivilException: Retrieve attribute failed.>
+    NeedsPromoting: False
+    ObjectId: 8C4E
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    PlotStyleName: ByLayer
+    ProjectState: New
+    RangeEnd: 1270.650995833241
+    RangeEndFromFeature: True
+    RangeStart: 0
+    RangeStartFromFeature: True
+    ReceiveShadows: True
+    RotationType: NotSupported
+    ShowToolTip: <CivilException: Retrieve attribute failed.>
+    StartParam: 0
+    StartPoint: (0, 0, 0)
+    StyleId: 2093
+    StyleName: Station over Speed
+    SubEntityCount: 1
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    ViewId: null
+    Visible: True
+    VisualStyleId: null
+    GetLifetimeService(): null
+    GetReactors() [1]: ImpRXObject
+    GetReferenceInfo(): <InvalidOperationException: It is not a reference entity.>
+
+  Entity [8C4D] AlignmentStationEquationLabelGroup (AECC_ALIGNMENT_STAEQU_LABEL_GROUP)
+    AllowsAnchorMarker: False
+    AllowsDimensionAnchors: False
+    AllowsDragging: True
+    AllowsFlipping: True
+    AllowsLeaderAttachment: False
+    AllowsPinning: True
+    AllowsReversing: False
+    Annotative: NotApplicable
+    Area: 0
+    AutoStagger: None
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DefaultDimensionAnchorOption: <InvalidOperationException: This type of LabelGroup doesn't support this property.>
+    DefaultDimensionAnchorValue: 3.64447593682178E-312
+    Description: <CivilException: Retrieve attribute failed.>
+    DisplayName: Alignment Station Equation Label Group
+    DrawableType: Geometry
+    EdgeStyleId: null
+    EndParam: 1
+    EndPoint: (1, 0, 0)
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FeatureId: 8C4A
+    FingerPrint: 0
+    FolderId: null
+    ForceAnnoAllVisible: True
+    Handle: 8C4D
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8C4D
+    IsAProxy: False
+    IsCancelling: False
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: False
+    IsWriteEnabled: False
+    LabelType: AlignmentStationEquation
+    Layer: C-ROAD-TEXT
+    LayerId: 2187
+    LayerKey: 
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Mask: FromLabelStyle
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: <CivilException: Retrieve attribute failed.>
+    NeedsPromoting: False
+    ObjectId: 8C4D
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    PlotStyleName: ByLayer
+    ProjectState: New
+    RangeEnd: 1270.650995833241
+    RangeEndFromFeature: True
+    RangeStart: 0
+    RangeStartFromFeature: True
+    ReceiveShadows: True
+    RotationType: NotSupported
+    ShowToolTip: <CivilException: Retrieve attribute failed.>
+    StartParam: 0
+    StartPoint: (0, 0, 0)
+    StyleId: 2060
+    StyleName: Station Ahead & Back
+    SubEntityCount: 0
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    ViewId: null
+    Visible: True
+    VisualStyleId: null
+    GetLifetimeService(): null
+    GetReactors() [1]: ImpRXObject
+    GetReferenceInfo(): <InvalidOperationException: It is not a reference entity.>
+
+  Entity [8C4C] AlignmentGeometryPointLabelGroup (AECC_ALIGNMENT_GEOMPOINT_LABEL_GROUP)
+    AllowsAnchorMarker: False
+    AllowsDimensionAnchors: False
+    AllowsDragging: True
+    AllowsFlipping: True
+    AllowsLeaderAttachment: False
+    AllowsPinning: True
+    AllowsReversing: False
+    Annotative: NotApplicable
+    Area: 0
+    AutoStagger: None
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DefaultDimensionAnchorOption: <InvalidOperationException: This type of LabelGroup doesn't support this property.>
+    DefaultDimensionAnchorValue: 3.64447593682178E-312
+    Description: <CivilException: Retrieve attribute failed.>
+    DisplayName: Alignment Geometry Point Label Group
+    DrawableType: Geometry
+    EdgeStyleId: null
+    EndParam: 1
+    EndPoint: (1, 0, 0)
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FeatureId: 8C4A
+    FingerPrint: 0
+    FolderId: null
+    ForceAnnoAllVisible: True
+    Handle: 8C4C
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8C4C
+    IsAProxy: False
+    IsCancelling: False
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: False
+    IsWriteEnabled: False
+    LabelType: AlignmentGeometryPoint
+    Layer: C-ROAD-TEXT
+    LayerId: 2187
+    LayerKey: 
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Mask: FromLabelStyle
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: <CivilException: Retrieve attribute failed.>
+    NeedsPromoting: False
+    ObjectId: 8C4C
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    PlotStyleName: ByLayer
+    ProjectState: New
+    RangeEnd: 1270.650995833241
+    RangeEndFromFeature: True
+    RangeStart: 0
+    RangeStartFromFeature: True
+    ReceiveShadows: True
+    RotationType: NotSupported
+    ShowToolTip: <CivilException: Retrieve attribute failed.>
+    StartParam: 0
+    StartPoint: (0, 0, 0)
+    StyleId: 1FFC
+    StyleName: Perpendicular with Tick and Line
+    SubEntityCount: 5
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    ViewId: null
+    Visible: True
+    VisualStyleId: null
+    GetLifetimeService(): null
+    GetReactors() [1]: ImpRXObject
+    GetReferenceInfo(): <InvalidOperationException: It is not a reference entity.>
+
+  Entity [8C4B] AlignmentStationLabelGroup (AECC_ALIGNMENT_STATION_LABEL_GROUP)
+    AllowsAnchorMarker: False
+    AllowsDimensionAnchors: False
+    AllowsDragging: True
+    AllowsFlipping: True
+    AllowsLeaderAttachment: False
+    AllowsPinning: True
+    AllowsReversing: False
+    Annotative: NotApplicable
+    Area: 0
+    AutoStagger: None
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DefaultDimensionAnchorOption: <InvalidOperationException: This type of LabelGroup doesn't support this property.>
+    DefaultDimensionAnchorValue: 3.64447593682178E-312
+    Description: <CivilException: Retrieve attribute failed.>
+    DisplayName: Alignment Station Label Group
+    DrawableType: Geometry
+    EdgeStyleId: null
+    EndParam: 1
+    EndPoint: (1, 0, 0)
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FeatureId: 8C4A
+    FingerPrint: 0
+    FolderId: null
+    ForceAnnoAllVisible: True
+    Handle: 8C4B
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8C4B
+    Increment: 100
+    IsAProxy: False
+    IsCancelling: False
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: False
+    IsWriteEnabled: False
+    LabelType: AlignmentMajorStation
+    Layer: C-ROAD-TEXT
+    LayerId: 2187
+    LayerKey: 
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Mask: FromLabelStyle
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: <CivilException: Retrieve attribute failed.>
+    NeedsPromoting: False
+    ObjectId: 8C4B
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    PlotStyleName: ByLayer
+    ProjectState: New
+    RangeEndFromFeature: True
+    RangeStartFromFeature: True
+    ReceiveShadows: True
+    RotationType: NotSupported
+    ShowToolTip: <CivilException: Retrieve attribute failed.>
+    StartParam: 0
+    StartPoint: (0, 0, 0)
+    StyleId: 1F95
+    StyleName: Parallel with Tick
+    SubEntityCount: 14
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    ViewId: null
+    Visible: True
+    VisualStyleId: null
+    GetLifetimeService(): null
+    GetReactors() [1]: ImpRXObject
+    GetReferenceInfo(): <InvalidOperationException: It is not a reference entity.>

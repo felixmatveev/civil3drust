@@ -19,4 +19,5 @@ Cargo.lock.bak
 /tools/c3d_api_dump/bin/
 /tools/c3d_api_dump/obj/
 *.api.txt
+!samples/*.api.txt
 /workbench/target

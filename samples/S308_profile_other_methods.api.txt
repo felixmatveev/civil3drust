@@ -1,0 +1,1599 @@
+drawing: C:\Users\felix\Downloads\profile_10_other types.dwg
+written: 2026-11-11 19:31:20Z
+
+[8C4A] prpfile
+  AlignmentType: Centerline
+  CreationMode: ManuallyCreation
+  FingerPrint: 0xD1003583023EF7B7 (15060095990721607607)
+  Description: 
+  StyleName: Proposed
+  IsSiteless: True
+  SiteName: 
+  StartingStation: 0
+  EndingStation: 1770.680354898
+  ReferencePointStation: 0
+  Length: 1770.680354898
+  UseDesignSpeed: False
+  UseDesignCriteriaFile: False
+  CriteriaFileName: 
+  UseDesignCheckSet: False
+  DesignCheckSetName: 
+  StationEquations.Count: 0
+  DesignSpeed #1: station 0, value 60, comment ""
+  Entity 1 (before <EntityNotFoundException: NoPrevAlignmentEntity,>, after 3): Line, Constraint1 Fixed, Constraint2 TwoPoints, sub-entities 1
+  Entity 2 (before 3, after <EntityNotFoundException: NoNextAlignmentEntity,>): Line, Constraint1 Fixed, Constraint2 TwoPoints, sub-entities 1
+  Entity 3 (before 1, after 2): Arc, Constraint1 Free, Constraint2 PassThrough, sub-entities 1
+
+  Profile [8E87] Profile
+    AlignmentId: 8C4A
+    Annotative: NotApplicable
+    Area: 0
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DataSourceId: <InvalidOperationException: No support for this ProfileType of profile.>
+    DataSourceName: <InvalidOperationException: No support for this ProfileType of profile.>
+    Description: 
+    DesignCheckSetId: <InvalidOperationException: You must use DesignSpeedBase first.>
+    DesignCheckSetName: <InvalidOperationException: No DesignCheckSet is available.>
+    DesignSpeedBased: False
+    DisplayName: Profile
+    DrawableType: Geometry
+    EdgeStyleId: null
+    ElevationMax: -2.6319689285531247
+    ElevationMin: -4.8625360808383444
+    EndParam: 1
+    EndPoint: <Exception: eNotApplicable>
+    EndingStation: 172.06997306219273
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FingerPrint: 18239020795570612233
+    FolderId: null
+    ForceAnnoAllVisible: True
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8E87
+    IsAProxy: False
+    IsCancelling: False
+    IsEditable: True
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: True
+    IsWriteEnabled: False
+    Layer: C-ROAD-PROF
+    LayerId: 3AD
+    LayerKey: 
+    Length: 136.47644449629115
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: float vertical curve thru point
+    NeedsPromoting: False
+    ObjectId: 8E87
+    Offset: 0
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    Plinegen: True
+    PlotStyleName: ByLayer
+    ProfileType: FG
+    ProjectState: New
+    ReceiveShadows: True
+    ShowToolTip: True
+    StartParam: 0
+    StartPoint: <Exception: eNotApplicable>
+    StartingStation: 35.593528565901579
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    UpdateMode: Static
+    UseDesignCheckSet: False
+    UseDesignCriteriaFile: False
+    Visible: True
+    VisualStyleId: null
+    PVIs[0] ProfilePVI
+      Elevation: -4.8625360808383444
+      EntityAfter: 1
+      EntityBefore: <InvalidOperationException: Cannot find entity before current PVI.>
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: 0.023992725032014765
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 35.593528565901579
+      Station: 35.593528565901579
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    PVIs[1] ProfilePVI
+      Elevation: -2.8137648426324282
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: 1
+      GradeIn: 0.023992725032014779
+      GradeOut: 0.0035586881928454822
+      HeadlightSightDistance: <InvalidOperationException: Value is out of range.>
+      PVIType: ParabolaSymmetric
+      PassingSightDistance: 807.843261420055
+      RawStation: 120.98488096426948
+      Station: 120.98488096426948
+      StoppingSightDistance: 376.31457873198769
+    PVIs[2] ProfilePVI
+      Elevation: -2.6319689285531247
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: 2
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: <InvalidOperationException: GradeOut is invalid for the last PVI in the profile.>
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 172.06997306219273
+      Station: 172.06997306219273
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    Entities[0] ProfileTangent
+      Constraint1: Fixed
+      Constraint2: PassThroughPt1AndPt2
+      EndElevation: -4.0394354105730521
+      EndStation: 69.899788866346213
+      EntityAfter: 2
+      EntityBefore: <EntityNotFoundException: There is no ProfileEntity before.>
+      EntityId: 1
+      EntityType: Tangent
+      Grade: 0.023992725032014765
+      HighestDesignSpeed: 60
+      Length: 34.306260300444634
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValueSSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      StartElevation: -4.8625360808383444
+      StartStation: 35.593528565901579
+      ThroughPoint1Elevation: -4.8625360808383444
+      ThroughPoint1Station: 35.593528565901579
+      ThroughPoint2Elevation: -2.3239649336254828
+      ThroughPoint2Station: 141.39939862966094
+    Entities[1] ProfileParabolaSymmetric
+      Constraint1: FloatOnPrev
+      Constraint2: PreviousSubEntPassPtAndParameter
+      CurveType: Crest
+      EndElevation: -2.6319689285531247
+      EndStation: 172.06997306219273
+      EntityAfter: <EntityNotFoundException: There is no ProfileEntity after.>
+      EntityBefore: 1
+      EntityId: 2
+      EntityType: ParabolaSymmetric
+      GradeAtThroughPoint1: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeAtThroughPoint2: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeChange: -0.020434036839169296
+      GradeIn: 0.023992725032014779
+      GradeOut: 0.0035586881928454822
+      HighLowPointElevation: -2.6319689285531247
+      HighLowPointStation: 172.06997306219273
+      HighestDesignSpeed: 60
+      K: 50.000000000000021
+      Length: 102.17018419584652
+      M: 1.9999999999999993
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValueSSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      PVIElevation: -2.8137648426324282
+      PVIStation: 120.98488096426948
+      Radius: 5000.0000000000018
+      StartElevation: -4.0394354105730521
+      StartStation: 69.899788866346213
+      TangentOffsetAtPVI: 0.26096866346533004
+      ThroughPoint1Elevation: -2.6319689285531247
+      ThroughPoint1Station: 172.06997306219273
+      ThroughPoint2Elevation: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      ThroughPoint2Station: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      ThroughPoint3Elevation: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      ThroughPoint3Station: <InvalidOperationException: Cannot set this property according to current constraint type.>
+
+  Profile [8E8C] Profile
+    AlignmentId: 8C4A
+    Annotative: NotApplicable
+    Area: 0
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DataSourceId: <InvalidOperationException: No support for this ProfileType of profile.>
+    DataSourceName: <InvalidOperationException: No support for this ProfileType of profile.>
+    Description: 
+    DesignCheckSetId: <InvalidOperationException: You must use DesignSpeedBase first.>
+    DesignCheckSetName: <InvalidOperationException: No DesignCheckSet is available.>
+    DesignSpeedBased: False
+    DisplayName: Profile
+    DrawableType: Geometry
+    EdgeStyleId: null
+    ElevationMax: -13.657728213873
+    ElevationMin: -15.546302453824229
+    EndParam: 1
+    EndPoint: <Exception: eNotApplicable>
+    EndingStation: 181.16569058549794
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FingerPrint: 18288073367309807459
+    FolderId: null
+    ForceAnnoAllVisible: True
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8E8C
+    IsAProxy: False
+    IsCancelling: False
+    IsEditable: True
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: True
+    IsWriteEnabled: False
+    Layer: C-ROAD-PROF
+    LayerId: 3AD
+    LayerKey: 
+    Length: 63.061745299799441
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: fixed vertical curve three points
+    NeedsPromoting: False
+    ObjectId: 8E8C
+    Offset: 0
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    Plinegen: True
+    PlotStyleName: ByLayer
+    ProfileType: FG
+    ProjectState: New
+    ReceiveShadows: True
+    ShowToolTip: True
+    StartParam: 0
+    StartPoint: <Exception: eNotApplicable>
+    StartingStation: 118.1039452856985
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    UpdateMode: Static
+    UseDesignCheckSet: False
+    UseDesignCriteriaFile: False
+    Visible: True
+    VisualStyleId: null
+    PVIs[0] ProfilePVI
+      Elevation: -15.546302453824229
+      EntityAfter: 1
+      EntityBefore: <InvalidOperationException: Cannot find entity before current PVI.>
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: <InvalidOperationException: GradeOut is invalid for the last PVI in the profile.>
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 118.1039452856985
+      Station: 118.1039452856985
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    PVIs[1] ProfilePVI
+      Elevation: -11.875856685729149
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: <InvalidOperationException: Cannot find entity before current PVI.>
+      GradeIn: 0.11640799824507088
+      GradeOut: -0.10983105314751498
+      HeadlightSightDistance: <InvalidOperationException: Value is out of range.>
+      PVIType: ParabolaSymmetric
+      PassingSightDistance: 99.881691021380561
+      RawStation: 149.63481793559822
+      Station: 149.63481793559822
+      StoppingSightDistance: 60.867609840130456
+    PVIs[2] ProfilePVI
+      Elevation: -15.338925635527811
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: 1
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: <InvalidOperationException: GradeOut is invalid for the last PVI in the profile.>
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 181.16569058549794
+      Station: 181.16569058549794
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    Entities[0] ProfileParabolaSymmetric
+      Constraint1: Fixed
+      Constraint2: ThreePassPoints
+      CurveType: Crest
+      EndElevation: -15.338925635527811
+      EndStation: 181.16569058549794
+      EntityAfter: <EntityNotFoundException: There is no ProfileEntity after.>
+      EntityBefore: <EntityNotFoundException: There is no ProfileEntity before.>
+      EntityId: 1
+      EntityType: ParabolaSymmetric
+      GradeAtThroughPoint1: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeAtThroughPoint2: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeChange: -0.22623905139258588
+      GradeIn: 0.11640799824507088
+      GradeOut: -0.10983105314751498
+      HighLowPointElevation: -13.657728213873
+      HighLowPointStation: 150.55144491498103
+      HighestDesignSpeed: 60
+      K: 2.7873943473344167
+      Length: 63.061745299799441
+      M: 35.875799237244607
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValueSSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      PVIElevation: -11.875856685729149
+      PVIStation: 149.63481793559822
+      Radius: 278.73943473344167
+      StartElevation: -15.546302453824229
+      StartStation: 118.1039452856985
+      TangentOffsetAtPVI: 1.7833786794734356
+      ThroughPoint1Elevation: -15.546302453824229
+      ThroughPoint1Station: 118.1039452856985
+      ThroughPoint2Elevation: -13.804335373258617
+      ThroughPoint2Station: 159.59193126639184
+      ThroughPoint3Elevation: -15.338925635527811
+      ThroughPoint3Station: 181.16569058549794
+
+  Profile [8E91] Profile
+    AlignmentId: 8C4A
+    Annotative: NotApplicable
+    Area: 0
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DataSourceId: <InvalidOperationException: No support for this ProfileType of profile.>
+    DataSourceName: <InvalidOperationException: No support for this ProfileType of profile.>
+    Description: crest K=50
+    DesignCheckSetId: <InvalidOperationException: You must use DesignSpeedBase first.>
+    DesignCheckSetName: <InvalidOperationException: No DesignCheckSet is available.>
+    DesignSpeedBased: False
+    DisplayName: Profile
+    DrawableType: Geometry
+    EdgeStyleId: null
+    ElevationMax: -11.705580882051519
+    ElevationMin: -12.231178488598289
+    EndParam: 1
+    EndPoint: <Exception: eNotApplicable>
+    EndingStation: 425.14068974551083
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FingerPrint: 11819484283874594978
+    FolderId: null
+    ForceAnnoAllVisible: True
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8E91
+    IsAProxy: False
+    IsCancelling: False
+    IsEditable: True
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: True
+    IsWriteEnabled: False
+    Layer: C-ROAD-PROF
+    LayerId: 3AD
+    LayerKey: 
+    Length: 89.19917811992309
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: fixed vertical curve two points and parameter
+    NeedsPromoting: False
+    ObjectId: 8E91
+    Offset: 0
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    Plinegen: True
+    PlotStyleName: ByLayer
+    ProfileType: FG
+    ProjectState: New
+    ReceiveShadows: True
+    ShowToolTip: True
+    StartParam: 0
+    StartPoint: <Exception: eNotApplicable>
+    StartingStation: 335.94151162558774
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    UpdateMode: Static
+    UseDesignCheckSet: False
+    UseDesignCriteriaFile: False
+    Visible: True
+    VisualStyleId: null
+    PVIs[0] ProfilePVI
+      Elevation: -11.733473447108462
+      EntityAfter: 1
+      EntityBefore: <InvalidOperationException: Cannot find entity before current PVI.>
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: <InvalidOperationException: GradeOut is invalid for the last PVI in the profile.>
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 335.94151162558774
+      Station: 335.94151162558774
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    PVIs[1] ProfilePVI
+      Elevation: -11.584501298989887
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: <InvalidOperationException: Cannot find entity before current PVI.>
+      GradeIn: 0.00334021346964187
+      GradeOut: -0.014499622154342778
+      HeadlightSightDistance: <InvalidOperationException: Value is out of range.>
+      PVIType: ParabolaSymmetric
+      PassingSightDistance: 911.40266035512479
+      RawStation: 380.54110068554928
+      Station: 380.54110068554928
+      StoppingSightDistance: 417.12271377585051
+    PVIs[2] ProfilePVI
+      Elevation: -12.231178488598289
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: 1
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: <InvalidOperationException: GradeOut is invalid for the last PVI in the profile.>
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 425.14068974551083
+      Station: 425.14068974551083
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    Entities[0] ProfileParabolaSymmetric
+      Constraint1: Fixed
+      Constraint2: TwoPassPointsAndParameter
+      CurveType: Crest
+      EndElevation: -12.231178488598289
+      EndStation: 425.14068974551083
+      EntityAfter: <EntityNotFoundException: There is no ProfileEntity after.>
+      EntityBefore: <EntityNotFoundException: There is no ProfileEntity before.>
+      EntityId: 1
+      EntityType: ParabolaSymmetric
+      GradeAtThroughPoint1: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeAtThroughPoint2: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeChange: -0.017839835623984647
+      GradeIn: 0.00334021346964187
+      GradeOut: -0.014499622154342778
+      HighLowPointElevation: -11.705580882051519
+      HighLowPointStation: 352.64257897379707
+      HighestDesignSpeed: 60
+      K: 49.999999999999922
+      Length: 89.19917811992309
+      M: 2.0000000000000031
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValueSSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      PVIElevation: -11.584501298989887
+      PVIStation: 380.54110068554928
+      Radius: 4999.9999999999918
+      StartElevation: -11.733473447108462
+      StartStation: 335.94151162558774
+      TangentOffsetAtPVI: 0.19891233443174444
+      ThroughPoint1Elevation: -11.733473447108462
+      ThroughPoint1Station: 335.94151162558774
+      ThroughPoint2Elevation: -12.231178488598289
+      ThroughPoint2Station: 425.14068974551083
+      ThroughPoint3Elevation: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      ThroughPoint3Station: <InvalidOperationException: Cannot set this property according to current constraint type.>
+
+  Profile [8E96] Profile
+    AlignmentId: 8C4A
+    Annotative: NotApplicable
+    Area: 0
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DataSourceId: <InvalidOperationException: No support for this ProfileType of profile.>
+    DataSourceName: <InvalidOperationException: No support for this ProfileType of profile.>
+    Description: sag K=50
+    DesignCheckSetId: <InvalidOperationException: You must use DesignSpeedBase first.>
+    DesignCheckSetName: <InvalidOperationException: No DesignCheckSet is available.>
+    DesignSpeedBased: False
+    DisplayName: Profile
+    DrawableType: Geometry
+    EdgeStyleId: null
+    ElevationMax: -17.871835060834108
+    ElevationMin: -18.038997469594911
+    EndParam: 1
+    EndPoint: <Exception: eNotApplicable>
+    EndingStation: 406.88597213735011
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FingerPrint: 12555786034802025666
+    FolderId: null
+    ForceAnnoAllVisible: True
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8E96
+    IsAProxy: False
+    IsCancelling: False
+    IsEditable: True
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: True
+    IsWriteEnabled: False
+    Layer: C-ROAD-PROF
+    LayerId: 3AD
+    LayerKey: 
+    Length: 76.337900341539353
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: fixed vertical curve two points and parameter 2
+    NeedsPromoting: False
+    ObjectId: 8E96
+    Offset: 0
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    Plinegen: True
+    PlotStyleName: ByLayer
+    ProfileType: FG
+    ProjectState: New
+    ReceiveShadows: True
+    ShowToolTip: True
+    StartParam: 0
+    StartPoint: <Exception: eNotApplicable>
+    StartingStation: 330.54807179581076
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    UpdateMode: Static
+    UseDesignCheckSet: False
+    UseDesignCriteriaFile: False
+    Visible: True
+    VisualStyleId: null
+    PVIs[0] ProfilePVI
+      Elevation: -17.913310198633916
+      EntityAfter: 1
+      EntityBefore: <InvalidOperationException: Cannot find entity before current PVI.>
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: <InvalidOperationException: GradeOut is invalid for the last PVI in the profile.>
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 330.54807179581076
+      Station: 330.54807179581076
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    PVIs[1] ProfilePVI
+      Elevation: -18.183946381161753
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: <InvalidOperationException: Cannot find entity before current PVI.>
+      GradeIn: -0.0070904801236868929
+      GradeOut: 0.00817709994462107
+      HeadlightSightDistance: <InvalidOperationException: Value is out of range.>
+      PVIType: ParabolaSymmetric
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 368.71702196658043
+      Station: 368.71702196658043
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    PVIs[2] ProfilePVI
+      Elevation: -17.871835060834108
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: 1
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: <InvalidOperationException: GradeOut is invalid for the last PVI in the profile.>
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 406.88597213735011
+      Station: 406.88597213735011
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    Entities[0] ProfileParabolaSymmetric
+      Constraint1: Fixed
+      Constraint2: TwoPassPointsAndParameter
+      CurveType: Sag
+      EndElevation: -17.871835060834108
+      EndStation: 406.88597213735011
+      EntityAfter: <EntityNotFoundException: There is no ProfileEntity after.>
+      EntityBefore: <EntityNotFoundException: There is no ProfileEntity before.>
+      EntityId: 1
+      EntityType: ParabolaSymmetric
+      GradeAtThroughPoint1: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeAtThroughPoint2: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeChange: 0.015267580068307963
+      GradeIn: -0.0070904801236868929
+      GradeOut: 0.00817709994462107
+      HighLowPointElevation: -18.038997469594911
+      HighLowPointStation: 366.000472414245
+      HighestDesignSpeed: 60
+      K: 49.999999999999694
+      Length: 76.337900341539353
+      M: 2.0000000000000124
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValueSSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      PVIElevation: -18.183946381161753
+      PVIStation: 368.71702196658043
+      Radius: 4999.9999999999691
+      StartElevation: -17.913310198633916
+      StartStation: 330.54807179581076
+      TangentOffsetAtPVI: 0.14568687571387076
+      ThroughPoint1Elevation: -17.913310198633916
+      ThroughPoint1Station: 330.54807179581076
+      ThroughPoint2Elevation: -17.871835060834108
+      ThroughPoint2Station: 406.88597213735011
+      ThroughPoint3Elevation: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      ThroughPoint3Station: <InvalidOperationException: Cannot set this property according to current constraint type.>
+
+  Profile [8EB9] Profile
+    AlignmentId: 8C4A
+    Annotative: NotApplicable
+    Area: 0
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DataSourceId: <InvalidOperationException: No support for this ProfileType of profile.>
+    DataSourceName: <InvalidOperationException: No support for this ProfileType of profile.>
+    Description: 
+    DesignCheckSetId: <InvalidOperationException: You must use DesignSpeedBase first.>
+    DesignCheckSetName: <InvalidOperationException: No DesignCheckSet is available.>
+    DesignSpeedBased: False
+    DisplayName: Profile
+    DrawableType: Geometry
+    EdgeStyleId: null
+    ElevationMax: -22.601340126804917
+    ElevationMin: -26.957055666594535
+    EndParam: 1
+    EndPoint: <Exception: eNotApplicable>
+    EndingStation: 334.95474270147679
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FingerPrint: 9790500060060906424
+    FolderId: null
+    ForceAnnoAllVisible: True
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8EB9
+    IsAProxy: False
+    IsCancelling: False
+    IsEditable: True
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: True
+    IsWriteEnabled: False
+    Layer: C-ROAD-PROF
+    LayerId: 3AD
+    LayerKey: 
+    Length: 196.0461301156738
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: float tangent thru point
+    NeedsPromoting: False
+    ObjectId: 8EB9
+    Offset: 0
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    Plinegen: True
+    PlotStyleName: ByLayer
+    ProfileType: FG
+    ProjectState: New
+    ReceiveShadows: True
+    ShowToolTip: True
+    StartParam: 0
+    StartPoint: <Exception: eNotApplicable>
+    StartingStation: 138.90861258580298
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    UpdateMode: Static
+    UseDesignCheckSet: False
+    UseDesignCriteriaFile: False
+    Visible: True
+    VisualStyleId: null
+    PVIs[0] ProfilePVI
+      Elevation: -26.957055666594535
+      EntityAfter: 1
+      EntityBefore: <InvalidOperationException: Cannot find entity before current PVI.>
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: <InvalidOperationException: GradeOut is invalid for the last PVI in the profile.>
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 138.90861258580298
+      Station: 138.90861258580298
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    PVIs[1] ProfilePVI
+      Elevation: -25.102419260132255
+      EntityAfter: 2
+      EntityBefore: <InvalidOperationException: Cannot find entity before current PVI.>
+      GradeIn: 0.091848903911393581
+      GradeOut: 0.014222485110793714
+      HeadlightSightDistance: <InvalidOperationException: Value is out of range.>
+      PVIType: ParabolaSymmetric
+      PassingSightDistance: 219.39794398102356
+      RawStation: 159.10086668446314
+      Station: 159.10086668446314
+      StoppingSightDistance: 105.80423277483268
+    PVIs[2] ProfilePVI
+      Elevation: -22.601340126804917
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: 2
+      GradeIn: 0.014222485110793695
+      GradeOut: <InvalidOperationException: GradeOut is invalid for the last PVI in the profile.>
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 334.95474270147679
+      Station: 334.95474270147679
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    Entities[0] ProfileParabolaSymmetric
+      Constraint1: Fixed
+      Constraint2: ThreePassPoints
+      CurveType: Crest
+      EndElevation: -24.815235226860697
+      EndStation: 179.29312078312333
+      EntityAfter: 2
+      EntityBefore: <EntityNotFoundException: There is no ProfileEntity before.>
+      EntityId: 1
+      EntityType: ParabolaSymmetric
+      GradeAtThroughPoint1: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeAtThroughPoint2: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeChange: -0.077626418800599867
+      GradeIn: 0.091848903911393581
+      GradeOut: 0.014222485110793714
+      HighLowPointElevation: -24.815235226860697
+      HighLowPointStation: 179.29312078312333
+      HighestDesignSpeed: 60
+      K: 5.2024180454667883
+      Length: 40.384508197320343
+      M: 19.22183091132721
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValueSSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      PVIElevation: -25.102419260132255
+      PVIStation: 159.10086668446314
+      Radius: 520.24180454667885
+      StartElevation: -26.957055666594535
+      StartStation: 138.90861258580298
+      TangentOffsetAtPVI: 0.39186309329768126
+      ThroughPoint1Elevation: -26.957055666594535
+      ThroughPoint1Station: 138.90861258580298
+      ThroughPoint2Elevation: -25.209403703350652
+      ThroughPoint2Station: 165.1313387800983
+      ThroughPoint3Elevation: -27.289942023711866
+      ThroughPoint3Station: 237.97225798874751
+    Entities[1] ProfileTangent
+      Constraint1: FloatOnPrev
+      Constraint2: PassThroughPt2
+      EndElevation: -22.601340126804917
+      EndStation: 334.95474270147679
+      EntityAfter: <EntityNotFoundException: There is no ProfileEntity after.>
+      EntityBefore: 1
+      EntityId: 2
+      EntityType: Tangent
+      Grade: 0.014222485110793695
+      HighestDesignSpeed: 60
+      Length: 155.66162191835346
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValueSSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      StartElevation: -24.815235226860697
+      StartStation: 179.29312078312333
+      ThroughPoint1Elevation: <CivilException: Retrieve attribute failed.>
+      ThroughPoint1Station: <CivilException: Retrieve attribute failed.>
+      ThroughPoint2Elevation: -22.601340126804917
+      ThroughPoint2Station: 334.95474270147679
+
+  Profile [8EBE] Profile
+    AlignmentId: 8C4A
+    Annotative: NotApplicable
+    Area: 0
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DataSourceId: <InvalidOperationException: No support for this ProfileType of profile.>
+    DataSourceName: <InvalidOperationException: No support for this ProfileType of profile.>
+    Description: 100ft @ 2% 
+    DesignCheckSetId: <InvalidOperationException: You must use DesignSpeedBase first.>
+    DesignCheckSetName: <InvalidOperationException: No DesignCheckSet is available.>
+    DesignSpeedBased: False
+    DisplayName: Profile
+    DrawableType: Geometry
+    EdgeStyleId: null
+    ElevationMax: -35.863504224119453
+    ElevationMin: -41.660205181676247
+    EndParam: 1
+    EndPoint: <Exception: eNotApplicable>
+    EndingStation: 283.63489856740716
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FingerPrint: 2745778177316684226
+    FolderId: null
+    ForceAnnoAllVisible: True
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8EBE
+    IsAProxy: False
+    IsCancelling: False
+    IsEditable: True
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: True
+    IsWriteEnabled: False
+    Layer: C-ROAD-PROF
+    LayerId: 3AD
+    LayerKey: 
+    Length: 140.98041153642271
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: float tangemt grade length
+    NeedsPromoting: False
+    ObjectId: 8EBE
+    Offset: 0
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    Plinegen: True
+    PlotStyleName: ByLayer
+    ProfileType: FG
+    ProjectState: New
+    ReceiveShadows: True
+    ShowToolTip: True
+    StartParam: 0
+    StartPoint: <Exception: eNotApplicable>
+    StartingStation: 142.65448703098446
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    UpdateMode: Static
+    UseDesignCheckSet: False
+    UseDesignCriteriaFile: False
+    Visible: True
+    VisualStyleId: null
+    PVIs[0] ProfilePVI
+      Elevation: -41.660205181676247
+      EntityAfter: 1
+      EntityBefore: <InvalidOperationException: Cannot find entity before current PVI.>
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: <InvalidOperationException: GradeOut is invalid for the last PVI in the profile.>
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 142.65448703098446
+      Station: 142.65448703098446
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    PVIs[1] ProfilePVI
+      Elevation: -38.273308339483677
+      EntityAfter: 2
+      EntityBefore: <InvalidOperationException: Cannot find entity before current PVI.>
+      GradeIn: 0.16529345193043524
+      GradeOut: 0.019999999999999889
+      HeadlightSightDistance: <InvalidOperationException: Value is out of range.>
+      PVIType: ParabolaSymmetric
+      PassingSightDistance: 126.92049636158607
+      RawStation: 163.14469279919581
+      Station: 163.14469279919581
+      StoppingSightDistance: 66.230404123788247
+    PVIs[2] ProfilePVI
+      Elevation: -35.863504224119453
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: 2
+      GradeIn: 0.019999999999999993
+      GradeOut: <InvalidOperationException: GradeOut is invalid for the last PVI in the profile.>
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 283.63489856740716
+      Station: 283.63489856740716
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    Entities[0] ProfileParabolaSymmetric
+      Constraint1: Fixed
+      Constraint2: ThreePassPoints
+      CurveType: Crest
+      EndElevation: -37.863504224119453
+      EndStation: 183.63489856740713
+      EntityAfter: 2
+      EntityBefore: <EntityNotFoundException: There is no ProfileEntity before.>
+      EntityId: 1
+      EntityType: ParabolaSymmetric
+      GradeAtThroughPoint1: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeAtThroughPoint2: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeChange: -0.14529345193043536
+      GradeIn: 0.16529345193043524
+      GradeOut: 0.019999999999999889
+      HighLowPointElevation: -37.863504224119453
+      HighLowPointStation: 183.63489856740713
+      HighestDesignSpeed: 60
+      K: 2.8205270775756386
+      Length: 40.980411536422679
+      M: 35.454366240636908
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValueSSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      PVIElevation: -38.273308339483677
+      PVIStation: 163.14469279919581
+      Radius: 282.05270775756384
+      StartElevation: -41.660205181676247
+      StartStation: 142.65448703098446
+      TangentOffsetAtPVI: 0.74427318170708479
+      ThroughPoint1Elevation: -41.660205181676247
+      ThroughPoint1Station: 142.65448703098446
+      ThroughPoint2Elevation: -37.832014333422379
+      ThroughPoint2Station: 185.52656955926977
+      ThroughPoint3Elevation: -41.8682590137124
+      ThroughPoint3Station: 237.13956475300256
+    Entities[1] ProfileTangent
+      Constraint1: FloatOnPrev
+      Constraint2: 534
+      EndElevation: -35.863504224119453
+      EndStation: 283.63489856740716
+      EntityAfter: <EntityNotFoundException: There is no ProfileEntity after.>
+      EntityBefore: 1
+      EntityId: 2
+      EntityType: Tangent
+      Grade: 0.019999999999999993
+      HighestDesignSpeed: 60
+      Length: 100.00000000000003
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValueSSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      StartElevation: -37.863504224119453
+      StartStation: 183.63489856740713
+      ThroughPoint1Elevation: <CivilException: Retrieve attribute failed.>
+      ThroughPoint1Station: <CivilException: Retrieve attribute failed.>
+      ThroughPoint2Elevation: <CivilException: Retrieve attribute failed.>
+      ThroughPoint2Station: <CivilException: Retrieve attribute failed.>
+
+  Profile [8EC3] Profile
+    AlignmentId: 8C4A
+    Annotative: NotApplicable
+    Area: 0
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DataSourceId: <InvalidOperationException: No support for this ProfileType of profile.>
+    DataSourceName: <InvalidOperationException: No support for this ProfileType of profile.>
+    Description: 
+    DesignCheckSetId: <InvalidOperationException: You must use DesignSpeedBase first.>
+    DesignCheckSetName: <InvalidOperationException: No DesignCheckSet is available.>
+    DesignSpeedBased: False
+    DisplayName: Profile
+    DrawableType: Geometry
+    EdgeStyleId: null
+    ElevationMax: -32.090560185685852
+    ElevationMin: -36.298063838435063
+    EndParam: 1
+    EndPoint: <Exception: eNotApplicable>
+    EndingStation: 749.43553998442258
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FingerPrint: 2209189656111017699
+    FolderId: null
+    ForceAnnoAllVisible: True
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8EC3
+    IsAProxy: False
+    IsCancelling: False
+    IsEditable: True
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: True
+    IsWriteEnabled: False
+    Layer: C-ROAD-PROF
+    LayerId: 3AD
+    LayerKey: 
+    Length: 308.68279918273583
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: free tangent
+    NeedsPromoting: False
+    ObjectId: 8EC3
+    Offset: 0
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    Plinegen: True
+    PlotStyleName: ByLayer
+    ProfileType: FG
+    ProjectState: New
+    ReceiveShadows: True
+    ShowToolTip: True
+    StartParam: 0
+    StartPoint: <Exception: eNotApplicable>
+    StartingStation: 440.75274080168674
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    UpdateMode: Static
+    UseDesignCheckSet: False
+    UseDesignCriteriaFile: False
+    Visible: True
+    VisualStyleId: null
+    PVIs[0] ProfilePVI
+      Elevation: -35.255532695734658
+      EntityAfter: 1
+      EntityBefore: <InvalidOperationException: Cannot find entity before current PVI.>
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: <InvalidOperationException: GradeOut is invalid for the last PVI in the profile.>
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 440.75274080168674
+      Station: 440.75274080168674
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    PVIs[1] ProfilePVI
+      Elevation: -31.930490188563812
+      EntityAfter: 3
+      EntityBefore: <InvalidOperationException: Cannot find entity before current PVI.>
+      GradeIn: 0.14192666361228309
+      GradeOut: -0.0071780088338297523
+      HeadlightSightDistance: <InvalidOperationException: Value is out of range.>
+      PVIType: ParabolaSymmetric
+      PassingSightDistance: 127.1377490736306
+      RawStation: 464.18063252085119
+      Station: 464.18063252085119
+      StoppingSightDistance: 67.998938367393407
+    PVIs[2] ProfilePVI
+      Elevation: -33.735562436312954
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: 3
+      GradeIn: -0.0071780088338298893
+      GradeOut: -0.07585326347099447
+      HeadlightSightDistance: <InvalidOperationException: Value is out of range.>
+      PVIType: ParabolaSymmetric
+      PassingSightDistance: 258.95259957072335
+      RawStation: 715.65319121175594
+      Station: 715.65319121175594
+      StoppingSightDistance: 130.55303198565827
+    PVIs[3] ProfilePVI
+      Elevation: -36.298063838435063
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: 2
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: <InvalidOperationException: GradeOut is invalid for the last PVI in the profile.>
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 749.43553998442258
+      Station: 749.43553998442258
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    Entities[0] ProfileParabolaSymmetric
+      Constraint1: Fixed
+      Constraint2: ThreePassPoints
+      CurveType: Crest
+      EndElevation: -32.098655802281982
+      EndStation: 487.6085242400157
+      EntityAfter: 3
+      EntityBefore: <EntityNotFoundException: There is no ProfileEntity before.>
+      EntityId: 1
+      EntityType: ParabolaSymmetric
+      GradeAtThroughPoint1: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeAtThroughPoint2: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeChange: -0.14910467244611283
+      GradeIn: 0.14192666361228309
+      GradeOut: -0.0071780088338297523
+      HighLowPointElevation: -32.090560185685852
+      HighLowPointStation: 485.35285228877012
+      HighestDesignSpeed: 60
+      K: 3.1424758640788255
+      Length: 46.855783438328956
+      M: 31.822042340272251
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValueSSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      PVIElevation: -31.930490188563812
+      PVIStation: 464.18063252085119
+      Radius: 314.24758640788252
+      StartElevation: -35.255532695734658
+      StartStation: 440.75274080168674
+      TangentOffsetAtPVI: 0.87330203022225628
+      ThroughPoint1Elevation: -35.255532695734658
+      ThroughPoint1Station: 440.75274080168674
+      ThroughPoint2Elevation: -32.836860173638435
+      ThroughPoint2Station: 463.69538383327745
+      ThroughPoint3Elevation: -35.630843929692766
+      ThroughPoint3Station: 532.52330112600794
+    Entities[1] ProfileParabolaSymmetric
+      Constraint1: Fixed
+      Constraint2: ThreePassPoints
+      CurveType: Crest
+      EndElevation: -36.298063838435063
+      EndStation: 749.43553998442258
+      EntityAfter: <EntityNotFoundException: There is no ProfileEntity after.>
+      EntityBefore: 3
+      EntityId: 2
+      EntityType: ParabolaSymmetric
+      GradeAtThroughPoint1: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeAtThroughPoint2: <InvalidOperationException: Cannot set this property according to current constraint type.>
+      GradeChange: -0.068675254637164576
+      GradeIn: -0.0071780088338298893
+      GradeOut: -0.07585326347099447
+      HighLowPointElevation: -33.493072438395231
+      HighLowPointStation: 681.87084243908942
+      HighestDesignSpeed: 60
+      K: 9.8382886095292026
+      Length: 67.564697545333161
+      M: 10.164369431401074
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValueSSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      PVIElevation: -33.735562436312954
+      PVIStation: 715.65319121175594
+      Radius: 983.82886095292031
+      StartElevation: -33.493072438395231
+      StartStation: 681.87084243908942
+      TangentOffsetAtPVI: 0.5800028510510935
+      ThroughPoint1Elevation: -37.674205217830966
+      ThroughPoint1Station: 583.83139050519094
+      ThroughPoint2Elevation: -34.463208665907217
+      ThroughPoint2Station: 630.55095127805544
+      ThroughPoint3Elevation: -36.298063838435063
+      ThroughPoint3Station: 749.43553998442258
+    Entities[2] ProfileTangent
+      Constraint1: Free
+      Constraint2: NoConstraints
+      EndElevation: -33.493072438395231
+      EndStation: 681.87084243908942
+      EntityAfter: 2
+      EntityBefore: 1
+      EntityId: 3
+      EntityType: Tangent
+      Grade: -0.0071780088338300168
+      HighestDesignSpeed: 60
+      Length: 194.26231819907372
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValueSSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      StartElevation: -32.098655802281982
+      StartStation: 487.6085242400157
+      ThroughPoint1Elevation: <CivilException: Retrieve attribute failed.>
+      ThroughPoint1Station: <CivilException: Retrieve attribute failed.>
+      ThroughPoint2Elevation: <CivilException: Retrieve attribute failed.>
+      ThroughPoint2Station: <CivilException: Retrieve attribute failed.>
+
+  Profile [8EEB] Profile
+    AlignmentId: 8C4A
+    Annotative: NotApplicable
+    Area: 0
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    DataSourceId: <InvalidOperationException: No support for this ProfileType of profile.>
+    DataSourceName: <InvalidOperationException: No support for this ProfileType of profile.>
+    Description: 
+    DesignCheckSetId: <InvalidOperationException: You must use DesignSpeedBase first.>
+    DesignCheckSetName: <InvalidOperationException: No DesignCheckSet is available.>
+    DesignSpeedBased: False
+    DisplayName: Profile
+    DrawableType: Geometry
+    EdgeStyleId: null
+    ElevationMax: -12.169338762866843
+    ElevationMin: -27.911510201438151
+    EndParam: 1
+    EndPoint: <Exception: eNotApplicable>
+    EndingStation: 1150.0437895209034
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FingerPrint: 7835713304046832342
+    FolderId: null
+    ForceAnnoAllVisible: True
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8EEB
+    IsAProxy: False
+    IsCancelling: False
+    IsEditable: True
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: True
+    IsWriteEnabled: False
+    Layer: C-ROAD-PROF
+    LayerId: 3AD
+    LayerKey: 
+    Length: 327.30273105183005
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: tangent intersection
+    NeedsPromoting: False
+    ObjectId: 8EEB
+    Offset: 0
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    Plinegen: True
+    PlotStyleName: ByLayer
+    ProfileType: FG
+    ProjectState: New
+    ReceiveShadows: True
+    ShowToolTip: True
+    StartParam: 0
+    StartPoint: <Exception: eNotApplicable>
+    StartingStation: 822.74105846907332
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    UpdateMode: Static
+    UseDesignCheckSet: False
+    UseDesignCriteriaFile: False
+    Visible: True
+    VisualStyleId: null
+    PVIs[0] ProfilePVI
+      Elevation: -15.17426961067558
+      EntityAfter: 1
+      EntityBefore: <InvalidOperationException: Cannot find entity before current PVI.>
+      GradeIn: <InvalidOperationException: GradeIn is invalid for the first PVI in the profile.>
+      GradeOut: -0.082713014779722913
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 822.74105846907332
+      Station: 822.74105846907332
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    PVIs[1] ProfilePVI
+      Elevation: -27.911510201438151
+      EntityAfter: 2
+      EntityBefore: 1
+      GradeIn: -0.082713014779722913
+      GradeOut: 0.090832685223959875
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 976.73424351599419
+      Station: 976.73424351599419
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    PVIs[2] ProfilePVI
+      Elevation: -12.169338762866843
+      EntityAfter: <InvalidOperationException: Cannot find entity before current PVI.>
+      EntityBefore: 2
+      GradeIn: 0.090832685223959875
+      GradeOut: <InvalidOperationException: GradeOut is invalid for the last PVI in the profile.>
+      HeadlightSightDistance: <NullReferenceException: Object reference not set to an instance of an object.>
+      PVIType: None
+      PassingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+      RawStation: 1150.0437895209034
+      Station: 1150.0437895209034
+      StoppingSightDistance: <InvalidOperationException: PassingSightDistance is valid only for the PVI that's type is ParabolaSymmetric and it's vertical curve type is Crest.>
+    Entities[0] ProfileTangent
+      Constraint1: Fixed
+      Constraint2: PassThroughPt1AndPt2
+      EndElevation: -27.911510201438151
+      EndStation: 976.73424351599419
+      EntityAfter: 2
+      EntityBefore: <EntityNotFoundException: There is no ProfileEntity before.>
+      EntityId: 1
+      EntityType: Tangent
+      Grade: -0.082713014779722913
+      HighestDesignSpeed: 60
+      Length: 153.99318504692087
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValueSSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      StartElevation: -15.17426961067558
+      StartStation: 822.74105846907332
+      ThroughPoint1Elevation: -15.17426961067558
+      ThroughPoint1Station: 822.74105846907332
+      ThroughPoint2Elevation: -27.911510201438151
+      ThroughPoint2Station: 976.73424351599419
+    Entities[1] ProfileTangent
+      Constraint1: Fixed
+      Constraint2: PassThroughPt1AndPt2
+      EndElevation: -12.169338762866843
+      EndStation: 1150.0437895209034
+      EntityAfter: <EntityNotFoundException: There is no ProfileEntity after.>
+      EntityBefore: 1
+      EntityId: 2
+      EntityType: Tangent
+      Grade: 0.090832685223959875
+      HighestDesignSpeed: 60
+      Length: 173.30954600490918
+      MinimumKValueHSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValuePSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      MinimumKValueSSD: <InvalidOperationException: Cannot get this property according to entity's type, constraint type or curve type.>
+      StartElevation: -27.911510201438151
+      StartStation: 976.73424351599419
+      ThroughPoint1Elevation: -27.911510201438151
+      ThroughPoint1Station: 976.73424351599419
+      ThroughPoint2Elevation: -12.169338762866843
+      ThroughPoint2Station: 1150.0437895209034
+
+  ProfileView [8DA9] ProfileView
+    AlignmentId: 8C4A
+    AlignmentName: prpfile
+    Annotative: NotApplicable
+    Area: 0
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    CloneMeForDragging: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    Description: 
+    DisplayName: Profile View
+    DrawableType: Geometry
+    EdgeStyleId: null
+    ElevationMax: -2.6319689285531247
+    ElevationMin: -41.660205181676247
+    ElevationRangeMode: Automatic
+    EndParam: 1
+    EndPoint: (1722.04324758399,1249.48374214307,1)
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FingerPrint: 0
+    FolderId: null
+    ForceAnnoAllVisible: True
+    HasFields: False
+    HasSaveVersionOverride: False
+    Id: 8DA9
+    IsAProxy: False
+    IsCancelling: False
+    IsEraseStatusToggled: False
+    IsErased: False
+    IsHighlighting: False
+    IsModified: False
+    IsModifiedGraphics: False
+    IsModifiedXData: False
+    IsNewObject: False
+    IsNotifyEnabled: False
+    IsNotifying: False
+    IsObjectIdsInFlux: False
+    IsPeriodic: False
+    IsPersistent: True
+    IsPlanar: True
+    IsReadEnabled: True
+    IsReallyClosing: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsTransactionResident: True
+    IsUndoing: False
+    IsUsed: True
+    IsWriteEnabled: False
+    Layer: C-ROAD-PROF-VIEW
+    LayerId: 8D6F
+    LayerKey: AeccGraphProfile
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Location: (1722.04324758399,1249.48374214307,0)
+    Material: ByLayer
+    MaterialId: 894
+    MergeStyle: Ignore
+    Name: prpfile2
+    NeedsPromoting: False
+    ObjectId: 8DA9
+    OwnerId: 1F
+    PaperOrientation: NotApplicable
+    PlotStyleName: ByLayer
+    ProjectState: New
+    ReceiveShadows: True
+    ShowToolTip: True
+    SplitDatumRounding: ExactElevation
+    SplitHeight: 0
+    SplitProfileView: False
+    SplitStationMode: Manual
+    SplitStationRounding: ExactStation
+    StartParam: 0
+    StartPoint: (1722.04324758399,1249.48374214307,0)
+    StationEnd: 1900
+    StationRangeMode: Automatic
+    StationStart: -100
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    Visible: True
+    VisualStyleId: null

@@ -55,6 +55,21 @@ one `AECC_PROFILEDATABAND_LABELGROUP`.
 
 `aecc_profile::pointers_to` and `parent_alignment` read them.
 
+**Companions (S312, `C3DDUMPALL`).** The "feature style" a profile
+points to twice is a **companion** in the alignment registry (12F9,
+owned by `AECC_ALIGNMENT_PARCEL_NODE` 12F8), shaped like an alignment's:
+an `AECC_FEATURE_STYLE` named with a 32-hex ID (API `Name`, e.g. 8F4F
+`f0441c1eb62c43a49c81cfbf6cc2a013`), a soft pointer back to the
+registry, then soft pointers to its members. The first profile, 8E87,
+shares its **alignment's** companion: 8C49 lists both 8E87 and the
+alignment 8C4A. The copies made later (8FCD, 8FE3) each got their own
+(8FD5, 8FEB). Three registry entries (8F4F, 8FC3, 8FCC) point to
+nothing; they are left over from profiles deleted earlier in the
+series (S310–S311 had 8FBB and 8FC4).
+
+The seven helper objects are `ImpDBObject` to the API: no public
+properties beyond the owner (the profile).
+
 ## Profile record (`AECC_PROFILE`, class `AeccImpVAlignment`)
 
 Strings: `AeccImpVAlignment`, two empty, then the label point names

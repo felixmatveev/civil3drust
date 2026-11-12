@@ -2,9 +2,10 @@
 // drawing, with its profiles and profile views, then every site and
 // feature line and the other Civil 3D entities in model space, to
 // <drawing>.api.txt, to compare with what civil3drust decodes.
-// C3DDUMPALL: every Civil 3D object in the database (entities, styles,
-// sites, helpers, label groups …), simple properties only, to
-// <drawing>.api-all.txt: the public names and values per class.
+// C3DDUMPALL: Civil 3D objects in the database by class — "control" (the
+// default: alignments, profiles, views, feature lines, sites, companions,
+// helpers, label groups, check sets), "all", or DXF name patterns — with
+// owner and simple properties, to <drawing>.api-all.txt.
 // Read-only: both open objects for read and change nothing.
 
 using System;
@@ -15,6 +16,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -96,9 +98,29 @@ namespace C3dApiDump
             Document doc = AcApp.DocumentManager.MdiActiveDocument;
             Editor ed = doc.Editor;
             Database db = doc.Database;
+            var opt = new PromptStringOptions(
+                "\nClasses: control, all, or DXF name patterns (comma-separated, * wildcard) <control>: ")
+            {
+                AllowSpaces = false,
+            };
+            PromptResult pr = ed.GetString(opt);
+            if (pr.Status != PromptStatus.OK)
+            {
+                return;
+            }
+            string answer = string.IsNullOrWhiteSpace(pr.StringResult) ? "control" : pr.StringResult.Trim();
+            string[] patterns = answer.Equals("control", StringComparison.OrdinalIgnoreCase)
+                ? ControlClasses
+                : answer.Equals("all", StringComparison.OrdinalIgnoreCase)
+                    ? new[] { "AECC_*" }
+                    : answer.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            Regex match = new Regex(
+                "^(" + string.Join("|", patterns.Select(x => Regex.Escape(x.Trim()).Replace("\\*", ".*"))) + ")$",
+                RegexOptions.IgnoreCase);
             var sb = new StringBuilder();
             sb.AppendLine("drawing: " + doc.Name);
             sb.AppendLine("written: " + DateTime.UtcNow.ToString("u"));
+            sb.AppendLine("classes: " + string.Join(", ", patterns));
             int n = 0;
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
@@ -111,7 +133,7 @@ namespace C3dApiDump
                         continue;
                     }
                     string dxf = id.ObjectClass.DxfName ?? "";
-                    if (!dxf.StartsWith("AECC_", StringComparison.OrdinalIgnoreCase))
+                    if (!dxf.StartsWith("AECC_", StringComparison.OrdinalIgnoreCase) || !match.IsMatch(dxf))
                     {
                         continue;
                     }
@@ -138,6 +160,15 @@ namespace C3dApiDump
             sb.AppendLine("objects: " + n);
             Write(doc, ed, sb, ".api-all.txt", false);
         }
+
+        // The classes around alignments, profiles, feature lines and sites.
+        static readonly string[] ControlClasses =
+        {
+            "AECC_ALIGNMENT", "AECC_ALIGNMENT_*NODE", "AECC_PROFILE", "AECC_PROFILE_VIEW",
+            "AECC_FEATURE_LINE", "AECC_FEATURE_STYLE", "AECC_PARCEL", "AECC_PARCEL_NODE",
+            "AECC_DB_*", "AECC_ENTITY*", "AECC_NOTIFICATIONINFOS", "AECC_*DESIGN_CHECK_SET",
+            "AECC_*LABEL_GROUP", "AECC_*LABELGROUP", "AECC_*LABELING", "AECC_GRADING*",
+        };
 
         static ObjectId[] SelectAll(Editor ed, string dxfName)
         {
@@ -195,6 +226,7 @@ namespace C3dApiDump
             "GetGeCurve", "GetOrthoProjectedCurve", "GetPlane", "GetSubentityGeometry",
             "GetGripPoints", "GetStretchPoints", "GetOsnapPoints", "GetTransformedCopy",
             "GetHyperlinkCollection", "GetAnonymousBlockIds", "GetAnnotativeScaleContexts",
+            "GetLifetimeService", "GetReferenceInfo",
         };
 
         static void DumpGetters(StringBuilder sb, object o, string indent)
@@ -389,10 +421,19 @@ namespace C3dApiDump
             }
         }
 
+        // Not part of the object's data: handles repeated in the header,
+        // and the transaction's view of the open object.
         static readonly HashSet<string> SkipProperties = new HashSet<string>
         {
             "Database", "Bounds", "GeometricExtents", "AcadObject", "ClassID",
             "UnmanagedObject", "AutoDelete", "IsDisposed", "DrawStream",
+            "Handle", "Id", "ObjectId", "OwnerId", "DrawableType", "PaperOrientation",
+            "Annotative", "MergeStyle", "HasFields", "HasSaveVersionOverride",
+            "IsAProxy", "IsCancelling", "IsEraseStatusToggled", "IsErased", "IsModified",
+            "IsModifiedGraphics", "IsModifiedXData", "IsNewObject", "IsNotifyEnabled",
+            "IsNotifying", "IsObjectIdsInFlux", "IsPersistent", "IsReadEnabled",
+            "IsReallyClosing", "IsTransactionResident", "IsUndoing", "IsWriteEnabled",
+            "IsHighlighting", "ForceAnnoAllVisible", "CloneMeForDragging",
         };
 
         // Every readable property of a simple type (numbers, strings, enums,

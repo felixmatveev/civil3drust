@@ -17,12 +17,19 @@ versions follow [Semantic Versioning](https://semver.org/).
   on a closed pipe.
 
 ### Fixed
+- The `C3DDUMP` outputs of S306–S312 were never committed (`*.api.txt`
+  was ignored everywhere), so `every_entity_matches_civil3d_api` failed
+  on a fresh clone; `.gitignore` now keeps `samples/*.api.txt`.
 - `tools/c3d_api_dump`: `Commands.cs` did not build against Civil 3D 2024
   (CS0104: `DBObject` exists in both `Autodesk.AutoCAD.DatabaseServices`
   and `Autodesk.Civil.DatabaseServices`); an alias picks AutoCAD's. Built
   by the owner with .NET SDK 8.0.428.
 
 ### Added
+- `C3DDUMPALL` asks for classes (`control` default, `all`, or DXF name
+  patterns); both commands leave out per-object bookkeeping properties.
+  S312's new dumps: profiles have companions in the alignment registry
+  (the first profile shares its alignment's), docs/profile-object.md.
 - `tools/c3d_api_dump`: `C3DDUMP` now also dumps sites, feature lines
   and every other `AECC_*` entity (simple properties plus each `Get…()`
   and `Get…(enum)` result, e.g. a feature line's points per point type);
