@@ -55,6 +55,11 @@ versions follow [Semantic Versioning](https://semver.org/).
   `exp_site` now writes.
 - S345 (S335 with the alignment's edge ID set) accepted by Civil 3D
   with no issues: every site experiment of the round now passes.
+- Re-saves S349–S351 of S336, S337 and S345: name and description
+  kept; a literal name the name pool already has is stored as the pool
+  ID again; the alignment moved in with its edge ID set stays in the
+  container once. Every writer of the round now meets the D-049
+  acceptance (no RECOVER, clean AUDIT, re-save reads back the same).
 
 ### Changed
 - `viewer/` and `hexview/` moved to `archive/` (D-075), unmaintained.

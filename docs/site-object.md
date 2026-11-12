@@ -65,7 +65,9 @@ handle stream: soft → tree node, n × soft → site, soft → one site,
   its ID alone; a new name gets `0x8000_0000 | id` and its string in the
   record and the list. The second site (key `00000101`) is the same
   case. Renaming the first to `B` (S328) gave it a string and a
-  high-bit key. Reading such a name needs the pool (MIST22).
+  high-bit key; a literal `A` written over the pooled one (S337) came
+  back from Civil 3D in the pooled form (S350). Reading such a name
+  needs the pool (MIST22).
 - **Order.** Key mod 8, then key — a hash table's order, the same as
   the container's nodes. It fits every list with two sites: S103
   (`…BDA`, `…BD7`), S104, S317 (`…3359`, `…335C`), S319, S329
@@ -278,9 +280,9 @@ node removed) and is rebuilt in the other with new node IDs from 1.
 | S333 move-out | **accepted**: clean open, no AUDIT issues; API: `IsSiteless: True`, `SiteName` empty, the site's `GetAlignmentIds()` empty. **Re-save S341** (the owner also renamed the site `Site A`; Civil 3D rewrote the whole drawing): the refilled companion 37FD stays the alignment's companion, same nodes, with edge flags 0x10 → 0x810 and vertex flags 10 → 2; the site's container is written compact — no edge slot (next ID still 2), **no face 1** (next ID 2), 19 style references; the emptied companion 8D69 likewise has no slot. So refilling an emptied companion is a valid way to make an alignment siteless, and a container's free slots and loop-less face are optional |
 | S334 move-out, one of two | **accepted**: clean; API: `Alignment - (1)` siteless, `Alignment - (2)` in the site, the site's `GetAlignmentIds()` = 8D8C. **Re-save S343**: same model; the refilled companion left exactly as written (edge 0x10, vertex flags 10 — S341 changed them, so that is not a rule); the container rewritten with a single edge entry that keeps **ID 2** |
 | S335 move-in again | **AUDIT: 1 error, fixed.** The alignment's record holds the ID of its edge (see "The alignment's edge ID"); S335 left it at 1 while the new edge was ID 3. Civil 3D's fix (S344): the alignment added to the container a second time as edge 4 on the same nodes, the written edge 3 left behind, the field set to 4. S332–S334 passed only because every edge there was ID 1 |
-| S345 = S335 with the edge ID field set to 3 | **accepted**: no issues where S335 had an AUDIT error; API: both alignments in the site. No re-save yet |
-| S336 rename + description | **accepted**: clean; API: site and container `Name: RENAMED`, `Description: written by civil3drust`, the members' `SiteName: RENAMED`. No re-save yet |
-| S337 literal name over a pooled one | **accepted**: clean; API: `Name: A`. No re-save yet |
+| S345 = S335 with the edge ID field set to 3 | **accepted**: no issues where S335 had an AUDIT error; API: both alignments in the site. **Re-save S351**: each alignment once in the container, edge 3 on the written nodes, the edge ID field still 3 |
+| S336 rename + description | **accepted**: clean; API: site and container `Name: RENAMED`, `Description: written by civil3drust`, the members' `SiteName: RENAMED`. **Re-save S349**: both strings kept, a new key for the site |
+| S337 literal name over a pooled one | **accepted**: clean; API: `Name: A`. **Re-save S350**: Civil 3D stores the name as the pool ID again (`0200D214`, no string) — a literal string for a pooled name is read and normalised |
 | S338 delete the only site | **accepted**: clean; API: no site, no container. **Re-save S346**: the zero-site list is kept byte for byte |
 | S339 create (clone of an empty site) | **accepted**: clean; API: `A` and `NEW SITE`, each with its container. **Re-save S347**: both kept; a new key for `NEW SITE` |
 | S340 create (clone of a site with members, graphics stripped) | **accepted**: clean; API: `B` with its three alignments, `A SITE` empty. **Re-save S348**: Civil 3D drew the new site's graphics, re-keyed both sites and put the list in key order |

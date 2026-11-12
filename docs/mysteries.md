@@ -621,8 +621,9 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   ID only (`docs/site-object.md`, "Site list").
 - **To settle:** the pool's layout in `AECC_CLASS_NODE`, so that such a
   name can be read; whether alignment and other object names use the
-  pool the same way. S337 tests writing a literal string for a pooled
-  name. Until then: give test sites names of several characters.
+  pool the same way. Writing a literal string for a pooled name is
+  accepted, and Civil 3D's save turns it back into the ID (S337 → S350),
+  so a writer never needs the pool. Until then: give test sites names of several characters.
 
 ## MIST23 — a site's parcel counters — **open (S112, S326)**
 
