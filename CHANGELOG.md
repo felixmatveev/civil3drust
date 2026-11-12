@@ -26,6 +26,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   by the owner with .NET SDK 8.0.428.
 
 ### Added
+- Workbench draws feature lines decoded, as 3D polylines (arcs from
+  bulges), instead of their bounding-box proxy graphics;
+  `aecc_feature_line::bulge_arc` and `sample_3d`.
 - S316 `C3DDUMP`: `GetPoints` per point type matches the decoded
   vertices (test `points_match_civil3d_api_s316`; two dependent
   elevations differ by 2e-10, recomputed by Civil 3D on open). The

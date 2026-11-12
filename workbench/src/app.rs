@@ -476,7 +476,9 @@ impl App {
                 });
                 for o in objs {
                     let badge = match (&o.decoded, &o.proxy) {
-                        (Decoded::Alignment(_), _) | (Decoded::Profile(_), _) => "◆",
+                        (Decoded::Alignment(_), _)
+                        | (Decoded::Profile(_), _)
+                        | (Decoded::FeatureLine(_), _) => "◆",
                         (Decoded::Failed(_), _) => "✖",
                         (_, Some(g)) if g.placeholder => "□",
                         (_, Some(_)) => "▣",
@@ -621,6 +623,20 @@ impl App {
                             ui.end_row();
                             ui.label("Elevations");
                             ui.label(format!("{:.3} – {:.3}", p.elevations.0, p.elevations.1));
+                            ui.end_row();
+                        }
+                        Decoded::FeatureLine(f) => {
+                            ui.label("Decoded");
+                            ui.label(format!(
+                                "feature line: {} vertices ({} elevation points), {} arc(s)",
+                                f.vertices, f.elevation_points, f.arcs
+                            ));
+                            ui.end_row();
+                            ui.label("Site");
+                            ui.label(f.site.clone().unwrap_or_else(|| "?".into()));
+                            ui.end_row();
+                            ui.label("Elevations");
+                            ui.label(format!("{:.3} – {:.3}", f.elevations.0, f.elevations.1));
                             ui.end_row();
                         }
                         Decoded::Failed(e) => {

@@ -267,6 +267,17 @@ The object list shows the profile's name, entity count, stations and
 elevation range; `--objects` prints the same. Drawing profiles in their
 profile views (2D) comes later, once the view's fields are mapped.
 
+## Feature lines in 3D (2026-11-11)
+
+Feature lines (`AECC_FEATURE_LINE`) used to show only their proxy
+graphics, a bounding box drawn as a placeholder. They are now decoded
+(◆): their vertices from the site's topology (`aecc_feature_line::vertices`),
+drawn by `aecc_feature_line::sample_3d` as a 3D polyline — straight
+between vertices, arcs from their bulges sampled every 1 unit, z linear
+along each segment — with a marker at every vertex. The object list and
+`--objects` show the site, the vertex, elevation point and arc counts
+and the elevation range.
+
 ## Open questions
 
 - Names for reference kinds (companion, style, label set, site,

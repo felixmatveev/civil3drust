@@ -122,3 +122,47 @@ pub fn vertices(doc: &CadDocument, line: &FeatureLine) -> Option<Vec<FeatureVert
         })
         .collect()
 }
+
+/// Centre, radius, start angle and signed sweep (positive = left) of the
+/// arc a bulge describes from `a` to `b`.
+pub fn bulge_arc(a: [f64; 2], b: [f64; 2], bulge: f64) -> ([f64; 2], f64, f64, f64) {
+    let sweep = 4.0 * bulge.atan();
+    let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
+    let c = dx.hypot(dy);
+    let h = (c / 2.0) / (sweep / 2.0).tan();
+    let (nx, ny) = (-dy / c, dx / c);
+    let center = [(a[0] + b[0]) / 2.0 + nx * h, (a[1] + b[1]) / 2.0 + ny * h];
+    let radius = (a[0] - center[0]).hypot(a[1] - center[1]);
+    let start = (a[1] - center[1]).atan2(a[0] - center[0]);
+    (center, radius, start, sweep)
+}
+
+/// The feature line as a 3D polyline: lines between vertices, arcs
+/// sampled about every `step` (at least 8 pieces), z changing linearly
+/// with the horizontal length along each segment (a constant grade).
+pub fn sample_3d(vertices: &[FeatureVertex], step: f64) -> Vec<[f64; 3]> {
+    let mut out = Vec::new();
+    for (i, v) in vertices.iter().enumerate() {
+        out.push([v.x, v.y, v.z]);
+        let (Some(b), Some(w)) = (v.bulge, vertices.get(i + 1)) else {
+            continue;
+        };
+        let (c, r, a0, sweep) = bulge_arc([v.x, v.y], [w.x, w.y], b);
+        let len = r * sweep.abs();
+        let n = if step > 0.0 {
+            ((len / step).ceil() as usize).clamp(8, 4096)
+        } else {
+            8
+        };
+        for k in 1..n {
+            let t = k as f64 / n as f64;
+            let a = a0 + sweep * t;
+            out.push([
+                c[0] + r * a.cos(),
+                c[1] + r * a.sin(),
+                v.z + (w.z - v.z) * t,
+            ]);
+        }
+    }
+    out
+}

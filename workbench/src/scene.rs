@@ -67,6 +67,7 @@ pub enum Decoded {
     Failed(String),
     Alignment(AlignmentView),
     Profile(ProfileView),
+    FeatureLine(FeatureLineView),
 }
 
 impl Decoded {
@@ -75,6 +76,7 @@ impl Decoded {
         match self {
             Decoded::Alignment(a) => &a.prims,
             Decoded::Profile(p) => &p.prims,
+            Decoded::FeatureLine(f) => &f.prims,
             _ => &[],
         }
     }
@@ -92,6 +94,20 @@ pub struct ProfileView {
     pub stations: (f64, f64),
     pub elevations: (f64, f64),
     /// The 3D polyline, then a marker at every entity boundary.
+    pub prims: Vec<Prim>,
+}
+
+/// A feature line from its site's topology: the vertices with their
+/// elevations, arcs sampled every [`PROFILE_STEP`].
+#[derive(Debug, Clone)]
+pub struct FeatureLineView {
+    pub name: String,
+    pub site: Option<String>,
+    pub vertices: usize,
+    pub elevation_points: usize,
+    pub arcs: usize,
+    pub elevations: (f64, f64),
+    /// The 3D polyline, then a marker at every vertex.
     pub prims: Vec<Prim>,
 }
 
@@ -158,6 +174,9 @@ impl Scene {
         for rec in raw::records(doc, "AECC_PROFILE") {
             alignments.insert(rec.handle, profile_view(doc, &rec, &decoded_alignments));
         }
+        for rec in raw::records(doc, "AECC_FEATURE_LINE") {
+            alignments.insert(rec.handle, feature_line_view(doc, &rec));
+        }
         for e in doc.model_space_entities() {
             match e {
                 EntityType::Unknown(u) => {
@@ -169,6 +188,7 @@ impl Scene {
                     let name = match &decoded {
                         Decoded::Alignment(a) => a.name.clone(),
                         Decoded::Profile(p) => p.name.clone(),
+                        Decoded::FeatureLine(f) => Some(f.name.clone()),
                         _ => raw::object_name(data),
                     };
                     scene.objects.push(Object {
@@ -223,6 +243,41 @@ pub fn station_text(sta: f64) -> String {
     let s = sta.abs();
     let hundreds = (s / 100.0).floor();
     format!("{sign}{}+{:05.2}", hundreds as i64, s - hundreds * 100.0)
+}
+
+/// A feature line as its 3D polyline (see [`FeatureLineView`]).
+fn feature_line_view(doc: &acadrust::document::CadDocument, rec: &raw::RawRecord) -> Decoded {
+    use civil3drust::aecc_feature_line as fl;
+    let line = fl::read(rec);
+    let Some(v) = fl::vertices(doc, &line) else {
+        return Decoded::Failed("no edge in the site's topology".into());
+    };
+    if v.len() < 2 {
+        return Decoded::Failed("fewer than two vertices".into());
+    }
+    let site = civil3drust::aecc_site::sites(doc)
+        .into_iter()
+        .find(|s| s.container == line.container)
+        .map(|s| s.name);
+    let (zmin, zmax) = v
+        .iter()
+        .fold((f64::MAX, f64::MIN), |(a, b), p| (a.min(p.z), b.max(p.z)));
+    let mut prims = vec![Prim::Line {
+        pts: fl::sample_3d(&v, PROFILE_STEP),
+        closed: false,
+    }];
+    prims.extend(v.iter().map(|p| Prim::Marker {
+        at: [p.x, p.y, p.z],
+    }));
+    Decoded::FeatureLine(FeatureLineView {
+        name: line.name,
+        site,
+        vertices: v.len(),
+        elevation_points: v.iter().filter(|p| p.is_elevation_point()).count(),
+        arcs: v.iter().filter(|p| p.bulge.is_some()).count(),
+        elevations: (zmin, zmax),
+        prims,
+    })
 }
 
 /// A profile over its alignment (see [`ProfileView`]).

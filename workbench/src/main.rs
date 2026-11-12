@@ -204,6 +204,15 @@ fn objects(path: &str) {
                 station_text(a.start_station),
                 station_text(a.start_station + a.length)
             ),
+            Decoded::FeatureLine(f) => format!(
+                "feature line in site {}, {} vertices ({} elevation points), {} arc(s), elev {:.3}..{:.3}",
+                f.site.as_deref().unwrap_or("?"),
+                f.vertices,
+                f.elevation_points,
+                f.arcs,
+                f.elevations.0,
+                f.elevations.1
+            ),
             Decoded::Profile(p) => format!(
                 "profile over {:X}, {} entities, sta {}..{}, elev {:.3}..{:.3}, {} points",
                 p.alignment,

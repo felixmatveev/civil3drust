@@ -269,3 +269,28 @@ fn points_match_civil3d_api_s316() {
     same(list("PIPoint"), pts(&|v| !v.is_elevation_point()));
     same(list("ElevationPoint"), pts(&|v| v.is_elevation_point()));
 }
+
+/// The fillet's arc from its bulge: radius 10, it ends on the next
+/// vertex, and the sampled 3D polyline runs from the first vertex to the
+/// last with the arc's z between its ends (S315).
+#[test]
+fn fillet_arc_and_sampling_s315() {
+    use civil3drust::aecc_feature_line::{bulge_arc, sample_3d};
+    let d = open("samples/S315_fl_curve.dwg");
+    let v = vertices(&d, &feature_lines(&d)[0]).unwrap();
+    let (a, b) = (v[1], v[2]);
+    let (c, r, a0, sweep) = bulge_arc([a.x, a.y], [b.x, b.y], a.bulge.unwrap());
+    assert!((r - 10.0).abs() < 1e-3, "{r}");
+    let end = [c[0] + r * (a0 + sweep).cos(), c[1] + r * (a0 + sweep).sin()];
+    assert!((end[0] - b.x).abs() < 1e-9 && (end[1] - b.y).abs() < 1e-9);
+    // Turns left (toward +y) like the deflection.
+    assert!(sweep > 0.0);
+    let pts = sample_3d(&v, 1.0);
+    assert_eq!(pts[0], [v[0].x, v[0].y, v[0].z]);
+    assert_eq!(*pts.last().unwrap(), [v[3].x, v[3].y, v[3].z]);
+    assert!(pts.len() >= 4 + 7);
+    let inner: Vec<_> = pts.iter().filter(|p| p[0] > a.x && p[0] < b.x).collect();
+    assert!(inner
+        .iter()
+        .all(|p| p[2] >= a.z.min(b.z) && p[2] <= a.z.max(b.z)));
+}
