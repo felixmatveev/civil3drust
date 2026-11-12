@@ -32,6 +32,11 @@ versions follow [Semantic Versioning](https://semver.org/).
   accepted by Civil 3D 2024 and re-saved as S341: the refilled companion
   is kept; the container is rewritten without the free slot and the
   loop-less face (`docs/civil3d-rebuilds.md`).
+- S342, Civil 3D's re-save of S332: the moved alignment stays in the
+  site, its record equal to Civil 3D's own S323; container graph and
+  site graphics rebuilt by Civil 3D. Move-in and move-out of a
+  non-crossing alignment now meet the D-049 acceptance (no RECOVER,
+  clean AUDIT, re-save reads back to the same model).
 
 ### Changed
 - `viewer/` and `hexview/` moved to `archive/` (D-075), unmaintained.
