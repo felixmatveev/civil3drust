@@ -230,6 +230,36 @@ references follow.
 container references; its edge leaves one container (free slot, crossing
 node removed) and is rebuilt in the other with new node IDs from 1.
 
+## Write experiments (S332–S340, `examples/exp_site.rs`) — results pending
+
+First writers, kept in the example until Civil 3D has accepted them.
+The container is decoded to a model (nodes, edge slots, faces, tail,
+references), changed, and written back whole; the site record's tail
+and the site list are rebuilt the same way. Nothing is copied from
+another drawing; `create` clones the drawing's first site.
+
+| sample | command | tests |
+|---|---|---|
+| S332 | `move-in` S322: 8D6A → the empty site | the S322 → S323 step. Differs from Civil 3D's S323 only in the node coordinates' last digits, one vertex flag (50, 2 in S323), the site's graphics (not redrawn), the optional site entry (not written) and the alignment's MIST2 block (absent, as in S322) |
+| S333 | `move-out` S323: 8D6A → `<None>` | last member leaves: free slot, face 1 without loops (S106 form), site point zeroed; an **emptied companion is refilled** (rebuilt form: edge 0x10, vertex flags 10, no face) instead of a new one |
+| S334 | `move-out` S324: 8D6A, 8D8C stays | a free slot before a live one; loop and nodes of one member removed |
+| S335 | `move-in` S334: 8D6A again | a site with a member and a free slot: edge ID 3, nodes 15–17, second loop `(15, 0)` in face 1 |
+| S336 | `rename` S331: `B` → `RENAMED`, description | the two strings and the list's name only (as S318, plus the description) |
+| S337 | `rename` S322: unnamed → `A` | name string inserted, key `0x80000000 \| n` (largest key of the site list and the alignment registry + 1) in record and list (MIST22) |
+| S338 | `delete` S322: the only site | site, container and list entry removed; zero-site list as in S24 |
+| S339 | `create` S322: `NEW SITE` | clone of an empty, unnamed site: handles (site, site + 1), key, name, empty tail and container, list entry in name order, last-created pointer |
+| S340 | `create` S331: `A SITE` | clone of a site with members: tail reset, **graphics stripped**, the template's date stamp kept |
+
+For each: does it open without RECOVER, is AUDIT clean, what does
+Prospector show (sites, the alignment's site), and a re-save. The
+re-saves show what Civil 3D rebuilds (graphics, keys, vertex flags, the
+entry) and go into `civil3d-rebuilds.md` / `civil3d-rejects.md`.
+
+Limits of the experiment code: an alignment that crosses or touches a
+member is refused (straight members only once the site has members);
+spirals are refused; `delete` takes empty sites only; `create` needs a
+site without parcels to clone.
+
 ## Open
 
 - **MIST22** — the unnamed sites: what name Civil 3D shows, and what the

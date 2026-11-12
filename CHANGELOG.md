@@ -17,6 +17,12 @@ versions follow [Semantic Versioning](https://semver.org/).
   of S101–S112 and S313–S331. New open questions MIST22 (sites without
   a name string) and MIST23 (parcel counters). Reader gaps found are
   listed there; the library is unchanged until the round closes.
+- `examples/exp_site.rs` and experiments S332–S340: first site writers
+  (rename/describe, name an unnamed site, create by cloning, delete an
+  empty site, move a non-crossing alignment into a site and back),
+  awaiting Civil 3D's verdict. The move-in output equals Civil 3D's S323
+  apart from caches and history flags (`docs/site-object.md`, "Write
+  experiments").
 
 ### Changed
 - `viewer/` and `hexview/` moved to `archive/` (D-075), unmaintained.
