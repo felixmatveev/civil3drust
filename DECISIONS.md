@@ -1580,3 +1580,20 @@ at the end of the round (CLAUDE.md).
 
 **Alternatives.** Command-line arguments per run (prompts every time);
 keeping two dump commands (two file formats to read).
+
+## D-078: Built-in (pooled) names: read through a table of observed IDs, written as literal strings
+
+**Context.** Civil 3D stores a site name it has among its built-in names
+as that name's ID (key without the high bit, no string). The ID's text is
+not in the drawing (MIST22), so no reader can get it from the file.
+
+**Decision.** The reader lists every site from the site list's key list
+and keeps the key (`Site::name_key`). `aecc_site::pooled_name` holds only
+the ID → name pairs our own samples have shown through Civil 3D's API
+dump; any other pooled name reads as empty, never guessed. Writers
+always store a literal string with a high-bit key, which Civil 3D accepts
+and converts on its own save (S337 → S350).
+
+**Why.** Cleanroom: the table can only grow from observed behaviour
+(harvest drawings such as S352). Writing literals keeps the writer
+independent of the table.

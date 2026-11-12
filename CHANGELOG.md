@@ -6,7 +6,18 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- `aecc_site`: sites whose name is one of Civil 3D's built-in names
+  (stored as an ID, no name string; MIST22) were not listed, and a
+  site's description was read from the wrong string for them. The site
+  count and keys now come from the site list's key list; `Site` has
+  `name_key`; `pooled_name` names the IDs the samples have shown
+  (`0200D214` = `A`), other pooled names read as empty (D-078). S321–S327
+  now list their site, and alignments in it report their membership.
+
 ### Added
+- `exp_site pool` and experiment S352: one empty site per built-in name
+  ID found in the samples, to learn the names from Civil 3D's API dump.
 - Site study, first batch (docs and samples only): S321–S331, the
   owner's eleven-step site series (empty site, alignment moved in,
   created in the site, crossings, a parcel, a feature line, rename,

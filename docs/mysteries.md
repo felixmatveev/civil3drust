@@ -619,11 +619,28 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   still in S329 after the site was renamed. Keys are IDs in a
   drawing-wide name pool; a name already in the pool is stored as the
   ID only (`docs/site-object.md`, "Site list").
-- **To settle:** the pool's layout in `AECC_CLASS_NODE`, so that such a
-  name can be read; whether alignment and other object names use the
-  pool the same way. Writing a literal string for a pooled name is
-  accepted, and Civil 3D's save turns it back into the ID (S337 → S350),
-  so a writer never needs the pool. Until then: give test sites names of several characters.
+- **Not in the drawing (S322 searched record by record):** the bytes of
+  `0200D214` occur only in the site, the site list, the design-check
+  expression 3620 (ID list `0200D217 0200D216 0000079D 0200D214`) and
+  its copy in class node BDA. No record pairs an ID with a text: the
+  only literal `A` is an abbreviation in class node C23, and there is no
+  `C` string at all for the second site. IDs without the high bit are
+  Civil 3D's built-in names (property names and the like); their text
+  comes from the program.
+- **Reading:** `aecc_site` takes the site count and keys from the site
+  list's key list, so pooled-name sites are listed, each with its
+  `name_key`; `aecc_site::pooled_name` gives the text for the IDs our
+  samples have paired with a name through the API dump (`0200D214` =
+  `A`), and the name is empty for any other ID (D-078).
+- **Writing:** always a literal string and a high-bit key. Civil 3D
+  accepts that for a name it has built in and stores the ID again on its
+  own save (S337 → S350), so a writer never needs the table.
+- **To settle:** the names of more IDs. S352 has one empty site per ID
+  seen in the samples' design-check expressions (18 IDs, each as its
+  site's description); its `C3DDUMP` gives the pairs for
+  `pooled_name`. Whether alignment and other object names use built-in
+  IDs the same way. Tip: test sites named with several characters get a
+  literal name.
 
 ## MIST23 — a site's parcel counters — **open (S112, S326)**
 

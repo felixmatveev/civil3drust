@@ -19,8 +19,13 @@ fn main() {
     let all = sites(&o.doc);
     println!("{} site(s)", all.len());
     for s in &all {
+        let key = if civil3drust::aecc_site::key_has_string(s.name_key) {
+            String::new()
+        } else {
+            format!(" (built-in name {:08X})", s.name_key)
+        };
         println!(
-            "  [{:X}] {:?}  container {}  description {:?}",
+            "  [{:X}] {:?}{key}  container {}  description {:?}",
             s.handle,
             s.name,
             s.container.map_or("-".into(), |c| format!("{c:X}")),

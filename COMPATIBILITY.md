@@ -30,7 +30,7 @@ Anything not listed is Passthrough.
 | &nbsp;&nbsp;Rail Diverted Alignments | — (no API value known) | Passthrough |
 | &nbsp;&nbsp;Miscellaneous Alignments | `aecc_build::TYPE_MISCELLANEOUS` (4; API "Utility") | Supported |
 | Feature Lines | Read: name, description, site, points with elevations, arcs (bulges), elevation points, from the site topology (S313–S317) | Partial |
-| Sites | `aecc_site::sites`, `membership` | Read-only — new alignments are siteless; deleting is siteless only (D-038, D-062) |
+| Sites | `aecc_site::sites`, `membership` | Read-only — new alignments are siteless; deleting is siteless only (D-038, D-062). A site named with one of Civil 3D's built-in names is listed with its key; its name is read only for IDs seen in samples (D-078, MIST22) |
 | Turnouts and Crossovers | — | Passthrough |
 | &nbsp;&nbsp;Crossover Groups | — | Passthrough |
 | &nbsp;&nbsp;Turnouts | — | Passthrough |

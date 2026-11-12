@@ -66,8 +66,10 @@ handle stream: soft → tree node, n × soft → site, soft → one site,
   record and the list. The second site (key `00000101`) is the same
   case. Renaming the first to `B` (S328) gave it a string and a
   high-bit key; a literal `A` written over the pooled one (S337) came
-  back from Civil 3D in the pooled form (S350). Reading such a name
-  needs the pool (MIST22).
+  back from Civil 3D in the pooled form (S350). The pool's table is not in the
+  drawing: the reader lists such a site with its key and names it from
+  the IDs the samples have shown (`aecc_site::pooled_name`; MIST22,
+  harvest experiment S352).
 - **Order.** Key mod 8, then key — a hash table's order, the same as
   the container's nodes. It fits every list with two sites: S103
   (`…BDA`, `…BD7`), S104, S317 (`…3359`, `…335C`), S319, S329

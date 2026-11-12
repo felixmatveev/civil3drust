@@ -801,7 +801,7 @@ fn cmd_delete(doc: &mut acadrust::CadDocument, a: &[String]) -> Res<()> {
     Ok(())
 }
 
-fn cmd_create(doc: &mut acadrust::CadDocument, a: &[String]) -> Res<()> {
+fn cmd_create(doc: &mut acadrust::CadDocument, a: &[String]) -> Res<u64> {
     let mut l = site_list(doc)?;
     let template = *l.sites.first().ok_or("no site to clone (needs one site)")?;
     let t_cont = container_of(doc, template)?;
@@ -901,6 +901,40 @@ fn cmd_create(doc: &mut acadrust::CadDocument, a: &[String]) -> Res<()> {
     l.last = site;
     write_site_list(doc, &l)?;
     println!("site {site:X}, container {cont:X}, key {key:08X}");
+    Ok(site)
+}
+
+/// MIST22 harvest: one new empty site per built-in name ID, stored the
+/// way Civil 3D stores a pooled name (the ID as key, no name string), with
+/// the ID as description so the API dump pairs each ID with its name.
+fn cmd_pool(doc: &mut acadrust::CadDocument, a: &[String]) -> Res<()> {
+    for id in a {
+        let key = u32::try_from(hex(id)).map_err(|_| "ID above 32 bits")?;
+        if named(key) {
+            return Err(format!("{id}: a pooled ID has no high bit"));
+        }
+        let site = cmd_create(doc, &["T".to_string()])?;
+        let mut l = site_list(doc)?;
+        if l.keys.contains(&key) {
+            return Err(format!("{id}: already a site key"));
+        }
+        let i = l.sites.iter().position(|h| *h == site).ok_or("new site")?;
+        let ni = name_index(&l, i);
+        l.names.remove(ni);
+        l.keys[i] = key;
+        let mut r = rec(doc, SITE, site)?;
+        let e = |e: string_stream::StringStreamError| e.to_string();
+        (r.data, r.handle_bits) =
+            string_stream::replace(&r.data, r.handle_bits, 3, &format!("id {key:08X}"))
+                .map_err(e)?;
+        (r.data, r.handle_bits) = string_stream::remove(&r.data, r.handle_bits, 2).map_err(e)?;
+        let n = 11;
+        (r.data, r.handle_bits) =
+            handle_refs::keep_refs(&r.data, r.handle_bits, site, n).ok_or("site references")?;
+        r.data = set_site_key(&r, key)?;
+        put(doc, site, r.data, r.handle_bits)?;
+        write_site_list(doc, &l)?;
+    }
     Ok(())
 }
 
@@ -1136,7 +1170,7 @@ fn main() {
     let a: Vec<String> = std::env::args().collect();
     if a.len() < 3 {
         fail(
-            "usage: exp_site <rename|create|delete|move-in|move-out|show> in.dwg [out.dwg args...]",
+            "usage: exp_site <rename|create|delete|move-in|move-out|pool|show> in.dwg [out.dwg args...]",
         );
     }
     let mut o = raw::open(&a[2]).unwrap_or_else(|e| fail(e));
@@ -1159,7 +1193,11 @@ fn main() {
         }
         "create" => {
             need(1);
-            cmd_create(&mut o.doc, args)
+            cmd_create(&mut o.doc, args).map(|_| ())
+        }
+        "pool" => {
+            need(1);
+            cmd_pool(&mut o.doc, args)
         }
         "delete" => {
             need(1);
