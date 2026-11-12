@@ -53,6 +53,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   Civil 3D draws the missing site graphics, re-keys written sites and
   keeps the site list in key order (key mod 8, then key), which
   `exp_site` now writes.
+- S345 (S335 with the alignment's edge ID set) accepted by Civil 3D
+  with no issues: every site experiment of the round now passes.
 
 ### Changed
 - `viewer/` and `hexview/` moved to `archive/` (D-075), unmaintained.
