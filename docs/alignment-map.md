@@ -60,6 +60,7 @@ Offsets are counted from the class data's start less 37 bits (the usual common e
 | 165–230 | MIST1, 66 bits (at 199 in the Properties form, 241 in S59) | **geometry fingerprint**, computed by Civil 3D; civil3drust writes zeros (D-046); checked for JSON-layout alignments (warning, groups re-solved) |
 | (Properties form) | date-modified block `BL 0x1600101F` + FILETIME (MIST3) | dropped with the plain form (D-057) |
 | +44 bits | MIST2 `BL 0x0D00D773, BL n` | **optional**, added by Civil 3D re-saves; must match the form BL; civil3drust removes it (D-047) |
+| +133 bits after MIST1 (and MIST2) | **edge ID**, `BL`: the ID of the alignment's edge in its companion or site container (S324, S326, S344; site-object.md) | read by `exp_site`; 1 for every siteless alignment; a wrong value is an AUDIT error (S335) |
 | 231–396 | almost all zero bits | constant |
 | last 22 bits | from the end: 13 unknown, 14 check for tangency, 15 lock all parameter constraints, 16 implied tangency swapping, 17 check set, 18 criteria file, 19 criteria-based design; the start station BD ends 20 bits before the end | decoded (`aecc_criteria`, `aecc_station`) |
 

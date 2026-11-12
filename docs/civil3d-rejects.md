@@ -45,6 +45,7 @@ How to read a row: **condition** in the file → **Civil 3D's response** →
 | condition | Civil 3D's response | samples | civil3drust |
 |---|---|---|---|
 | No companion and no registry entry; the alignment's two companion references null | AUDIT: 2 errors (no objects named). With fixing, the references stay null and no companion is created; without fixing, the file is kept as is | S30 → S31, S32; probably also the 2 errors in S67, S70, S73 | guarded: `create_alignment` writes a companion and registry entry unless `--no-parcel-entry` |
+| Alignment's edge ID field (133 bits after MIST1/MIST2) ≠ the ID of its edge in the site container | AUDIT: 1 error, fixed — Civil 3D adds the alignment to the container again under a new edge ID on the same nodes and leaves the old edge behind (members list the alignment twice) | S335 → S344 | to do in the library writer; `exp_site move-in` / `move-out` set the field (S345) |
 
 ## 4. Accepted, but Civil 3D changes it
 

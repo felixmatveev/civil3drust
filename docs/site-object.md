@@ -203,6 +203,28 @@ Details, each with the samples that show it:
   pasted or re-saved container keeps the 19 non-null ones (S317, S319).
   The S101 template has one (851).
 
+## The alignment's edge ID
+
+An alignment record holds the ID of its edge in the site container (or
+companion): one `BL`, 133 bits after MIST1 — after MIST2 when that is
+present, 98 bits later in the Alignment Properties form
+(alignment-map.md, section 2). Siteless alignments always have 1, which
+is why it went unnoticed.
+
+- S324/S326: 8D6A 1, 8D8C 2, 8DA4 3, 8DB7 4 — their edge IDs in 8D59.
+- Checked on the 146 sample drawings between S24 and S344 that this
+  check was run on (606 alignments): the field equals the edge ID in
+  573, 38 of them with an ID above 1; 11 alignments have no edge at
+  all; of the 22 that do not fit, 21 are in the connected (curb-return)
+  alignment drawings S283–S297, whose records are laid out differently,
+  and one is S335.
+- A wrong value is an AUDIT error (S335 → S344): Civil 3D looks the
+  edge up by this ID, does not find it, and adds the alignment to the
+  container again.
+
+Moving an alignment between a companion and a container, or between
+containers, has to write the new edge's ID here.
+
 ## What each operation changes
 
 **Create an empty site** (S98 → S101; the records of S313, S321): site record,
@@ -221,7 +243,9 @@ else changes.
 
 **Move an alignment into a site** (S322 → S323, S101 → S102):
 
-- alignment: references 2 and 3 → the container (data unchanged);
+- alignment: references 2 and 3 → the container, and its edge ID
+  field → the ID of its new edge (1 in S323, so the data looked
+  unchanged);
 - companion: emptied — nodes `next, 0, 0`, edge slot free, no face,
   references cut to the registry pointer — and left in the registry;
 - container: nodes, an edge slot (flags 0x810, a/b = 1), face 1 with
@@ -249,7 +273,9 @@ node removed) and is rebuilt in the other with new node IDs from 1.
 | S332 move-in | **accepted**: opens with no RECOVER, AUDIT clean; Prospector lists the alignment under the site; API: `IsSiteless: False`, `SiteName: A`, the site's `GetAlignmentIds()` = 8D6A, the container's `Name` = `A`. So Civil 3D takes the container without the site's redrawn graphics, without the optional site entry, with vertex flag 50 where it writes 2, and with node coordinates from the alignment. **Re-save S342** (site renamed `Site A`, whole drawing rewritten): the alignment is still in the site and its record equals the one in Civil 3D's own S323; Civil 3D rebuilt the container from the alignment (new node IDs 4–6 with its own coordinate rounding, edge flags 0x30, vertex flags 50/2/10, face flags 7, 19 style references), redrew the site's graphics (bit for bit those of S323) and set the site point from its nodes; it did not add the optional entry |
 | S333 move-out | **accepted**: clean open, no AUDIT issues; API: `IsSiteless: True`, `SiteName` empty, the site's `GetAlignmentIds()` empty. **Re-save S341** (the owner also renamed the site `Site A`; Civil 3D rewrote the whole drawing): the refilled companion 37FD stays the alignment's companion, same nodes, with edge flags 0x10 → 0x810 and vertex flags 10 → 2; the site's container is written compact — no edge slot (next ID still 2), **no face 1** (next ID 2), 19 style references; the emptied companion 8D69 likewise has no slot. So refilling an emptied companion is a valid way to make an alignment siteless, and a container's free slots and loop-less face are optional |
 | S334 move-out, one of two | **accepted**: clean; API: `Alignment - (1)` siteless, `Alignment - (2)` in the site, the site's `GetAlignmentIds()` = 8D8C. **Re-save S343**: same model; the refilled companion left exactly as written (edge 0x10, vertex flags 10 — S341 changed them, so that is not a rule); the container rewritten with a single edge entry that keeps **ID 2** |
-| S335–S340 | pending |
+| S335 move-in again | **AUDIT: 1 error, fixed.** The alignment's record holds the ID of its edge (see "The alignment's edge ID"); S335 left it at 1 while the new edge was ID 3. Civil 3D's fix (S344): the alignment added to the container a second time as edge 4 on the same nodes, the written edge 3 left behind, the field set to 4. S332–S334 passed only because every edge there was ID 1 |
+| S345 = S335 with the edge ID field set to 3 | pending |
+| S336–S340 | pending |
 
 
 First writers, kept in the example until Civil 3D has accepted them.

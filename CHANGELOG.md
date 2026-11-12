@@ -41,6 +41,12 @@ versions follow [Semantic Versioning](https://semver.org/).
   edge entries carry their own ID (a rewrite drops freed entries and
   keeps the IDs): layout in `docs/site-object.md` and `exp_site`
   corrected.
+- New field: an alignment record holds the ID of its edge in its
+  companion or site container (133 bits after MIST1/MIST2; it matches
+  in 573 sample alignments). Found through S335, where Civil 3D's AUDIT reported
+  one error because the field was stale (re-save S344: the alignment
+  added to the container twice). `exp_site` now writes it; corrected
+  experiment S345 (`docs/site-object.md`, `docs/civil3d-rejects.md`).
 
 ### Changed
 - `viewer/` and `hexview/` moved to `archive/` (D-075), unmaintained.

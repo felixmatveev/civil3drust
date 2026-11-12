@@ -897,11 +897,46 @@ fn cmd_create(doc: &mut acadrust::CadDocument, a: &[String]) -> Res<()> {
     Ok(())
 }
 
-fn alignment_refs(doc: &mut acadrust::CadDocument, r: &RawRecord, target: u64) -> Res<()> {
+/// Bit of the alignment's edge ID (`BL`): the ID of its edge in the site
+/// container or companion, 133 bits after MIST1 and the optional MIST2
+/// (98 bits later in the Alignment Properties form); checked against its
+/// present value.
+fn edge_id_bit(d: &[u8], id: i32) -> Res<usize> {
+    use civil3drust::aecc_build as b;
+    let after_key =
+        b::geometry_key_bit(d).ok_or("alignment: MIST1 not found")? + b::GEOMETRY_KEY_BITS;
+    // 133 bits after MIST1 (and MIST2 when present): S324, S326, S344.
+    let candidates: Vec<usize> = match b::resave_field_bit(d) {
+        Some(q) => vec![q + 44 + 133],
+        None => vec![after_key + 133, after_key + 98 + 133],
+    };
+    candidates
+        .into_iter()
+        .find(|&q| {
+            raw::get_bit(d, q) == 0
+                && raw::get_bit(d, q + 1) == 1
+                && raw::read_bl(d, q).map(|x| x.0) == Some(id)
+        })
+        .ok_or(format!("alignment: edge ID {id} not where expected"))
+}
+
+/// The alignment's two container references and its edge ID.
+fn alignment_refs(
+    doc: &mut acadrust::CadDocument,
+    r: &RawRecord,
+    target: u64,
+    edge: (i32, i32),
+) -> Res<()> {
     let mut t: Vec<u64> = refs_of(r).iter().map(|x| x.1).collect();
     t[2] = target;
     t[3] = target;
-    let (d, hb) = handle_refs::rewrite_refs(&r.data, r.handle_bits, r.handle, &t)
+    if !(1..256).contains(&edge.1) {
+        return Err("edge ID over 255 not handled".into());
+    }
+    let mut data = r.data.clone();
+    let at = edge_id_bit(&data, edge.0)?;
+    raw::set_byte(&mut data, at + 2, edge.1 as u8);
+    let (d, hb) = handle_refs::rewrite_refs(&data, r.handle_bits, r.handle, &t)
         .ok_or("alignment references")?;
     put(doc, r.handle, d, hb)
 }
@@ -953,6 +988,10 @@ fn cmd_move_in(doc: &mut acadrust::CadDocument, a: &[String]) -> Res<()> {
     }
     // Container: nodes, edge (as Civil 3D writes a moved alignment), loop.
     let first = t.add_edge(&pts, &bulges, 0x810, true);
+    let ids = (
+        ct.edges.iter().flatten().next().map_or(1, |e| e.id),
+        t.edges.iter().flatten().last().map_or(1, |e| e.id),
+    );
     t.members.push(al);
     match t.faces.first_mut() {
         Some(f) => f.loops.push((first, 0)),
@@ -974,7 +1013,7 @@ fn cmd_move_in(doc: &mut acadrust::CadDocument, a: &[String]) -> Res<()> {
     ct.faces.iter_mut().for_each(|f| f.loops.clear());
     let (d, hb) = ct.write(&comp)?;
     put(doc, comp_h, d, hb)?;
-    alignment_refs(doc, &r, cont_h)?;
+    alignment_refs(doc, &r, cont_h, ids)?;
     refresh_site(doc, site, &t)?;
     println!("{al:X} → site {site:X} (container {cont_h:X}); companion {comp_h:X} emptied");
     Ok(())
@@ -998,6 +1037,7 @@ fn cmd_move_out(doc: &mut acadrust::CadDocument, a: &[String]) -> Res<()> {
     let slot = (0..t.edges.len())
         .find(|&s| t.edges[s].is_some() && t.member_index(s) == m)
         .ok_or("member slot")?;
+    let old_id = t.edges[slot].as_ref().map_or(1, |e| e.id);
     t.remove_edge(slot)?;
     let (d, hb) = t.write(&cont)?;
     put(doc, cont_h, d, hb)?;
@@ -1019,7 +1059,8 @@ fn cmd_move_out(doc: &mut acadrust::CadDocument, a: &[String]) -> Res<()> {
     }
     let (d, hb) = ct.write(&comp)?;
     put(doc, comp.handle, d, hb)?;
-    alignment_refs(doc, &r, comp.handle)?;
+    let new_id = ct.edges.iter().flatten().last().map_or(1, |e| e.id);
+    alignment_refs(doc, &r, comp.handle, (old_id, new_id))?;
     refresh_site(doc, site, &t)?;
     println!(
         "{al:X} → siteless (companion {:X} refilled); slot {} of {cont_h:X} freed",
@@ -1051,6 +1092,28 @@ fn show(doc: &acadrust::CadDocument) -> Res<()> {
                 t.rest
             ),
             Err(e) => println!("face {:X} {:?}: {e}", r.handle, s),
+        }
+    }
+    let mut edge_of = std::collections::HashMap::new();
+    for r in raw::records(doc, CONT) {
+        if let Ok(t) = Topo::parse(&r) {
+            for (e, m) in t.edges.iter().flatten().zip(&t.members) {
+                edge_of.insert(*m, (r.handle, e.id));
+            }
+        }
+    }
+    for r in raw::records(doc, "AECC_ALIGNMENT") {
+        match edge_of.get(&r.handle) {
+            Some((c, id)) => println!(
+                "alignment {:X}: edge {id} of {c:X}, edge ID field {}",
+                r.handle,
+                if edge_id_bit(&r.data, *id).is_ok() {
+                    "matches"
+                } else {
+                    "DIFFERS"
+                }
+            ),
+            None => println!("alignment {:X}: in no container", r.handle),
         }
     }
     for r in raw::records(doc, CONT) {
