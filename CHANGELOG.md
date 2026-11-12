@@ -26,6 +26,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   by the owner with .NET SDK 8.0.428.
 
 ### Added
+- S316 `C3DDUMP`: `GetPoints` per point type matches the decoded
+  vertices (test `points_match_civil3d_api_s316`; two dependent
+  elevations differ by 2e-10, recomputed by Civil 3D on open). The
+  add-in also calls `Get…(int)` methods per index.
 - S316/S319 `C3DDUMPALL` outputs: feature line counts, site and
   elevations agree with the decoded vertices (test
   `counts_match_civil3d_api_s316_s319`); `AECC_PARCEL` is the API's

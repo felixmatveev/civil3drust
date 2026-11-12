@@ -16,7 +16,8 @@ prints it on the command line):
 
 Sections 2–4 give every simple property and the result of every public
 `Get…()` method without parameters, and of `Get…(enum)` for each value of
-the enum — so a feature line shows `GetPoints(AllPoints)`,
+the enum and `Get…(int)` for each index below the object's largest
+`…Count` property (at most 200) — so a feature line shows `GetPoints(AllPoints)`,
 `GetPoints(PIPoints)`, `GetPoints(ElevationPoints)` and whatever else
 this Civil 3D version offers, and a site its alignment and feature line
 IDs. Everything is read by reflection, so the add-in builds against any

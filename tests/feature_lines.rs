@@ -231,3 +231,41 @@ fn counts_match_civil3d_api_s316_s319() {
         }
     }
 }
+
+/// `C3DDUMP` on S316: `GetPoints(PIPoint)`, `GetPoints(ElevationPoint)`
+/// and `GetPoints(AllPoints)` are the decoded vertices — the PIs are the
+/// unflagged ones, all points in edge order. x and y to the last digit;
+/// the fillet's start (node 4) and the elevation point come back 2e-10
+/// from the stored z: Civil 3D recomputes them on open (its re-save, S319,
+/// stores the API's values).
+#[test]
+fn points_match_civil3d_api_s316() {
+    let text = std::fs::read_to_string("samples/S316_fl_edit.api.txt").unwrap();
+    let list = |kind: &str| -> Vec<[f64; 3]> {
+        let key = format!("GetPoints({kind}) [");
+        let line = text.lines().find(|l| l.trim().starts_with(&key)).unwrap();
+        let body = &line[line.find("]: ").unwrap() + 3..];
+        body.trim_matches(|c| c == '(' || c == ')')
+            .split("), (")
+            .map(|p| {
+                let v: Vec<f64> = p.split(", ").map(|x| x.parse().unwrap()).collect();
+                [v[0], v[1], v[2]]
+            })
+            .collect()
+    };
+    let d = open("samples/S316_fl_edit.dwg");
+    let v = vertices(&d, &feature_lines(&d)[0]).unwrap();
+    let pts = |f: &dyn Fn(&FeatureVertex) -> bool| -> Vec<[f64; 3]> {
+        v.iter().filter(|v| f(v)).map(|v| [v.x, v.y, v.z]).collect()
+    };
+    let same = |a: Vec<[f64; 3]>, b: Vec<[f64; 3]>| {
+        assert_eq!(a.len(), b.len());
+        for (p, q) in a.iter().zip(&b) {
+            assert_eq!((p[0], p[1]), (q[0], q[1]));
+            assert!((p[2] - q[2]).abs() < 1e-9, "{p:?} {q:?}");
+        }
+    };
+    same(list("AllPoints"), pts(&|_| true));
+    same(list("PIPoint"), pts(&|v| !v.is_elevation_point()));
+    same(list("ElevationPoint"), pts(&|v| v.is_elevation_point()));
+}

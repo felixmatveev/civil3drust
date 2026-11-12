@@ -1,0 +1,132 @@
+drawing: C:\Users\felix\Downloads\S316_fl_edit.dwg
+written: 2026-11-12 00:18:28Z
+
+== Sites
+
+  Site [8C42] Site (AECC_PARCEL)
+    Area: 3.070876886113183E-13
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    Description: 
+    DisplayName: Parcel
+    EdgeStyleId: null
+    EndParam: <Exception: eNotImplementedYet>
+    EndPoint: <Exception: eNotImplementedYet>
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FingerPrint: 0
+    FolderId: null
+    IsPeriodic: False
+    IsPlanar: False
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsUsed: False
+    Layer: 0
+    LayerId: 10
+    LayerKey: 
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Material: ByLayer
+    MaterialId: 894
+    Name: TEST
+    NeedsPromoting: False
+    PlotStyleName: ByLayer
+    ProjectState: New
+    ReceiveShadows: True
+    ShowToolTip: True
+    StartParam: <Exception: eNotImplementedYet>
+    StartPoint: <Exception: eNotImplementedYet>
+    StyleId: 1CE6
+    StyleName: Property
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    UDPClassificationApplyType: None
+    UDPClassificationName: 
+    Visible: True
+    VisualStyleId: null
+    GetAlignmentIds() [0]: 
+    GetFeatureLineIds() [1]: 8D60
+    GetParcelIds() [0]: 
+    GetReactors() [2]: ImpRXObject, ImpRXObject
+
+== Feature lines
+
+  FeatureLine [8D60] FeatureLine (AECC_FEATURE_LINE)
+    Area: 0
+    AutomaticallyBoundSpaces: NotApplicableToThisObject
+    BlockId: 1F
+    BlockName: *Model_Space
+    CastShadows: True
+    Closed: False
+    CollisionType: Solid
+    ColorIndex: 256
+    CurvesCount: 1
+    Description: 4 points + curve R=50 
+    DisplayName: Feature Line
+    EdgeStyleId: null
+    ElevationPointsCount: 1
+    EndParam: 4
+    EndPoint: (177.83072233200073, 49.84087518742308, 103)
+    ExtensionDictionary: null
+    FaceStyleId: null
+    FingerPrint: 0
+    FolderId: null
+    IsEditable: True
+    IsPeriodic: False
+    IsPlanar: True
+    IsReferenceObject: False
+    IsReferenceStale: False
+    IsReferenceSubObject: False
+    IsReferenceValid: False
+    IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+    IsUsed: False
+    Layer: C-TOPO-FEAT
+    LayerId: 10D8
+    LayerKey: 
+    Length2D: 192.26235145566031
+    Length3D: 324.488456438879
+    LineWeight: ByLayer
+    Linetype: ByLayer
+    LinetypeId: 15
+    LinetypeScale: 1
+    Material: ByLayer
+    MaterialId: 894
+    MaxElevation: 200
+    MaxGrade: 16.704671984342504
+    MinElevation: 100
+    MinGrade: 0.050000000001918815
+    Name: TEST FEATURE LINE
+    NeedsPromoting: False
+    PIPointsCount: 4
+    PlotStyleName: ByLayer
+    PointsCount: 5
+    ProjectState: New
+    ReceiveShadows: True
+    RelativeSurfaceId: null
+    ShowToolTip: True
+    SiteId: 8C42
+    StartParam: 0
+    StartPoint: (0, 0, 100)
+    StyleName: Basic Feature Line
+    SupportsBaseCurveCommands: False
+    SupportsProfileCommands: False
+    SwappingReferences: False
+    Visible: True
+    VisualStyleId: null
+    GetPoints(PIPoint) [4]: (0, 0, 100), (97.0725272372365, 0, 104.85362636204809), (102.46530637191609, 1.5787214036099613, 200), (177.83072233200073, 49.84087518742308, 103)
+    GetPoints(ElevationPoint) [1]: (141.11209436692297, 26.327171362005174, 150.2591687743552)
+    GetPoints(AllPoints) [5]: (0, 0, 100), (97.0725272372365, 0, 104.85362636204809), (102.46530637191609, 1.5787214036099613, 200), (141.11209436692297, 26.327171362005174, 150.2591687743552), (177.83072233200073, 49.84087518742308, 103)
+    GetReactors() [2]: ImpRXObject, ImpRXObject
+
+== Other Civil 3D entities

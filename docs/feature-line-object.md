@@ -133,6 +133,16 @@ cause.
   `counts_match_civil3d_api_s316_s319`): elevation points are the
   flagged vertices, all other vertices (including the arc's ends) are
   PIs, and each bulge is one curve.
+- `C3DDUMP` on S316 (`samples/S316_fl_edit.api.txt`): `GetPoints(PIPoint)`,
+  `GetPoints(ElevationPoint)` and `GetPoints(AllPoints)` are the decoded
+  vertices (test `points_match_civil3d_api_s316`). x and y agree to the
+  last digit; the z of the fillet's start (104.85362636185407 stored,
+  …204809 in the API) and of the elevation point (…416952 stored,
+  …43552 in the API) differ by 2e-10: Civil 3D recomputes these
+  dependent elevations on open, and its re-save (S319) stores the
+  recomputed values. No public property or method gives the arc's
+  radius; the bulge is the only curve data (the add-in now also tries
+  `Get…(int)` methods per index).
 - The pasted copy (8DAA) reports exactly what the original does, apart
   from name, site and coordinates — including **`IsEditable: True`**. The
   API sees nothing that would stop editing (MIST21, parked).

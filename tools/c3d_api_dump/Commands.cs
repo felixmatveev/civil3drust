@@ -253,7 +253,38 @@ namespace C3dApiDump
                         Invoke(sb, o, m, new[] { v }, m.Name + "(" + v + ")", indent);
                     }
                 }
+                else if (ps.Length == 1 && ps[0].ParameterType == typeof(int))
+                {
+                    // Indexed getters (e.g. per point or per curve): every
+                    // index below the object's largest …Count property.
+                    int n = Math.Min(MaxCount(o), 200);
+                    for (int i = 0; i < n; i++)
+                    {
+                        Invoke(sb, o, m, new object[] { i }, m.Name + "(" + i + ")", indent);
+                    }
+                }
             }
+        }
+
+        static int MaxCount(object o)
+        {
+            int n = 0;
+            foreach (PropertyInfo p in o.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (p.PropertyType != typeof(int) || !p.Name.EndsWith("Count", StringComparison.Ordinal)
+                    || p.GetIndexParameters().Length != 0)
+                {
+                    continue;
+                }
+                try
+                {
+                    n = Math.Max(n, (int)p.GetValue(o, null));
+                }
+                catch (System.Exception)
+                {
+                }
+            }
+            return n;
         }
 
         static void Invoke(StringBuilder sb, object o, MethodInfo m, object[] args, string name,
