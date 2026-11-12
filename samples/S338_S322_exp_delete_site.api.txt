@@ -1,0 +1,819 @@
+drawing: C:\Users\felix\Downloads\site_experiments_S332-S340\S338_S322_exp_delete_site.dwg
+written: 2026-11-12 21:08:32Z
+config: classes control (AECC_ALIGNMENT, AECC_ALIGNMENT_*NODE, AECC_PROFILE, AECC_PROFILE_VIEW, AECC_FEATURE_LINE, AECC_FEATURE_STYLE, AECC_PARCEL, AECC_PARCEL_NODE, AECC_DB_*, AECC_ENTITY*, AECC_NOTIFICATIONINFOS, AECC_*DESIGN_CHECK_SET, AECC_*LABEL_GROUP, AECC_*LABELGROUP, AECC_*LABELING, AECC_GRADING*), getters on, display reps skipped, echo off
+
+[8D6A] Alignment - (1)
+  AlignmentType: Centerline
+  CreationMode: ManuallyCreation
+  FingerPrint: 0x4A0BB9D91407541A (5335562525545550874)
+  Description: 
+  StyleName: Proposed
+  IsSiteless: True
+  SiteName: 
+  StartingStation: 0
+  EndingStation: 210.200626985272
+  ReferencePointStation: 0
+  Length: 210.200626985272
+  UseDesignSpeed: False
+  UseDesignCriteriaFile: False
+  CriteriaFileName: 
+  UseDesignCheckSet: False
+  DesignCheckSetName: 
+  StationEquations.Count: 0
+  DesignSpeed #1: station 0, value 60, comment ""
+  Entity 1 (before <EntityNotFoundException: NoPrevAlignmentEntity,>, after 2): Line, Constraint1 Fixed, Constraint2 TwoPoints, sub-entities 1
+  Entity 2 (before 1, after <EntityNotFoundException: NoNextAlignmentEntity,>): Line, Constraint1 Fixed, Constraint2 TwoPoints, sub-entities 1
+
+== Objects
+
+[A1C] AECC_GRADING_GROUP DBObject owner 8B
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Grading Group
+  GetReactors() [1]: ImpRXObject
+
+[A1D] AECC_GRADING_CRITERIA GradingCriteria owner 8C1
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/23/2006 10:26:49 PM
+  DateModified: 2/23/2006 10:26:49 PM
+  Description: 
+  DistanceProjectionType: Slope
+  ElevationProjectionType: CutFillSlope
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+  RelativeElevationProjectionType: Slope
+  SurfaceProjectionType: CutFillSlope
+  Target: Distance
+  GetReactors() [1]: ImpRXObject
+
+[A23] AECC_GRADING_STYLE GradingStyle owner 8C1
+  CenterMarker: PercentageOfScreen
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/23/2006 10:26:49 PM
+  DateModified: 2/23/2006 10:26:49 PM
+  Description: 
+  ExtensionDictionary: null
+  FixedSize: 10
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+  PercentageOfScreen: 0.02
+  PlottedSize: 0.041666666666666664
+  SlopePatternStyleId: null
+  SlopePatternStyleName: <InvalidOperationException: Operation is not valid due to the current state of the object.>
+  SlopeRangeMax: 2
+  SlopeRangeMin: 0.16666666666666666
+  UseSlopePatternStyle: False
+  UseSlopeRange: False
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[B87] AECC_GRADING_CRITERIA_SET GradingCriteriaSet owner 8C1
+  Count: 0
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/23/2006 10:26:49 PM
+  DateModified: 2/23/2006 10:26:49 PM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[B88] AECC_GRADING_CRITERIA_SET GradingCriteriaSet owner B87
+  Count: 4
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/23/2006 10:26:49 PM
+  DateModified: 3/12/2006 8:08:25 PM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[C43] AECC_PARCEL_NODE DBObject owner 8B
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Parcels
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[DD2] AECC_GRADING_CRITERIA GradingCriteria owner A1D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/24/2006 12:11:06 AM
+  DateModified: 2/24/2006 12:12:44 AM
+  Description: 
+  DistanceProjectionType: Slope
+  ElevationProjectionType: CutFillSlope
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  RelativeElevationProjectionType: Slope
+  SurfaceProjectionType: CutFillSlope
+  Target: Distance
+  GetReactors() [1]: ImpRXObject
+
+[12F8] AECC_ALIGNMENT_PARCEL_NODE DBObject owner 8B
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: True
+  Name: <None>
+  GetReactors() [1]: ImpRXObject
+
+[12F9] AECC_FEATURE_STYLE DBObject owner 12F8
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Standard
+  GetReactors() [0]: 
+
+[1F01] AECC_GRADING_STYLE GradingStyle owner A23
+  CenterMarker: PercentageOfScreen
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/28/2006 9:44:45 PM
+  DateModified: 3/26/2006 3:06:02 PM
+  Description: 
+  ExtensionDictionary: null
+  FixedSize: 10
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  PercentageOfScreen: 0.02
+  PlottedSize: 0.041666666666666664
+  SlopePatternStyleId: null
+  SlopePatternStyleName: <InvalidOperationException: Operation is not valid due to the current state of the object.>
+  SlopeRangeMax: 2
+  SlopeRangeMin: 0.16666666666666666
+  UseSlopePatternStyle: False
+  UseSlopeRange: True
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[1F02] AECC_GRADING_STYLE GradingStyle owner A23
+  CenterMarker: PercentageOfScreen
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/28/2006 9:45:42 PM
+  DateModified: 3/26/2006 3:06:19 PM
+  Description: 
+  ExtensionDictionary: null
+  FixedSize: 10
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  PercentageOfScreen: 0.02
+  PlottedSize: 0.041666666666666664
+  SlopePatternStyleId: null
+  SlopePatternStyleName: <InvalidOperationException: Operation is not valid due to the current state of the object.>
+  SlopeRangeMax: 2
+  SlopeRangeMin: 0.16666666666666666
+  UseSlopePatternStyle: False
+  UseSlopeRange: True
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[1F03] AECC_GRADING_STYLE GradingStyle owner A23
+  CenterMarker: PercentageOfScreen
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/23/2006 10:26:49 PM
+  DateModified: 3/26/2006 3:06:30 PM
+  Description: 
+  ExtensionDictionary: null
+  FixedSize: 10
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  PercentageOfScreen: 0.02
+  PlottedSize: 0.041666666666666664
+  SlopePatternStyleId: null
+  SlopePatternStyleName: <InvalidOperationException: Operation is not valid due to the current state of the object.>
+  SlopeRangeMax: 2
+  SlopeRangeMin: 0.16666666666666666
+  UseSlopePatternStyle: False
+  UseSlopeRange: False
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[339D] AECC_ALIGNMENT_DESIGN_CHECK_SET AlignmentDesignCheckSet owner 8C1
+  CreateBy: Autodesk, Inc.
+  DateCreated: 1/18/2008 11:19:28 AM
+  DateModified: 1/18/2008 11:19:28 AM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+  GetAllDesignChecks() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[339E] AECC_ALIGNMENT_DESIGN_CHECK_SET AlignmentDesignCheckSet owner 339D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 1/18/2008 11:19:28 AM
+  DateModified: 2/22/2008 2:48:21 PM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  GetAllDesignChecks() [1]: AlignmentDesignCheck
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[339F] AECC_PROFILE_DESIGN_CHECK_SET ProfileDesignCheckSet owner 8C1
+  CreateBy: Autodesk, Inc.
+  DateCreated: 1/18/2008 11:19:28 AM
+  DateModified: 1/18/2008 11:19:28 AM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+  GetAllDesignChecks() [0]: 
+  GetAllDesignChecks() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[33A0] AECC_PROFILE_DESIGN_CHECK_SET ProfileDesignCheckSet owner 339F
+  CreateBy: Autodesk, Inc.
+  DateCreated: 1/18/2008 11:19:28 AM
+  DateModified: 1/23/2008 8:27:58 PM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  GetAllDesignChecks() [3]: ProfileDesignCheck, ProfileDesignCheck, ProfileDesignCheck
+  GetAllDesignChecks() [3]: AlignmentDesignCheck, AlignmentDesignCheck, AlignmentDesignCheck
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[37FD] AECC_FEATURE_STYLE DBObject owner 12F9
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: 8455b411d65b47abcfc2448aaf17db64
+  GetReactors() [0]: 
+
+[38CD] AECC_ALIGNMENT_DESIGN_CHECK_SET AlignmentDesignCheckSet owner 339D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/6/2008 12:04:45 PM
+  DateModified: 2/6/2008 12:08:05 PM
+  Description: Design Check Set for use in Subdivision-type design, with typical design speeds ~25mph
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+  GetAllDesignChecks() [3]: AlignmentDesignCheck, AlignmentDesignCheck, AlignmentDesignCheck
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[38D4] AECC_PROFILE_DESIGN_CHECK_SET ProfileDesignCheckSet owner 339F
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/6/2008 12:23:06 PM
+  DateModified: 2/6/2008 12:23:36 PM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+  GetAllDesignChecks() [1]: ProfileDesignCheck
+  GetAllDesignChecks() [1]: AlignmentDesignCheck
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[7C89] AECC_GRADING_CRITERIA GradingCriteria owner A1D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/24/2006 12:11:57 AM
+  DateModified: 2/24/2006 12:12:54 AM
+  Description: 
+  DistanceProjectionType: Slope
+  ElevationProjectionType: CutFillSlope
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  RelativeElevationProjectionType: Slope
+  SurfaceProjectionType: CutFillSlope
+  Target: RelativeElevation
+  GetReactors() [1]: ImpRXObject
+
+[7C8A] AECC_GRADING_CRITERIA GradingCriteria owner A1D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/24/2006 12:12:23 AM
+  DateModified: 2/24/2006 12:12:38 AM
+  Description: 
+  DistanceProjectionType: Slope
+  ElevationProjectionType: CutFillSlope
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  RelativeElevationProjectionType: Slope
+  SurfaceProjectionType: CutFillSlope
+  Target: Surface
+  GetReactors() [1]: ImpRXObject
+
+[7C8B] AECC_GRADING_CRITERIA GradingCriteria owner A1D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/24/2006 12:11:37 AM
+  DateModified: 2/24/2006 12:12:50 AM
+  Description: 
+  DistanceProjectionType: Slope
+  ElevationProjectionType: CutFillSlope
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  RelativeElevationProjectionType: Slope
+  SurfaceProjectionType: CutFillSlope
+  Target: Elevation
+  GetReactors() [1]: ImpRXObject
+
+[8D69] AECC_FEATURE_STYLE DBObject owner 12F9
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: 4e7fd9abe14e401662b8bb896bdb3c76
+  GetReactors() [0]: 
+
+[8D6B] AECC_ALIGNMENT_STATION_LABEL_GROUP AlignmentStationLabelGroup owner 1F
+  AllowsAnchorMarker: False
+  AllowsDimensionAnchors: False
+  AllowsDragging: True
+  AllowsFlipping: True
+  AllowsLeaderAttachment: False
+  AllowsPinning: True
+  AllowsReversing: False
+  Area: 0
+  AutoStagger: None
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  DefaultDimensionAnchorOption: <InvalidOperationException: This type of LabelGroup doesn't support this property.>
+  DefaultDimensionAnchorValue: 4.75778807408276E-312
+  Description: <CivilException: Retrieve attribute failed.>
+  DisplayName: Alignment Station Label Group
+  EdgeStyleId: null
+  EndParam: 1
+  EndPoint: (1, 0, 0)
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FeatureId: 8D6A
+  FingerPrint: 0
+  FolderId: null
+  Increment: 100
+  IsPeriodic: False
+  IsPlanar: True
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  LabelType: AlignmentMajorStation
+  Layer: C-ROAD-TEXT
+  LayerId: 2187
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Mask: FromLabelStyle
+  Material: ByLayer
+  MaterialId: 894
+  Name: <CivilException: Retrieve attribute failed.>
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  RangeEndFromFeature: True
+  RangeStartFromFeature: True
+  ReceiveShadows: True
+  RotationType: NotSupported
+  ShowToolTip: <CivilException: Retrieve attribute failed.>
+  StartParam: 0
+  StartPoint: (0, 0, 0)
+  StyleId: 1F95
+  StyleName: Parallel with Tick
+  SubEntityCount: 4
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  ViewId: null
+  Visible: True
+  VisualStyleId: null
+  GetReactors() [1]: ImpRXObject
+
+[8D6C] AECC_ALIGNMENT_GEOMPOINT_LABEL_GROUP AlignmentGeometryPointLabelGroup owner 1F
+  AllowsAnchorMarker: False
+  AllowsDimensionAnchors: False
+  AllowsDragging: True
+  AllowsFlipping: True
+  AllowsLeaderAttachment: False
+  AllowsPinning: True
+  AllowsReversing: False
+  Area: 0
+  AutoStagger: None
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  DefaultDimensionAnchorOption: <InvalidOperationException: This type of LabelGroup doesn't support this property.>
+  DefaultDimensionAnchorValue: 4.75778807408276E-312
+  Description: <CivilException: Retrieve attribute failed.>
+  DisplayName: Alignment Geometry Point Label Group
+  EdgeStyleId: null
+  EndParam: 1
+  EndPoint: (1, 0, 0)
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FeatureId: 8D6A
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: True
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  LabelType: AlignmentGeometryPoint
+  Layer: C-ROAD-TEXT
+  LayerId: 2187
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Mask: FromLabelStyle
+  Material: ByLayer
+  MaterialId: 894
+  Name: <CivilException: Retrieve attribute failed.>
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  RangeEnd: 210.20062698527198
+  RangeEndFromFeature: True
+  RangeStart: 0
+  RangeStartFromFeature: True
+  ReceiveShadows: True
+  RotationType: NotSupported
+  ShowToolTip: <CivilException: Retrieve attribute failed.>
+  StartParam: 0
+  StartPoint: (0, 0, 0)
+  StyleId: 1FFC
+  StyleName: Perpendicular with Tick and Line
+  SubEntityCount: 3
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  ViewId: null
+  Visible: True
+  VisualStyleId: null
+  GetReactors() [1]: ImpRXObject
+
+[8D6D] AECC_ALIGNMENT_STAEQU_LABEL_GROUP AlignmentStationEquationLabelGroup owner 1F
+  AllowsAnchorMarker: False
+  AllowsDimensionAnchors: False
+  AllowsDragging: True
+  AllowsFlipping: True
+  AllowsLeaderAttachment: False
+  AllowsPinning: True
+  AllowsReversing: False
+  Area: 0
+  AutoStagger: None
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  DefaultDimensionAnchorOption: <InvalidOperationException: This type of LabelGroup doesn't support this property.>
+  DefaultDimensionAnchorValue: 4.75778807408276E-312
+  Description: <CivilException: Retrieve attribute failed.>
+  DisplayName: Alignment Station Equation Label Group
+  EdgeStyleId: null
+  EndParam: 1
+  EndPoint: (1, 0, 0)
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FeatureId: 8D6A
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: True
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  LabelType: AlignmentStationEquation
+  Layer: C-ROAD-TEXT
+  LayerId: 2187
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Mask: FromLabelStyle
+  Material: ByLayer
+  MaterialId: 894
+  Name: <CivilException: Retrieve attribute failed.>
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  RangeEnd: 210.20062698527198
+  RangeEndFromFeature: True
+  RangeStart: 0
+  RangeStartFromFeature: True
+  ReceiveShadows: True
+  RotationType: NotSupported
+  ShowToolTip: <CivilException: Retrieve attribute failed.>
+  StartParam: 0
+  StartPoint: (0, 0, 0)
+  StyleId: 2060
+  StyleName: Station Ahead & Back
+  SubEntityCount: 0
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  ViewId: null
+  Visible: True
+  VisualStyleId: null
+  GetReactors() [1]: ImpRXObject
+
+[8D6E] AECC_ALIGNMENT_DESIGNSPEED_LABEL_GROUP AlignmentDesignSpeedLabelGroup owner 1F
+  AllowsAnchorMarker: False
+  AllowsDimensionAnchors: False
+  AllowsDragging: True
+  AllowsFlipping: True
+  AllowsLeaderAttachment: False
+  AllowsPinning: True
+  AllowsReversing: False
+  Area: 0
+  AutoStagger: None
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  DefaultDimensionAnchorOption: <InvalidOperationException: This type of LabelGroup doesn't support this property.>
+  DefaultDimensionAnchorValue: 4.75778807408276E-312
+  Description: <CivilException: Retrieve attribute failed.>
+  DisplayName: Alignment Design Speed Label Group
+  EdgeStyleId: null
+  EndParam: 1
+  EndPoint: (1, 0, 0)
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FeatureId: 8D6A
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: True
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  LabelType: AlignmentDesignSpeed
+  Layer: C-ROAD-TEXT
+  LayerId: 2187
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Mask: FromLabelStyle
+  Material: ByLayer
+  MaterialId: 894
+  Name: <CivilException: Retrieve attribute failed.>
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  RangeEnd: 210.20062698527198
+  RangeEndFromFeature: True
+  RangeStart: 0
+  RangeStartFromFeature: True
+  ReceiveShadows: True
+  RotationType: NotSupported
+  ShowToolTip: <CivilException: Retrieve attribute failed.>
+  StartParam: 0
+  StartPoint: (0, 0, 0)
+  StyleId: 2093
+  StyleName: Station over Speed
+  SubEntityCount: 1
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  ViewId: null
+  Visible: True
+  VisualStyleId: null
+  GetReactors() [1]: ImpRXObject
+
+[8D6F] AECC_ALIGNMENT_VAGEOMPOINT_LABELING AlignmentVerticalGeometryPointLabelGroup owner 1F
+  AllowsAnchorMarker: False
+  AllowsDimensionAnchors: False
+  AllowsDragging: True
+  AllowsFlipping: True
+  AllowsLeaderAttachment: False
+  AllowsPinning: True
+  AllowsReversing: False
+  Area: 0
+  AutoStagger: None
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  DefaultDimensionAnchorOption: <InvalidOperationException: This type of LabelGroup doesn't support this property.>
+  DefaultDimensionAnchorValue: 4.75778807408276E-312
+  Description: <CivilException: Retrieve attribute failed.>
+  DisplayName: Alignment Vertical Geometry Point Label Group
+  EdgeStyleId: null
+  EndParam: 1
+  EndPoint: (1, 0, 0)
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FeatureId: 8D6A
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: True
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  LabelType: AlignmentProfileGeometryPoint
+  Layer: C-ROAD-TEXT
+  LayerId: 2187
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Mask: FromLabelStyle
+  Material: ByLayer
+  MaterialId: 894
+  Name: <CivilException: Retrieve attribute failed.>
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  RangeEnd: 210.20062698527198
+  RangeEndFromFeature: True
+  RangeStart: 0
+  RangeStartFromFeature: True
+  ReceiveShadows: True
+  RotationType: NotSupported
+  ShowToolTip: <CivilException: Retrieve attribute failed.>
+  StartParam: 0
+  StartPoint: (0, 0, 0)
+  StyleId: 202E
+  StyleName: Code and Station
+  SubEntityCount: 0
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  VerticalAlignment: null
+  ViewId: null
+  Visible: True
+  VisualStyleId: null
+  GetReactors() [1]: ImpRXObject
+
+[8D70] AECC_ALIGNMENT_SUPERELEVATION_LABEL_GROUP AlignmentSuperelevationLabelGroup owner 1F
+  AllowsAnchorMarker: False
+  AllowsDimensionAnchors: False
+  AllowsDragging: True
+  AllowsFlipping: True
+  AllowsLeaderAttachment: False
+  AllowsPinning: True
+  AllowsReversing: False
+  Area: 0
+  AutoStagger: None
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  DefaultDimensionAnchorOption: <InvalidOperationException: This type of LabelGroup doesn't support this property.>
+  DefaultDimensionAnchorValue: 4.75778807408276E-312
+  Description: <CivilException: Retrieve attribute failed.>
+  DisplayName: Alignment Superelevation Label Group
+  EdgeStyleId: null
+  EndParam: 1
+  EndPoint: (1, 0, 0)
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FeatureId: 8D6A
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: True
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  LabelType: AlignmentSuperelevationCriticalPoints
+  Layer: C-ROAD-TEXT
+  LayerId: 2187
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Mask: FromLabelStyle
+  Material: ByLayer
+  MaterialId: 894
+  Name: <CivilException: Retrieve attribute failed.>
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  RangeEnd: 210.20062698527198
+  RangeEndFromFeature: True
+  RangeStart: 0
+  RangeStartFromFeature: True
+  ReceiveShadows: True
+  RotationType: NotSupported
+  ShowToolTip: <CivilException: Retrieve attribute failed.>
+  StartParam: 0
+  StartPoint: (0, 0, 0)
+  StyleId: 3535
+  StyleName: Superelevation Symbols
+  SubEntityCount: 0
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  ViewId: null
+  Visible: True
+  VisualStyleId: null
+  GetReactors() [1]: ImpRXObject
+
+[8D71] AECC_ALIGNMENT_MINOR_STATION_LABEL_GROUP AlignmentMinorStationLabelGroup owner 1F
+  AllowsAnchorMarker: False
+  AllowsDimensionAnchors: False
+  AllowsDragging: True
+  AllowsFlipping: True
+  AllowsLeaderAttachment: False
+  AllowsPinning: True
+  AllowsReversing: False
+  Area: 0
+  AutoStagger: None
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  DefaultDimensionAnchorOption: <InvalidOperationException: This type of LabelGroup doesn't support this property.>
+  DefaultDimensionAnchorValue: 4.75778807408276E-312
+  Description: <CivilException: Retrieve attribute failed.>
+  DisplayName: Alignment Minor Station Label Group
+  EdgeStyleId: null
+  EndParam: 1
+  EndPoint: (1, 0, 0)
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FeatureId: 8D6A
+  FingerPrint: 0
+  FolderId: null
+  Increment: 50
+  IsPeriodic: False
+  IsPlanar: True
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  LabelType: AlignmentMinorStation
+  Layer: C-ROAD-TEXT
+  LayerId: 2187
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  MajorStationLabelGroup: 8D6B
+  Mask: FromLabelStyle
+  Material: ByLayer
+  MaterialId: 894
+  Name: <CivilException: Retrieve attribute failed.>
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  RotationType: NotSupported
+  ShowToolTip: <CivilException: Retrieve attribute failed.>
+  StartParam: 0
+  StartPoint: (0, 0, 0)
+  StyleId: 1FCC
+  StyleName: Tick
+  SubEntityCount: 2
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  ViewId: null
+  Visible: True
+  VisualStyleId: null
+  GetReactors() [1]: ImpRXObject
+
+objects: 31

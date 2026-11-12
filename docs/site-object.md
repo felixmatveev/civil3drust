@@ -66,10 +66,14 @@ handle stream: soft → tree node, n × soft → site, soft → one site,
   record and the list. The second site (key `00000101`) is the same
   case. Renaming the first to `B` (S328) gave it a string and a
   high-bit key. Reading such a name needs the pool (MIST22).
-- **Order.** By name, ascending, spaces ignored: `TEST2`, `TEST SITE`
-  (S103); `TEST 2`, `TEST SITE` (S104); `TEST`, `TEST|1` (S317);
-  unnamed, `B` (S329). (Not by key: S317 is ascending, S103 descending.)
-  The strings follow the same order, unnamed sites skipped.
+- **Order.** Key mod 8, then key — a hash table's order, the same as
+  the container's nodes. It fits every list with two sites: S103
+  (`…BDA`, `…BD7`), S104, S317 (`…3359`, `…335C`), S319, S329
+  (`00000101`, `…AFB`), S347, S348. (An earlier reading, "by name,
+  spaces ignored", fitted all but S348.) Civil 3D accepts another order
+  and rewrites it: S340 was written `A SITE`, `B` and came back `B`,
+  `A SITE` with new keys (S348). The strings follow the list's order,
+  pooled names skipped.
 - **The extra pointer** after the n sites is the site created last
   (S103, S317, S329); deleting that site left it **null** (S331).
 
@@ -275,7 +279,11 @@ node removed) and is rebuilt in the other with new node IDs from 1.
 | S334 move-out, one of two | **accepted**: clean; API: `Alignment - (1)` siteless, `Alignment - (2)` in the site, the site's `GetAlignmentIds()` = 8D8C. **Re-save S343**: same model; the refilled companion left exactly as written (edge 0x10, vertex flags 10 — S341 changed them, so that is not a rule); the container rewritten with a single edge entry that keeps **ID 2** |
 | S335 move-in again | **AUDIT: 1 error, fixed.** The alignment's record holds the ID of its edge (see "The alignment's edge ID"); S335 left it at 1 while the new edge was ID 3. Civil 3D's fix (S344): the alignment added to the container a second time as edge 4 on the same nodes, the written edge 3 left behind, the field set to 4. S332–S334 passed only because every edge there was ID 1 |
 | S345 = S335 with the edge ID field set to 3 | pending |
-| S336–S340 | pending |
+| S336 rename + description | **accepted**: clean; API: site and container `Name: RENAMED`, `Description: written by civil3drust`, the members' `SiteName: RENAMED`. No re-save yet |
+| S337 literal name over a pooled one | **accepted**: clean; API: `Name: A`. No re-save yet |
+| S338 delete the only site | **accepted**: clean; API: no site, no container. **Re-save S346**: the zero-site list is kept byte for byte |
+| S339 create (clone of an empty site) | **accepted**: clean; API: `A` and `NEW SITE`, each with its container. **Re-save S347**: both kept; a new key for `NEW SITE` |
+| S340 create (clone of a site with members, graphics stripped) | **accepted**: clean; API: `B` with its three alignments, `A SITE` empty. **Re-save S348**: Civil 3D drew the new site's graphics, re-keyed both sites and put the list in key order |
 
 
 First writers, kept in the example until Civil 3D has accepted them.
@@ -293,7 +301,7 @@ another drawing; `create` clones the drawing's first site.
 | S336 | `rename` S331: `B` → `RENAMED`, description | the two strings and the list's name only (as S318, plus the description) |
 | S337 | `rename` S322: the pooled name `A` → a literal `A` | name string inserted, key `0x80000000 \| n` (largest key of the site list and the alignment registry + 1) in record and list (MIST22) |
 | S338 | `delete` S322: the only site | site, container and list entry removed; zero-site list as in S24 |
-| S339 | `create` S322: `NEW SITE` | clone of an empty, unnamed site: handles (site, site + 1), key, name, empty tail and container, list entry in name order, last-created pointer |
+| S339 | `create` S322: `NEW SITE` | clone of an empty site: handles (site, site + 1), key, name, empty tail and container, list entry, last-created pointer |
 | S340 | `create` S331: `A SITE` | clone of a site with members: tail reset, **graphics stripped**, the template's date stamp kept |
 
 For each: does it open without RECOVER, is AUDIT clean, what does

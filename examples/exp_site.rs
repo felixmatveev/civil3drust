@@ -638,32 +638,51 @@ fn site_list(doc: &acadrust::CadDocument) -> Res<SiteList> {
     })
 }
 
+/// The list in Civil 3D's order: key mod 8, then key — a hash table's
+/// order, as for the container's nodes (every list of S103–S348).
+fn sorted(l: &SiteList) -> (Vec<u32>, Vec<u64>, Vec<String>) {
+    let mut names = l.names.iter();
+    let mut e: Vec<(u32, u64, Option<&String>)> = l
+        .keys
+        .iter()
+        .zip(&l.sites)
+        .map(|(k, s)| (*k, *s, if named(*k) { names.next() } else { None }))
+        .collect();
+    e.sort_by_key(|x| (x.0 & 7, x.0));
+    (
+        e.iter().map(|x| x.0).collect(),
+        e.iter().map(|x| x.1).collect(),
+        e.iter().filter_map(|x| x.2.cloned()).collect(),
+    )
+}
+
 fn write_site_list(doc: &mut acadrust::CadDocument, l: &SiteList) -> Res<()> {
+    let (keys, sites, names) = sorted(l);
     let d = &l.rec.data;
     let ss = string_stream::parse(d, l.rec.handle_bits).map_err(|e| e.to_string())?;
     let mut w = Bits::default();
     w.copy(d, 0, l.list_bit);
     w.bl(0);
-    w.bl(l.keys.len() as i32);
-    for k in &l.keys {
+    w.bl(keys.len() as i32);
+    for k in &keys {
         w.bits(0, 2);
         k.to_le_bytes().iter().for_each(|b| w.byte(*b));
     }
     w.copy(d, ss.start - LIST_END, ss.start);
     let mut refs = vec![l.tree];
-    refs.extend(l.sites.iter().map(|h| (4, *h)));
+    refs.extend(sites.iter().map(|h| (4, *h)));
     refs.push((4, l.last));
     refs.extend(&l.styles);
     let (mut data, mut hb) = finish(w, &l.rec, &refs)?;
     // Strings: "" + the names of the named sites, in list order.
     let old = ss.strings.len() - 1;
-    for i in (l.names.len()..old).rev() {
+    for i in (names.len()..old).rev() {
         (data, hb) = string_stream::remove(&data, hb, i + 1).map_err(|e| e.to_string())?;
     }
-    for i in old..l.names.len() {
+    for i in old..names.len() {
         (data, hb) = string_stream::insert_empty(&data, hb, i + 1).map_err(|e| e.to_string())?;
     }
-    for (i, n) in l.names.iter().enumerate() {
+    for (i, n) in names.iter().enumerate() {
         (data, hb) = string_stream::replace(&data, hb, i + 1, n).map_err(|e| e.to_string())?;
     }
     put(doc, l.rec.handle, data, hb)
@@ -726,17 +745,6 @@ fn set_site_strings(r: &RawRecord, name: &str, description: Option<&str>) -> Res
     // Civil 3D pads the handle stream with 1-bits, which can read as one
     // more reference once the record's length changes.
     handle_refs::keep_refs(&d, hb, r.handle, refs_of(r).len()).ok_or("site references".into())
-}
-
-/// Where a site called `name` goes in the list: by name, spaces ignored,
-/// unnamed sites first.
-fn list_position(l: &SiteList, name: &str) -> usize {
-    let norm = |s: &str| s.replace(' ', "");
-    let mut names = l.names.iter();
-    l.keys
-        .iter()
-        .position(|k| named(*k) && names.next().is_some_and(|n| norm(n) > norm(name)))
-        .unwrap_or(l.keys.len())
 }
 
 // ----------------------------------------------------------------- commands
@@ -886,11 +894,10 @@ fn cmd_create(doc: &mut acadrust::CadDocument, a: &[String]) -> Res<()> {
         },
     );
 
-    let i = list_position(&l, &a[0]);
-    let ni = name_index(&l, i);
-    l.keys.insert(i, key);
-    l.sites.insert(i, site);
-    l.names.insert(ni, a[0].clone());
+    // Appended here; `write_site_list` puts the list in key order.
+    l.keys.push(key);
+    l.sites.push(site);
+    l.names.push(a[0].clone());
     l.last = site;
     write_site_list(doc, &l)?;
     println!("site {site:X}, container {cont:X}, key {key:08X}");

@@ -47,6 +47,12 @@ versions follow [Semantic Versioning](https://semver.org/).
   one error because the field was stale (re-save S344: the alignment
   added to the container twice). `exp_site` now writes it; corrected
   experiment S345 (`docs/site-object.md`, `docs/civil3d-rejects.md`).
+- S336–S340 accepted by Civil 3D (owner): rename with description, a
+  literal name over a pooled one, deleting the only site, creating a
+  site from an empty one and from one with members. Re-saves S346–S348:
+  Civil 3D draws the missing site graphics, re-keys written sites and
+  keeps the site list in key order (key mod 8, then key), which
+  `exp_site` now writes.
 
 ### Changed
 - `viewer/` and `hexview/` moved to `archive/` (D-075), unmaintained.
