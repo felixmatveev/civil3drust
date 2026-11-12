@@ -19,7 +19,7 @@
 //!   without it is the ID of one of Civil 3D's built-in names (a property
 //!   name such as `A`): the record then has no name string, and the text
 //!   is not in the drawing (MIST22). [`pooled_name`] knows the IDs our
-//!   samples have shown.
+//!   samples have shown (S352/S353).
 //! - A **siteless** alignment's two companion references (hard pointers 2
 //!   and 3 of its handle stream) point to its companion, owned by the
 //!   alignment registry (BC0, owned by `AECC_ALIGNMENT_PARCEL_NODE`).
@@ -90,10 +90,30 @@ pub fn key_has_string(key: u32) -> bool {
 /// stores a site name it already has among its built-in names as that
 /// name's ID alone (S321: the site the API calls `A` has key
 /// `0x0200D214`, the ID the `R/3<A<R` design check uses for the spiral
-/// value A, and no name string).
+/// value A, and no name string). The pairs are Civil 3D 2024's API
+/// names of the sites of S352, one site per ID (S353; English names —
+/// the text comes from the program, MIST22).
 pub fn pooled_name(key: u32) -> Option<&'static str> {
     match key {
+        0x0000_0101 => Some("C"),
+        0x0000_079D => Some("IF"),
+        0x0200_D064 => Some("Tangent In Direction"),
+        0x0200_D065 => Some("Tangent Out Direction"),
+        0x0200_D100 => Some("Length"),
+        0x0200_D185 => Some("Radius"),
         0x0200_D214 => Some("A"),
+        0x0200_D216 => Some("Radius in"),
+        0x0200_D217 => Some("Radius out"),
+        0x0200_D386 => Some("Design Speed"),
+        0x0200_D55F => Some("Cross slope - Left outside pavement"),
+        0x0200_D560 => Some("Cross slope - Left inside pavement"),
+        0x0200_D561 => Some("Cross slope - Right outside pavement"),
+        0x0200_D562 => Some("Cross slope - Right inside pavement"),
+        0x0200_D6D4 => Some("Left Rail Differential Elevation"),
+        0x0200_D6D5 => Some("Right Rail Differential Elevation"),
+        0x0200_F20D => Some("Profile Curve Length"),
+        0x0200_F300 => Some("Tangent Grade"),
+        0x0200_F404 => Some("Grade Change"),
         _ => None,
     }
 }
@@ -230,6 +250,7 @@ mod tests {
         assert!(key_has_string(0x8000_0AFB));
         assert!(!key_has_string(0x0200_D214));
         assert_eq!(pooled_name(0x0200_D214), Some("A"));
-        assert_eq!(pooled_name(0x0000_0101), None);
+        assert_eq!(pooled_name(0x0000_0101), Some("C"));
+        assert_eq!(pooled_name(0x0200_D215), None);
     }
 }

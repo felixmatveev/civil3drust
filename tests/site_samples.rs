@@ -106,10 +106,10 @@ fn pooled_site_names() {
     assert_eq!(s.len(), 1);
     assert_eq!((s[0].name.as_str(), s[0].name_key), ("A", 0x0200_D214));
     assert_eq!(s[0].description, "");
-    // S329: a second pooled site, whose ID is not known, before `B`.
+    // S329: a second pooled site (`C`, S353) before `B`.
     let s = sites(&open("samples/S329_site_second_site_fl_moved.dwg").doc);
     assert_eq!(s.len(), 2);
-    assert_eq!((s[0].name.as_str(), s[0].name_key), ("", 0x0000_0101));
+    assert_eq!((s[0].name.as_str(), s[0].name_key), ("C", 0x0000_0101));
     assert_eq!((s[1].name.as_str(), s[1].name_key), ("B", 0x8000_0AFB));
     // S323: the alignment is found in the pooled-name site.
     let o = open("samples/S323_site_alignment_into_site.dwg");
@@ -132,6 +132,22 @@ fn pooled_site_names() {
     let s = sites(&open("samples/S349_S336_resaved.dwg").doc);
     assert_eq!(s[0].name, "RENAMED");
     assert_eq!(s[0].description, "written by civil3drust");
+    // S352 (civil3drust: one site per built-in ID, the ID as
+    // description) and S353 (Civil 3D's save): 19 sites, every name
+    // known, the same keys in the same order.
+    let a = sites(&open("samples/S352_S321_exp_pool_names.dwg").doc);
+    let b = sites(&open("samples/S353_S352_resaved.dwg").doc);
+    assert_eq!(a.len(), 19);
+    assert_eq!(a, b);
+    for s in &b {
+        assert!(!s.name.is_empty(), "{:08X}", s.name_key);
+        if s.name != "A" {
+            assert_eq!(s.description, format!("id {:08X}", s.name_key));
+        }
+    }
+    let name = |k| b.iter().find(|s| s.name_key == k).unwrap().name.as_str();
+    assert_eq!(name(0x0200_D386), "Design Speed");
+    assert_eq!(name(0x0000_079D), "IF");
     // S338/S346: no site left.
     assert!(sites(&open("samples/S346_S338_resaved.dwg").doc).is_empty());
 }

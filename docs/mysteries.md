@@ -635,12 +635,42 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
 - **Writing:** always a literal string and a high-bit key. Civil 3D
   accepts that for a name it has built in and stores the ID again on its
   own save (S337 → S350), so a writer never needs the table.
-- **To settle:** the names of more IDs. S352 has one empty site per ID
-  seen in the samples' design-check expressions (18 IDs, each as its
-  site's description); its `C3DDUMP` gives the pairs for
-  `pooled_name`. Whether alignment and other object names use built-in
-  IDs the same way. Tip: test sites named with several characters get a
-  literal name.
+- **Harvest (S352 → S353):** S352 has one empty site per ID seen in the
+  samples' design-check expressions (18 IDs, each as its site's
+  description). Civil 3D 2024 opened it without errors, showed every
+  site under a built-in name, and its save (S353) keeps the 19 keys and
+  their order, still without name strings. `C3DDUMP` of S353:
+
+  | ID | Name |
+  |---|---|
+  | `00000101` | C |
+  | `0000079D` | IF |
+  | `0200D064` | Tangent In Direction |
+  | `0200D065` | Tangent Out Direction |
+  | `0200D100` | Length |
+  | `0200D185` | Radius |
+  | `0200D214` | A |
+  | `0200D216` | Radius in |
+  | `0200D217` | Radius out |
+  | `0200D386` | Design Speed |
+  | `0200D55F` | Cross slope - Left outside pavement |
+  | `0200D560` | Cross slope - Left inside pavement |
+  | `0200D561` | Cross slope - Right outside pavement |
+  | `0200D562` | Cross slope - Right inside pavement |
+  | `0200D6D4` | Left Rail Differential Elevation |
+  | `0200D6D5` | Right Rail Differential Elevation |
+  | `0200F20D` | Profile Curve Length |
+  | `0200F300` | Tangent Grade |
+  | `0200F404` | Grade Change |
+
+  So any ID Civil 3D knows is a valid site name, including the
+  expression function `IF` (`0000079D`) and the second site of the S321
+  series (`00000101` = `C`). The names are the English program's.
+- **To settle:** the IDs of other built-in names (a site named with one
+  the table lacks reads as unnamed, with its key); whether alignment and
+  other object names use built-in IDs the same way; whether another
+  language version shows other texts for the same IDs. Tip: test sites
+  named with several characters get a literal name.
 
 ## MIST23 — a site's parcel counters — **open (S112, S326)**
 

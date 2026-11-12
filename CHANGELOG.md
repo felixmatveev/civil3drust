@@ -12,12 +12,15 @@ versions follow [Semantic Versioning](https://semver.org/).
   site's description was read from the wrong string for them. The site
   count and keys now come from the site list's key list; `Site` has
   `name_key`; `pooled_name` names the IDs the samples have shown
-  (`0200D214` = `A`), other pooled names read as empty (D-078). S321–S327
+  (19 IDs from S352/S353, e.g. `0200D214` = `A`, `00000101` = `C`),
+  other pooled names read as empty (D-078). S321–S327
   now list their site, and alignments in it report their membership.
 
 ### Added
 - `exp_site pool` and experiment S352: one empty site per built-in name
   ID found in the samples, to learn the names from Civil 3D's API dump.
+  Civil 3D 2024 opened it cleanly; S353 is its save, with the API dump
+  that pairs the 18 IDs with their names (MIST22).
 - Site study, first batch (docs and samples only): S321–S331, the
   owner's eleven-step site series (empty site, alignment moved in,
   created in the site, crossings, a parcel, a feature line, rename,

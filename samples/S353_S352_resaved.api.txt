@@ -1,0 +1,1504 @@
+drawing: C:\Users\felix\Downloads\S352_S321_exp_pool_names2.dwg
+written: 2026-11-12 21:45:01Z
+config: classes control (AECC_ALIGNMENT, AECC_ALIGNMENT_*NODE, AECC_PROFILE, AECC_PROFILE_VIEW, AECC_FEATURE_LINE, AECC_FEATURE_STYLE, AECC_PARCEL, AECC_PARCEL_NODE, AECC_DB_*, AECC_ENTITY*, AECC_NOTIFICATIONINFOS, AECC_*DESIGN_CHECK_SET, AECC_*LABEL_GROUP, AECC_*LABELGROUP, AECC_*LABELING, AECC_GRADING*), getters on, display reps skipped, echo off
+
+== Objects
+
+[A1C] AECC_GRADING_GROUP DBObject owner 8B
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Grading Group
+  GetReactors() [1]: ImpRXObject
+
+[A1D] AECC_GRADING_CRITERIA GradingCriteria owner 8C1
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/23/2006 10:26:49 PM
+  DateModified: 2/23/2006 10:26:49 PM
+  Description: 
+  DistanceProjectionType: Slope
+  ElevationProjectionType: CutFillSlope
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+  RelativeElevationProjectionType: Slope
+  SurfaceProjectionType: CutFillSlope
+  Target: Distance
+  GetReactors() [1]: ImpRXObject
+
+[A23] AECC_GRADING_STYLE GradingStyle owner 8C1
+  CenterMarker: PercentageOfScreen
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/23/2006 10:26:49 PM
+  DateModified: 2/23/2006 10:26:49 PM
+  Description: 
+  ExtensionDictionary: null
+  FixedSize: 10
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+  PercentageOfScreen: 0.02
+  PlottedSize: 0.041666666666666664
+  SlopePatternStyleId: null
+  SlopePatternStyleName: <InvalidOperationException: Operation is not valid due to the current state of the object.>
+  SlopeRangeMax: 2
+  SlopeRangeMin: 0.16666666666666666
+  UseSlopePatternStyle: False
+  UseSlopeRange: False
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[B87] AECC_GRADING_CRITERIA_SET GradingCriteriaSet owner 8C1
+  Count: 0
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/23/2006 10:26:49 PM
+  DateModified: 2/23/2006 10:26:49 PM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[B88] AECC_GRADING_CRITERIA_SET GradingCriteriaSet owner B87
+  Count: 4
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/23/2006 10:26:49 PM
+  DateModified: 3/12/2006 8:08:25 PM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[C43] AECC_PARCEL_NODE DBObject owner 8B
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Parcels
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[DD2] AECC_GRADING_CRITERIA GradingCriteria owner A1D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/24/2006 12:11:06 AM
+  DateModified: 2/24/2006 12:12:44 AM
+  Description: 
+  DistanceProjectionType: Slope
+  ElevationProjectionType: CutFillSlope
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  RelativeElevationProjectionType: Slope
+  SurfaceProjectionType: CutFillSlope
+  Target: Distance
+  GetReactors() [1]: ImpRXObject
+
+[12F8] AECC_ALIGNMENT_PARCEL_NODE DBObject owner 8B
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: True
+  Name: <None>
+  GetReactors() [1]: ImpRXObject
+
+[12F9] AECC_FEATURE_STYLE DBObject owner 12F8
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Standard
+  GetReactors() [0]: 
+
+[1F01] AECC_GRADING_STYLE GradingStyle owner A23
+  CenterMarker: PercentageOfScreen
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/28/2006 9:44:45 PM
+  DateModified: 3/26/2006 3:06:02 PM
+  Description: 
+  ExtensionDictionary: null
+  FixedSize: 10
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  PercentageOfScreen: 0.02
+  PlottedSize: 0.041666666666666664
+  SlopePatternStyleId: null
+  SlopePatternStyleName: <InvalidOperationException: Operation is not valid due to the current state of the object.>
+  SlopeRangeMax: 2
+  SlopeRangeMin: 0.16666666666666666
+  UseSlopePatternStyle: False
+  UseSlopeRange: True
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[1F02] AECC_GRADING_STYLE GradingStyle owner A23
+  CenterMarker: PercentageOfScreen
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/28/2006 9:45:42 PM
+  DateModified: 3/26/2006 3:06:19 PM
+  Description: 
+  ExtensionDictionary: null
+  FixedSize: 10
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  PercentageOfScreen: 0.02
+  PlottedSize: 0.041666666666666664
+  SlopePatternStyleId: null
+  SlopePatternStyleName: <InvalidOperationException: Operation is not valid due to the current state of the object.>
+  SlopeRangeMax: 2
+  SlopeRangeMin: 0.16666666666666666
+  UseSlopePatternStyle: False
+  UseSlopeRange: True
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[1F03] AECC_GRADING_STYLE GradingStyle owner A23
+  CenterMarker: PercentageOfScreen
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/23/2006 10:26:49 PM
+  DateModified: 3/26/2006 3:06:30 PM
+  Description: 
+  ExtensionDictionary: null
+  FixedSize: 10
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  PercentageOfScreen: 0.02
+  PlottedSize: 0.041666666666666664
+  SlopePatternStyleId: null
+  SlopePatternStyleName: <InvalidOperationException: Operation is not valid due to the current state of the object.>
+  SlopeRangeMax: 2
+  SlopeRangeMin: 0.16666666666666666
+  UseSlopePatternStyle: False
+  UseSlopeRange: False
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[339D] AECC_ALIGNMENT_DESIGN_CHECK_SET AlignmentDesignCheckSet owner 8C1
+  CreateBy: Autodesk, Inc.
+  DateCreated: 1/18/2008 11:19:28 AM
+  DateModified: 1/18/2008 11:19:28 AM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+  GetAllDesignChecks() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[339E] AECC_ALIGNMENT_DESIGN_CHECK_SET AlignmentDesignCheckSet owner 339D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 1/18/2008 11:19:28 AM
+  DateModified: 2/22/2008 2:48:21 PM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  GetAllDesignChecks() [1]: AlignmentDesignCheck
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[339F] AECC_PROFILE_DESIGN_CHECK_SET ProfileDesignCheckSet owner 8C1
+  CreateBy: Autodesk, Inc.
+  DateCreated: 1/18/2008 11:19:28 AM
+  DateModified: 1/18/2008 11:19:28 AM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+  GetAllDesignChecks() [0]: 
+  GetAllDesignChecks() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[33A0] AECC_PROFILE_DESIGN_CHECK_SET ProfileDesignCheckSet owner 339F
+  CreateBy: Autodesk, Inc.
+  DateCreated: 1/18/2008 11:19:28 AM
+  DateModified: 1/23/2008 8:27:58 PM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  GetAllDesignChecks() [3]: ProfileDesignCheck, ProfileDesignCheck, ProfileDesignCheck
+  GetAllDesignChecks() [3]: AlignmentDesignCheck, AlignmentDesignCheck, AlignmentDesignCheck
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[37FD] AECC_FEATURE_STYLE DBObject owner 12F9
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: 8455b411d65b47abcfc2448aaf17db64
+  GetReactors() [0]: 
+
+[38CD] AECC_ALIGNMENT_DESIGN_CHECK_SET AlignmentDesignCheckSet owner 339D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/6/2008 12:04:45 PM
+  DateModified: 2/6/2008 12:08:05 PM
+  Description: Design Check Set for use in Subdivision-type design, with typical design speeds ~25mph
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+  GetAllDesignChecks() [3]: AlignmentDesignCheck, AlignmentDesignCheck, AlignmentDesignCheck
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[38D4] AECC_PROFILE_DESIGN_CHECK_SET ProfileDesignCheckSet owner 339F
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/6/2008 12:23:06 PM
+  DateModified: 2/6/2008 12:23:36 PM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+  GetAllDesignChecks() [1]: ProfileDesignCheck
+  GetAllDesignChecks() [1]: AlignmentDesignCheck
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[7C89] AECC_GRADING_CRITERIA GradingCriteria owner A1D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/24/2006 12:11:57 AM
+  DateModified: 2/24/2006 12:12:54 AM
+  Description: 
+  DistanceProjectionType: Slope
+  ElevationProjectionType: CutFillSlope
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  RelativeElevationProjectionType: Slope
+  SurfaceProjectionType: CutFillSlope
+  Target: RelativeElevation
+  GetReactors() [1]: ImpRXObject
+
+[7C8A] AECC_GRADING_CRITERIA GradingCriteria owner A1D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/24/2006 12:12:23 AM
+  DateModified: 2/24/2006 12:12:38 AM
+  Description: 
+  DistanceProjectionType: Slope
+  ElevationProjectionType: CutFillSlope
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  RelativeElevationProjectionType: Slope
+  SurfaceProjectionType: CutFillSlope
+  Target: Surface
+  GetReactors() [1]: ImpRXObject
+
+[7C8B] AECC_GRADING_CRITERIA GradingCriteria owner A1D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/24/2006 12:11:37 AM
+  DateModified: 2/24/2006 12:12:50 AM
+  Description: 
+  DistanceProjectionType: Slope
+  ElevationProjectionType: CutFillSlope
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  RelativeElevationProjectionType: Slope
+  SurfaceProjectionType: CutFillSlope
+  Target: Elevation
+  GetReactors() [1]: ImpRXObject
+
+[8D58] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: 
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: A
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D59] AECC_FEATURE_STYLE DBObject owner 8D58
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: A
+  GetReactors() [0]: 
+
+[8D67] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 00000101
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: C
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D68] AECC_FEATURE_STYLE DBObject owner 8D67
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: C
+  GetReactors() [0]: 
+
+[8D69] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0000079D
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: IF
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D6A] AECC_FEATURE_STYLE DBObject owner 8D69
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: IF
+  GetReactors() [0]: 
+
+[8D6B] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0200D216
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: Radius in
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D6C] AECC_FEATURE_STYLE DBObject owner 8D6B
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Radius in
+  GetReactors() [0]: 
+
+[8D6D] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0200D217
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: Radius out
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D6E] AECC_FEATURE_STYLE DBObject owner 8D6D
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Radius out
+  GetReactors() [0]: 
+
+[8D6F] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0200D064
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: Tangent In Direction
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D70] AECC_FEATURE_STYLE DBObject owner 8D6F
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Tangent In Direction
+  GetReactors() [0]: 
+
+[8D71] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0200D065
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: Tangent Out Direction
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D72] AECC_FEATURE_STYLE DBObject owner 8D71
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Tangent Out Direction
+  GetReactors() [0]: 
+
+[8D73] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0200D100
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: Length
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D74] AECC_FEATURE_STYLE DBObject owner 8D73
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Length
+  GetReactors() [0]: 
+
+[8D75] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0200D185
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: Radius
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D76] AECC_FEATURE_STYLE DBObject owner 8D75
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Radius
+  GetReactors() [0]: 
+
+[8D77] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0200D386
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: Design Speed
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D78] AECC_FEATURE_STYLE DBObject owner 8D77
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Design Speed
+  GetReactors() [0]: 
+
+[8D79] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0200D55F
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: Cross slope - Left outside pavement
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D7A] AECC_FEATURE_STYLE DBObject owner 8D79
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Cross slope - Left outside pavement
+  GetReactors() [0]: 
+
+[8D7B] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0200D560
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: Cross slope - Left inside pavement
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D7C] AECC_FEATURE_STYLE DBObject owner 8D7B
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Cross slope - Left inside pavement
+  GetReactors() [0]: 
+
+[8D7D] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0200D561
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: Cross slope - Right outside pavement
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D7E] AECC_FEATURE_STYLE DBObject owner 8D7D
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Cross slope - Right outside pavement
+  GetReactors() [0]: 
+
+[8D7F] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0200D562
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: Cross slope - Right inside pavement
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D80] AECC_FEATURE_STYLE DBObject owner 8D7F
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Cross slope - Right inside pavement
+  GetReactors() [0]: 
+
+[8D81] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0200D6D4
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: Left Rail Differential Elevation
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D82] AECC_FEATURE_STYLE DBObject owner 8D81
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Left Rail Differential Elevation
+  GetReactors() [0]: 
+
+[8D83] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0200D6D5
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: Right Rail Differential Elevation
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D84] AECC_FEATURE_STYLE DBObject owner 8D83
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Right Rail Differential Elevation
+  GetReactors() [0]: 
+
+[8D85] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0200F20D
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: Profile Curve Length
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D86] AECC_FEATURE_STYLE DBObject owner 8D85
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Profile Curve Length
+  GetReactors() [0]: 
+
+[8D87] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0200F300
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: Tangent Grade
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D88] AECC_FEATURE_STYLE DBObject owner 8D87
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Tangent Grade
+  GetReactors() [0]: 
+
+[8D89] AECC_PARCEL Site owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: id 0200F404
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: Grade Change
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+  GetAlignmentIds() [0]: 
+  GetFeatureLineIds() [0]: 
+  GetParcelIds() [0]: 
+  GetReactors() [2]: ImpRXObject, ImpRXObject
+
+[8D8A] AECC_FEATURE_STYLE DBObject owner 8D89
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Grade Change
+  GetReactors() [0]: 
+
+objects: 60
