@@ -1,0 +1,2416 @@
+drawing: C:\Users\felix\Downloads\S319_S318_civ3d_resaved.dwg
+written: 2026-11-12 00:11:36Z
+classes: AECC_ALIGNMENT, AECC_ALIGNMENT_*NODE, AECC_PROFILE, AECC_PROFILE_VIEW, AECC_FEATURE_LINE, AECC_FEATURE_STYLE, AECC_PARCEL, AECC_PARCEL_NODE, AECC_DB_*, AECC_ENTITY*, AECC_NOTIFICATIONINFOS, AECC_*DESIGN_CHECK_SET, AECC_*LABEL_GROUP, AECC_*LABELGROUP, AECC_*LABELING, AECC_GRADING*
+
+[A1C] AECC_GRADING_GROUP DBObject owner 8B
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Grading Group
+
+[A1D] AECC_GRADING_CRITERIA GradingCriteria owner 8C1
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/23/2006 10:26:49 PM
+  DateModified: 2/23/2006 10:26:49 PM
+  Description: 
+  DistanceProjectionType: Slope
+  ElevationProjectionType: CutFillSlope
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+  RelativeElevationProjectionType: Slope
+  SurfaceProjectionType: CutFillSlope
+  Target: Distance
+
+[A23] AECC_GRADING_STYLE GradingStyle owner 8C1
+  CenterMarker: PercentageOfScreen
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/23/2006 10:26:49 PM
+  DateModified: 2/23/2006 10:26:49 PM
+  Description: 
+  ExtensionDictionary: null
+  FixedSize: 10
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+  PercentageOfScreen: 0.02
+  PlottedSize: 0.041666666666666664
+  SlopePatternStyleId: null
+  SlopePatternStyleName: <InvalidOperationException: Operation is not valid due to the current state of the object.>
+  SlopeRangeMax: 2
+  SlopeRangeMin: 0.16666666666666666
+  UseSlopePatternStyle: False
+  UseSlopeRange: False
+
+[B87] AECC_GRADING_CRITERIA_SET GradingCriteriaSet owner 8C1
+  Count: 0
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/23/2006 10:26:49 PM
+  DateModified: 2/23/2006 10:26:49 PM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+
+[B88] AECC_GRADING_CRITERIA_SET GradingCriteriaSet owner B87
+  Count: 4
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/23/2006 10:26:49 PM
+  DateModified: 3/12/2006 8:08:25 PM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+
+[C43] AECC_PARCEL_NODE DBObject owner 8B
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Parcels
+
+[D56] AECC_DISP_REP_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Labeling Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewLabeling
+  Name: AeccDbViewLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[D57] AECC_DISP_REP_ALIGNMENT_DESIGNSPEED_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewAlignmentDesignSpeedLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Alignment Design Speed Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewAlignmentDesignSpeedLabeling
+  Name: AeccDbViewAlignmentDesignSpeedLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[D58] AECC_DISP_REP_ALIGNMENT_GEOMPT_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewAlignmentGeomPointLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Alignment Geometry Point Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewAlignmentGeomPointLabeling
+  Name: AeccDbViewAlignmentGeomPointLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[D59] AECC_DISP_REP_ALIGNMENT_MINOR_STATION_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewAlignmentMinorStationLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Alignment Minor Station Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewAlignmentMinorStationLabeling
+  Name: AeccDbViewAlignmentMinorStationLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[D5A] AECC_DISP_REP_ALIGNMENT_PI_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewAlignmentPILabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Alignment PI Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewAlignmentPILabeling
+  Name: AeccDbViewAlignmentPILabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[D5B] AECC_DISP_REP_ALIGNMENT_STAEQU_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewAlignmentStaEquLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Alignment Station Equation Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewAlignmentStaEquLabeling
+  Name: AeccDbViewAlignmentStaEquLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[D5C] AECC_DISP_REP_ALIGNMENT_STATION_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewAlignmentStationLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Alignment Station Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewAlignmentStationLabeling
+  Name: AeccDbViewAlignmentStationLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[D5E] AECC_DISP_REP_ALIGNMENT_VERTICAL_GEOMPT_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewAlignmentVAGeomPointLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Alignment Vertical Geometry Point Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewAlignmentVAGeomPointLabeling
+  Name: AeccDbViewAlignmentVAGeomPointLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[DD2] AECC_GRADING_CRITERIA GradingCriteria owner A1D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/24/2006 12:11:06 AM
+  DateModified: 2/24/2006 12:12:44 AM
+  Description: 
+  DistanceProjectionType: Slope
+  ElevationProjectionType: CutFillSlope
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  RelativeElevationProjectionType: Slope
+  SurfaceProjectionType: CutFillSlope
+  Target: Distance
+
+[12F8] AECC_ALIGNMENT_PARCEL_NODE DBObject owner 8B
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: True
+  Name: <None>
+
+[12F9] AECC_FEATURE_STYLE DBObject owner 12F8
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: Standard
+
+[134A] AECC_DISP_REP_SAMPLELINE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSampleLineLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: 
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSampleLineLabeling
+  Name: AeccDbViewSampleLineLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[134B] AECC_DISP_REP_SECTION_GRADEBREAK_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSectionGradeBreakLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Section Grade Break Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSectionGradeBreakLabeling
+  Name: AeccDbViewSectionGradeBreakLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[134C] AECC_DISP_REP_SECTION_MINOR_OFFSET_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSectionMinorOffsetLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Section Minor Offset Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSectionMinorOffsetLabeling
+  Name: AeccDbViewSectionMinorOffsetLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[134D] AECC_DISP_REP_SECTION_OFFSET_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSectionOffsetLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Section Offset Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSectionOffsetLabeling
+  Name: AeccDbViewSectionOffsetLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[134E] AECC_DISP_REP_SECTION_SEGMENT_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSectionSegmentLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Section Segment Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSectionSegmentLabeling
+  Name: AeccDbViewSectionSegmentLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[1350] AECC_DISP_REP_SURFACE_CONTOUR_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSurfaceContourLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Surface Contour Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSurfaceContourLabeling
+  Name: AeccDbViewSurfaceContourLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[1352] AECC_DISP_REP_VALIGNMENT_CRESTCURVE_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewVAlignmentCrestCurveLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Vertical Alignment Crest Curve Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewVAlignmentCrestCurveLabeling
+  Name: AeccDbViewVAlignmentCrestCurveLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[1353] AECC_DISP_REP_VALIGNMENT_HAGEOMPT_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewVAlignmentHAGeomPointLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Vertical Alignment Horizontal Geometry Point Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewVAlignmentHAGeomPointLabeling
+  Name: AeccDbViewVAlignmentHAGeomPointLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[1354] AECC_DISP_REP_VALIGNMENT_LINE_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewVAlignmentLineLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Vertical Alignment Line Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewVAlignmentLineLabeling
+  Name: AeccDbViewVAlignmentLineLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[1355] AECC_DISP_REP_VALIGNMENT_MINOR_STATION_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewVAlignmentMinorStationLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Vertical Alignment Minor Station Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewVAlignmentMinorStationLabeling
+  Name: AeccDbViewVAlignmentMinorStationLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[1356] AECC_DISP_REP_VALIGNMENT_PVI_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewVAlignmentPVILabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Vertical Alignment PVI Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewVAlignmentPVILabeling
+  Name: AeccDbViewVAlignmentPVILabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[1357] AECC_DISP_REP_VALIGNMENT_SAGCURVE_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewVAlignmentSagCurveLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Vertical Alignment Sag Curve Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewVAlignmentSagCurveLabeling
+  Name: AeccDbViewVAlignmentSagCurveLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[1358] AECC_DISP_REP_VALIGNMENT_STATION_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewVAlignmentStationLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Vertical Alignment Station Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewVAlignmentStationLabeling
+  Name: AeccDbViewVAlignmentStationLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[135A] AECC_DISP_REP_PIPE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewPipeLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Pipe Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewPipeLabel
+  Name: AeccDbViewPipeLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[135B] AECC_DISP_REP_PIPE_PROFILE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewPipeProfileLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Pipe Profile Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewPipeProfileLabel
+  Name: AeccDbViewPipeProfileLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[135C] AECC_DISP_REP_PIPE_SECTION_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewPipeSectionLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Pipe Section Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewPipeSectionLabel
+  Name: AeccDbViewPipeSectionLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[135D] AECC_DISP_REP_SPANNING_PIPE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSpanningPipeLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Spanning Pipe Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSpanningPipeLabel
+  Name: AeccDbViewSpanningPipeLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[135E] AECC_DISP_REP_STRUCTURE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewStructureLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Structure Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewStructureLabel
+  Name: AeccDbViewStructureLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[135F] AECC_DISP_REP_STRUCTURE_PROFILE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewStructureProfileLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Structure Profile Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewStructureProfileLabel
+  Name: AeccDbViewStructureProfileLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[1360] AECC_DISP_REP_STRUCTURE_SECTION_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewStructureSectionLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Structure Section Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewStructureSectionLabel
+  Name: AeccDbViewStructureSectionLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[1363] AECC_DISP_REP_MATCHLINE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewMatchLineLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Match Line Labeling Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewMatchLineLabeling
+  Name: AeccDbViewMatchLineLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[1364] AECC_DISP_REP_VIEWFRAME_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewViewFrameLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: View Frame Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewViewFrameLabeling
+  Name: AeccDbViewViewFrameLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[1F01] AECC_GRADING_STYLE GradingStyle owner A23
+  CenterMarker: PercentageOfScreen
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/28/2006 9:44:45 PM
+  DateModified: 3/26/2006 3:06:02 PM
+  Description: 
+  ExtensionDictionary: null
+  FixedSize: 10
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  PercentageOfScreen: 0.02
+  PlottedSize: 0.041666666666666664
+  SlopePatternStyleId: null
+  SlopePatternStyleName: <InvalidOperationException: Operation is not valid due to the current state of the object.>
+  SlopeRangeMax: 2
+  SlopeRangeMin: 0.16666666666666666
+  UseSlopePatternStyle: False
+  UseSlopeRange: True
+
+[1F02] AECC_GRADING_STYLE GradingStyle owner A23
+  CenterMarker: PercentageOfScreen
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/28/2006 9:45:42 PM
+  DateModified: 3/26/2006 3:06:19 PM
+  Description: 
+  ExtensionDictionary: null
+  FixedSize: 10
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  PercentageOfScreen: 0.02
+  PlottedSize: 0.041666666666666664
+  SlopePatternStyleId: null
+  SlopePatternStyleName: <InvalidOperationException: Operation is not valid due to the current state of the object.>
+  SlopeRangeMax: 2
+  SlopeRangeMin: 0.16666666666666666
+  UseSlopePatternStyle: False
+  UseSlopeRange: True
+
+[1F03] AECC_GRADING_STYLE GradingStyle owner A23
+  CenterMarker: PercentageOfScreen
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/23/2006 10:26:49 PM
+  DateModified: 3/26/2006 3:06:30 PM
+  Description: 
+  ExtensionDictionary: null
+  FixedSize: 10
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  PercentageOfScreen: 0.02
+  PlottedSize: 0.041666666666666664
+  SlopePatternStyleId: null
+  SlopePatternStyleName: <InvalidOperationException: Operation is not valid due to the current state of the object.>
+  SlopeRangeMax: 2
+  SlopeRangeMin: 0.16666666666666666
+  UseSlopePatternStyle: False
+  UseSlopeRange: False
+
+[339D] AECC_ALIGNMENT_DESIGN_CHECK_SET AlignmentDesignCheckSet owner 8C1
+  CreateBy: Autodesk, Inc.
+  DateCreated: 1/18/2008 11:19:28 AM
+  DateModified: 1/18/2008 11:19:28 AM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+
+[339E] AECC_ALIGNMENT_DESIGN_CHECK_SET AlignmentDesignCheckSet owner 339D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 1/18/2008 11:19:28 AM
+  DateModified: 2/22/2008 2:48:21 PM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+
+[339F] AECC_PROFILE_DESIGN_CHECK_SET ProfileDesignCheckSet owner 8C1
+  CreateBy: Autodesk, Inc.
+  DateCreated: 1/18/2008 11:19:28 AM
+  DateModified: 1/18/2008 11:19:28 AM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+
+[33A0] AECC_PROFILE_DESIGN_CHECK_SET ProfileDesignCheckSet owner 339F
+  CreateBy: Autodesk, Inc.
+  DateCreated: 1/18/2008 11:19:28 AM
+  DateModified: 1/23/2008 8:27:58 PM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+
+[3445] AECC_DISP_REP_ALIGNMENT_SUPERELEVATION_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewAlignmentSuperelevationLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Alignment Superelevation Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewAlignmentSuperelevationLabeling
+  Name: AeccDbViewAlignmentSuperelevationLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[344B] AECC_DISP_REP_SPANNING_PIPE_PROFILE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSpanningPipeProfileLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Spanning Pipe Profile Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSpanningPipeProfileLabel
+  Name: AeccDbViewSpanningPipeProfileLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[37FD] AECC_FEATURE_STYLE DBObject owner 12F9
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: 8455b411d65b47abcfc2448aaf17db64
+
+[38CD] AECC_ALIGNMENT_DESIGN_CHECK_SET AlignmentDesignCheckSet owner 339D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/6/2008 12:04:45 PM
+  DateModified: 2/6/2008 12:08:05 PM
+  Description: Design Check Set for use in Subdivision-type design, with typical design speeds ~25mph
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+
+[38D4] AECC_PROFILE_DESIGN_CHECK_SET ProfileDesignCheckSet owner 339F
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/6/2008 12:23:06 PM
+  DateModified: 2/6/2008 12:23:36 PM
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  ModifiedBy: Autodesk, Inc.
+
+[45FD] AECC_DISP_REP_HORGEOMETRY_BAND_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewHorizontalGeometryBandLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Horizontal Geometry Band Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewHorizontalGeometryBandLabeling
+  Name: AeccDbViewHorizontalGeometryBandLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[45FE] AECC_DISP_REP_PIPENETWORK_BAND_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewPipeNetworkBandLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Pipe Network Band Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewPipeNetworkBandLabeling
+  Name: AeccDbViewPipeNetworkBandLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[45FF] AECC_DISP_REP_PROFILEDATA_BAND_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewProfileDataBandLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Profile Data Band Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewProfileDataBandLabeling
+  Name: AeccDbViewProfileDataBandLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[4601] AECC_DISP_REP_SECTIONDATA_BAND_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSectionDataBandLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Section Data Band Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSectionDataBandLabeling
+  Name: AeccDbViewSectionDataBandLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[4603] AECC_DISP_REP_SECTIONSEGMENT_BAND_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSectionSegmentBandLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Section Segment Band Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSectionSegmentBandLabeling
+  Name: AeccDbViewSectionSegmentBandLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[4604] AECC_DISP_REP_SECTIONALDATA_BAND_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSectionalDataBandLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Sectional Data Band Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSectionalDataBandLabeling
+  Name: AeccDbViewSectionalDataBandLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[4605] AECC_DISP_REP_SUPERELEVATION_BAND_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSuperElevationBandLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Super Elevation Band Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSuperElevationBandLabeling
+  Name: AeccDbViewSuperElevationBandLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[4606] AECC_DISP_REP_VERTICALGEOMETRY_BAND_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewVerticalGeometryBandLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Vertical Geometry Band Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewVerticalGeometryBandLabeling
+  Name: AeccDbViewVerticalGeometryBandLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[460A] AECC_DISP_REP_INTERSECTION_LOCATION_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewIntersectionLocationLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Intersection
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewIntersectionLocationLabel
+  Name: AeccDbViewIntersectionLocationLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[737B] AECC_DISP_REP_ALIGNMENT_CANT_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewAlignmentCantLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Alignment Cant Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewAlignmentCantLabeling
+  Name: AeccDbViewAlignmentCantLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[737D] AECC_DISP_REP_SURVEY_FIGURE_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSvFigureLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Survey Figure Object Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSvFigureLabel
+  Name: AeccDbViewSvFigureLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[7383] AECC_DISP_REP_APPURTENANCE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewAppurtenanceLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Appurtenance Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewAppurtenanceLabel
+  Name: AeccDbViewAppurtenanceLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[7384] AECC_DISP_REP_APPURTENANCE_PROFILE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewAppurtenanceProfileLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Appurtenance Profile Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewAppurtenanceProfileLabel
+  Name: AeccDbViewAppurtenanceProfileLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[7385] AECC_DISP_REP_FITTING_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewFittingLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Fitting Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewFittingLabel
+  Name: AeccDbViewFittingLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[7386] AECC_DISP_REP_FITTING_PROFILE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewFittingProfileLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Fitting Profile Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewFittingProfileLabel
+  Name: AeccDbViewFittingProfileLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[7387] AECC_DISP_REP_PRESSURE_PIPE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewPressurePipeLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Pressure Pipe Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewPressurePipeLabel
+  Name: AeccDbViewPressurePipeLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[7388] AECC_DISP_REP_PRESSURE_PIPE_PROFILE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewPressurePipeProfileLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Pressure Pipe Profile Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewPressurePipeProfileLabel
+  Name: AeccDbViewPressurePipeProfileLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[7C89] AECC_GRADING_CRITERIA GradingCriteria owner A1D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/24/2006 12:11:57 AM
+  DateModified: 2/24/2006 12:12:54 AM
+  Description: 
+  DistanceProjectionType: Slope
+  ElevationProjectionType: CutFillSlope
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  RelativeElevationProjectionType: Slope
+  SurfaceProjectionType: CutFillSlope
+  Target: RelativeElevation
+
+[7C8A] AECC_GRADING_CRITERIA GradingCriteria owner A1D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/24/2006 12:12:23 AM
+  DateModified: 2/24/2006 12:12:38 AM
+  Description: 
+  DistanceProjectionType: Slope
+  ElevationProjectionType: CutFillSlope
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  RelativeElevationProjectionType: Slope
+  SurfaceProjectionType: CutFillSlope
+  Target: Surface
+
+[7C8B] AECC_GRADING_CRITERIA GradingCriteria owner A1D
+  CreateBy: Autodesk, Inc.
+  DateCreated: 2/24/2006 12:11:37 AM
+  DateModified: 2/24/2006 12:12:50 AM
+  Description: 
+  DistanceProjectionType: Slope
+  ElevationProjectionType: CutFillSlope
+  ExtensionDictionary: null
+  IsUsed: True
+  ModifiedBy: Autodesk, Inc.
+  RelativeElevationProjectionType: Slope
+  SurfaceProjectionType: CutFillSlope
+  Target: Elevation
+
+[809C] AECC_DISP_REP_SECTION_CORRIDOR_POINT_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSectionCorridorPointLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Section Corridor Point Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSectionCorridorPointLabeling
+  Name: AeccDbViewSectionCorridorPointLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[81C8] AECC_DISP_REP_CROSSING_PIPE_PROFILE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewCrossingPipeProfileLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Crossing Pipe Profile Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewCrossingPipeProfileLabel
+  Name: AeccDbViewCrossingPipeProfileLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[81C9] AECC_DISP_REP_CROSSING_PRESSURE_PIPE_PROFILE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewCrossingPressurePipeProfileLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Crossing Pressure Pipe Profile Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewCrossingPressurePipeProfileLabel
+  Name: AeccDbViewCrossingPressurePipeProfileLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[81CA] AECC_DISP_REP_PRESSURE_PIPE_SECTION_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewPressurePipeSectionLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Pressure Pipe Section Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewPressurePipeSectionLabel
+  Name: AeccDbViewPressurePipeSectionLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[8830] AECC_DISP_REP_PRESSURENETWORK_BAND_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewPressureNetworkBandLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Pressure Network Band Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewPressureNetworkBandLabeling
+  Name: AeccDbViewPressureNetworkBandLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[8839] AECC_DISP_REP_BRIDGE_FOUNDATION_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewBridgeFoundationLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Bridge Foundation Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewBridgeFoundationLabeling
+  Name: AeccDbViewBridgeFoundationLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[883A] AECC_DISP_REP_BRIDGE_ABUTMENT_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewBridgeAbutmentLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Bridge Abutment Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewBridgeAbutmentLabeling
+  Name: AeccDbViewBridgeAbutmentLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[883C] AECC_DISP_REP_BRIDGE_GENERICOBJ_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewBridgeGenericObjLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Bridge Generic Object Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewBridgeGenericObjLabeling
+  Name: AeccDbViewBridgeGenericObjLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[883D] AECC_DISP_REP_BRIDGE_DECK_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewBridgeDeckLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Bridge Deck Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewBridgeDeckLabeling
+  Name: AeccDbViewBridgeDeckLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[8841] AECC_DISP_REP_BRIDGE_GIRDER_GROUP_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewBridgeGirderGroupLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Bridge Girder Group Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewBridgeGirderGroupLabeling
+  Name: AeccDbViewBridgeGirderGroupLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[8842] AECC_DISP_REP_BRIDGE_PIER_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewBridgePierLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Bridge Pier Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewBridgePierLabeling
+  Name: AeccDbViewBridgePierLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[8844] AECC_DISP_REP_BRIDGE_GRIDER_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewBridgeGirderLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Bridge Girder Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewBridgeGirderLabeling
+  Name: AeccDbViewBridgeGirderLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[8ACE] AECC_DISP_REP_CANT_BAND_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewCantBandLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Cant Band Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewCantBandLabeling
+  Name: AeccDbViewCantBandLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[8ACF] AECC_DISP_REP_SPEED_BAND_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSpeedBandLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Speed Band Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSpeedBandLabeling
+  Name: AeccDbViewSpeedBandLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[8AD0] AECC_DISP_REP_APPURTENANCE_SECTION_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewAppurtenanceSectionLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Appurtenance Section Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewAppurtenanceSectionLabel
+  Name: AeccDbViewAppurtenanceSectionLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[8AD1] AECC_DISP_REP_FITTING_SECTION_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewFittingSectionLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Fitting Section Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewFittingSectionLabel
+  Name: AeccDbViewFittingSectionLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[8AD2] AECC_DISP_REP_SPANNING_PRESSURE_PIPE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSpanningPressurePipeLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Spanning Pressure Pipe Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSpanningPressurePipeLabel
+  Name: AeccDbViewSpanningPressurePipeLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[8AD3] AECC_DISP_REP_SPANNING_PRESSURE_PIPE_PROFILE_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewSpanningPressurePipeProfileLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Spanning Pressure Pipe Profile Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewSpanningPressurePipeProfileLabel
+  Name: AeccDbViewSpanningPressurePipeProfileLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[8AD6] AECC_DISP_REP_TURNOUT_CRITICALPOINTS_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewTurnoutCriticalPointsLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Turnout Critical Points Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewTurnoutCriticalPointsLabel
+  Name: AeccDbViewTurnoutCriticalPointsLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[8ADA] AECC_DISP_REP_TURNOUT_LABELING DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewTurnoutLabel
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Turnout Plan Label Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewTurnoutLabel
+  Name: AeccDbViewTurnoutLabel
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[8C42] AECC_PARCEL Site owner 1F
+  Area: 3.070876886113183E-13
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: 
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: TEST
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+
+[8C43] AECC_FEATURE_STYLE DBObject owner 8C42
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: TEST
+
+[8C46] AECC_DISP_REP_COGO_BAND_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewCogoBandLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Point Proximity Band Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewCogoBandLabeling
+  Name: AeccDbViewCogoBandLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[8C47] AECC_DISP_REP_DISTANCE_BAND_LABEL_GROUP DisplayRepresentation owner D13
+  AlternateName: 
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BaseGsMarkerValue: 1
+  CanBeDeleted: False
+  DefaultDisplayPropertiesId: null
+  DefaultRecordName: AeccDbViewDistanceBandLabeling
+  DefaultVisibility: True
+  Description: 
+  DisplayName: Alignment Proximity Band Label Group Display Representation
+  DisplayRepresentationName: General
+  ExtensionDictionary: null
+  HasReliableGsMarkers: True
+  IsLocked: False
+  IsNewToThisDrawing: False
+  IsSimilarTo: 
+  IsUserDisplayRepresentation: False
+  Keynote: <Exception: eKeyNotFound>
+  KeynoteValue: <Exception: eKeyNotFound>
+  LocalizedName: AeccDbViewDistanceBandLabeling
+  Name: AeccDbViewDistanceBandLabeling
+  StateImageIndex: WithoutProperties
+  SwappingReferences: False
+  SymbolName: 
+  UseObjectSnapCache: True
+  ViewTypeDisplayName: General
+
+[8D60] AECC_FEATURE_LINE FeatureLine owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  CurvesCount: 1
+  Description: 4 points + curve R=50 
+  DisplayName: Feature Line
+  EdgeStyleId: null
+  ElevationPointsCount: 1
+  EndParam: 4
+  EndPoint: (177.83072233200073, 49.84087518742308, 103)
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsEditable: True
+  IsPeriodic: False
+  IsPlanar: True
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: C-TOPO-FEAT
+  LayerId: 10D8
+  LayerKey: 
+  Length2D: 192.26235145566031
+  Length3D: 324.488456438879
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  MaxElevation: 200
+  MaxGrade: 16.704671984342504
+  MinElevation: 100
+  MinGrade: 0.050000000001918815
+  Name: TEST FEATURE LINE
+  NeedsPromoting: False
+  PIPointsCount: 4
+  PlotStyleName: ByLayer
+  PointsCount: 5
+  ProjectState: New
+  ReceiveShadows: True
+  RelativeSurfaceId: null
+  ShowToolTip: True
+  SiteId: 8C42
+  StartParam: 0
+  StartPoint: (0, 0, 100)
+  StyleName: Basic Feature Line
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  Visible: True
+  VisualStyleId: null
+
+[8DA8] AECC_PARCEL Site owner 1F
+  Area: 3.070876886113183E-13
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  Description: 
+  DisplayName: Parcel
+  EdgeStyleId: null
+  EndParam: <Exception: eNotImplementedYet>
+  EndPoint: <Exception: eNotImplementedYet>
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsPeriodic: False
+  IsPlanar: False
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: 0
+  LayerId: 10
+  LayerKey: 
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  Name: TEST1
+  NeedsPromoting: False
+  PlotStyleName: ByLayer
+  ProjectState: New
+  ReceiveShadows: True
+  ShowToolTip: True
+  StartParam: <Exception: eNotImplementedYet>
+  StartPoint: <Exception: eNotImplementedYet>
+  StyleId: 1CE6
+  StyleName: Property
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  UDPClassificationApplyType: None
+  UDPClassificationName: 
+  Visible: True
+  VisualStyleId: null
+
+[8DA9] AECC_FEATURE_STYLE DBObject owner 8DA8
+  Description: 
+  ExtensionDictionary: null
+  IsUsed: False
+  Name: TEST1
+
+[8DAA] AECC_FEATURE_LINE FeatureLine owner 1F
+  Area: 0
+  AutomaticallyBoundSpaces: NotApplicableToThisObject
+  BlockId: 1F
+  BlockName: *Model_Space
+  CastShadows: True
+  Closed: False
+  CollisionType: Solid
+  ColorIndex: 256
+  CurvesCount: 1
+  Description: this feature line was copy-pasted and is not editable. What is chnaged?
+  DisplayName: Feature Line
+  EdgeStyleId: null
+  ElevationPointsCount: 1
+  EndParam: 4
+  EndPoint: (177.54578957613558, 106.88770495681092, 103)
+  ExtensionDictionary: null
+  FaceStyleId: null
+  FingerPrint: 0
+  FolderId: null
+  IsEditable: True
+  IsPeriodic: False
+  IsPlanar: True
+  IsReferenceObject: False
+  IsReferenceStale: False
+  IsReferenceSubObject: False
+  IsReferenceValid: False
+  IsReferencedSourceExisting: <InvalidOperationException: It is not a reference entity.>
+  IsUsed: False
+  Layer: C-TOPO-FEAT
+  LayerId: 10D8
+  LayerKey: 
+  Length2D: 192.26235145566031
+  Length3D: 324.488456438879
+  LineWeight: ByLayer
+  Linetype: ByLayer
+  LinetypeId: 15
+  LinetypeScale: 1
+  Material: ByLayer
+  MaterialId: 894
+  MaxElevation: 200
+  MaxGrade: 16.704671984342504
+  MinElevation: 100
+  MinGrade: 0.050000000001918815
+  Name: TEST FEATURE LINE (1) (1)
+  NeedsPromoting: False
+  PIPointsCount: 4
+  PlotStyleName: ByLayer
+  PointsCount: 5
+  ProjectState: New
+  ReceiveShadows: True
+  RelativeSurfaceId: null
+  ShowToolTip: True
+  SiteId: 8DA8
+  StartParam: 0
+  StartPoint: (-0.28493275586515665, 57.046829769387841, 100)
+  StyleName: Basic Feature Line
+  SupportsBaseCurveCommands: False
+  SupportsProfileCommands: False
+  SwappingReferences: False
+  Visible: True
+  VisualStyleId: null
+
+objects: 99

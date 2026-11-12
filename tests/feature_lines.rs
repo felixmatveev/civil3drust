@@ -179,3 +179,55 @@ fn explode_rebuilt_s320() {
         .all(|v| v.bulge.is_none() && !v.is_elevation_point()));
     assert_eq!((v[0].z, v[4].z, v[6].z), (100.0, 200.0, 103.0));
 }
+
+/// The feature line counts `C3DDUMPALL` reports (S316, S319: `PointsCount`,
+/// `PIPointsCount`, `ElevationPointsCount`, `CurvesCount`, `SiteId`) agree
+/// with the decoded vertices: elevation points are flagged vertices, every
+/// other vertex is a PI, and each bulge is one curve.
+#[test]
+fn counts_match_civil3d_api_s316_s319() {
+    for (dwg, api) in [
+        (
+            "samples/S316_fl_edit.dwg",
+            "samples/S316_fl_edit.api-all.txt",
+        ),
+        (
+            "samples/S319_S318_civ3d_resaved.dwg",
+            "samples/S319_S318_civ3d_resaved.api-all.txt",
+        ),
+    ] {
+        let text = std::fs::read_to_string(api).unwrap();
+        let d = open(dwg);
+        for fl in feature_lines(&d) {
+            let head = format!("[{:X}] AECC_FEATURE_LINE", fl.handle);
+            let block: Vec<&str> = text
+                .lines()
+                .skip_while(|l| !l.starts_with(&head))
+                .skip(1)
+                .take_while(|l| !l.is_empty())
+                .collect();
+            let get = |k: &str| -> String {
+                block
+                    .iter()
+                    .find_map(|l| l.trim().strip_prefix(&format!("{k}: ")))
+                    .unwrap_or_else(|| panic!("{api} {head}: no {k}"))
+                    .to_string()
+            };
+            let v = vertices(&d, &fl).unwrap();
+            let elev = v.iter().filter(|v| v.is_elevation_point()).count();
+            let curves = v.iter().filter(|v| v.bulge.is_some()).count();
+            assert_eq!(get("PointsCount"), v.len().to_string(), "{api} {head}");
+            assert_eq!(get("PIPointsCount"), (v.len() - elev).to_string());
+            assert_eq!(get("ElevationPointsCount"), elev.to_string());
+            assert_eq!(get("CurvesCount"), curves.to_string());
+            assert_eq!(get("Name"), fl.name);
+            let site = sites(&d)
+                .into_iter()
+                .find(|s| s.container == fl.container)
+                .unwrap();
+            assert_eq!(get("SiteId"), format!("{:X}", site.handle));
+            let maxz = v.iter().map(|v| v.z).fold(f64::MIN, f64::max);
+            assert_eq!(get("MaxElevation").parse::<f64>().unwrap(), maxz);
+        }
+    }
+}

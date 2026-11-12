@@ -26,6 +26,12 @@ versions follow [Semantic Versioning](https://semver.org/).
   by the owner with .NET SDK 8.0.428.
 
 ### Added
+- S316/S319 `C3DDUMPALL` outputs: feature line counts, site and
+  elevations agree with the decoded vertices (test
+  `counts_match_civil3d_api_s316_s319`); `AECC_PARCEL` is the API's
+  `Site`; the site's `felix` string is the user name, not a description.
+  `C3DDUMPALL control` leaves out display representations
+  (`AECC_DISP_REP_*`).
 - `C3DDUMPALL` asks for classes (`control` default, `all`, or DXF name
   patterns); both commands leave out per-object bookkeeping properties.
   S312's new dumps: profiles have companions in the alignment registry

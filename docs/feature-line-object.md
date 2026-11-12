@@ -4,7 +4,7 @@ Samples from the owner (Civil 3D 2024), one change per step:
 
 | ID | step |
 |---|---|
-| S313 | empty site `TEST` (description `felix`) |
+| S313 | empty site `TEST` |
 | S314 | feature line `TEST FEATURE LINE` (8D60), three points, description "3 points" |
 | S315 | fillet added at the middle point (description "4 points + curve R=50") |
 | S316 | edits: an elevation changed to 200, an elevation point inserted |
@@ -67,7 +67,7 @@ The owner copied the feature line and pasted it; the copy cannot be
 edited with the GUI. What the paste did (S316 → S317):
 
 - **A new site.** The copy is not in site `TEST`: Civil 3D created a site
-  `TEST|1` (`AECC_PARCEL` 8DA8, same description `felix`, same styles)
+  `TEST|1` (`AECC_PARCEL` 8DA8, same styles)
   with its own container (8DA9), and listed it in the site collection
   (`AECC_PARCEL_NODE` C43: `TEST`, `TEST|1`). The copy (8DAA) points to
   8DA9. The original's site, container and record are unchanged.
@@ -113,6 +113,29 @@ only object in `TEST1`, and S320's working line is in `TEST`. Tests for
 the owner (MIST21): in S319, *Move to Site* the copy into `TEST`; and
 draw a new feature line directly in `TEST1`. Either result locates the
 cause.
+
+## Checked against the Civil 3D API (S316, S319)
+
+`C3DDUMPALL` (owner; `samples/S316_fl_edit.api-all.txt`,
+`samples/S319_S318_civ3d_resaved.api-all.txt`):
+
+- `AECC_PARCEL` with class `AeccImpFace` is the API's **`Site`** (its
+  `Name` `TEST`, `Description` empty, `StyleName` Property); the string
+  after the name, `felix`, is the Windows user name, the same user string
+  Civil 3D writes into an alignment's Properties form — not the
+  description. The site container (`AECC_FEATURE_STYLE` owned by the
+  site) has the site's name as its `Name`.
+- Feature lines: `PointsCount` 5, `PIPointsCount` 4,
+  `ElevationPointsCount` 1, `CurvesCount` 1, `SiteId`, `MinElevation`
+  100, `MaxElevation` 200, `Length2D`, `Length3D`, `MinGrade`,
+  `MaxGrade`, `RelativeSurfaceId` null. The counts, the site and the
+  extreme elevations agree with the decoded vertices (test
+  `counts_match_civil3d_api_s316_s319`): elevation points are the
+  flagged vertices, all other vertices (including the arc's ends) are
+  PIs, and each bulge is one curve.
+- The pasted copy (8DAA) reports exactly what the original does, apart
+  from name, site and coordinates — including **`IsEditable: True`**. The
+  API sees nothing that would stop editing (MIST21, parked).
 
 ## Open
 

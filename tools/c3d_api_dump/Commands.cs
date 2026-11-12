@@ -133,7 +133,9 @@ namespace C3dApiDump
                         continue;
                     }
                     string dxf = id.ObjectClass.DxfName ?? "";
-                    if (!dxf.StartsWith("AECC_", StringComparison.OrdinalIgnoreCase) || !match.IsMatch(dxf))
+                    if (!dxf.StartsWith("AECC_", StringComparison.OrdinalIgnoreCase) || !match.IsMatch(dxf)
+                        || (patterns == ControlClasses
+                            && dxf.StartsWith("AECC_DISP_REP_", StringComparison.OrdinalIgnoreCase)))
                     {
                         continue;
                     }
