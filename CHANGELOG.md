@@ -36,6 +36,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   (CLAUDE.md).
 
 ### Added
+- `docs/briefs/site-study.md`: hand-off brief for the site study
+  (knowns, code entry points, samples to request, rules, done criteria).
 - Workbench draws feature lines decoded, as 3D polylines (arcs from
   bulges), instead of their bounding-box proxy graphics;
   `aecc_feature_line::bulge_arc` and `sample_3d`.
