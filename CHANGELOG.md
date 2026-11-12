@@ -28,6 +28,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   site (owner; API dump added). MIST22 narrowed: the series' sites are
   named `A` and `C` after all — names already in the drawing's name pool
   are stored as a pool ID with no string.
+- S333 (alignment moved out of a site, an emptied companion refilled)
+  accepted by Civil 3D 2024 and re-saved as S341: the refilled companion
+  is kept; the container is rewritten without the free slot and the
+  loop-less face (`docs/civil3d-rebuilds.md`).
 
 ### Changed
 - `viewer/` and `hexview/` moved to `archive/` (D-075), unmaintained.

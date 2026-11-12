@@ -186,7 +186,8 @@ Details, each with the samples that show it:
   with history (MIST12).
 - **Faces.** Face 1 is the site; it gets its slot with the first member
   and keeps it, with no loops, when the last member leaves (S106 1069,
-  S320 8DA9). An empty, never-used container has no face slot but next
+  S320 8DA9) — until Civil 3D rewrites the drawing, which drops it
+  along with the free slots (S341). An empty, never-used container has no face slot but next
   free ID 2. One loop per connected group of edges: `(start node of the
   group's first edge, 0)` for a group that closes nothing (S323 `(1,0)`;
   S324 `(1,0),(12,0)`); a crossing node with k = 1, 2 or 3 where a region
@@ -243,7 +244,8 @@ node removed) and is rebuilt in the other with new node IDs from 1.
 | sample | Civil 3D 2024 (owner) |
 |---|---|
 | S332 move-in | **accepted**: opens with no RECOVER, AUDIT clean; Prospector lists the alignment under the site; API: `IsSiteless: False`, `SiteName: A`, the site's `GetAlignmentIds()` = 8D6A, the container's `Name` = `A`. So Civil 3D takes the container without the site's redrawn graphics, without the optional site entry, with vertex flag 50 where it writes 2, and with node coordinates from the alignment. Its re-save is still to come (the drawing sent back was this file unchanged) |
-| S333–S340 | pending |
+| S333 move-out | **accepted**: clean open, no AUDIT issues; API: `IsSiteless: True`, `SiteName` empty, the site's `GetAlignmentIds()` empty. **Re-save S341** (the owner also renamed the site `Site A`; Civil 3D rewrote the whole drawing): the refilled companion 37FD stays the alignment's companion, same nodes, with edge flags 0x10 → 0x810 and vertex flags 10 → 2; the site's container is written compact — no edge slot (next ID still 2), **no face 1** (next ID 2), 19 style references; the emptied companion 8D69 likewise has no slot. So refilling an emptied companion is a valid way to make an alignment siteless, and a container's free slots and loop-less face are optional |
+| S334–S340 | pending |
 
 
 First writers, kept in the example until Civil 3D has accepted them.
