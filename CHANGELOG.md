@@ -23,6 +23,11 @@ versions follow [Semantic Versioning](https://semver.org/).
   awaiting Civil 3D's verdict. The move-in output equals Civil 3D's S323
   apart from caches and history flags (`docs/site-object.md`, "Write
   experiments").
+- S332 (alignment moved into a site by `exp_site`) accepted by
+  Civil 3D 2024: no RECOVER, clean AUDIT, the alignment listed under the
+  site (owner; API dump added). MIST22 narrowed: the series' sites are
+  named `A` and `C` after all — names already in the drawing's name pool
+  are stored as a pool ID with no string.
 
 ### Changed
 - `viewer/` and `hexview/` moved to `archive/` (D-075), unmaintained.

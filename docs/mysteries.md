@@ -607,15 +607,22 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   writer has to reproduce; civil3drust does not paste. Untested: *Move to
   Site* on the copy, a new feature line drawn in `TEST1`.
 
-## MIST22 — sites without a name string — **open (S321–S330)**
+## MIST22 — site names stored as a pool ID — **open (S321–S330, S332)**
 
-- **What:** the two sites of the S321 series were saved with no name:
-  four strings in the site record instead of five, no string in the site
-  list, and a key without the high bit (`0200D214`, `00000101`) where a
-  named site has `0x8000_0000 | id`. Renaming one to `B` (S328) gave it
-  the string and a normal key (`docs/site-object.md`, "Site list").
-- **To settle:** what Prospector shows as the name of such a site (the
-  owner's `C3DDUMP` `Name`), and whether the key values mean anything.
+- **What:** the two sites of the S321 series have no name string: four
+  strings in the site record instead of five, none in the site list, and
+  a key without the high bit (`0200D214`, `00000101`) where other sites
+  have `0x8000_0000 | id`. Civil 3D shows the first as `A` (owner's
+  Prospector and `C3DDUMP` of S332).
+- **Found:** `0200D214` is also in `AECC_USER_DEFINED_ATTRIBUTE` 3620
+  (expression `R/3<A<R`) and in `AECC_CLASS_NODE` BDA, in S322 and
+  still in S329 after the site was renamed. Keys are IDs in a
+  drawing-wide name pool; a name already in the pool is stored as the
+  ID only (`docs/site-object.md`, "Site list").
+- **To settle:** the pool's layout in `AECC_CLASS_NODE`, so that such a
+  name can be read; whether alignment and other object names use the
+  pool the same way. S337 tests writing a literal string for a pooled
+  name. Until then: give test sites names of several characters.
 
 ## MIST23 — a site's parcel counters — **open (S112, S326)**
 

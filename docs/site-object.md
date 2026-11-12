@@ -53,13 +53,19 @@ handle stream: soft → tree node, n × soft → site, soft → one site,
   the same kind of key as in the alignment registry; the site record
   holds the same value. Civil 3D gives a new key on rename (S317 → S319:
   `…335C` → `…335E`, S327 → S328).
-- **Sites without a name string (S321–S327, S329–S330 8DEB).** Both
-  sites of this round were saved with no name: the site record has four
-  strings instead of five, the list has no string for it, and its key
-  has no high bit (`0200D214` for the first site, `00000101` for the
-  second). Renaming the first to `B` (S328) inserted the string and
-  gave it a normal key. What Prospector shows for such a site is a
-  question for the owner (MIST22).
+- **Sites whose name is not a string (S321–S327, S329–S330 8DEB).**
+  The first site of this round is named `A` (API dump of S332: site and
+  container `Name: A`), yet its record has four strings instead of
+  five, the list has no string for it, and its key has no high bit:
+  `0200D214`. The same value is in the template's
+  `AECC_USER_DEFINED_ATTRIBUTE` 3620 — the expression `R/3<A<R`, which
+  uses a name `A` — and in `AECC_CLASS_NODE` BDA, in every drawing of
+  the series, whatever the site is called. So keys are IDs in a
+  drawing-wide pool of names: a name the pool already has is stored as
+  its ID alone; a new name gets `0x8000_0000 | id` and its string in the
+  record and the list. The second site (key `00000101`) is the same
+  case. Renaming the first to `B` (S328) gave it a string and a
+  high-bit key. Reading such a name needs the pool (MIST22).
 - **Order.** By name, ascending, spaces ignored: `TEST2`, `TEST SITE`
   (S103); `TEST 2`, `TEST SITE` (S104); `TEST`, `TEST|1` (S317);
   unnamed, `B` (S329). (Not by key: S317 is ascending, S103 descending.)
@@ -230,7 +236,15 @@ references follow.
 container references; its edge leaves one container (free slot, crossing
 node removed) and is rebuilt in the other with new node IDs from 1.
 
-## Write experiments (S332–S340, `examples/exp_site.rs`) — results pending
+## Write experiments (S332–S340, `examples/exp_site.rs`)
+
+**Results so far**
+
+| sample | Civil 3D 2024 (owner) |
+|---|---|
+| S332 move-in | **accepted**: opens with no RECOVER, AUDIT clean; Prospector lists the alignment under the site; API: `IsSiteless: False`, `SiteName: A`, the site's `GetAlignmentIds()` = 8D6A, the container's `Name` = `A`. So Civil 3D takes the container without the site's redrawn graphics, without the optional site entry, with vertex flag 50 where it writes 2, and with node coordinates from the alignment. Its re-save is still to come (the drawing sent back was this file unchanged) |
+| S333–S340 | pending |
+
 
 First writers, kept in the example until Civil 3D has accepted them.
 The container is decoded to a model (nodes, edge slots, faces, tail,
@@ -245,7 +259,7 @@ another drawing; `create` clones the drawing's first site.
 | S334 | `move-out` S324: 8D6A, 8D8C stays | a free slot before a live one; loop and nodes of one member removed |
 | S335 | `move-in` S334: 8D6A again | a site with a member and a free slot: edge ID 3, nodes 15–17, second loop `(15, 0)` in face 1 |
 | S336 | `rename` S331: `B` → `RENAMED`, description | the two strings and the list's name only (as S318, plus the description) |
-| S337 | `rename` S322: unnamed → `A` | name string inserted, key `0x80000000 \| n` (largest key of the site list and the alignment registry + 1) in record and list (MIST22) |
+| S337 | `rename` S322: the pooled name `A` → a literal `A` | name string inserted, key `0x80000000 \| n` (largest key of the site list and the alignment registry + 1) in record and list (MIST22) |
 | S338 | `delete` S322: the only site | site, container and list entry removed; zero-site list as in S24 |
 | S339 | `create` S322: `NEW SITE` | clone of an empty, unnamed site: handles (site, site + 1), key, name, empty tail and container, list entry in name order, last-created pointer |
 | S340 | `create` S331: `A SITE` | clone of a site with members: tail reset, **graphics stripped**, the template's date stamp kept |
@@ -262,8 +276,9 @@ site without parcels to clone.
 
 ## Open
 
-- **MIST22** — the unnamed sites: what name Civil 3D shows, and what the
-  keys without the high bit are.
+- **MIST22** — the name pool: where a key without the high bit is
+  resolved to its text (`AECC_CLASS_NODE` BDA holds the key of `A`).
+  Until then a site with such a name reads as unnamed.
 - **MIST23** — the parcel counters: the site record's last values and
   the container's counter pairs and lists, with one and two parcels
   only (S112, S326). A sample with the Numbering counters set to
