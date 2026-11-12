@@ -37,6 +37,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   site graphics rebuilt by Civil 3D. Move-in and move-out of a
   non-crossing alignment now meet the D-049 acceptance (no RECOVER,
   clean AUDIT, re-save reads back to the same model).
+- S334 accepted by Civil 3D; its re-save S343 shows that a container's
+  edge entries carry their own ID (a rewrite drops freed entries and
+  keeps the IDs): layout in `docs/site-object.md` and `exp_site`
+  corrected.
 
 ### Changed
 - `viewer/` and `hexview/` moved to `archive/` (D-075), unmaintained.

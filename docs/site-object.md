@@ -130,9 +130,9 @@ BL key                 0 for a site container; the registry key for a companion
 NODES   next free ID, count, ID of the first node (0 if none),
         count × { BD x, BD y, BD z, bits 010, ID of the next node (0 = last) }
 
-EDGES   next free ID, slot count,
-        per slot (slot i holds edge ID i):
-          2                                  a free slot (its member left), or
+EDGES   next free ID, entry count,
+        per entry:
+          2                                  a freed entry (its member left), or
           0, ID, flags, vertex count, 0,
              per vertex: kind, flags, node ID, face a, face b
                          [kind 1: BD bulge, 0],
@@ -154,7 +154,7 @@ TAIL    X                      number of hard (style) references at the
 ```
 
 Handle stream: `own−1` → the site (a companion: soft → registry); one
-hard null per `after` value (S316); per **live edge**, in slot order,
+hard null per `after` value (S316); per **live edge**, in entry order,
 `soft → member, soft null`; per **face**, in order, `soft → the site
 (face 1) or the parcel, soft null` (a companion's face 1: two nulls);
 then the X hard references. A parser built on this grammar reads all 105
@@ -168,10 +168,13 @@ Details, each with the samples that show it:
   16, 1, 17, 2, 18, 3, 19, 27, 12, 20 …; S48: 40–43, 39) — a hash
   table's order; Civil 3D re-reads any order (S110 → S111).
   IDs are never reused (S330: next free 28 with 8 nodes left).
-- **Free slots.** When a member leaves, its slot becomes `BL 2` and its
-  nodes go (S329: slot 5, the feature line; S330: slot 1). Trailing
-  free slots are kept until a later rewrite drops them (emptied
-  companions: `2, 1, [2]` in S323, `2, 0` after a later save, S104).
+- **Freed entries.** When a member leaves, its entry becomes `BL 2` and
+  its nodes go (S329: the fifth entry, the feature line; S330: the
+  first). Entries carry their ID; they are in ID order with the freed
+  ones in place only until Civil 3D rewrites the record, which drops
+  the freed entries and keeps the IDs of the rest (S343: `next 3,
+  count 1`, one entry with ID 2; emptied companions: `2, 1, [2]` in
+  S323, `2, 0` after a later save, S104). IDs are not reused.
 - **Crossings** are nodes shared by both edges, vertex flags 1072
   (0x430); a feature line's vertex on an alignment has 0x800430 and the
   alignment's 1136 (S327). The crossing node keeps z = 0.
@@ -245,7 +248,8 @@ node removed) and is rebuilt in the other with new node IDs from 1.
 |---|---|
 | S332 move-in | **accepted**: opens with no RECOVER, AUDIT clean; Prospector lists the alignment under the site; API: `IsSiteless: False`, `SiteName: A`, the site's `GetAlignmentIds()` = 8D6A, the container's `Name` = `A`. So Civil 3D takes the container without the site's redrawn graphics, without the optional site entry, with vertex flag 50 where it writes 2, and with node coordinates from the alignment. **Re-save S342** (site renamed `Site A`, whole drawing rewritten): the alignment is still in the site and its record equals the one in Civil 3D's own S323; Civil 3D rebuilt the container from the alignment (new node IDs 4–6 with its own coordinate rounding, edge flags 0x30, vertex flags 50/2/10, face flags 7, 19 style references), redrew the site's graphics (bit for bit those of S323) and set the site point from its nodes; it did not add the optional entry |
 | S333 move-out | **accepted**: clean open, no AUDIT issues; API: `IsSiteless: True`, `SiteName` empty, the site's `GetAlignmentIds()` empty. **Re-save S341** (the owner also renamed the site `Site A`; Civil 3D rewrote the whole drawing): the refilled companion 37FD stays the alignment's companion, same nodes, with edge flags 0x10 → 0x810 and vertex flags 10 → 2; the site's container is written compact — no edge slot (next ID still 2), **no face 1** (next ID 2), 19 style references; the emptied companion 8D69 likewise has no slot. So refilling an emptied companion is a valid way to make an alignment siteless, and a container's free slots and loop-less face are optional |
-| S334–S340 | pending |
+| S334 move-out, one of two | **accepted**: clean; API: `Alignment - (1)` siteless, `Alignment - (2)` in the site, the site's `GetAlignmentIds()` = 8D8C. **Re-save S343**: same model; the refilled companion left exactly as written (edge 0x10, vertex flags 10 — S341 changed them, so that is not a rule); the container rewritten with a single edge entry that keeps **ID 2** |
+| S335–S340 | pending |
 
 
 First writers, kept in the example until Civil 3D has accepted them.

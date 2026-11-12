@@ -121,6 +121,7 @@ struct Vertex {
 
 #[derive(Clone, Debug)]
 struct Edge {
+    id: i32,
     flags: i32,
     vertices: Vec<Vertex>,
     after: Vec<i32>,
@@ -185,13 +186,11 @@ impl Topo {
         let edge_next = bl(d, &mut p)?;
         let slots = bl(d, &mut p)?;
         let mut edges = Vec::new();
-        for i in 0..slots {
+        for _ in 0..slots {
             match bl(d, &mut p)? {
                 2 => edges.push(None),
                 0 => {
-                    if bl(d, &mut p)? != i + 1 {
-                        return Err("edge ID out of order".into());
-                    }
+                    let id = bl(d, &mut p)?;
                     let flags = bl(d, &mut p)?;
                     let n = bl(d, &mut p)?;
                     bl(d, &mut p)?;
@@ -217,6 +216,7 @@ impl Topo {
                         bl(d, &mut p)?;
                     }
                     edges.push(Some(Edge {
+                        id,
                         flags,
                         vertices,
                         after,
@@ -291,12 +291,12 @@ impl Topo {
         }
         w.bl(self.edge_next);
         w.bl(self.edges.len() as i32);
-        for (i, e) in self.edges.iter().enumerate() {
+        for e in &self.edges {
             let Some(e) = e else {
                 w.bl(2);
                 continue;
             };
-            for v in [0, i as i32 + 1, e.flags, e.vertices.len() as i32, 0] {
+            for v in [0, e.id, e.flags, e.vertices.len() as i32, 0] {
                 w.bl(v);
             }
             for v in &e.vertices {
@@ -375,19 +375,18 @@ impl Topo {
             self.nodes.push((first + i as i32, p.0, p.1, 0.0));
         }
         self.node_next += n as i32;
+        // An emptied companion gets edge ID 1 again (Civil 3D never reuses
+        // an ID, but it never refills a companion either).
+        let refill = self.edge_next == 2 && self.edges.iter().all(|s| s.is_none());
         let e = Some(Edge {
+            id: if refill { 1 } else { self.edge_next },
             flags,
             vertices,
             after: Vec::new(),
         });
-        if self.edge_next == 2 && self.edges.iter().all(|s| s.is_none()) {
-            // An emptied companion: its one edge is ID 1 again (Civil 3D
-            // never reuses an ID, but it never refills a companion either).
+        if refill {
             self.edges = vec![e];
         } else {
-            while (self.edges.len() as i32) < self.edge_next - 1 {
-                self.edges.push(None);
-            }
             self.edges.push(e);
             self.edge_next += 1;
         }
@@ -425,7 +424,8 @@ impl Topo {
             .map(|e| match e {
                 None => "free".into(),
                 Some(e) => format!(
-                    "0x{:X}[{}]",
+                    "{}:0x{:X}[{}]",
+                    e.id,
                     e.flags,
                     e.vertices
                         .iter()
