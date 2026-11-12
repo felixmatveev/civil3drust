@@ -25,6 +25,16 @@ versions follow [Semantic Versioning](https://semver.org/).
   and `Autodesk.Civil.DatabaseServices`); an alias picks AutoCAD's. Built
   by the owner with .NET SDK 8.0.428.
 
+### Changed
+- `tools/c3d_api_dump`: two commands, `C3DDUMP` and `C3DDUMPCONFIG`
+  (replacing `C3DDUMP`'s fixed sections and `C3DDUMPALL`). The
+  configuration (classes: `control`/`all`/patterns, getters, display
+  representations, echo) lasts the session and is saved to
+  `%APPDATA%\civil3drust\c3ddump.cfg`. Output: alignments in the detailed
+  form, then `== Objects` in handle order (D-077).
+- Working rule: library changes in batches after a sample round
+  (CLAUDE.md).
+
 ### Added
 - Workbench draws feature lines decoded, as 3D polylines (arcs from
   bulges), instead of their bounding-box proxy graphics;

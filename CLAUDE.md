@@ -8,6 +8,12 @@
   clean.
 - Every change: a descriptive commit message, a `CHANGELOG.md` entry under
   `[Unreleased]`, and a `DECISIONS.md` entry when a design choice is made.
+- Work in batches (owner): while samples are coming in, analyse them with
+  scratch scripts and the existing tools, and record findings in `docs/`
+  (and the samples with their README rows). Change the library, tests and
+  workbench once per batch, when the owner closes the sample round or
+  asks for it — not after every sample. Fixes that block analysis are the
+  exception.
 
 ## Cleanroom rules
 Follow the rules in `README.md` strictly. Format findings come only from our
@@ -91,6 +97,6 @@ samples and steps that produced it.
 - `cargo run --release --example sites -- file.dwg` (sites and each alignment's site)
 - `cargo run --release --example scan_elements -- record.bin [handle bits]` (decode a raw `AECC_ALIGNMENT` record dump)
 - `python3 tools/rebuild_from_report.py report.txt a_record.bin out.bin` (rebuild B's record from A's dump and a `--diff --filter <handle>` report)
-- `tools/c3d_api_dump/` (C# Civil 3D add-in, owner runs it: `NETLOAD`, `C3DDUMP` → `<drawing>.api.txt` with each alignment's public API values)
+- `tools/c3d_api_dump/` (C# Civil 3D add-in, owner runs it: `NETLOAD`, `C3DDUMPCONFIG` (classes, getters; kept in `%APPDATA%`), `C3DDUMP` → `<drawing>.api.txt`: alignments with profiles and views, then every other configured object)
 - `cargo run --release --example tags -- [--min N] [--min-classes K] [--class AECC_X] a.dwg ...` (candidate sub-object tags; noisy, confirm before use)
 - Record map: `docs/alignment-map.md`; layout methods → constraints: `docs/element-methods.md`; open questions: `docs/mysteries.md` (MIST1…, never renumbered); classes and fields in public API terms: `docs/class-catalog.md` (D-048); what Civil 3D rejects/crashes on/repairs (pre-write checks): `docs/civil3d-rejects.md`; what it accepts missing and rebuilds: `docs/civil3d-rebuilds.md`; deferred work: `FUTURE.md` (FRT-1…, never renumbered); what is supported per Civil 3D object: `COMPATIBILITY.md` (update it with every feature change)

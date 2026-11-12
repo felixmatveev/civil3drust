@@ -1,12 +1,12 @@
-// C3DDUMP: write the public API values of every alignment in the current
-// drawing, with its profiles and profile views, then every site and
-// feature line and the other Civil 3D entities in model space, to
-// <drawing>.api.txt, to compare with what civil3drust decodes.
-// C3DDUMPALL: Civil 3D objects in the database by class — "control" (the
-// default: alignments, profiles, views, feature lines, sites, companions,
-// helpers, label groups, check sets), "all", or DXF name patterns — with
-// owner and simple properties, to <drawing>.api-all.txt.
-// Read-only: both open objects for read and change nothing.
+// C3DDUMP: write the public API values of the Civil 3D objects chosen in
+// the configuration to <drawing>.api.txt, to compare with what
+// civil3drust decodes. Alignments come first in their detailed form (with
+// their profiles and profile views); every other matching object follows
+// in the generic form (simple properties, optionally Get… results).
+// C3DDUMPCONFIG: set the classes and options. The configuration is kept
+// for the session and saved to %APPDATA%\civil3drust\c3ddump.cfg, so it
+// is also the default in the next session.
+// Read-only: objects are opened for read and nothing is changed.
 
 using System;
 using System.Collections;
@@ -33,135 +33,7 @@ namespace C3dApiDump
 {
     public class Commands
     {
-        [CommandMethod("C3DDUMP")]
-        public void Dump()
-        {
-            Document doc = AcApp.DocumentManager.MdiActiveDocument;
-            Editor ed = doc.Editor;
-            var sb = new StringBuilder();
-            sb.AppendLine("drawing: " + doc.Name);
-            sb.AppendLine("written: " + DateTime.UtcNow.ToString("u"));
-            var done = new HashSet<Handle>();
-
-            using (Transaction tr = doc.Database.TransactionManager.StartTransaction())
-            {
-                foreach (ObjectId id in SelectAll(ed, "AECC_ALIGNMENT"))
-                {
-                    if (!(tr.GetObject(id, OpenMode.ForRead) is Alignment al))
-                    {
-                        continue;
-                    }
-                    done.Add(al.Handle);
-                    DumpAlignment(sb, al);
-                    DumpChildren(sb, tr, al, "GetProfileIds", "Profile", new[] { "PVIs", "Entities" }, done);
-                    DumpChildren(sb, tr, al, "GetProfileViewIds", "ProfileView", new string[0], done);
-                }
-
-                sb.AppendLine();
-                sb.AppendLine("== Sites");
-                try
-                {
-                    foreach (ObjectId id in CivilApplication.ActiveDocument.GetSiteIds())
-                    {
-                        DumpObject(sb, tr, id, "Site", done);
-                    }
-                }
-                catch (System.Exception e)
-                {
-                    sb.AppendLine("  <" + Inner(e) + ">");
-                }
-
-                sb.AppendLine();
-                sb.AppendLine("== Feature lines");
-                foreach (ObjectId id in SelectAll(ed, "AECC_FEATURE_LINE"))
-                {
-                    DumpObject(sb, tr, id, "FeatureLine", done);
-                }
-
-                sb.AppendLine();
-                sb.AppendLine("== Other Civil 3D entities");
-                foreach (ObjectId id in SelectAll(ed, "AECC_*"))
-                {
-                    if (!done.Contains(id.Handle))
-                    {
-                        DumpObject(sb, tr, id, "Entity", done);
-                    }
-                }
-                tr.Commit();
-            }
-            Write(doc, ed, sb, ".api.txt", true);
-        }
-
-        [CommandMethod("C3DDUMPALL")]
-        public void DumpAll()
-        {
-            Document doc = AcApp.DocumentManager.MdiActiveDocument;
-            Editor ed = doc.Editor;
-            Database db = doc.Database;
-            var opt = new PromptStringOptions(
-                "\nClasses: control, all, or DXF name patterns (comma-separated, * wildcard) <control>: ")
-            {
-                AllowSpaces = false,
-            };
-            PromptResult pr = ed.GetString(opt);
-            if (pr.Status != PromptStatus.OK)
-            {
-                return;
-            }
-            string answer = string.IsNullOrWhiteSpace(pr.StringResult) ? "control" : pr.StringResult.Trim();
-            string[] patterns = answer.Equals("control", StringComparison.OrdinalIgnoreCase)
-                ? ControlClasses
-                : answer.Equals("all", StringComparison.OrdinalIgnoreCase)
-                    ? new[] { "AECC_*" }
-                    : answer.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-            Regex match = new Regex(
-                "^(" + string.Join("|", patterns.Select(x => Regex.Escape(x.Trim()).Replace("\\*", ".*"))) + ")$",
-                RegexOptions.IgnoreCase);
-            var sb = new StringBuilder();
-            sb.AppendLine("drawing: " + doc.Name);
-            sb.AppendLine("written: " + DateTime.UtcNow.ToString("u"));
-            sb.AppendLine("classes: " + string.Join(", ", patterns));
-            int n = 0;
-            using (Transaction tr = db.TransactionManager.StartTransaction())
-            {
-                long seed = db.Handseed.Value;
-                for (long h = 1; h < seed; h++)
-                {
-                    ObjectId id;
-                    if (!db.TryGetObjectId(new Handle(h), out id) || id.IsNull || id.IsErased)
-                    {
-                        continue;
-                    }
-                    string dxf = id.ObjectClass.DxfName ?? "";
-                    if (!dxf.StartsWith("AECC_", StringComparison.OrdinalIgnoreCase) || !match.IsMatch(dxf)
-                        || (patterns == ControlClasses
-                            && dxf.StartsWith("AECC_DISP_REP_", StringComparison.OrdinalIgnoreCase)))
-                    {
-                        continue;
-                    }
-                    DBObject obj;
-                    try
-                    {
-                        obj = tr.GetObject(id, OpenMode.ForRead);
-                    }
-                    catch (System.Exception e)
-                    {
-                        sb.AppendLine();
-                        sb.AppendLine("[" + id.Handle + "] " + dxf + " <" + Inner(e) + ">");
-                        continue;
-                    }
-                    sb.AppendLine();
-                    sb.AppendLine("[" + obj.Handle + "] " + dxf + " " + obj.GetType().Name
-                        + " owner " + Format(obj.OwnerId));
-                    DumpSimple(sb, obj, "  ");
-                    n++;
-                }
-                tr.Commit();
-            }
-            sb.AppendLine();
-            sb.AppendLine("objects: " + n);
-            Write(doc, ed, sb, ".api-all.txt", false);
-        }
+        // ---- configuration ------------------------------------------------
 
         // The classes around alignments, profiles, feature lines and sites.
         static readonly string[] ControlClasses =
@@ -172,14 +44,238 @@ namespace C3dApiDump
             "AECC_*LABEL_GROUP", "AECC_*LABELGROUP", "AECC_*LABELING", "AECC_GRADING*",
         };
 
-        static ObjectId[] SelectAll(Editor ed, string dxfName)
+        class Config
         {
-            var filter = new SelectionFilter(new[]
+            // "control", "all", or comma-separated DXF name patterns (* wildcard).
+            public string Classes = "control";
+            // Call Get…(), Get…(enum), Get…(int) on the generic objects.
+            public bool Getters = true;
+            // Leave out display representations (AECC_DISP_REP_*).
+            public bool SkipDisplayReps = true;
+            // Also print the dump on the command line.
+            public bool Echo = false;
+
+            public string[] Patterns()
             {
-                new TypedValue((int)DxfCode.Start, dxfName),
-            });
-            PromptSelectionResult sel = ed.SelectAll(filter);
-            return sel.Status == PromptStatus.OK ? sel.Value.GetObjectIds() : new ObjectId[0];
+                if (Classes.Equals("control", StringComparison.OrdinalIgnoreCase))
+                {
+                    return ControlClasses;
+                }
+                if (Classes.Equals("all", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new[] { "AECC_*" };
+                }
+                return Classes.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim()).ToArray();
+            }
+
+            public bool Matches(string dxf)
+            {
+                if (!dxf.StartsWith("AECC_", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+                if (SkipDisplayReps && dxf.StartsWith("AECC_DISP_REP_", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+                var re = new Regex(
+                    "^(" + string.Join("|", Patterns().Select(x => Regex.Escape(x).Replace("\\*", ".*"))) + ")$",
+                    RegexOptions.IgnoreCase);
+                return re.IsMatch(dxf);
+            }
+
+            public override string ToString()
+            {
+                return "classes " + Classes + " (" + string.Join(", ", Patterns()) + "), getters "
+                    + (Getters ? "on" : "off") + ", display reps " + (SkipDisplayReps ? "skipped" : "kept")
+                    + ", echo " + (Echo ? "on" : "off");
+            }
+
+            static string FilePath()
+            {
+                return Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "civil3drust", "c3ddump.cfg");
+            }
+
+            public static Config Load()
+            {
+                var c = new Config();
+                try
+                {
+                    foreach (string line in File.ReadAllLines(FilePath()))
+                    {
+                        int eq = line.IndexOf('=');
+                        if (eq < 0)
+                        {
+                            continue;
+                        }
+                        string k = line.Substring(0, eq).Trim(), v = line.Substring(eq + 1).Trim();
+                        if (k == "classes" && v.Length > 0) c.Classes = v;
+                        if (k == "getters") c.Getters = v == "on";
+                        if (k == "skip_display_reps") c.SkipDisplayReps = v == "on";
+                        if (k == "echo") c.Echo = v == "on";
+                    }
+                }
+                catch (System.Exception)
+                {
+                    // No saved configuration: defaults.
+                }
+                return c;
+            }
+
+            public void Save()
+            {
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(FilePath()));
+                    File.WriteAllLines(FilePath(), new[]
+                    {
+                        "classes=" + Classes,
+                        "getters=" + (Getters ? "on" : "off"),
+                        "skip_display_reps=" + (SkipDisplayReps ? "on" : "off"),
+                        "echo=" + (Echo ? "on" : "off"),
+                    });
+                }
+                catch (System.Exception)
+                {
+                    // Kept for the session only.
+                }
+            }
+        }
+
+        static Config config;
+
+        static Config Current()
+        {
+            if (config == null)
+            {
+                config = Config.Load();
+            }
+            return config;
+        }
+
+        [CommandMethod("C3DDUMPCONFIG")]
+        public void Configure()
+        {
+            Editor ed = AcApp.DocumentManager.MdiActiveDocument.Editor;
+            Config c = Current();
+            while (true)
+            {
+                ed.WriteMessage("\nC3DDUMP: " + c);
+                var ko = new PromptKeywordOptions("\nChange [Classes/Getters/Displayreps/Echo/Reset] <done>: ")
+                {
+                    AllowNone = true,
+                };
+                foreach (string k in new[] { "Classes", "Getters", "Displayreps", "Echo", "Reset" })
+                {
+                    ko.Keywords.Add(k);
+                }
+                PromptResult kr = ed.GetKeywords(ko);
+                if (kr.Status != PromptStatus.OK || string.IsNullOrEmpty(kr.StringResult))
+                {
+                    break;
+                }
+                switch (kr.StringResult)
+                {
+                    case "Classes":
+                        var so = new PromptStringOptions(
+                            "\nClasses: control, all, or DXF name patterns (comma-separated, * wildcard) <"
+                            + c.Classes + ">: ")
+                        {
+                            AllowSpaces = false,
+                        };
+                        PromptResult sr = ed.GetString(so);
+                        if (sr.Status == PromptStatus.OK && !string.IsNullOrWhiteSpace(sr.StringResult))
+                        {
+                            c.Classes = sr.StringResult.Trim();
+                        }
+                        break;
+                    case "Getters":
+                        c.Getters = !c.Getters;
+                        break;
+                    case "Displayreps":
+                        c.SkipDisplayReps = !c.SkipDisplayReps;
+                        break;
+                    case "Echo":
+                        c.Echo = !c.Echo;
+                        break;
+                    case "Reset":
+                        config = c = new Config();
+                        break;
+                }
+            }
+            c.Save();
+            ed.WriteMessage("\nC3DDUMP: " + c + "\n");
+        }
+
+        // ---- dump ---------------------------------------------------------
+
+        [CommandMethod("C3DDUMP")]
+        public void Dump()
+        {
+            Document doc = AcApp.DocumentManager.MdiActiveDocument;
+            Editor ed = doc.Editor;
+            Database db = doc.Database;
+            Config c = Current();
+            var sb = new StringBuilder();
+            sb.AppendLine("drawing: " + doc.Name);
+            sb.AppendLine("written: " + DateTime.UtcNow.ToString("u"));
+            sb.AppendLine("config: " + c);
+            var done = new HashSet<Handle>();
+            int n = 0;
+
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+                // Every object of a matching class, in handle order.
+                var ids = new List<ObjectId>();
+                long seed = db.Handseed.Value;
+                for (long h = 1; h < seed; h++)
+                {
+                    ObjectId id;
+                    if (!db.TryGetObjectId(new Handle(h), out id) || id.IsNull || id.IsErased)
+                    {
+                        continue;
+                    }
+                    if (c.Matches(id.ObjectClass.DxfName ?? ""))
+                    {
+                        ids.Add(id);
+                    }
+                }
+
+                // Alignments in the detailed form, each with its profiles
+                // and profile views.
+                foreach (ObjectId id in ids.Where(i => i.ObjectClass.DxfName == "AECC_ALIGNMENT"))
+                {
+                    if (!(tr.GetObject(id, OpenMode.ForRead) is Alignment al))
+                    {
+                        continue;
+                    }
+                    done.Add(al.Handle);
+                    DumpAlignment(sb, al);
+                    DumpChildren(sb, tr, al, "GetProfileIds", "Profile", new[] { "PVIs", "Entities" }, done);
+                    DumpChildren(sb, tr, al, "GetProfileViewIds", "ProfileView", new string[0], done);
+                    n++;
+                }
+
+                // Everything else in the generic form.
+                sb.AppendLine();
+                sb.AppendLine("== Objects");
+                foreach (ObjectId id in ids)
+                {
+                    if (done.Contains(id.Handle))
+                    {
+                        continue;
+                    }
+                    DumpObject(sb, tr, id, c.Getters, done);
+                    n++;
+                }
+                tr.Commit();
+            }
+            sb.AppendLine();
+            sb.AppendLine("objects: " + n);
+            Write(doc, ed, sb, ".api.txt", c.Echo);
         }
 
         static void Write(Document doc, Editor ed, StringBuilder sb, string suffix, bool echo)
@@ -196,12 +292,15 @@ namespace C3dApiDump
             ed.WriteMessage((echo ? "\n" + sb : "") + "\nC3DDUMP: written to " + path + "\n");
         }
 
-        // One object: header line, every simple property, then the values
-        // of its parameterless Get… methods (and of Get…(enum) for every
-        // value of the enum), e.g. a feature line's GetPoints(PIPoints).
-        static void DumpObject(StringBuilder sb, Transaction tr, ObjectId id, string label,
+        // One object: header line (handle, DXF class, API type, owner), every
+        // simple property, then — with getters on — the values of its
+        // parameterless Get… methods, of Get…(enum) for every value of the
+        // enum, and of Get…(int) per index (e.g. a feature line's
+        // GetPoints(PIPoint)).
+        static void DumpObject(StringBuilder sb, Transaction tr, ObjectId id, bool getters,
             HashSet<Handle> done)
         {
+            string dxf = id.ObjectClass.DxfName;
             DBObject obj;
             try
             {
@@ -209,15 +308,19 @@ namespace C3dApiDump
             }
             catch (System.Exception e)
             {
-                sb.AppendLine("  " + label + " [" + id.Handle + "] <" + Inner(e) + ">");
+                sb.AppendLine();
+                sb.AppendLine("[" + id.Handle + "] " + dxf + " <" + Inner(e) + ">");
                 return;
             }
             done.Add(obj.Handle);
             sb.AppendLine();
-            sb.AppendLine("  " + label + " [" + obj.Handle + "] " + obj.GetType().Name
-                + " (" + id.ObjectClass.DxfName + ")");
-            DumpSimple(sb, obj, "    ");
-            DumpGetters(sb, obj, "    ");
+            sb.AppendLine("[" + obj.Handle + "] " + dxf + " " + obj.GetType().Name
+                + " owner " + Format(obj.OwnerId));
+            DumpSimple(sb, obj, "  ");
+            if (getters)
+            {
+                DumpGetters(sb, obj, "  ");
+            }
         }
 
         static readonly HashSet<string> SkipMethods = new HashSet<string>

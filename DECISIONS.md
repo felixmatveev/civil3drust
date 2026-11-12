@@ -1560,3 +1560,23 @@ edge, `Edge::after`) rather than given a feature-line variant.
 **Alternatives.** A separate feature-line parser for the container: it
 would duplicate the node and edge reading and drift from the alignment
 side, while a writer will have to keep both kinds of edges in one graph.
+
+## D-077: One configurable dump command; library changes in batches
+Date: 2026-11-11 · Status: accepted
+
+**Context.** `C3DDUMP` had fixed sections and `C3DDUMPALL` a class prompt
+on every run; the owner asked for one dump command driven by a
+configuration, and for the library to change once per round of samples
+rather than after each one.
+
+**Decision.** The add-in has `C3DDUMP` and `C3DDUMPCONFIG`. The
+configuration (classes, getters, display representations, echo) is kept
+in a static field for the session and in
+`%APPDATA%\civil3drust\c3ddump.cfg` across sessions. The dump writes
+alignments in their detailed form (the tests read it) and every other
+matching object generically in handle order, one file per drawing.
+During a round of samples, findings go to `docs/` and the code changes
+at the end of the round (CLAUDE.md).
+
+**Alternatives.** Command-line arguments per run (prompts every time);
+keeping two dump commands (two file formats to read).

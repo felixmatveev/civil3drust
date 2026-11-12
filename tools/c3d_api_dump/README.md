@@ -2,33 +2,48 @@
 
 A read-only Civil 3D add-in with two commands.
 
-**`C3DDUMP`** writes to `<drawing>.api.txt` next to the drawing (and
-prints it on the command line):
+**`C3DDUMP`** writes the Civil 3D objects of the configured classes to
+`<drawing>.api.txt` next to the drawing (`%TEMP%` for an unsaved one):
 
-1. Every alignment (`AlignmentType`, `CreationMode`, `FingerPrint`,
-   design speeds, entities and their constraints, …), each followed by
-   its profiles (every simple property, then each PVI and each entity)
-   and its profile views (every simple property).
-2. `== Sites`: every site.
-3. `== Feature lines`: every feature line.
-4. `== Other Civil 3D entities`: every other `AECC_*` entity in the
-   drawing (label groups, parcels, …).
+1. Alignments (if their class is in the filter) in the detailed form:
+   `AlignmentType`, `CreationMode`, `FingerPrint`, design speeds,
+   entities and their constraints, …, each followed by its profiles
+   (every simple property, then each PVI and each entity) and its
+   profile views.
+2. `== Objects`: every other matching object, in handle order, as
+   `[handle] DXF-class API-type owner <handle>` and its simple
+   properties; with **getters** on, also the result of every public
+   `Get…()` method, of `Get…(enum)` for each value of the enum, and of
+   `Get…(int)` for each index below the object's largest `…Count`
+   property (at most 200) — so a feature line shows
+   `GetPoints(PIPoint)`, `GetPoints(ElevationPoint)`,
+   `GetPoints(AllPoints)`, and a site its alignment and feature line IDs.
 
-Sections 2–4 give every simple property and the result of every public
-`Get…()` method without parameters, and of `Get…(enum)` for each value of
-the enum and `Get…(int)` for each index below the object's largest
-`…Count` property (at most 200) — so a feature line shows `GetPoints(AllPoints)`,
-`GetPoints(PIPoints)`, `GetPoints(ElevationPoints)` and whatever else
-this Civil 3D version offers, and a site its alignment and feature line
-IDs. Everything is read by reflection, so the add-in builds against any
+**`C3DDUMPCONFIG`** shows the configuration and changes it, one keyword
+at a time (Enter when done):
+
+| keyword | setting | default |
+|---|---|---|
+| `Classes` | `control`, `all`, or DXF name patterns, comma-separated, `*` wildcard (e.g. `AECC_PROFILE*,AECC_FEATURE_LINE`) | `control` |
+| `Getters` | call the `Get…` methods on the generic objects (on/off) | on |
+| `Displayreps` | leave out display representations, `AECC_DISP_REP_*` (on/off) | on |
+| `Echo` | also print the dump on the command line (on/off) | off |
+| `Reset` | back to the defaults | |
+
+`control` is the classes around alignments, profiles, feature lines and
+sites: `AECC_ALIGNMENT`, `AECC_ALIGNMENT_*NODE`, `AECC_PROFILE`,
+`AECC_PROFILE_VIEW`, `AECC_FEATURE_LINE`, `AECC_FEATURE_STYLE` (site
+containers, companions, registry), `AECC_PARCEL` (sites),
+`AECC_PARCEL_NODE`, `AECC_DB_*` and `AECC_ENTITY*` (profile helpers),
+`AECC_NOTIFICATIONINFOS`, the design check sets, label groups and
+labelings, `AECC_GRADING*`.
+
+The configuration lasts for the Civil 3D session and is saved to
+`%APPDATA%\civil3drust\c3ddump.cfg`, so the next session starts with it.
+The dump's third line repeats the configuration it used.
+
+Everything is read by reflection, so the add-in builds against any
 Civil 3D version.
-
-**`C3DDUMPALL`** walks every handle in the database and writes every
-Civil 3D object (`AECC_*` class: entities, styles, sites, profile helper
-objects, label groups, settings …) with its owner and simple properties
-to `<drawing>.api-all.txt`. Not printed (it is long). Use it to see a
-class's public property names and values next to its record — the
-skeleton of types (docs/open-blocks.md).
 
 Cleanroom: it reads our own sample drawings through Civil 3D's public
 API, so its output is observed Civil 3D behaviour (CLAUDE.md). Autodesk's
@@ -66,9 +81,9 @@ at that version's folder.
 1. Open the drawing in Civil 3D.
 2. `NETLOAD` → pick `C3dApiDump.dll` (answer **Load** if the security
    prompt appears).
-3. `C3DDUMP` (and/or `C3DDUMPALL`).
-4. Send `<drawing>.api.txt` / `<drawing>.api-all.txt` (written next to
-   the drawing, or to `%TEMP%` for an unsaved drawing).
+3. `C3DDUMPCONFIG` once if the defaults don't fit, then `C3DDUMP`.
+4. Send `<drawing>.api.txt` (written next to the drawing, or to `%TEMP%`
+   for an unsaved drawing).
 
 After a rebuild, NETLOAD the new DLL in a fresh Civil 3D session (a
 loaded .NET assembly cannot be replaced while Civil 3D runs).
@@ -89,5 +104,5 @@ loaded .NET assembly cannot be replaced while Civil 3D runs).
   `aecc_feature_line::vertices` (PIs, elevation points, z), and whatever
   curve methods the API lists against the bulges
   (`docs/feature-line-object.md`).
-- `C3DDUMPALL`: property names per class for the typed skeleton; handle
+- The `== Objects` section: property names per class for the typed skeleton; handle
   values (`…Id` properties) against the records' handle streams.
