@@ -6,7 +6,24 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Sites are writable (D-079): `aecc_site_edit` with `create_site`,
+  `rename_site`, `delete_site`, `move_into_site`, `move_out_of_site`,
+  `create_site_with_builtin_name`, `describe`, and the decoded
+  container/companion record `Topology` (parse and write). New commands
+  for `c3dr` and the workbench: `sites`, `site_create`, `site_rename`,
+  `site_delete`, `site_move_in`, `site_move_out`. Every writer was
+  accepted by Civil 3D 2024 (S332–S351); `tests/site_edit.rs`
+  regenerates the experiment drawings from the library. Moves are
+  refused where members would cross or touch, for sites with parcels and
+  for spirals. `examples/exp_site.rs` now calls the library.
+  `COMPATIBILITY.md`: Sites Read-only → Partial.
+- `docs/site-object.md`: summary of the round ("In the library").
+
 ### Fixed
+- `aecc_topology::graph` failed on containers with a freed edge entry
+  (a member that left the site: S330, S105); it now skips freed entries,
+  and `Edge` has the edge's `id`.
 - `aecc_site`: sites whose name is one of Civil 3D's built-in names
   (stored as an ID, no name string; MIST22) were not listed, and a
   site's description was read from the wrong string for them. The site

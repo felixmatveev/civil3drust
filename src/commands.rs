@@ -456,6 +456,7 @@ fn style_handle(doc: &CadDocument, key: &str) -> Result<u64, String> {
 use ArgKind as K;
 
 const ALIGNMENT: ArgSpec = arg("alignment", K::Alignment, "alignment name or hex handle");
+const SITE: ArgSpec = arg("site", K::Text, "site name or hex handle");
 
 static COMMANDS: &[Command] = &[
     Command {
@@ -666,7 +667,197 @@ static COMMANDS: &[Command] = &[
         edits: true,
         run: run_delete,
     },
+    Command {
+        name: "sites",
+        help: "list sites (handle, name, description, members) and siteless alignments",
+        args: &[],
+        edits: false,
+        run: run_sites,
+    },
+    Command {
+        name: "site_create",
+        help: "create an empty site, cloned from the drawing's first site (D-079)",
+        args: &[arg("name", K::Text, "name of the new site")],
+        edits: true,
+        run: run_site_create,
+    },
+    Command {
+        name: "site_rename",
+        help: "rename a site and/or set its description",
+        args: &[
+            SITE,
+            arg("name", K::Text, "new name, or - to keep it"),
+            opt("--description", K::Text, "description text"),
+        ],
+        edits: true,
+        run: run_site_rename,
+    },
+    Command {
+        name: "site_delete",
+        help: "delete an empty site",
+        args: &[SITE],
+        edits: true,
+        run: run_site_delete,
+    },
+    Command {
+        name: "site_move_in",
+        help: "move a siteless alignment that crosses nothing into a site",
+        args: &[ALIGNMENT, SITE],
+        edits: true,
+        run: run_site_move_in,
+    },
+    Command {
+        name: "site_move_out",
+        help: "move an alignment out of its site (back to siteless)",
+        args: &[ALIGNMENT],
+        edits: true,
+        run: run_site_move_out,
+    },
 ];
+
+/// A site by name or hex handle.
+fn site_arg(doc: &CadDocument, a: &Args) -> Result<crate::aecc_site::Site, String> {
+    let t = a.text("site")?;
+    let all = crate::aecc_site::sites(doc);
+    let by_name: Vec<_> = all.iter().filter(|s| s.name == t).collect();
+    if let [one] = by_name[..] {
+        return Ok(one.clone());
+    }
+    if by_name.len() > 1 {
+        return Err(format!(
+            "{} sites are named '{t}': use the handle",
+            by_name.len()
+        ));
+    }
+    let h = u64::from_str_radix(t.trim_start_matches('#').trim_start_matches("0x"), 16).ok();
+    all.into_iter()
+        .find(|s| Some(s.handle) == h)
+        .ok_or(format!("no site '{t}'"))
+}
+
+fn site_label(s: &crate::aecc_site::Site) -> String {
+    format!("[{:X}] '{}'", s.handle, s.name)
+}
+
+fn run_sites(doc: &mut CadDocument, _: &Args) -> Result<String, String> {
+    use crate::aecc_site::{key_has_string, membership, sites, Membership};
+    let all = sites(doc);
+    let als = raw::records(doc, "AECC_ALIGNMENT");
+    let place: Vec<(String, Membership)> =
+        als.iter().map(|r| (label(r), membership(doc, r))).collect();
+    let mut s = String::new();
+    for site in &all {
+        let members: Vec<&str> = place
+            .iter()
+            .filter(|(_, m)| matches!(m, Membership::InSite { site: h, .. } if *h == site.handle))
+            .map(|(l, _)| l.as_str())
+            .collect();
+        let key = if key_has_string(site.name_key) {
+            String::new()
+        } else {
+            format!(" (built-in name {:08X})", site.name_key)
+        };
+        let _ = writeln!(
+            s,
+            "{}{key}: description '{}', alignments: {}",
+            site_label(site),
+            site.description,
+            if members.is_empty() {
+                "none".to_string()
+            } else {
+                members.join(", ")
+            }
+        );
+    }
+    let free: Vec<&str> = place
+        .iter()
+        .filter(|(_, m)| matches!(m, Membership::Siteless { .. }))
+        .map(|(l, _)| l.as_str())
+        .collect();
+    let _ = writeln!(
+        s,
+        "siteless: {}",
+        if free.is_empty() {
+            "none".into()
+        } else {
+            free.join(", ")
+        }
+    );
+    Ok(s.trim_end().to_string())
+}
+
+fn run_site_create(doc: &mut CadDocument, a: &Args) -> Result<String, String> {
+    let name = a.text("name")?;
+    if crate::aecc_site::sites(doc).iter().any(|s| s.name == name) {
+        return Err(format!("a site named '{name}' exists"));
+    }
+    let c = crate::aecc_site_edit::create_site(doc, &name).map_err(|e| e.to_string())?;
+    Ok(format!(
+        "created site [{:X}] '{name}': container {:X}, key {:08X}",
+        c.site, c.container, c.key
+    ))
+}
+
+fn run_site_rename(doc: &mut CadDocument, a: &Args) -> Result<String, String> {
+    let site = site_arg(doc, a)?;
+    let name = a.text("name")?;
+    let new = (name != "-").then_some(name.as_str());
+    if let Some(n) = new {
+        if n.is_empty() {
+            return Err("a site needs a name".into());
+        }
+        if crate::aecc_site::sites(doc)
+            .iter()
+            .any(|s| s.name == n && s.handle != site.handle)
+        {
+            return Err(format!("a site named '{n}' exists"));
+        }
+    }
+    if new.is_none() && a.get("--description").is_none() {
+        return Err("nothing to change".into());
+    }
+    crate::aecc_site_edit::rename_site(doc, site.handle, new, a.get("--description"))
+        .map_err(|e| e.to_string())?;
+    Ok(format!(
+        "{} -> '{}'{}",
+        site_label(&site),
+        new.unwrap_or(&site.name),
+        a.get("--description")
+            .map(|d| format!(", description '{d}'"))
+            .unwrap_or_default()
+    ))
+}
+
+fn run_site_delete(doc: &mut CadDocument, a: &Args) -> Result<String, String> {
+    let site = site_arg(doc, a)?;
+    crate::aecc_site_edit::delete_site(doc, site.handle).map_err(|e| e.to_string())?;
+    Ok(format!("deleted site {}", site_label(&site)))
+}
+
+fn run_site_move_in(doc: &mut CadDocument, a: &Args) -> Result<String, String> {
+    let rec = a.alignment(doc, "alignment")?;
+    let site = site_arg(doc, a)?;
+    let m = crate::aecc_site_edit::move_into_site(doc, rec.handle, site.handle)
+        .map_err(|e| e.to_string())?;
+    Ok(format!(
+        "{} -> site {} (container {:X}); companion {:X} emptied",
+        label(&rec),
+        site_label(&site),
+        m.container,
+        m.companion
+    ))
+}
+
+fn run_site_move_out(doc: &mut CadDocument, a: &Args) -> Result<String, String> {
+    let rec = a.alignment(doc, "alignment")?;
+    let m = crate::aecc_site_edit::move_out_of_site(doc, rec.handle).map_err(|e| e.to_string())?;
+    Ok(format!(
+        "{} -> siteless (companion {:X}); left site {:X}",
+        label(&rec),
+        m.companion,
+        m.site
+    ))
+}
 
 fn run_alignments(doc: &mut CadDocument, _: &Args) -> Result<String, String> {
     let styles = alignment_styles(doc);

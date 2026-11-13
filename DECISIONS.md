@@ -1581,6 +1581,34 @@ at the end of the round (CLAUDE.md).
 **Alternatives.** Command-line arguments per run (prompts every time);
 keeping two dump commands (two file formats to read).
 
+## D-079: Site writers: three records edited together, members only where nothing crosses
+
+**Context.** The site study (S321–S353) mapped the site record, the site
+list and the container/companion record completely enough to rewrite
+them, and Civil 3D accepted every experiment (create, rename/describe,
+delete, move an alignment in and out).
+
+**Decision.** `aecc_site_edit` holds the writers; `commands` exposes them
+as `sites`, `site_create`, `site_rename`, `site_delete`, `site_move_in`,
+`site_move_out`. One decoded form (`Topology`) serves containers and
+companions: parse, change, write the whole record. A new site is a clone
+of an existing one (handles, key, name, empty tail, no graphics) — its
+style references and constant block come from the drawing, not from us
+(D-015). Moving out refills an emptied companion of the registry instead
+of creating one as Civil 3D does. Anything that needs a planar
+arrangement (crossing or touching members, sites with parcels) is
+refused rather than guessed, and so are spirals and feature lines.
+
+**Why.** Each accepted experiment is reproduced record for record by the
+library (`tests/site_edit.rs`), so the proof carries over. Refilling a
+companion writes one record less and was accepted (S333 → S341). A
+wrong face assignment would produce a drawing Civil 3D may open but
+compute parcels from wrongly; refusing keeps the acceptance rule (D-049).
+
+**Alternatives.** Patching records in place (the entry lists change
+length everywhere); building a site record from nothing (the 760-bit
+block is mostly unread).
+
 ## D-078: Built-in (pooled) names: read through a table of observed IDs, written as literal strings
 
 **Context.** Civil 3D stores a site name it has among its built-in names

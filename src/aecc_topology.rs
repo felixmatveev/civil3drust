@@ -153,6 +153,9 @@ pub struct Vertex {
 /// One edge (an alignment's polyline through the nodes).
 #[derive(Debug, Clone, PartialEq)]
 pub struct Edge {
+    /// The edge's ID in its record: the value the member alignment stores
+    /// as its edge ID (docs/site-object.md). IDs are never reused.
+    pub id: i32,
     pub flags: i32,
     pub vertices: Vec<Vertex>,
     /// The list after a site container's edge (`BL m, m × BL`): empty for
@@ -211,6 +214,7 @@ fn edge_at(data: &[u8], bit: usize) -> Option<(Edge, usize)> {
     }
     Some((
         Edge {
+            id: 0,
             flags,
             vertices,
             after: Vec::new(),
@@ -220,24 +224,33 @@ fn edge_at(data: &[u8], bit: usize) -> Option<(Edge, usize)> {
 }
 
 /// Decode the graph of a companion or site container: node list, then
-/// the edge list (`BL next free edge ID, BL count, BL 0, BL first edge
-/// ID`), edges one after another. Each edge ends with `BL m, m × BL`
-/// ([`Edge::after`]; m = 0 for alignments) and `BL 0 ×3`; between edges
-/// come `BL 0` and the next edge's ID (S104, S112, S316).
+/// the edge list: `BL next free edge ID, BL entry count`, and per entry
+/// either `BL 2` (a freed entry: its member left the site, S330) or
+/// `BL 0, BL ID`, the edge, `BL m, m × BL` ([`Edge::after`]; m = 0 for
+/// alignments) and `BL 0 ×3` (S104, S112, S316, S321–S353). The live
+/// edges come in the order of the record's member references. The full
+/// record (faces, tail) is read by [`crate::aecc_site_edit::Topology`].
 pub fn graph(data: &[u8]) -> Option<Graph> {
     let nodes = node_list(data)?;
     let p = nodes.end_bit;
     let (next_free, p) = raw::read_bl(data, p)?;
-    let (count, p) = raw::read_bl(data, p)?;
-    let (zero, p) = raw::read_bl(data, p)?;
-    let (head, mut p) = raw::read_bl(data, p)?;
-    if !(1..=10_000).contains(&count) || count >= next_free || zero != 0 || head != 1 {
+    let (count, mut p) = raw::read_bl(data, p)?;
+    if !(1..=10_000).contains(&count) || count >= next_free {
         return None;
     }
     let mut edges = Vec::new();
     let mut end = p;
-    for k in 0..count {
-        let (edge, q) = edge_at(data, p)?;
+    for _ in 0..count {
+        let (state, q) = raw::read_bl(data, p)?;
+        if state == 2 {
+            p = q;
+            continue;
+        }
+        let (id, q) = raw::read_bl(data, q)?;
+        if state != 0 || id < 1 || id >= next_free {
+            return None;
+        }
+        let (mut edge, q) = edge_at(data, q)?;
         if edge
             .vertices
             .iter()
@@ -245,7 +258,7 @@ pub fn graph(data: &[u8]) -> Option<Graph> {
         {
             return None;
         }
-        let mut edge = edge;
+        edge.id = id;
         let (m, mut q) = raw::read_bl(data, q)?;
         if !(0..=10_000).contains(&m) {
             return None;
@@ -264,14 +277,6 @@ pub fn graph(data: &[u8]) -> Option<Graph> {
             q = r;
         }
         end = q;
-        if k + 1 < count {
-            let (z, r) = raw::read_bl(data, q)?;
-            let (next, r) = raw::read_bl(data, r)?;
-            if z != 0 || next < 1 || next >= next_free {
-                return None;
-            }
-            q = r;
-        }
         p = q;
     }
     Some(Graph {
@@ -299,7 +304,7 @@ fn companion_graph_at(data: &[u8], nodes: NodeList) -> Option<Graph> {
     if (next_free, count, zero, head) != (2, 1, 0, 1) {
         return None;
     }
-    let (edge, end) = edge_at(data, p)?;
+    let (mut edge, end) = edge_at(data, p)?;
     if edge
         .vertices
         .iter()
@@ -307,6 +312,7 @@ fn companion_graph_at(data: &[u8], nodes: NodeList) -> Option<Graph> {
     {
         return None;
     }
+    edge.id = head;
     Some(Graph {
         nodes,
         edges: vec![edge],

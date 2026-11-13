@@ -43,7 +43,7 @@ sample drawings (`samples/README.md`) and the evidence for each finding are in
 | Start station, design speeds (incl. on curves), design criteria flags, parameter locks | ✓ | ✓ |
 | Alignment type (centerline, miscellaneous) | ✓ | ✓ |
 | Implied PI display option | ✓ | ✓ (`set_pi_display`) |
-| Sites and parcels | ✓ membership | read-only for now (D-038) |
+| Sites and parcels | ✓ sites, membership, container graph | ✓ sites: create, rename, delete (empty), move a non-crossing alignment in and out (D-079); parcels read-only |
 | Detached pieces after deleting an interior element | ✓ | kept as placeholders (D-037) |
 | Widening (offset alignments with widening regions and transitions) | not sampled yet | — |
 | Offset, curb return and rail alignments; station equations | not sampled yet | — |
@@ -93,7 +93,8 @@ raw records so they are saved byte for byte (D-033,
 | `aecc_element_edit`, `aecc_arc_edit`, `aecc_alignment_edit`, `aecc_delete` | Adding and removing elements, radius and length edits; deleting alignments. |
 | `aecc_station`, `aecc_design_speed`, `aecc_criteria` | Start station, design speeds, design criteria. |
 | `aecc_style`, `aecc_alignment_refs` | Style references and display components; name, description, layer. |
-| `aecc_registry`, `aecc_topology`, `aecc_site` | Companion registry, topology graph, sites (read-only). |
+| `aecc_registry`, `aecc_topology`, `aecc_site` | Companion registry, topology graph, sites (read). |
+| `aecc_site_edit` | Site writers: create, rename, delete, move an alignment in and out (D-079). |
 | `proxy_graphics` | The display cache embedded in AECC entity records. |
 | `alignment`, `inventory` | Format-independent alignment geometry; AECC class inventory. |
 | `dump` | Plain-text RON view of a drawing: compact entities, decoded alignments, raw records (D-065). |

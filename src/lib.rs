@@ -24,6 +24,8 @@
 //! - [`aecc_elements`] — tangent and arc element records, read-only.
 //! - [`aecc_alignment_edit`] — writes changed tangent geometry back into an
 //!   `AECC_ALIGNMENT` record as same-size patches.
+//! - [`aecc_site`], [`aecc_site_edit`] — sites: reading, and creating,
+//!   renaming, deleting and moving alignments in and out (D-079).
 //! - [`proxy_graphics`] — the display cache embedded in AECC entity records.
 //! - [`commands`] — every edit as a named command with an argument spec
 //!   (the `c3dr` binary and the workbench run them).
@@ -52,6 +54,7 @@ pub mod aecc_offset;
 pub mod aecc_profile;
 pub mod aecc_registry;
 pub mod aecc_site;
+pub mod aecc_site_edit;
 pub mod aecc_station;
 pub mod aecc_station_refs;
 pub mod aecc_style;

@@ -1,4 +1,4 @@
-# Sites — record, container, collection, parcels (S101–S112, S313–S331)
+# Sites — record, container, collection, parcels (S101–S112, S313–S353)
 
 A site in the file is four things:
 
@@ -319,11 +319,44 @@ member is refused (straight members only once the site has members);
 spirals are refused; `delete` takes empty sites only; `create` needs a
 site without parcels to clone.
 
+## In the library (round closed 2026-11-12, D-078, D-079)
+
+What the round settled, in one place:
+
+| Finding | Samples | Where it lives |
+|---|---|---|
+| A site is three records: site (`AECC_PARCEL`), container (`AECC_FEATURE_STYLE`, handle + 1), entry in the site list (`AECC_PARCEL_NODE`) | S321–S331 | this file |
+| The site list holds `BL n` keys in hash order (key mod 8, then key), names only for keys with the high bit, a last-created pointer | S103–S348 | `aecc_site::site_keys`, `site_entries` |
+| A key without the high bit is one of Civil 3D's built-in names; its text is not in the drawing | S321, S352/S353 | `aecc_site::pooled_name` (19 IDs), MIST22 |
+| Container/companion: nodes in hash order, edge entries with their own IDs (freed entries stay as `BL 2`, IDs never reused), faces with loops, counters, lists; handle stream in the same order | 150+ records | `aecc_site_edit::Topology` (parse and write), `aecc_topology::graph` (skips freed entries, gives edge IDs) |
+| The alignment stores the ID of its edge; a stale value is an AUDIT error and Civil 3D adds a second edge | S335 → S344, S345 → S351 | `move_into_site`, `move_out_of_site`; `docs/civil3d-rejects.md` |
+| Site record tail: extent point, flags (99 empty, 122 used), optional entry, three values | S321–S331 | `aecc_site_edit` (internal), `describe` |
+| Civil 3D rebuilds: site graphics, the container graph (new node IDs, freed entries dropped), list order, the pooled form of a built-in name | S341–S351 | `docs/civil3d-rebuilds.md` |
+
+Library calls and `c3dr` commands (the workbench runs the same commands):
+
+| Edit | Library (`aecc_site_edit`) | Command | Proved by |
+|---|---|---|---|
+| List | `aecc_site::sites`, `membership`; `describe` | `sites` | — |
+| Create an empty site | `create_site` (clones the first site without parcels) | `site_create <name>` | S339/S340 → S347/S348 |
+| Rename, describe | `rename_site` | `site_rename <site> <name\|-> [--description t]` | S336/S337 → S349/S350 |
+| Delete an empty site | `delete_site` | `site_delete <site>` | S338 → S346 |
+| Alignment into a site | `move_into_site` | `site_move_in <alignment> <site>` | S332/S345 → S342/S351 |
+| Alignment back to siteless | `move_out_of_site` | `site_move_out <alignment>` | S333/S334 → S341/S343 |
+| Site under a built-in name ID | `create_site_with_builtin_name` | (`exp_site pool`) | S352 → S353 |
+
+Refused, with a message: a move that would cross or touch a member; a
+site with parcels as target or as template; alignments with spirals;
+arcs when the site already has members (no arc crossing test); moving
+out an edge that shares a node or has elevation points; deleting a site
+with members; moving out when the registry has no emptied companion to
+refill. `tests/site_edit.rs` regenerates S336–S339 and S345 record for
+record and round-trips every container of S101–S112 and S313–S353.
+
 ## Open
 
-- **MIST22** — the name pool: where a key without the high bit is
-  resolved to its text (`AECC_CLASS_NODE` BDA holds the key of `A`).
-  Until then a site with such a name reads as unnamed.
+- **MIST22** — built-in names: 19 IDs are known (S353); a site named
+  with another built-in name reads as unnamed, with its key.
 - **MIST23** — the parcel counters: the site record's last values and
   the container's counter pairs and lists, with one and two parcels
   only (S112, S326). A sample with the Numbering counters set to
@@ -337,14 +370,17 @@ site without parcels to clone.
   face pair; face and vertex flag bits (MIST12).
 - Parcel records beyond their tail and references (their graphics,
   area, label, number, name template).
-- Crossing writes (planar arrangement, parcel creation) — stretch goal.
 
-## Reader gaps found (to fix when the round closes)
+- Feature lines into and out of a site; members that cross (crossing
+  nodes, faces, parcels); spirals and arc crossing tests in moves;
+  deleting a site with its members (FRT-4).
 
-- `aecc_site::site_handles` takes the number of sites from the list's
-  strings, so unnamed sites are missed: S321–S327 report no site and
-  S329–S330 report the wrong one. The count is the `BL n` before the
-  keys; the name has to come from the site record's string count.
-- `aecc_topology::graph` reads an edge header `next, count, 0, 1`; with
-  a free slot the list reads `next, slots, 2, …` (S330, S105) and the
-  parse fails or stops early (S329). Faces and the tail are not read.
+## Reader gaps found — fixed at round close
+
+- `aecc_site::site_handles` took the number of sites from the list's
+  strings, so sites with built-in names were missed (S321–S327 reported
+  no site). The count and keys now come from `BL n` and the key list.
+- `aecc_topology::graph` read an edge header `next, count, 0, 1`; with
+  a freed entry the parse failed (S330, S105). It now reads entries
+  (`BL 2` freed, `BL 0, ID, edge`) and reports each edge's ID; faces and
+  the tail are read by `aecc_site_edit::Topology`.
