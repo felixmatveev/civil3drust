@@ -40,7 +40,7 @@ Steps 1–2 are the target of this round; 3–4 are stretch.
   the face list).
 - `docs/feature-line-object.md`: feature lines are edges of the same
   container graph with z = elevation; site and container references;
-  API checks (`C3DDUMP` output). The pasted-copy oddity (MIST21) is
+  API checks (`C3DUMP` output). The pasted-copy oddity (MIST21) is
   parked — ignore it.
 - `docs/open-blocks.md` → "Shared objects": what is unread in sites and
   containers.
@@ -84,9 +84,9 @@ record bits for scratch Python), `--example sites -- file.dwg`.
 
 ## Samples to ask the owner for
 
-One change per step, each saved, each with `C3DDUMP` run (default
+One change per step, each saved, each with `C3DUMP` run (default
 `control` classes; the add-in is `tools/c3d_api_dump`, configure with
-`C3DDUMPCONFIG`). Round coordinates so crossings are known by hand.
+`C3DCONFIG`). Round coordinates so crossings are known by hand.
 Check `git ls-tree origin/main samples/` for the next free S-number
 before naming them.
 

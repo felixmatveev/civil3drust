@@ -7,20 +7,23 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- The add-in's commands are `C3DUMP` and `C3DCONFIG` only (owner); the
+  earlier names `C3DDUMP`, `C3DDUMPCONFIG` and the two aliases are
+  gone, and the docs use the new names throughout. The settings file
+  stays `%APPDATA%\civil3drust\c3ddump.cfg`.
 - Workflow (`CLAUDE.md`, D-081): tests run as `cargo test -q`; `cargo
   clippy --all-targets` runs only before major commits.
 
 ### Added
 - Dump on save and change reports (D-080). The Civil 3D add-in
-  (`tools/c3d_api_dump`): `C3DDUMPCONFIG` → `Auto` writes
+  (`tools/c3d_api_dump`): `C3DCONFIG` → `Auto` writes
   `c3dump\<drawing>.<yyyyMMdd-HHmmss>.api.txt` after every `QSAVE`,
   `SAVEAS` and `SAVE` (off at the start of each session, never saved);
   classes `full` (every object in the drawing; `Get…` methods on `AECC_`
   objects only) is the new default, the earlier settings remain as the
-  partial dumps; `C3DUMP` and `C3DUMPCONFIG` are accepted as command
-  names; the dump header has `trigger:` and `host:` lines. **Not built
+  partial dumps; the dump header has `trigger:` and `host:` lines. **Not built
   or run here** (no Civil 3D): first run by the owner.
-- Workbench: `apidump.rs` reads C3DDUMP files (objects by handle) and
+- Workbench: `apidump.rs` reads C3DUMP files (objects by handle) and
   `changes.rs` joins them with the record comparison. New headless
   modes: `--changes a.dwg b.dwg` (per object: differing record bits and
   the API properties that changed; `--brief` for one line per object),
@@ -130,7 +133,7 @@ versions follow [Semantic Versioning](https://semver.org/).
   on a closed pipe.
 
 ### Fixed
-- The `C3DDUMP` outputs of S306–S312 were never committed (`*.api.txt`
+- The `C3DUMP` outputs of S306–S312 were never committed (`*.api.txt`
   was ignored everywhere), so `every_entity_matches_civil3d_api` failed
   on a fresh clone; `.gitignore` now keeps `samples/*.api.txt`.
 - `tools/c3d_api_dump`: `Commands.cs` did not build against Civil 3D 2024
@@ -139,8 +142,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   by the owner with .NET SDK 8.0.428.
 
 ### Changed
-- `tools/c3d_api_dump`: two commands, `C3DDUMP` and `C3DDUMPCONFIG`
-  (replacing `C3DDUMP`'s fixed sections and `C3DDUMPALL`). The
+- `tools/c3d_api_dump`: two commands, `C3DUMP` and `C3DCONFIG`
+  (replacing `C3DUMP`'s fixed sections and `C3DUMPALL`). The
   configuration (classes: `control`/`all`/patterns, getters, display
   representations, echo) lasts the session and is saved to
   `%APPDATA%\civil3drust\c3ddump.cfg`. Output: alignments in the detailed
@@ -154,24 +157,24 @@ versions follow [Semantic Versioning](https://semver.org/).
 - Workbench draws feature lines decoded, as 3D polylines (arcs from
   bulges), instead of their bounding-box proxy graphics;
   `aecc_feature_line::bulge_arc` and `sample_3d`.
-- S316 `C3DDUMP`: `GetPoints` per point type matches the decoded
+- S316 `C3DUMP`: `GetPoints` per point type matches the decoded
   vertices (test `points_match_civil3d_api_s316`; two dependent
   elevations differ by 2e-10, recomputed by Civil 3D on open). The
   add-in also calls `Get…(int)` methods per index.
-- S316/S319 `C3DDUMPALL` outputs: feature line counts, site and
+- S316/S319 `C3DUMPALL` outputs: feature line counts, site and
   elevations agree with the decoded vertices (test
   `counts_match_civil3d_api_s316_s319`); `AECC_PARCEL` is the API's
   `Site`; the site's `felix` string is the user name, not a description.
-  `C3DDUMPALL control` leaves out display representations
+  `C3DUMPALL control` leaves out display representations
   (`AECC_DISP_REP_*`).
-- `C3DDUMPALL` asks for classes (`control` default, `all`, or DXF name
+- `C3DUMPALL` asks for classes (`control` default, `all`, or DXF name
   patterns); both commands leave out per-object bookkeeping properties.
   S312's new dumps: profiles have companions in the alignment registry
   (the first profile shares its alignment's), docs/profile-object.md.
-- `tools/c3d_api_dump`: `C3DDUMP` now also dumps sites, feature lines
+- `tools/c3d_api_dump`: `C3DUMP` now also dumps sites, feature lines
   and every other `AECC_*` entity (simple properties plus each `Get…()`
   and `Get…(enum)` result, e.g. a feature line's points per point type);
-  new `C3DDUMPALL` writes every Civil 3D object in the database (owner
+  new `C3DUMPALL` writes every Civil 3D object in the database (owner
   and simple properties) to `<drawing>.api-all.txt`. Not built here (no
   Civil 3D); the owner builds it. The profile test's dump parser ends an
   entity at any new section.
@@ -202,19 +205,19 @@ versions follow [Semantic Versioning](https://semver.org/).
   `AECC_NOTIFICATIONINFOS` object. `aecc_profile::profile_locking`.
   S311: after an alignment edit, the "delete affected entities" profile
   lost its entities; the others kept theirs.
-- Profile curves by grade and by radius (S309, owner, with `C3DDUMP`):
+- Profile curves by grade and by radius (S309, owner, with `C3DUMP`):
   fixed parabola by two points and a grade at either end (kind 12,
   grades in percent), floating parabola by a point and its grade (kind
   34), parameter 0x2002 = radius. Every S309 entity agrees with the API
   to 1e-6; the circular high/low point curve has no record in the file.
 - Profile entities of the fixed, floating and free methods (S308, owner,
-  with `C3DDUMP`): fixed parabola by three points or two points and K,
+  with `C3DUMP`): fixed parabola by three points or two points and K,
   floating parabola by a point and K, floating tangent to a point (also
   what "grade, length" stores), free tangent between two curves.
   `aecc_profile::segments` resolves every entity's start and end; all
   entities of S306–S308 agree with Civil 3D's API to 1e-6.
 - Profile vertical curves of every free type (S307, owner, with
-  `C3DDUMP`): symmetric parabola by length or K (prefix 6, kinds 0, 2),
+  `C3DUMP`): symmetric parabola by length or K (prefix 6, kinds 0, 2),
   circular by length, radius or through point (prefix 4, kinds 0, 9, 7),
   asymmetric parabola (prefix 8, kind 10). `aecc_profile::CurveDef`,
   `CurveShape`; `layout` places them and reproduces Civil 3D's BVC, EVC,
@@ -227,8 +230,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   `profiles`. S306: the vertical curve's BD is its length (typed 150).
   `aecc_profile::layout` resolves PVIs and symmetric parabolas (BVC,
   EVC, K, elevation along it); checked to 1e-9 against the first
-  `C3DDUMP` profile output (S306).
-- `C3DDUMP` also writes each alignment's profiles (every simple property,
+  `C3DUMP` profile output (S306).
+- `C3DUMP` also writes each alignment's profiles (every simple property,
   each PVI and entity) and profile views, read by reflection, for the
   profile samples.
 - Stale experiment results (S296, S297, owner): S295 opens cleanly;
@@ -838,7 +841,7 @@ versions follow [Semantic Versioning](https://semver.org/).
   and how the writer guards against it; ends in the pre-write check list.
 - `docs/civil3d-rebuilds.md`: what Civil 3D accepts missing, zeroed or
   stale and rebuilds on save — the parts civil3drust leaves to it (D-049).
-- `tools/c3d_api_dump/`: a read-only Civil 3D add-in (`C3DDUMP`) that
+- `tools/c3d_api_dump/`: a read-only Civil 3D add-in (`C3DUMP`) that
   writes each alignment's public API values (`CreationMode`,
   `FingerPrint`, design speeds, entity constraints, …) to a text file,
   to compare with what civil3drust decodes.

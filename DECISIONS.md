@@ -1564,12 +1564,12 @@ side, while a writer will have to keep both kinds of edges in one graph.
 ## D-077: One configurable dump command; library changes in batches
 Date: 2026-11-11 · Status: accepted
 
-**Context.** `C3DDUMP` had fixed sections and `C3DDUMPALL` a class prompt
+**Context.** `C3DUMP` had fixed sections and `C3DUMPALL` a class prompt
 on every run; the owner asked for one dump command driven by a
 configuration, and for the library to change once per round of samples
 rather than after each one.
 
-**Decision.** The add-in has `C3DDUMP` and `C3DDUMPCONFIG`. The
+**Decision.** The add-in has `C3DUMP` and `C3DCONFIG`. The
 configuration (classes, getters, display representations, echo) is kept
 in a static field for the session and in
 `%APPDATA%\civil3drust\c3ddump.cfg` across sessions. The dump writes
@@ -1585,7 +1585,7 @@ keeping two dump commands (two file formats to read).
 
 **Context.** Each sample round needs Civil 3D's own view of the objects
 (what the owner typed, what Civil 3D derived, what else an edit touched).
-`C3DDUMP` gave that on request, for chosen classes, and whole dumps and
+`C3DUMP` gave that on request, for chosen classes, and whole dumps and
 drawings were then read to find the few values that changed. The owner
 asked for the dump to be automatic and for the comparing to happen on
 his PC, so that only differences are analysed.
@@ -1593,7 +1593,7 @@ his PC, so that only differences are analysed.
 **Decision.**
 - The add-in dumps after every save command when `Auto` is on: one file
   per save in `c3dump\` next to the drawing, named by the time. Auto is
-  off at the start of every Civil 3D session and is not saved. `C3DDUMP`
+  off at the start of every Civil 3D session and is not saved. `C3DUMP`
   stays as the manual dump (`<drawing>.api.txt`).
 - The default scope is `full`, every object in the drawing; the earlier
   class settings are the partial dumps. Filtering belongs to the

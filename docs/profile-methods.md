@@ -2,7 +2,7 @@
 
 The entity methods of Civil 3D 2024's Profile Layout Tools (owner's
 screenshots, 2026-11-11), like `element-methods.md` for alignments. Each
-row is filled in from a sample and its `C3DDUMP` output.
+row is filled in from a sample and its `C3DUMP` output.
 
 ## Tangents
 
@@ -63,7 +63,7 @@ bits are the likely place for the type and for length versus K / radius.
 ## Free vertical curves as stored (S306, S307)
 
 S307 (owner): one profile per curve type and parameter, each tangent –
-curve – tangent, drawn with the tangents; `C3DDUMP` next to it. The
+curve – tangent, drawn with the tangents; `C3DUMP` next to it. The
 kind prefix gives the curve type, the element kind its constraint (the
 API's `Constraint2`); every curve is `Constraint1 Free`, placed at the
 PVI between its two tangents:
@@ -92,7 +92,7 @@ Civil 3D's values to 1e-7 (test `curve_types_match_civil3d_api`):
 
 ## Fixed, floating and free entities (S308)
 
-S308 (owner, with `C3DDUMP`): one profile per method. The fixed entities
+S308 (owner, with `C3DUMP`): one profile per method. The fixed entities
 stand on their stored points; a floating one hangs from the element
 before; a free one touches both neighbours. `aecc_profile::segments`
 resolves every entity, and each start and end agrees with Civil 3D's to
@@ -108,7 +108,7 @@ resolves every entity, and each start and end agrees with Civil 3D's to
 The curve code (0x1000 sag, 0x1001 crest) is the BL after a free
 parabola's value too: every free parabola sampled was a crest.
 
-S309 (owner, with `C3DDUMP`) adds the PVI-based free curves, the grade
+S309 (owner, with `C3DUMP`) adds the PVI-based free curves, the grade
 methods and the parameter code 0x2002 (radius; a parabola's radius is
 100 K). Grades are stored **in percent**. Every entity of S309 agrees
 with the API to 1e-6, except the circular high/low point curve, which

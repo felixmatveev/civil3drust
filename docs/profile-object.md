@@ -55,7 +55,7 @@ one `AECC_PROFILEDATABAND_LABELGROUP`.
 
 `aecc_profile::pointers_to` and `parent_alignment` read them.
 
-**Companions (S312, `C3DDUMPALL`).** The "feature style" a profile
+**Companions (S312, `C3DUMPALL`).** The "feature style" a profile
 points to twice is a **companion** in the alignment registry (12F9,
 owned by `AECC_ALIGNMENT_PARCEL_NODE` 12F8), shaped like an alignment's:
 an `AECC_FEATURE_STYLE` named with a 32-hex ID (API `Name`, e.g. 8F4F
@@ -115,7 +115,7 @@ range.
 
 ## Checked against the Civil 3D API (S306)
 
-`C3DDUMP` on S306 (owner; `samples/S306_profile_curve_length_150.api.txt`)
+`C3DUMP` on S306 (owner; `samples/S306_profile_curve_length_150.api.txt`)
 agrees with the decoded records to 1e-9 (test
 `layout_matches_civil3d_api`, `aecc_profile::layout`):
 

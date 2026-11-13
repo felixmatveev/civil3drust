@@ -180,7 +180,7 @@ fn explode_rebuilt_s320() {
     assert_eq!((v[0].z, v[4].z, v[6].z), (100.0, 200.0, 103.0));
 }
 
-/// The feature line counts `C3DDUMPALL` reports (S316, S319: `PointsCount`,
+/// The feature line counts `C3DUMPALL` reports (S316, S319: `PointsCount`,
 /// `PIPointsCount`, `ElevationPointsCount`, `CurvesCount`, `SiteId`) agree
 /// with the decoded vertices: elevation points are flagged vertices, every
 /// other vertex is a PI, and each bulge is one curve.
@@ -232,7 +232,7 @@ fn counts_match_civil3d_api_s316_s319() {
     }
 }
 
-/// `C3DDUMP` on S316: `GetPoints(PIPoint)`, `GetPoints(ElevationPoint)`
+/// `C3DUMP` on S316: `GetPoints(PIPoint)`, `GetPoints(ElevationPoint)`
 /// and `GetPoints(AllPoints)` are the decoded vertices — the PIs are the
 /// unflagged ones, all points in edge order. x and y to the last digit;
 /// the fillet's start (node 4) and the elevation point come back 2e-10

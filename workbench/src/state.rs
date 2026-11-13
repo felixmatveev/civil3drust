@@ -108,7 +108,7 @@ pub struct Workbench {
     /// The file's record map (bytes of records acadrust parses); `None`
     /// while it loads or when mapping failed.
     pub filemap: Option<filemap::Loaded>,
-    /// The Civil 3D API dump that belongs to the drawing (`C3DDUMP`,
+    /// The Civil 3D API dump that belongs to the drawing (`C3DUMP`,
     /// D-080), when there is one next to it.
     pub api: Option<crate::apidump::Dump>,
 }

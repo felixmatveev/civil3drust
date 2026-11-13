@@ -1,4 +1,4 @@
-//! Civil 3D API dumps (`C3DDUMP`, `tools/c3d_api_dump`): read, filter,
+//! Civil 3D API dumps (`C3DUMP`, `tools/c3d_api_dump`): read, filter,
 //! compare (D-080).
 //!
 //! A dump is the add-in's plain text: a few header lines, then one entry
@@ -215,7 +215,7 @@ pub fn load(path: impl AsRef<Path>) -> Result<Dump, String> {
     let mut d = parse(&String::from_utf8_lossy(&bytes));
     d.path = path.display().to_string();
     if d.objects.is_empty() {
-        return Err(format!("{}: no objects (not a C3DDUMP file?)", d.path));
+        return Err(format!("{}: no objects (not a C3DUMP file?)", d.path));
     }
     Ok(d)
 }

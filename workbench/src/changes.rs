@@ -47,7 +47,7 @@ pub fn report(i: &Inputs) -> String {
             let _ = writeln!(
                 out,
                 "API dumps: not found for both drawings; records only \
-                 (C3DDUMP, or `<drawing>.api.txt` / `c3dump/` next to each drawing)"
+                 (C3DUMP, or `<drawing>.api.txt` / `c3dump/` next to each drawing)"
             );
         }
     }

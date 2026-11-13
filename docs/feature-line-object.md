@@ -116,7 +116,7 @@ cause.
 
 ## Checked against the Civil 3D API (S316, S319)
 
-`C3DDUMPALL` (owner; `samples/S316_fl_edit.api-all.txt`,
+`C3DUMPALL` (owner; `samples/S316_fl_edit.api-all.txt`,
 `samples/S319_S318_civ3d_resaved.api-all.txt`):
 
 - `AECC_PARCEL` with class `AeccImpFace` is the API's **`Site`** (its
@@ -133,7 +133,7 @@ cause.
   `counts_match_civil3d_api_s316_s319`): elevation points are the
   flagged vertices, all other vertices (including the arc's ends) are
   PIs, and each bulge is one curve.
-- `C3DDUMP` on S316 (`samples/S316_fl_edit.api.txt`): `GetPoints(PIPoint)`,
+- `C3DUMP` on S316 (`samples/S316_fl_edit.api.txt`): `GetPoints(PIPoint)`,
   `GetPoints(ElevationPoint)` and `GetPoints(AllPoints)` are the decoded
   vertices (test `points_match_civil3d_api_s316`). x and y agree to the
   last digit; the z of the fillet's start (104.85362636185407 stored,

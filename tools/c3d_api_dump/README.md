@@ -1,9 +1,9 @@
-# C3DDUMP — Civil 3D API dump
+# C3DUMP — Civil 3D API dump
 
-A read-only Civil 3D add-in with two commands (`C3DUMP` and
-`C3DUMPCONFIG` are accepted as well).
+A read-only Civil 3D add-in with two commands, `C3DUMP` and
+`C3DCONFIG`.
 
-**`C3DDUMP`** writes the objects of the configured classes to
+**`C3DUMP`** writes the objects of the configured classes to
 `<drawing>.api.txt` next to the drawing (`%TEMP%` for an unsaved one),
 as the drawing is now, saved or not:
 
@@ -21,7 +21,7 @@ as the drawing is now, saved or not:
    shows `GetPoints(PIPoint)`, `GetPoints(ElevationPoint)`,
    `GetPoints(AllPoints)`, and a site its alignment and feature line IDs.
 
-**Dump on save** (`C3DDUMPCONFIG` → `Auto`, D-080): while Auto is on,
+**Dump on save** (`C3DCONFIG` → `Auto`, D-080): while Auto is on,
 every `QSAVE`, `SAVEAS` and `SAVE` of an open drawing also writes
 
 ```
@@ -40,7 +40,7 @@ The workbench reads these files: `--changes a.dwg b.dwg` (records and
 API values that changed), `--api-history file.dwg` (save by save),
 `--api`, `--api-diff`, and the **API** tab (`docs/workbench.md`).
 
-**`C3DDUMPCONFIG`** shows the configuration and changes it, one keyword
+**`C3DCONFIG`** shows the configuration and changes it, one keyword
 at a time (Enter when done):
 
 | keyword | setting | default |
@@ -115,8 +115,8 @@ at that version's folder.
 1. Open the drawing in Civil 3D.
 2. `NETLOAD` → pick `C3dApiDump.dll` (answer **Load** if the security
    prompt appears).
-3. `C3DDUMPCONFIG` once if the defaults don't fit, then `C3DDUMP`; or
-   `C3DDUMPCONFIG` → `Auto` and save as usual.
+3. `C3DCONFIG` once if the defaults don't fit, then `C3DUMP`; or
+   `C3DCONFIG` → `Auto` and save as usual.
 4. Compare with the workbench and send the report
    (`civil3drust-workbench --changes before.dwg after.dwg --out report.txt`),
    or send `<drawing>.api.txt` itself (written next to the drawing, or

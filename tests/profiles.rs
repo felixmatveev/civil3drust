@@ -1,5 +1,5 @@
 //! Profiles and profile views (S298–S305): element records and links.
-// Values copied verbatim from the C3DDUMP output.
+// Values copied verbatim from the C3DUMP output.
 #![allow(clippy::excessive_precision)]
 
 use civil3drust::aecc_profile::{
@@ -145,7 +145,7 @@ fn curve_length_typed() {
 
 #[test]
 fn layout_matches_civil3d_api() {
-    // C3DDUMP on S306 (owner; samples/S306_profile_curve_length_150.api.txt).
+    // C3DUMP on S306 (owner; samples/S306_profile_curve_length_150.api.txt).
     let o = open("S306");
     let l = layout(&profile_elements(&profile(&o, 0x8D72).data)).unwrap();
     let want = [(-100.0, -20.0), (822.01097503767369, 0.0), (1900.0, -10.0)];
@@ -180,7 +180,7 @@ fn layout_matches_civil3d_api() {
     assert!(l.curves.is_empty());
 }
 
-/// Civil 3D's values for one curve (C3DDUMP, S307).
+/// Civil 3D's values for one curve (C3DUMP, S307).
 struct Api {
     handle: u64,
     def: CurveDef,
@@ -323,13 +323,13 @@ fn curve_types_match_civil3d_api() {
     }
 }
 
-/// An entity in a `C3DDUMP` file: id, [start station, start elevation, end
+/// An entity in a `C3DUMP` file: id, [start station, start elevation, end
 /// station, end elevation].
 type ApiEntity = (i32, [f64; 4]);
-/// A profile in a `C3DDUMP` file: handle and its entities.
+/// A profile in a `C3DUMP` file: handle and its entities.
 type ApiProfile = (u64, Vec<ApiEntity>);
 
-/// Each profile's entities in a `C3DDUMP` file.
+/// Each profile's entities in a `C3DUMP` file.
 fn api_entities(path: &str) -> Vec<ApiProfile> {
     let text = std::fs::read_to_string(path).unwrap();
     let mut out: Vec<ApiProfile> = Vec::new();
@@ -378,7 +378,7 @@ fn api_entities(path: &str) -> Vec<ApiProfile> {
 
 #[test]
 fn every_entity_matches_civil3d_api() {
-    // Every entity of every profile in the samples with a C3DDUMP: start
+    // Every entity of every profile in the samples with a C3DUMP: start
     // and end as Civil 3D reports them (S306, S307, S308).
     use civil3drust::aecc_profile::segments;
     for id in ["S306", "S307", "S308", "S309", "S310", "S311", "S312"] {

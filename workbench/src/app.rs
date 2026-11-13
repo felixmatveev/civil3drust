@@ -823,7 +823,7 @@ impl App {
         let Some(d) = &wb.api else {
             ui.weak(
                 "No Civil 3D API dump next to this drawing.\n\
-                 In Civil 3D: C3DDUMP writes <drawing>.api.txt; with C3DDUMPCONFIG Auto on, \
+                 In Civil 3D: C3DUMP writes <drawing>.api.txt; with C3DCONFIG Auto on, \
                  every save writes one into c3dump\\ next to the drawing.",
             );
             return;
@@ -1465,7 +1465,7 @@ impl eframe::App for App {
                     ui.selectable_value(&mut self.right, RightTab::Ron, "RON");
                     ui.selectable_value(&mut self.right, RightTab::Form, "Command form");
                     ui.selectable_value(&mut self.right, RightTab::Api, "API")
-                        .on_hover_text("What Civil 3D's API reports for the object (C3DDUMP)");
+                        .on_hover_text("What Civil 3D's API reports for the object (C3DUMP)");
                 });
                 ui.separator();
                 match self.right {

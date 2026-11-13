@@ -281,7 +281,7 @@ and the elevation range.
 ## API dumps and change reports (2026-11-12, D-080)
 
 The Civil 3D add-in (`tools/c3d_api_dump`) writes what Civil 3D's API
-reports for a drawing: on request (`C3DDUMP` → `<drawing>.api.txt`) or,
+reports for a drawing: on request (`C3DUMP` → `<drawing>.api.txt`) or,
 with Auto on, after every save
 (`c3dump/<drawing>.<yyyyMMdd-HHmmss>.api.txt`, one per save). The
 workbench reads these dumps (`apidump.rs`) and compares them, so that

@@ -613,7 +613,7 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   strings in the site record instead of five, none in the site list, and
   a key without the high bit (`0200D214`, `00000101`) where other sites
   have `0x8000_0000 | id`. Civil 3D shows the first as `A` (owner's
-  Prospector and `C3DDUMP` of S332).
+  Prospector and `C3DUMP` of S332).
 - **Found:** `0200D214` is also in `AECC_USER_DEFINED_ATTRIBUTE` 3620
   (expression `R/3<A<R`) and in `AECC_CLASS_NODE` BDA, in S322 and
   still in S329 after the site was renamed. Keys are IDs in a
@@ -639,7 +639,7 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
   samples' design-check expressions (18 IDs, each as its site's
   description). Civil 3D 2024 opened it without errors, showed every
   site under a built-in name, and its save (S353) keeps the 19 keys and
-  their order, still without name strings. `C3DDUMP` of S353:
+  their order, still without name strings. `C3DUMP` of S353:
 
   | ID | Name |
   |---|---|

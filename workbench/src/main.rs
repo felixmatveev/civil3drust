@@ -17,9 +17,9 @@
 //!                                                  records and Civil 3D API values that
 //!                                                  changed, object by object (D-080)
 //! civil3drust-workbench --api dump|file.dwg [--class pats] [--handle h,h] [--filter text] [--out file]
-//!                                                  part of a C3DDUMP file
+//!                                                  part of a C3DUMP file
 //! civil3drust-workbench --api-diff a b [--class …] [--handle …] [--filter …] [--noise list] [--out file]
-//!                                                  what changed between two C3DDUMP files
+//!                                                  what changed between two C3DUMP files
 //! civil3drust-workbench --api-history file.dwg [same options]
 //!                                                  the same, save by save (c3dump/ next to the drawing)
 //! civil3drust-workbench --make-noise list a b      add what differs between two saves without
@@ -365,11 +365,11 @@ fn is_dwg(p: &str) -> bool {
     p.to_ascii_lowercase().ends_with(".dwg")
 }
 
-/// A C3DDUMP file, or the one that belongs to a drawing.
+/// A C3DUMP file, or the one that belongs to a drawing.
 fn load_api(p: &str) -> apidump::Dump {
     let path = if is_dwg(p) {
         apidump::find_for(std::path::Path::new(p))
-            .unwrap_or_else(|| fail(format!("no API dump next to {p} (run C3DDUMP)")))
+            .unwrap_or_else(|| fail(format!("no API dump next to {p} (run C3DUMP)")))
     } else {
         p.into()
     };
@@ -411,7 +411,7 @@ fn api_history(args: &[String]) {
     let files = apidump::history(std::path::Path::new(file));
     if files.len() < 2 {
         fail(format!(
-            "{} dump(s) in c3dump/ for {file}; two saves with C3DDUMPCONFIG Auto on are needed",
+            "{} dump(s) in c3dump/ for {file}; two saves with C3DCONFIG Auto on are needed",
             files.len()
         ));
     }

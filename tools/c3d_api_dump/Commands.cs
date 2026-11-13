@@ -1,9 +1,9 @@
-// C3DDUMP (also C3DUMP): write the public API values of the objects chosen
+// C3DUMP: write the public API values of the objects chosen
 // in the configuration to <drawing>.api.txt, to compare with what
 // civil3drust decodes. Alignments come first in their detailed form (with
 // their profiles and profile views); every other matching object follows
 // in the generic form (simple properties, optionally Get… results).
-// C3DDUMPCONFIG (also C3DUMPCONFIG): set the classes and options. The
+// C3DCONFIG: set the classes and options. The
 // configuration is kept for the session and saved to
 // %APPDATA%\civil3drust\c3ddump.cfg, so it is also the default in the next
 // session — except Auto, which is off at the start of every session.
@@ -182,27 +182,14 @@ namespace C3dApiDump
             return config;
         }
 
-        // The owner's spelling of the two commands.
-        [CommandMethod("C3DUMPCONFIG")]
-        public void ConfigureAlias()
-        {
-            Configure();
-        }
-
-        [CommandMethod("C3DUMP")]
-        public void DumpAlias()
-        {
-            Dump();
-        }
-
-        [CommandMethod("C3DDUMPCONFIG")]
+        [CommandMethod("C3DCONFIG")]
         public void Configure()
         {
             Editor ed = AcApp.DocumentManager.MdiActiveDocument.Editor;
             Config c = Current();
             while (true)
             {
-                ed.WriteMessage("\nC3DDUMP: " + c);
+                ed.WriteMessage("\nC3DUMP: " + c);
                 var ko = new PromptKeywordOptions("\nChange [Auto/Classes/Getters/Displayreps/Echo/Reset] <done>: ")
                 {
                     AllowNone = true,
@@ -250,10 +237,10 @@ namespace C3dApiDump
             }
             c.Save();
             SetAuto(c.Auto);
-            ed.WriteMessage("\nC3DDUMP: " + c + "\n");
+            ed.WriteMessage("\nC3DUMP: " + c + "\n");
             if (c.Auto)
             {
-                ed.WriteMessage("C3DDUMP: every save of an open drawing writes c3dump\\<drawing>.<time>.api.txt"
+                ed.WriteMessage("C3DUMP: every save of an open drawing writes c3dump\\<drawing>.<time>.api.txt"
                     + " next to it, until Auto is switched off or Civil 3D closes.\n");
             }
         }
@@ -323,13 +310,13 @@ namespace C3dApiDump
                     Path.GetFileNameWithoutExtension(file) + "."
                         + DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture) + ".api.txt");
                 File.WriteAllText(path, sb.ToString());
-                doc.Editor.WriteMessage("\nC3DDUMP: written to " + path + "\n");
+                doc.Editor.WriteMessage("\nC3DUMP: written to " + path + "\n");
             }
             catch (System.Exception ex)
             {
                 try
                 {
-                    doc.Editor.WriteMessage("\nC3DDUMP: dump on save failed: " + Inner(ex) + "\n");
+                    doc.Editor.WriteMessage("\nC3DUMP: dump on save failed: " + Inner(ex) + "\n");
                 }
                 catch (System.Exception)
                 {
@@ -339,7 +326,7 @@ namespace C3dApiDump
 
         // ---- dump ---------------------------------------------------------
 
-        [CommandMethod("C3DDUMP")]
+        [CommandMethod("C3DUMP")]
         public void Dump()
         {
             Document doc = AcApp.DocumentManager.MdiActiveDocument;
@@ -448,7 +435,7 @@ namespace C3dApiDump
                 folder,
                 Path.GetFileNameWithoutExtension(doc.Name) + suffix);
             File.WriteAllText(path, sb.ToString());
-            ed.WriteMessage((echo ? "\n" + sb : "") + "\nC3DDUMP: written to " + path + "\n");
+            ed.WriteMessage((echo ? "\n" + sb : "") + "\nC3DUMP: written to " + path + "\n");
         }
 
         // One object: header line (handle, DXF class, API type, owner), every

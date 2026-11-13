@@ -70,7 +70,7 @@ applied.
 
 **Needed.**
 - A sample: an alignment with station equations (increasing and
-  decreasing) and a layout profile across them, with `C3DDUMP`, to see
+  decreasing) and a layout profile across them, with `C3DUMP`, to see
   whether profile records keep raw (distance) stations or equation
   stations, and what the API's `Station` / `RawStation` report.
 - Apply the answer in `point_at_station` / `sample_3d` and in a profile

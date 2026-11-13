@@ -16,7 +16,7 @@ one change moved.
 ```
 baseline.dwg ──► script: one change ──► Save As S<n>_<name>.dwg
                                               │
-             C3DDUMP Auto (dump on save) ◄────┤
+             C3DUMP Auto (dump on save) ◄────┤
                                               ▼
                  workbench --changes baseline variant --noise …
                                               ▼
@@ -28,7 +28,7 @@ baseline.dwg ──► script: one change ──► Save As S<n>_<name>.dwg
 Both are MIT, both have a Node MCP server talking JSON-RPC over loopback
 TCP (port 8080) to a C# add-in loaded with `NETLOAD`. Neither is a
 source of format findings; they are tooling only, and anything they
-report is observed Civil 3D behaviour like a C3DDUMP value.
+report is observed Civil 3D behaviour like a C3DUMP value.
 
 | repo | commit | what it is | use here |
 |---|---|---|---|
@@ -37,7 +37,7 @@ report is observed Civil 3D behaviour like a C3DDUMP value.
 
 ## Planned shape
 
-- **Already in place (D-080):** C3DDUMP's `Auto` mode dumps every
+- **Already in place (D-080):** C3DUMP's `Auto` mode dumps every
   save to `c3dump\<drawing>.<timestamp>.api.txt`, and the workbench
   joins record bits with API changes (`--changes`, `--api-diff`,
   `--api-history`) and drops save noise (`--make-noise`, `--noise`).
@@ -83,7 +83,7 @@ report is observed Civil 3D behaviour like a C3DDUMP value.
    without manual steps.
 
 **MIST1 in particular.** The 66-bit field is probably the API's
-`Entity.FingerPrint`, which C3DDUMP already reads. A runner can sweep
+`Entity.FingerPrint`, which C3DUMP already reads. A runner can sweep
 one geometry parameter at a time (length, position, rotation, radius)
 and log fingerprint vs. geometry for hundreds of variants, a data set
 for working out the algorithm from behaviour alone.
