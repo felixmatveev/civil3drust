@@ -12,9 +12,30 @@ cargo run -- --related in.dwg <handle> [depth]           # what the hex pane sho
 cargo run -- --objects in.dwg                            # drawn objects (viewer --dump)
 cargo run -- --dump in.dwg                               # sections and records (hexview --dump)
 cargo run -- --diff a.dwg b.dwg [--show civil,opaque,unmapped,acad|all] [--filter text]
+cargo run -- --changes a.dwg b.dwg [--brief] [--class pats] [--handle h,h] [--filter text]
+             [--noise list] [--show kinds|all] [--api-a dump] [--api-b dump] [--out report.txt]
+                                                         # records + Civil 3D API values that changed
+cargo run -- --api dump|in.dwg [--class pats] [--handle h,h] [--filter text] [--out file]
+cargo run -- --api-diff a b [--class pats] [--handle h,h] [--filter text] [--noise list] [--out file]
+cargo run -- --api-history in.dwg [same options]        # c3dump/ next to the drawing, save by save
+cargo run -- --make-noise list a b                      # two saves without a change → noise list
 cargo run -- --svg out.svg in.dwg [--select <handle>] [--3d] [--no-proxy] [--no-decoded]
              [--placeholders] [--no-context] [--light] [--size WxH]
 ```
+
+**What changed between two saves** (D-080, `docs/workbench.md`): with the
+Civil 3D add-in's Auto on (`tools/c3d_api_dump`), every save leaves an
+API dump in `c3dump\` next to the drawing. Save the drawing under a new
+name per step (`SAVEAS`), then
+
+```
+civil3drust-workbench --changes STEP_01.dwg STEP_02.dwg --out changes.txt
+```
+
+writes, per object, the record bits that differ and the API values that
+changed. That file is what to pass on; add `--brief` when it is long.
+One drawing saved repeatedly under the same name has only its dump
+history: `--api-history file.dwg`.
 
 Dependencies are built with `opt-level = 2` in the dev profile (see
 `Cargo.toml`), so the first build is slow and later ones only rebuild
@@ -27,7 +48,7 @@ further.
 +--------------------------------------------------------------------------+
 | Open  Save As  Reload  Undo  Redo | 2D 3D Fit | layers                    |
 +-----------+----------------------------------------+---------------------+
-| Objects   | [Drawing] [File (hex)]                 | Details | RON | Form|
+| Objects   | [Drawing] [File (hex)]                 | Details|RON|Form|API|
 | (✎ edited)|  click: select   Ctrl+click: x,y       |                     |
 |           |  Alt+click: handle into command line   |                     |
 +-----------+----------------------------------------+---------------------+

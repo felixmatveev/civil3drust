@@ -1,6 +1,7 @@
 //! The window (eframe/egui): object list, view, hex pane, RON pane,
 //! command form and console around one selection (D-073).
 
+use crate::apidump;
 use crate::filemap;
 use crate::fileview::FileView;
 use crate::hex::{self, HexAction, HexState};
@@ -45,6 +46,8 @@ enum RightTab {
     Details,
     Ron,
     Form,
+    /// The Civil 3D API dump next to the drawing (D-080).
+    Api,
 }
 
 /// What the central area shows.
@@ -128,6 +131,11 @@ struct App {
     confirm_discard: bool,
     central: Central,
     fileview: FileView,
+    /// API tab: class patterns, text filter, and what the last export did.
+    api_classes: String,
+    api_text: String,
+    api_selected_only: bool,
+    api_status: String,
 }
 
 impl App {
@@ -808,6 +816,110 @@ impl App {
         }
     }
 
+    /// The Civil 3D API dump: the selected object's entry, and a filtered
+    /// part of the dump saved to a file.
+    fn api_pane(&mut self, ui: &mut egui::Ui) {
+        let Some(wb) = &self.wb else { return };
+        let Some(d) = &wb.api else {
+            ui.weak(
+                "No Civil 3D API dump next to this drawing.\n\
+                 In Civil 3D: C3DDUMP writes <drawing>.api.txt; with C3DDUMPCONFIG Auto on, \
+                 every save writes one into c3dump\\ next to the drawing.",
+            );
+            return;
+        };
+        ui.small(&d.path);
+        for h in d.header.iter().filter(|h| h.starts_with("written:")) {
+            ui.small(h);
+        }
+        ui.horizontal(|ui| {
+            ui.label("Classes");
+            ui.add(
+                egui::TextEdit::singleline(&mut self.api_classes)
+                    .hint_text("AECC_ALIGNMENT,AECC_PROFILE*")
+                    .desired_width(220.0),
+            );
+        });
+        ui.horizontal(|ui| {
+            ui.label("Text");
+            ui.add(egui::TextEdit::singleline(&mut self.api_text).desired_width(140.0));
+            ui.checkbox(&mut self.api_selected_only, "selected only");
+        });
+        let handle = match (self.api_selected_only, self.layers.selected) {
+            (true, Some(h)) => format!("{h:X}"),
+            _ => String::new(),
+        };
+        let filter = apidump::Filter::new(&self.api_classes, &handle, &self.api_text);
+        let mut export = false;
+        ui.horizontal(|ui| match &filter {
+            Ok(f) => {
+                let n = d
+                    .objects
+                    .values()
+                    .filter(|o| f.passes(o.handle, &o.class, &o.title))
+                    .count();
+                export = ui
+                    .button("Save filtered…")
+                    .on_hover_text("Write the matching objects to a file, in the dump's format")
+                    .clicked();
+                ui.weak(format!("{n} of {} objects", d.objects.len()));
+            }
+            Err(e) => {
+                ui.colored_label(Color32::LIGHT_RED, e);
+            }
+        });
+        if !self.api_status.is_empty() {
+            ui.small(&self.api_status);
+        }
+        ui.separator();
+        let text = match self.layers.selected {
+            None => "Select an object to see its entry.".to_string(),
+            Some(h) => match d.objects.get(&h) {
+                None => format!("{h:X} is not in the dump (class not dumped, or created since)."),
+                Some(o) => {
+                    let mut t = format!("{}\n", o.title);
+                    for (k, v) in &o.props {
+                        t.push_str(&format!("  {k}: {v}\n"));
+                    }
+                    // What was listed under it (an alignment's profiles).
+                    for c in d.objects.values().filter(|c| c.parent == Some(h)) {
+                        t.push_str(&format!("\n{}  ({} properties)\n", c.title, c.props.len()));
+                    }
+                    t
+                }
+            },
+        };
+        egui::ScrollArea::both()
+            .id_salt("api_text")
+            .auto_shrink([false, false])
+            .show(ui, |ui| {
+                ui.add(
+                    egui::Label::new(egui::RichText::new(text).monospace().size(12.0))
+                        .wrap_mode(egui::TextWrapMode::Extend)
+                        .selectable(true),
+                );
+            });
+        if let (true, Ok(f)) = (export, &filter) {
+            let stem = wb
+                .path
+                .file_stem()
+                .map(|s| s.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "drawing".into());
+            let mut dlg = rfd::FileDialog::new()
+                .add_filter("API dump", &["txt"])
+                .set_file_name(format!("{stem}.filtered.api.txt"));
+            if let Some(dir) = wb.path.parent() {
+                dlg = dlg.set_directory(dir);
+            }
+            if let Some(p) = dlg.save_file() {
+                self.api_status = match std::fs::write(&p, apidump::export(d, f)) {
+                    Ok(()) => format!("written: {}", p.display()),
+                    Err(e) => format!("failed to write {}: {e}", p.display()),
+                };
+            }
+        }
+    }
+
     fn spec(&self) -> Vec<CommandInfo> {
         match (&self.external.spec, self.external.enabled) {
             (Some(s), true) => s.clone(),
@@ -1352,11 +1464,14 @@ impl eframe::App for App {
                     ui.selectable_value(&mut self.right, RightTab::Details, "Details");
                     ui.selectable_value(&mut self.right, RightTab::Ron, "RON");
                     ui.selectable_value(&mut self.right, RightTab::Form, "Command form");
+                    ui.selectable_value(&mut self.right, RightTab::Api, "API")
+                        .on_hover_text("What Civil 3D's API reports for the object (C3DDUMP)");
                 });
                 ui.separator();
                 match self.right {
                     RightTab::Details => self.details(ui),
                     RightTab::Ron => self.ron_pane(ui),
+                    RightTab::Api => self.api_pane(ui),
                     RightTab::Form => {
                         egui::ScrollArea::vertical()
                             .id_salt("form_scroll")

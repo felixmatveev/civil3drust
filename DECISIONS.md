@@ -1581,6 +1581,52 @@ at the end of the round (CLAUDE.md).
 **Alternatives.** Command-line arguments per run (prompts every time);
 keeping two dump commands (two file formats to read).
 
+## D-080: API dump on every save; comparisons are made locally and only changes are read
+
+**Context.** Each sample round needs Civil 3D's own view of the objects
+(what the owner typed, what Civil 3D derived, what else an edit touched).
+`C3DDUMP` gave that on request, for chosen classes, and whole dumps and
+drawings were then read to find the few values that changed. The owner
+asked for the dump to be automatic and for the comparing to happen on
+his PC, so that only differences are analysed.
+
+**Decision.**
+- The add-in dumps after every save command when `Auto` is on: one file
+  per save in `c3dump\` next to the drawing, named by the time. Auto is
+  off at the start of every Civil 3D session and is not saved. `C3DDUMP`
+  stays as the manual dump (`<drawing>.api.txt`).
+- The default scope is `full`, every object in the drawing; the earlier
+  class settings are the partial dumps. Filtering belongs to the
+  workbench, not to the add-in.
+- The dump keeps its plain-text format. The workbench parses it into
+  objects by handle and compares property by property.
+- `--changes a.dwg b.dwg` is the unit of analysis: per object, the
+  record's differing bits and the API values that changed. A noise list
+  (`prop`, `record`) drops what changes on every save; what it drops is
+  counted in the report.
+
+**Why.** A dump at every save cannot be forgotten and pairs each file
+with its ground truth; a history shows side effects in objects nobody
+looked at (deleting a site deleted its feature line). A full dump keeps
+those side effects, which a class filter at dump time would lose. Auto
+off by default keeps production drawings free of dumps. Comparing is
+deterministic work for a program: the report for two consecutive Civil
+3D saves is about a hundred lines (S322 → S323: 22 of 6 573 records)
+against megabytes of dump. The text format stays because the add-in
+cannot be built or run outside the owner's Civil 3D, so its changes are
+kept small, and the existing sample dumps stay readable.
+
+**Cleanroom.** Unchanged: the add-in calls Civil 3D's public API on our
+own drawings and reads nothing else; Autodesk's assemblies are neither
+opened nor committed.
+
+**Alternatives.** RON dumps (a rewrite of the add-in's output that could
+not be tested here, and no gain for comparing); a diff tracked inside
+the add-in (state in Civil 3D, harder to trust than two files);
+overwriting one dump per drawing (no history); hooking the database's
+save events (they also fire for autosave; the end of a save command
+does not).
+
 ## D-079: Site writers: three records edited together, members only where nothing crosses
 
 **Context.** The site study (S321–S353) mapped the site record, the site

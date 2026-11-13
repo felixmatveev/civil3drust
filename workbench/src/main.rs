@@ -12,12 +12,26 @@
 //! civil3drust-workbench --dump file.dwg             list sections and records (hexview --dump)
 //! civil3drust-workbench --diff a.dwg b.dwg [--show civil,opaque,unmapped,acad|all] [--filter text]
 //!                                                  record-by-record bit diff (hexview --diff)
+//! civil3drust-workbench --changes a.dwg b.dwg [--api-a a.api.txt] [--api-b b.api.txt]
+//!     [--class pats] [--handle h,h] [--filter text] [--noise list] [--show kinds] [--brief] [--out file]
+//!                                                  records and Civil 3D API values that
+//!                                                  changed, object by object (D-080)
+//! civil3drust-workbench --api dump|file.dwg [--class pats] [--handle h,h] [--filter text] [--out file]
+//!                                                  part of a C3DDUMP file
+//! civil3drust-workbench --api-diff a b [--class …] [--handle …] [--filter …] [--noise list] [--out file]
+//!                                                  what changed between two C3DDUMP files
+//! civil3drust-workbench --api-history file.dwg [same options]
+//!                                                  the same, save by save (c3dump/ next to the drawing)
+//! civil3drust-workbench --make-noise list a b      add what differs between two saves without
+//!                                                  a change (drawings or dumps) to a noise list
 //! civil3drust-workbench --svg out.svg file.dwg [options]
 //!     --select <handle> --3d --z-scale <n> --no-proxy --no-decoded --placeholders
 //!     --no-context --light --size WxH               render the view to SVG
 //! ```
 
+mod apidump;
 mod app;
+mod changes;
 mod compare;
 mod filemap;
 mod fileview;
@@ -39,6 +53,12 @@ fn usage() -> ! {
          civil3drust-workbench --objects file.dwg\n       \
          civil3drust-workbench --dump file.dwg\n       \
          civil3drust-workbench --diff a.dwg b.dwg [--show civil,opaque,unmapped,acad|all] [--filter text]\n       \
+         civil3drust-workbench --changes a.dwg b.dwg [--api-a dump] [--api-b dump] [--class pats] [--handle h,h] \
+         [--filter text] [--noise list] [--show kinds] [--brief] [--out file]\n       \
+         civil3drust-workbench --api dump|file.dwg [--class pats] [--handle h,h] [--filter text] [--out file]\n       \
+         civil3drust-workbench --api-diff a b [--class pats] [--handle h,h] [--filter text] [--noise list] [--out file]\n       \
+         civil3drust-workbench --api-history file.dwg [--class pats] [--handle h,h] [--filter text] [--noise list] [--out file]\n       \
+         civil3drust-workbench --make-noise list a b\n       \
          civil3drust-workbench --svg out.svg file.dwg [--select <handle>] [--3d] [--z-scale <n>] [--no-proxy] \
          [--no-decoded] [--placeholders] [--no-context] [--light] [--size WxH]"
     );
@@ -311,23 +331,196 @@ fn diff(args: &[String]) {
     let (Some(a), Some(b)) = (args.first(), args.get(1)) else {
         usage()
     };
-    let show = flag(args, "--show").unwrap_or_else(|| "civil,opaque,unmapped".into());
     let filter = flag(args, "--filter").unwrap_or_default();
     let (la, lb) = (load_map(a), load_map(b));
     let c = compare::compare(&la, &lb);
-    let want: Vec<&str> = show.split(',').map(str::trim).collect();
-    let show = |o: filemap::Origin| {
+    let show = show_kinds(args, "civil,opaque,unmapped");
+    let text = compare::report(&c, &la, &lb, &show, &filter);
+    // Ignore a closed pipe (`| head`).
+    let _ = std::io::Write::write_all(&mut std::io::stdout(), text.as_bytes());
+}
+
+fn fail(e: String) -> ! {
+    eprintln!("{e}");
+    exit(1);
+}
+
+/// Print `text`, or write it to the `--out` file.
+fn emit(args: &[String], text: &str) {
+    match flag(args, "--out") {
+        Some(p) => {
+            if let Err(e) = std::fs::write(&p, text) {
+                fail(format!("failed to write {p}: {e}"));
+            }
+            eprintln!("written: {p} ({} lines)", text.lines().count());
+        }
+        // Ignore a closed pipe (`| head`).
+        None => {
+            let _ = std::io::Write::write_all(&mut std::io::stdout(), text.as_bytes());
+        }
+    }
+}
+
+fn is_dwg(p: &str) -> bool {
+    p.to_ascii_lowercase().ends_with(".dwg")
+}
+
+/// A C3DDUMP file, or the one that belongs to a drawing.
+fn load_api(p: &str) -> apidump::Dump {
+    let path = if is_dwg(p) {
+        apidump::find_for(std::path::Path::new(p))
+            .unwrap_or_else(|| fail(format!("no API dump next to {p} (run C3DDUMP)")))
+    } else {
+        p.into()
+    };
+    apidump::load(path).unwrap_or_else(|e| fail(e))
+}
+
+fn api_filter(args: &[String]) -> apidump::Filter {
+    apidump::Filter::new(
+        &flag(args, "--class").unwrap_or_default(),
+        &flag(args, "--handle").unwrap_or_default(),
+        &flag(args, "--filter").unwrap_or_default(),
+    )
+    .unwrap_or_else(|e| fail(e))
+}
+
+fn noise(args: &[String]) -> apidump::Noise {
+    flag(args, "--noise").map_or_else(apidump::Noise::default, |p| {
+        apidump::Noise::load(&p).unwrap_or_else(|e| fail(e))
+    })
+}
+
+/// Part of a dump, in the dump's format.
+fn api(args: &[String]) {
+    let Some(file) = args.first() else { usage() };
+    emit(args, &apidump::export(&load_api(file), &api_filter(args)));
+}
+
+fn api_diff(args: &[String]) {
+    let (Some(a), Some(b)) = (args.first(), args.get(1)) else {
+        usage()
+    };
+    let text = apidump::diff_report(&load_api(a), &load_api(b), &api_filter(args), &noise(args));
+    emit(args, &text);
+}
+
+/// The dumps written on save, each compared with the one before.
+fn api_history(args: &[String]) {
+    let Some(file) = args.first() else { usage() };
+    let files = apidump::history(std::path::Path::new(file));
+    if files.len() < 2 {
+        fail(format!(
+            "{} dump(s) in c3dump/ for {file}; two saves with C3DDUMPCONFIG Auto on are needed",
+            files.len()
+        ));
+    }
+    let dumps: Vec<apidump::Dump> = files
+        .iter()
+        .map(|p| apidump::load(p).unwrap_or_else(|e| fail(e)))
+        .collect();
+    let (f, n) = (api_filter(args), noise(args));
+    let mut out = String::new();
+    for (k, w) in dumps.windows(2).enumerate() {
+        outln!(out, "######## save {} → {}", k + 1, k + 2);
+        out.push_str(&apidump::diff_report(&w[0], &w[1], &f, &n));
+        out.push('\n');
+    }
+    emit(args, &out);
+}
+
+fn show_kinds(args: &[String], default: &str) -> impl Fn(filemap::Origin) -> bool {
+    let show = flag(args, "--show").unwrap_or_else(|| default.into());
+    let want: Vec<String> = show.split(',').map(|s| s.trim().to_string()).collect();
+    move |o: filemap::Origin| {
         let name = match o {
             filemap::Origin::Acad => "acad",
             filemap::Origin::Civil => "civil",
             filemap::Origin::Opaque => "opaque",
             filemap::Origin::Unmapped => "unmapped",
         };
-        want.contains(&name) || want.contains(&"all")
+        want.iter().any(|w| w == name || w == "all")
+    }
+}
+
+/// Records and API values that changed between two drawings.
+fn changes_cmd(args: &[String]) {
+    let (Some(a), Some(b)) = (args.first(), args.get(1)) else {
+        usage()
     };
-    let text = compare::report(&c, &la, &lb, &show, &filter);
-    // Ignore a closed pipe (`| head`).
-    let _ = std::io::Write::write_all(&mut std::io::stdout(), text.as_bytes());
+    let (la, lb) = (load_map(a), load_map(b));
+    let find = |name: &str, dwg: &str| {
+        flag(args, name)
+            .map(std::path::PathBuf::from)
+            .or_else(|| apidump::find_for(std::path::Path::new(dwg)))
+            .map(|p| apidump::load(p).unwrap_or_else(|e| fail(e)))
+    };
+    let (da, db) = (find("--api-a", a), find("--api-b", b));
+    let show = show_kinds(args, "civil,opaque,unmapped");
+    let text = changes::report(&changes::Inputs {
+        a: &la,
+        b: &lb,
+        api: da.as_ref().zip(db.as_ref()),
+        filter: &api_filter(args),
+        noise: &noise(args),
+        show: &show,
+        brief: args.iter().any(|a| a == "--brief"),
+    });
+    emit(args, &text);
+}
+
+/// Add what differs between two saves made without a change to a noise
+/// list: records for two drawings (and properties, when both have a dump),
+/// properties for two dumps.
+fn make_noise(args: &[String]) {
+    let (Some(list), Some(a), Some(b)) = (args.first(), args.get(1), args.get(2)) else {
+        usage()
+    };
+    let mut rules: Vec<String> = Vec::new();
+    if is_dwg(a) && is_dwg(b) {
+        let (la, lb) = (load_map(a), load_map(b));
+        for e in compare::compare(&la, &lb).entries {
+            rules.push(format!("record #{:X}  # {}", e.handle, e.label));
+        }
+        let find = |p: &str| {
+            apidump::find_for(std::path::Path::new(p)).and_then(|p| apidump::load(p).ok())
+        };
+        if let (Some(x), Some(y)) = (find(a), find(b)) {
+            rules.extend(apidump::noise_from(&x, &y));
+        }
+    } else {
+        rules.extend(apidump::noise_from(&load_api(a), &load_api(b)));
+    }
+    let old = std::fs::read_to_string(list).unwrap_or_default();
+    let mut text = if old.is_empty() {
+        "# civil3drust workbench noise list: what changes on every save.\n\
+         # prop <class pattern> <property pattern>   an API property\n\
+         # record <#HANDLE | label pattern>          a DWG record (handles belong to one drawing series)\n"
+            .to_string()
+    } else {
+        old.clone()
+    };
+    if !text.ends_with('\n') {
+        text.push('\n');
+    }
+    let rule_of = |l: &str| l.split(" # ").next().unwrap_or("").trim().to_string();
+    let have: std::collections::HashSet<String> = old.lines().map(rule_of).collect();
+    let mut added = 0;
+    for r in &rules {
+        if !have.contains(&rule_of(r)) {
+            text.push_str(r);
+            text.push('\n');
+            added += 1;
+        }
+    }
+    apidump::Noise::parse(&text).unwrap_or_else(|e| fail(e));
+    if let Err(e) = std::fs::write(list, text) {
+        fail(format!("failed to write {list}: {e}"));
+    }
+    println!(
+        "{list}: {added} rule(s) added, {} already there",
+        rules.len() - added
+    );
 }
 
 fn main() {
@@ -339,6 +532,11 @@ fn main() {
         Some("--objects") => objects(args.get(1).unwrap_or_else(|| usage())),
         Some("--dump") => file_dump(args.get(1).unwrap_or_else(|| usage())),
         Some("--diff") => diff(&args[1..]),
+        Some("--changes") => changes_cmd(&args[1..]),
+        Some("--api") => api(&args[1..]),
+        Some("--api-diff") => api_diff(&args[1..]),
+        Some("--api-history") => api_history(&args[1..]),
+        Some("--make-noise") => make_noise(&args[1..]),
         Some("-h" | "--help") => usage(),
         Some(s) if s.starts_with("--") && s != "--goto" && s != "--compare" => usage(),
         _ => {

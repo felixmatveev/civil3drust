@@ -1,11 +1,15 @@
-// C3DDUMP: write the public API values of the Civil 3D objects chosen in
-// the configuration to <drawing>.api.txt, to compare with what
+// C3DDUMP (also C3DUMP): write the public API values of the objects chosen
+// in the configuration to <drawing>.api.txt, to compare with what
 // civil3drust decodes. Alignments come first in their detailed form (with
 // their profiles and profile views); every other matching object follows
 // in the generic form (simple properties, optionally Get… results).
-// C3DDUMPCONFIG: set the classes and options. The configuration is kept
-// for the session and saved to %APPDATA%\civil3drust\c3ddump.cfg, so it
-// is also the default in the next session.
+// C3DDUMPCONFIG (also C3DUMPCONFIG): set the classes and options. The
+// configuration is kept for the session and saved to
+// %APPDATA%\civil3drust\c3ddump.cfg, so it is also the default in the next
+// session — except Auto, which is off at the start of every session.
+// Auto on: after every QSAVE, SAVEAS and SAVE the same dump is written to
+// c3dump\<drawing>.<yyyyMMdd-HHmmss>.api.txt next to the drawing, one file
+// per save (D-080).
 // Read-only: objects are opened for read and nothing is changed.
 
 using System;
@@ -46,8 +50,11 @@ namespace C3dApiDump
 
         class Config
         {
-            // "control", "all", or comma-separated DXF name patterns (* wildcard).
-            public string Classes = "control";
+            // "full" (every object in the drawing), "control", "all" (every
+            // AECC_ class), or comma-separated DXF name patterns (* wildcard).
+            public string Classes = "full";
+            // Dump after every save. Never saved: off in a new session.
+            public bool Auto = false;
             // Call Get…(), Get…(enum), Get…(int) on the generic objects.
             public bool Getters = true;
             // Leave out display representations (AECC_DISP_REP_*).
@@ -55,8 +62,17 @@ namespace C3dApiDump
             // Also print the dump on the command line.
             public bool Echo = false;
 
+            public bool IsFull()
+            {
+                return Classes.Equals("full", StringComparison.OrdinalIgnoreCase);
+            }
+
             public string[] Patterns()
             {
+                if (IsFull())
+                {
+                    return new[] { "*" };
+                }
                 if (Classes.Equals("control", StringComparison.OrdinalIgnoreCase))
                 {
                     return ControlClasses;
@@ -69,27 +85,31 @@ namespace C3dApiDump
                     .Select(x => x.Trim()).ToArray();
             }
 
-            public bool Matches(string dxf)
+            // The test for one DXF class name. "full" takes every object,
+            // display representations included; the other settings take
+            // Civil 3D (AECC_) classes only.
+            public Func<string, bool> Matcher()
             {
-                if (!dxf.StartsWith("AECC_", StringComparison.OrdinalIgnoreCase))
+                if (IsFull())
                 {
-                    return false;
+                    return dxf => true;
                 }
-                if (SkipDisplayReps && dxf.StartsWith("AECC_DISP_REP_", StringComparison.OrdinalIgnoreCase))
-                {
-                    return false;
-                }
+                bool skip = SkipDisplayReps;
                 var re = new Regex(
                     "^(" + string.Join("|", Patterns().Select(x => Regex.Escape(x).Replace("\\*", ".*"))) + ")$",
                     RegexOptions.IgnoreCase);
-                return re.IsMatch(dxf);
+                return dxf => dxf.StartsWith("AECC_", StringComparison.OrdinalIgnoreCase)
+                    && !(skip && dxf.StartsWith("AECC_DISP_REP_", StringComparison.OrdinalIgnoreCase))
+                    && re.IsMatch(dxf);
             }
 
             public override string ToString()
             {
-                return "classes " + Classes + " (" + string.Join(", ", Patterns()) + "), getters "
-                    + (Getters ? "on" : "off") + ", display reps " + (SkipDisplayReps ? "skipped" : "kept")
-                    + ", echo " + (Echo ? "on" : "off");
+                return "classes " + Classes + " ("
+                    + (IsFull() ? "every object" : string.Join(", ", Patterns())) + "), getters "
+                    + (Getters ? "on" : "off") + ", display reps "
+                    + (SkipDisplayReps && !IsFull() ? "skipped" : "kept")
+                    + ", echo " + (Echo ? "on" : "off") + ", auto " + (Auto ? "on" : "off");
             }
 
             static string FilePath()
@@ -104,7 +124,12 @@ namespace C3dApiDump
                 var c = new Config();
                 try
                 {
-                    foreach (string line in File.ReadAllLines(FilePath()))
+                    string[] lines = File.ReadAllLines(FilePath());
+                    // A file written before "full" existed (no version
+                    // line) keeps its options but not its classes, so that
+                    // the full dump is the default once.
+                    bool current = lines.Any(l => l.Trim() == "version=2");
+                    foreach (string line in lines)
                     {
                         int eq = line.IndexOf('=');
                         if (eq < 0)
@@ -112,7 +137,7 @@ namespace C3dApiDump
                             continue;
                         }
                         string k = line.Substring(0, eq).Trim(), v = line.Substring(eq + 1).Trim();
-                        if (k == "classes" && v.Length > 0) c.Classes = v;
+                        if (k == "classes" && v.Length > 0 && current) c.Classes = v;
                         if (k == "getters") c.Getters = v == "on";
                         if (k == "skip_display_reps") c.SkipDisplayReps = v == "on";
                         if (k == "echo") c.Echo = v == "on";
@@ -132,6 +157,7 @@ namespace C3dApiDump
                     Directory.CreateDirectory(Path.GetDirectoryName(FilePath()));
                     File.WriteAllLines(FilePath(), new[]
                     {
+                        "version=2",
                         "classes=" + Classes,
                         "getters=" + (Getters ? "on" : "off"),
                         "skip_display_reps=" + (SkipDisplayReps ? "on" : "off"),
@@ -156,6 +182,19 @@ namespace C3dApiDump
             return config;
         }
 
+        // The owner's spelling of the two commands.
+        [CommandMethod("C3DUMPCONFIG")]
+        public void ConfigureAlias()
+        {
+            Configure();
+        }
+
+        [CommandMethod("C3DUMP")]
+        public void DumpAlias()
+        {
+            Dump();
+        }
+
         [CommandMethod("C3DDUMPCONFIG")]
         public void Configure()
         {
@@ -164,11 +203,11 @@ namespace C3dApiDump
             while (true)
             {
                 ed.WriteMessage("\nC3DDUMP: " + c);
-                var ko = new PromptKeywordOptions("\nChange [Classes/Getters/Displayreps/Echo/Reset] <done>: ")
+                var ko = new PromptKeywordOptions("\nChange [Auto/Classes/Getters/Displayreps/Echo/Reset] <done>: ")
                 {
                     AllowNone = true,
                 };
-                foreach (string k in new[] { "Classes", "Getters", "Displayreps", "Echo", "Reset" })
+                foreach (string k in new[] { "Auto", "Classes", "Getters", "Displayreps", "Echo", "Reset" })
                 {
                     ko.Keywords.Add(k);
                 }
@@ -179,9 +218,12 @@ namespace C3dApiDump
                 }
                 switch (kr.StringResult)
                 {
+                    case "Auto":
+                        c.Auto = !c.Auto;
+                        break;
                     case "Classes":
                         var so = new PromptStringOptions(
-                            "\nClasses: control, all, or DXF name patterns (comma-separated, * wildcard) <"
+                            "\nClasses: full (every object), control, all (AECC_*), or DXF name patterns (comma-separated, * wildcard) <"
                             + c.Classes + ">: ")
                         {
                             AllowSpaces = false,
@@ -207,7 +249,92 @@ namespace C3dApiDump
                 }
             }
             c.Save();
+            SetAuto(c.Auto);
             ed.WriteMessage("\nC3DDUMP: " + c + "\n");
+            if (c.Auto)
+            {
+                ed.WriteMessage("C3DDUMP: every save of an open drawing writes c3dump\\<drawing>.<time>.api.txt"
+                    + " next to it, until Auto is switched off or Civil 3D closes.\n");
+            }
+        }
+
+        // ---- dump on save -------------------------------------------------
+
+        // The commands that save the drawing. Autosave is not a command, so
+        // it never dumps; closing with "save changes" does not either (save
+        // first).
+        static readonly string[] SaveCommands = { "QSAVE", "SAVEAS", "SAVE" };
+
+        // Subscribe every open and every future document, or none.
+        static void SetAuto(bool on)
+        {
+            DocumentCollection dm = AcApp.DocumentManager;
+            dm.DocumentCreated -= OnDocumentCreated;
+            foreach (Document d in dm)
+            {
+                d.CommandEnded -= OnCommandEnded;
+            }
+            if (!on)
+            {
+                return;
+            }
+            dm.DocumentCreated += OnDocumentCreated;
+            foreach (Document d in dm)
+            {
+                d.CommandEnded += OnCommandEnded;
+            }
+        }
+
+        static void OnDocumentCreated(object sender, DocumentCollectionEventArgs e)
+        {
+            if (e.Document == null)
+            {
+                return;
+            }
+            e.Document.CommandEnded -= OnCommandEnded;
+            e.Document.CommandEnded += OnCommandEnded;
+        }
+
+        // After a save command: one dump per save, named by the time. A
+        // failure is reported on the command line and never reaches the
+        // save, which has already finished.
+        static void OnCommandEnded(object sender, CommandEventArgs e)
+        {
+            Document doc = sender as Document;
+            Config c = Current();
+            string name = (e.GlobalCommandName ?? "").ToUpperInvariant();
+            if (doc == null || !c.Auto || !SaveCommands.Contains(name))
+            {
+                return;
+            }
+            try
+            {
+                string file = doc.Name;
+                if (!Path.IsPathRooted(file) || !File.Exists(file))
+                {
+                    // Not saved to a file (the save was cancelled).
+                    return;
+                }
+                StringBuilder sb = Build(doc, c, "save (" + name + ")");
+                string folder = Path.Combine(Path.GetDirectoryName(file), "c3dump");
+                Directory.CreateDirectory(folder);
+                string path = Path.Combine(
+                    folder,
+                    Path.GetFileNameWithoutExtension(file) + "."
+                        + DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture) + ".api.txt");
+                File.WriteAllText(path, sb.ToString());
+                doc.Editor.WriteMessage("\nC3DDUMP: written to " + path + "\n");
+            }
+            catch (System.Exception ex)
+            {
+                try
+                {
+                    doc.Editor.WriteMessage("\nC3DDUMP: dump on save failed: " + Inner(ex) + "\n");
+                }
+                catch (System.Exception)
+                {
+                }
+            }
         }
 
         // ---- dump ---------------------------------------------------------
@@ -216,15 +343,24 @@ namespace C3dApiDump
         public void Dump()
         {
             Document doc = AcApp.DocumentManager.MdiActiveDocument;
-            Editor ed = doc.Editor;
-            Database db = doc.Database;
             Config c = Current();
+            Write(doc, doc.Editor, Build(doc, c, "manual"), ".api.txt", c.Echo);
+        }
+
+        // The dump of a drawing as it is now.
+        static StringBuilder Build(Document doc, Config c, string trigger)
+        {
+            Database db = doc.Database;
             var sb = new StringBuilder();
             sb.AppendLine("drawing: " + doc.Name);
             sb.AppendLine("written: " + DateTime.UtcNow.ToString("u"));
             sb.AppendLine("config: " + c);
+            sb.AppendLine("trigger: " + trigger);
+            sb.AppendLine("host: " + Get(() =>
+                System.Diagnostics.Process.GetCurrentProcess().MainModule.FileVersionInfo.ProductVersion));
             var done = new HashSet<Handle>();
             int n = 0;
+            Func<string, bool> matches = c.Matcher();
 
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
@@ -238,7 +374,7 @@ namespace C3dApiDump
                     {
                         continue;
                     }
-                    if (c.Matches(id.ObjectClass.DxfName ?? ""))
+                    if (matches(ClassName(id)))
                     {
                         ids.Add(id);
                     }
@@ -246,7 +382,7 @@ namespace C3dApiDump
 
                 // Alignments in the detailed form, each with its profiles
                 // and profile views.
-                foreach (ObjectId id in ids.Where(i => i.ObjectClass.DxfName == "AECC_ALIGNMENT"))
+                foreach (ObjectId id in ids.Where(i => ClassName(i) == "AECC_ALIGNMENT"))
                 {
                     if (!(tr.GetObject(id, OpenMode.ForRead) is Alignment al))
                     {
@@ -259,7 +395,8 @@ namespace C3dApiDump
                     n++;
                 }
 
-                // Everything else in the generic form.
+                // Everything else in the generic form. Get… methods are
+                // called on Civil 3D objects only.
                 sb.AppendLine();
                 sb.AppendLine("== Objects");
                 foreach (ObjectId id in ids)
@@ -268,14 +405,36 @@ namespace C3dApiDump
                     {
                         continue;
                     }
-                    DumpObject(sb, tr, id, c.Getters, done);
+                    bool civil = ClassName(id).StartsWith("AECC_", StringComparison.OrdinalIgnoreCase);
+                    DumpObject(sb, tr, id, c.Getters && civil, done);
                     n++;
                 }
                 tr.Commit();
             }
             sb.AppendLine();
             sb.AppendLine("objects: " + n);
-            Write(doc, ed, sb, ".api.txt", c.Echo);
+            return sb;
+        }
+
+        // The DXF class name, or the runtime class name for a class
+        // without one; never empty (the dump's reader takes it as the
+        // class).
+        static string ClassName(ObjectId id)
+        {
+            try
+            {
+                string dxf = id.ObjectClass.DxfName;
+                if (!string.IsNullOrEmpty(dxf))
+                {
+                    return dxf;
+                }
+                string name = id.ObjectClass.Name;
+                return string.IsNullOrEmpty(name) ? "?" : name;
+            }
+            catch (System.Exception)
+            {
+                return "?";
+            }
         }
 
         static void Write(Document doc, Editor ed, StringBuilder sb, string suffix, bool echo)
@@ -300,7 +459,7 @@ namespace C3dApiDump
         static void DumpObject(StringBuilder sb, Transaction tr, ObjectId id, bool getters,
             HashSet<Handle> done)
         {
-            string dxf = id.ObjectClass.DxfName;
+            string dxf = ClassName(id);
             DBObject obj;
             try
             {

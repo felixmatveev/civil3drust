@@ -379,7 +379,7 @@ fn describe_change(out: &mut String, pa: &Pane, sa: &Span, pb: &Pane, sb: &Span)
     }
 }
 
-fn origin_name(o: Origin) -> &'static str {
+pub fn origin_name(o: Origin) -> &'static str {
     match o {
         Origin::Acad => "acadrust",
         Origin::Civil => "civil3drust",
@@ -458,47 +458,85 @@ pub fn report(
         "Bit offsets are relative to the record data start (as in civil3drust); bit 0 is the MSB of the first data byte."
     );
     for e in shown {
-        let what = match e.kind {
-            Kind::Changed => "changed",
-            Kind::OnlyA => "only in A",
-            Kind::OnlyB => "only in B",
-        };
-        let _ = writeln!(
-            out,
-            "\n== {what}: #{:X} {} ({})",
-            e.handle,
-            e.label,
-            origin_name(e.origin)
-        );
-        match (e.a, e.b) {
-            (Some(x), Some(y)) => {
-                let (sa, sb) = (&pa.spans[x], &pb.spans[y]);
-                if sa.label() != sb.label() {
-                    let _ = writeln!(out, "   B label: {}", sb.label());
-                }
-                describe_change(&mut out, pa, sa, pb, sb);
-            }
-            (Some(x), None) | (None, Some(x)) => {
-                let (p, s) = if e.a.is_some() {
-                    (pa, &pa.spans[x])
-                } else {
-                    (pb, &pb.spans[x])
-                };
-                let d = data(p, s);
-                let _ = writeln!(
-                    out,
-                    "   data {} bytes, handle stream {} bits",
-                    d.len(),
-                    s.handle_bits
-                );
-                for f in s.fields.iter().take(60) {
-                    let _ = writeln!(out, "     {}: {}", f.label, f.value);
-                }
-            }
-            (None, None) => {}
-        }
+        entry_text(&mut out, pa, pb, e);
     }
     out
+}
+
+/// One differing record on one line: sizes and how much differs.
+pub fn entry_brief(pa: &Pane, pb: &Pane, e: &Entry) -> String {
+    let head = format!("#{:X} {} ({})", e.handle, e.label, origin_name(e.origin));
+    match (e.a, e.b) {
+        (Some(x), Some(y)) => {
+            let (sa, sb) = (&pa.spans[x], &pb.spans[y]);
+            let (ba, bb) = (bits(data(pa, sa)), bits(data(pb, sb)));
+            let ea = ba.len() - sa.handle_bits.min(ba.len());
+            let eb = bb.len() - sb.handle_bits.min(bb.len());
+            let edits = diff_bits(&ba[..ea], &bb[..eb]);
+            let changed: usize = edits.iter().map(|e| e.a.len().max(e.b.len())).sum();
+            let data = if edits.is_empty() {
+                "data same".to_string()
+            } else {
+                format!(
+                    "data {ea} → {eb} bits, {} region(s), {changed} bits",
+                    edits.len()
+                )
+            };
+            let handles = if ba[ea..] == bb[eb..] {
+                "handles same"
+            } else {
+                "handles differ"
+            };
+            format!("changed    {head}: {data}; {handles}")
+        }
+        (Some(x), None) => format!("only in A  {head}: {} bytes", data(pa, &pa.spans[x]).len()),
+        (None, Some(y)) => format!("only in B  {head}: {} bytes", data(pb, &pb.spans[y]).len()),
+        (None, None) => head,
+    }
+}
+
+/// One differing record: its heading, then the bit and field changes (or,
+/// for a record in one drawing only, its size and decoded fields).
+pub fn entry_text(out: &mut String, pa: &Pane, pb: &Pane, e: &Entry) {
+    let what = match e.kind {
+        Kind::Changed => "changed",
+        Kind::OnlyA => "only in A",
+        Kind::OnlyB => "only in B",
+    };
+    let _ = writeln!(
+        out,
+        "\n== {what}: #{:X} {} ({})",
+        e.handle,
+        e.label,
+        origin_name(e.origin)
+    );
+    match (e.a, e.b) {
+        (Some(x), Some(y)) => {
+            let (sa, sb) = (&pa.spans[x], &pb.spans[y]);
+            if sa.label() != sb.label() {
+                let _ = writeln!(out, "   B label: {}", sb.label());
+            }
+            describe_change(out, pa, sa, pb, sb);
+        }
+        (Some(x), None) | (None, Some(x)) => {
+            let (p, s) = if e.a.is_some() {
+                (pa, &pa.spans[x])
+            } else {
+                (pb, &pb.spans[x])
+            };
+            let d = data(p, s);
+            let _ = writeln!(
+                out,
+                "   data {} bytes, handle stream {} bits",
+                d.len(),
+                s.handle_bits
+            );
+            for f in s.fields.iter().take(60) {
+                let _ = writeln!(out, "     {}: {}", f.label, f.value);
+            }
+        }
+        (None, None) => {}
+    }
 }
 
 #[cfg(test)]

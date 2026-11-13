@@ -1,9 +1,11 @@
 # C3DDUMP — Civil 3D API dump
 
-A read-only Civil 3D add-in with two commands.
+A read-only Civil 3D add-in with two commands (`C3DUMP` and
+`C3DUMPCONFIG` are accepted as well).
 
-**`C3DDUMP`** writes the Civil 3D objects of the configured classes to
-`<drawing>.api.txt` next to the drawing (`%TEMP%` for an unsaved one):
+**`C3DDUMP`** writes the objects of the configured classes to
+`<drawing>.api.txt` next to the drawing (`%TEMP%` for an unsaved one),
+as the drawing is now, saved or not:
 
 1. Alignments (if their class is in the filter) in the detailed form:
    `AlignmentType`, `CreationMode`, `FingerPrint`, design speeds,
@@ -12,23 +14,51 @@ A read-only Civil 3D add-in with two commands.
    profile views.
 2. `== Objects`: every other matching object, in handle order, as
    `[handle] DXF-class API-type owner <handle>` and its simple
-   properties; with **getters** on, also the result of every public
-   `Get…()` method, of `Get…(enum)` for each value of the enum, and of
-   `Get…(int)` for each index below the object's largest `…Count`
-   property (at most 200) — so a feature line shows
-   `GetPoints(PIPoint)`, `GetPoints(ElevationPoint)`,
+   properties; with **getters** on, for Civil 3D (`AECC_`) objects also
+   the result of every public `Get…()` method, of `Get…(enum)` for each
+   value of the enum, and of `Get…(int)` for each index below the
+   object's largest `…Count` property (at most 200) — so a feature line
+   shows `GetPoints(PIPoint)`, `GetPoints(ElevationPoint)`,
    `GetPoints(AllPoints)`, and a site its alignment and feature line IDs.
+
+**Dump on save** (`C3DDUMPCONFIG` → `Auto`, D-080): while Auto is on,
+every `QSAVE`, `SAVEAS` and `SAVE` of an open drawing also writes
+
+```
+<drawing folder>\c3dump\<drawing>.<yyyyMMdd-HHmmss>.api.txt
+```
+
+one file per save, so a drawing collects the history of what Civil 3D
+reported after each step. The dump is made after the save has finished;
+if it fails, a line on the command line says so and the save is not
+affected. Autosave does not dump, and neither does closing a drawing
+with "save changes" (save first). Auto is **off at the start of every
+Civil 3D session** and is not saved, so production drawings get no dumps
+unless it is switched on.
+
+The workbench reads these files: `--changes a.dwg b.dwg` (records and
+API values that changed), `--api-history file.dwg` (save by save),
+`--api`, `--api-diff`, and the **API** tab (`docs/workbench.md`).
 
 **`C3DDUMPCONFIG`** shows the configuration and changes it, one keyword
 at a time (Enter when done):
 
 | keyword | setting | default |
 |---|---|---|
-| `Classes` | `control`, `all`, or DXF name patterns, comma-separated, `*` wildcard (e.g. `AECC_PROFILE*,AECC_FEATURE_LINE`) | `control` |
-| `Getters` | call the `Get…` methods on the generic objects (on/off) | on |
-| `Displayreps` | leave out display representations, `AECC_DISP_REP_*` (on/off) | on |
-| `Echo` | also print the dump on the command line (on/off) | off |
+| `Auto` | dump after every save (on/off); never saved | off |
+| `Classes` | `full`, `control`, `all`, or DXF name patterns, comma-separated, `*` wildcard (e.g. `AECC_PROFILE*,AECC_FEATURE_LINE`) | `full` |
+| `Getters` | call the `Get…` methods on the Civil 3D objects (on/off) | on |
+| `Displayreps` | leave out display representations, `AECC_DISP_REP_*` (on/off); not used with `full` | on |
+| `Echo` | also print a manual dump on the command line (on/off) | off |
 | `Reset` | back to the defaults | |
+
+`full` is every object in the drawing: Civil 3D objects, display
+representations, and plain AutoCAD objects (layers, dictionaries,
+entities; simple properties only). It is the default, and the workbench
+filters it afterwards. On a template-based drawing it is several
+thousand objects: expect a few megabytes and some seconds per dump. If
+that is too slow, or a property of some AutoCAD object upsets Civil 3D,
+use one of the partial settings: `all` is every `AECC_` class;
 
 `control` is the classes around alignments, profiles, feature lines and
 sites: `AECC_ALIGNMENT`, `AECC_ALIGNMENT_*NODE`, `AECC_PROFILE`,
@@ -39,8 +69,12 @@ containers, companions, registry), `AECC_PARCEL` (sites),
 labelings, `AECC_GRADING*`.
 
 The configuration lasts for the Civil 3D session and is saved to
-`%APPDATA%\civil3drust\c3ddump.cfg`, so the next session starts with it.
-The dump's third line repeats the configuration it used.
+`%APPDATA%\civil3drust\c3ddump.cfg` (the filter file: `classes=…` and the
+options), so the next session starts with it — except Auto. A file saved
+by the add-in before `full` existed keeps its options, but its classes
+are replaced by `full` once. The dump's header repeats the configuration
+it used, what triggered it (`manual`, or `save (QSAVE)`) and the host
+version.
 
 Everything is read by reflection, so the add-in builds against any
 Civil 3D version.
@@ -81,9 +115,12 @@ at that version's folder.
 1. Open the drawing in Civil 3D.
 2. `NETLOAD` → pick `C3dApiDump.dll` (answer **Load** if the security
    prompt appears).
-3. `C3DDUMPCONFIG` once if the defaults don't fit, then `C3DDUMP`.
-4. Send `<drawing>.api.txt` (written next to the drawing, or to `%TEMP%`
-   for an unsaved drawing).
+3. `C3DDUMPCONFIG` once if the defaults don't fit, then `C3DDUMP`; or
+   `C3DDUMPCONFIG` → `Auto` and save as usual.
+4. Compare with the workbench and send the report
+   (`civil3drust-workbench --changes before.dwg after.dwg --out report.txt`),
+   or send `<drawing>.api.txt` itself (written next to the drawing, or
+   to `%TEMP%` for an unsaved drawing).
 
 After a rebuild, NETLOAD the new DLL in a fresh Civil 3D session (a
 loaded .NET assembly cannot be replaced while Civil 3D runs).

@@ -278,6 +278,58 @@ along each segment — with a marker at every vertex. The object list and
 `--objects` show the site, the vertex, elevation point and arc counts
 and the elevation range.
 
+## API dumps and change reports (2026-11-12, D-080)
+
+The Civil 3D add-in (`tools/c3d_api_dump`) writes what Civil 3D's API
+reports for a drawing: on request (`C3DDUMP` → `<drawing>.api.txt`) or,
+with Auto on, after every save
+(`c3dump/<drawing>.<yyyyMMdd-HHmmss>.api.txt`, one per save). The
+workbench reads these dumps (`apidump.rs`) and compares them, so that
+only what changed has to be read.
+
+- A dump is parsed into objects keyed by handle; collection items become
+  `PVIs[0].Station`, counts move into the value (`GetIds(): [2] …`). A
+  drawing's dump is the newer of the manual one next to it and the last
+  one in `c3dump/`.
+- **`--changes a.dwg b.dwg`** (`changes.rs`) is the report to pass on:
+  per object, the record comparison of `--diff` (differing bit regions,
+  decoded fields) followed by the API properties that changed
+  (`~ name: a → b`, `- name`, `+ name`). An object whose record changed
+  with no API change says so; an API change with an identical record is
+  listed too (a derived value). Objects in one dump only are cut at 60
+  properties. `--api-a`/`--api-b` name the dumps when they are elsewhere.
+- **`--brief`**: one line per object (bits and regions that differ, API
+  lines), for a first look when much changed; then `--handle 8D58,8D6A`
+  for the detail.
+- **Filters** (all modes): `--class` (DXF class patterns, `*` wildcard,
+  comma-separated), `--handle`, `--filter` (text in the entry's first
+  line or the record label); `--show` selects record kinds as in
+  `--diff` (default `civil,opaque,unmapped`).
+- **Noise list** (`--noise file`): what changes on every save.
+  `prop <class pattern> <property pattern>` drops an API property,
+  `record <#HANDLE | label pattern>` a record; ` # ` starts a comment.
+  The report counts what was dropped (and lists the record handles), so
+  nothing disappears silently. `--make-noise list a b` adds every
+  difference between two saves made without a change (two drawings:
+  records by handle, plus properties when both have dumps; two dumps:
+  properties). Record rules by handle belong to one drawing series; a
+  record on the list is hidden whole, so a real change in it would be
+  hidden too — keep the list short and check the count.
+- **`--api`** writes a filtered part of a dump in the dump's own format
+  (it reads back); **`--api-diff a b`** compares two dumps;
+  **`--api-history file.dwg`** compares each dump in `c3dump/` with the
+  one before. `--out file` writes any of these to a file.
+- **API tab** (right panel): the dump found next to the open drawing;
+  the selected object's entry as text, class and text filters, "selected
+  only", and **Save filtered…**. After Save As the tab is empty (the
+  copy has no dump until Civil 3D saves it).
+
+Measured on our samples: two consecutive Civil 3D saves (S322 → S323)
+differ in 22 of 6 573 records, a 137-line report without filters; a
+drawing written by civil3drust against Civil 3D's re-save (S336 → S349)
+differs in 1 646 records, where `--brief`, `--class` and `--handle` are
+needed.
+
 ## Open questions
 
 - Names for reference kinds (companion, style, label set, site,

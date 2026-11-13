@@ -7,6 +7,25 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Dump on save and change reports (D-080). The Civil 3D add-in
+  (`tools/c3d_api_dump`): `C3DDUMPCONFIG` → `Auto` writes
+  `c3dump\<drawing>.<yyyyMMdd-HHmmss>.api.txt` after every `QSAVE`,
+  `SAVEAS` and `SAVE` (off at the start of each session, never saved);
+  classes `full` (every object in the drawing; `Get…` methods on `AECC_`
+  objects only) is the new default, the earlier settings remain as the
+  partial dumps; `C3DUMP` and `C3DUMPCONFIG` are accepted as command
+  names; the dump header has `trigger:` and `host:` lines. **Not built
+  or run here** (no Civil 3D): first run by the owner.
+- Workbench: `apidump.rs` reads C3DDUMP files (objects by handle) and
+  `changes.rs` joins them with the record comparison. New headless
+  modes: `--changes a.dwg b.dwg` (per object: differing record bits and
+  the API properties that changed; `--brief` for one line per object),
+  `--api` (filtered part of a dump), `--api-diff`, `--api-history`
+  (the dumps written on save, each against the one before),
+  `--make-noise` and `--noise` (records and properties that change on
+  every save, dropped and counted), with `--class`, `--handle`,
+  `--filter` and `--out`. New **API** tab: the selected object's entry
+  from the dump next to the drawing, filters, Save filtered….
 - Sites are writable (D-079): `aecc_site_edit` with `create_site`,
   `rename_site`, `delete_site`, `move_into_site`, `move_out_of_site`,
   `create_site_with_builtin_name`, `describe`, and the decoded

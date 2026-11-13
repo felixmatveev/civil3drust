@@ -108,6 +108,9 @@ pub struct Workbench {
     /// The file's record map (bytes of records acadrust parses); `None`
     /// while it loads or when mapping failed.
     pub filemap: Option<filemap::Loaded>,
+    /// The Civil 3D API dump that belongs to the drawing (`C3DDUMP`,
+    /// D-080), when there is one next to it.
+    pub api: Option<crate::apidump::Dump>,
 }
 
 const UNDO_LIMIT: usize = 50;
@@ -160,6 +163,7 @@ impl Workbench {
             log: Vec::new(),
             dirty: false,
             filemap: None,
+            api: None,
             path,
             opened,
         };
@@ -175,6 +179,7 @@ impl Workbench {
             wb.path.display(),
             wb.index.records.len()
         ));
+        wb.load_api();
         if let Some(r) = &wb.opened.failsafe_reason {
             wb.log.push((
                 LogKind::Error,
@@ -184,6 +189,27 @@ impl Workbench {
             ));
         }
         Ok(wb)
+    }
+
+    /// Pick up the API dump next to the drawing (the manual
+    /// `<drawing>.api.txt` or the last one in `c3dump/`, whichever is
+    /// newer).
+    pub fn load_api(&mut self) {
+        self.api = None;
+        let Some(p) = crate::apidump::find_for(&self.path) else {
+            return;
+        };
+        match crate::apidump::load(&p) {
+            Ok(d) => {
+                self.info(format!(
+                    "API dump {} ({} objects)",
+                    p.display(),
+                    d.objects.len()
+                ));
+                self.api = Some(d);
+            }
+            Err(e) => self.log.push((LogKind::Error, format!("API dump: {e}"))),
+        }
     }
 
     pub fn doc(&self) -> &CadDocument {
@@ -582,6 +608,9 @@ impl Workbench {
         let extra = theirs.keys().filter(|h| !mine.contains_key(h)).count();
         self.dirty = false;
         self.path = path.to_path_buf();
+        // The dump described the drawing that was opened; the saved copy
+        // has its own once Civil 3D has saved it.
+        self.api = None;
         let mut msg = format!(
             "saved {}: {} raw records read back",
             path.display(),
