@@ -43,6 +43,9 @@ Tools: `workbench --diff a.dwg b.dwg --filter <handle>` (formerly
 | MIST19 | offset alignment block after the type | mostly read (regions, transitions) |
 | MIST20 | connected (curb return) alignment block after the type | partly read (S283–S286) |
 | MIST21 | pasted feature line not quick-editable | parked: Civil 3D copy-paste problem |
+| MIST22 | site names stored as a pool ID | open: 19 IDs known (S353) |
+| MIST23 | a site's parcel counters | open |
+| MIST24 | one bit in an arc element when its alignment leaves a site | open |
 
 ## MIST1 — the 66-bit section-2 field — **PARTIALLY SOLVED (S142–S150, S214)**
 
@@ -715,3 +718,16 @@ set, 14 check for tangency. Bit 13 before the end is still unexplained.
 - Non-clothoid spirals in groups, free spirals and JSON groups; a second
   length/radius pair and inward spirals for the spiral types
   (`alignment-object.md`, "Spiral types").
+
+## MIST24 — one bit in an arc element when its alignment leaves a site — **open (S360, S361)**
+
+- **What:** moving the arc alignment 8C58 of S360 to `<None>` (S361)
+  changes, besides its two container references, one bit of its record:
+  bit 3136, 34 bits after the arc element's start (bit 3102), 0 → 1.
+  The straight alignments of S354–S359 do not change at all when they
+  move out.
+- **Ideas:** a cached state of the arc (its split at the crossing, or a
+  "geometry changed" flag).
+- **To settle:** the same bit in other arc elements of the samples
+  (siteless, in a site, after a re-save); an arc alignment moved out of
+  a site where it crossed nothing.

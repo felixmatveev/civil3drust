@@ -1,4 +1,4 @@
-# Sites — record, container, collection, parcels (S101–S112, S313–S353)
+# Sites — record, container, collection, parcels (S101–S112, S313–S361)
 
 A site in the file is four things:
 
@@ -273,6 +273,71 @@ references follow.
 container references; its edge leaves one container (free slot, crossing
 node removed) and is rebuilt in the other with new node IDs from 1.
 
+## Crossing and touching members (S354–S361, owner, Civil 3D 2024)
+
+Four drawings with two straight alignments in one site, and a copy of
+each in which Civil 3D moved alignment (2) to `<None>`. Alignment (1),
+8C4F, is (0,0)–(100,0) in all of them; alignment (2), 8C58, varies.
+
+| Case | Alignment (2) | Container 8C43 in the site |
+|---|---|---|
+| S354 cross | (50,50)–(50,−50) | node 5 = (50,0) shared; edge 1: 1 → **5** → 2, edge 2: 3 → **5** → 4; both middle vertices flags `0x430` (1072) |
+| S356 tee | (50,0)–(50,−50) | node 6 = (50,0): start of edge 1 (6 → 7, start flags 50, end flags 10) and a middle vertex of edge 2 (3 → **6** → 4, flags `0x470` = 1136) |
+| S358 end to end | (100,0)–(100,−50) | node 4 = (100,0): end of edge 2 (3 → 4, end flags 2) and start of edge 1 (4 → 8, start flags `0x800002`) |
+| S360 arc | arc via (50,0) | node 24 = (50,0): the arc's edge 1 is 22 → **24** → 23, two kind-1 vertices with bulge −0.4142 each (two 90° arcs; the one-piece arc of S361's companion has bulge −1); arc vertex flags `0x10F00B2`, `0x10F0430`; the line's middle vertex `0x470` |
+
+What this settles:
+
+- **No edge is split.** A crossing or touching point is one node,
+  shared, inserted into each edge as an extra vertex where the point is
+  inside the edge; an endpoint on an endpoint or on another edge is the
+  same node (S356, S358). Each alignment keeps exactly one edge entry,
+  so the alignment's edge ID (D-079) does not change.
+- **An arc is cut at the crossing**: its vertices are the pieces, each
+  kind 1 with the bulge of its own piece (`tan(θ/4)`).
+- **One loop per connected part.** The site's single face has one loop
+  in every case: the two alignments are one connected part. (S343's two
+  separate alignments gave two loops.) The loop's node is a node of that
+  part; which one Civil 3D picks is not a rule we can see (2, 3, 3, 4 in
+  S354/S356/S358/S360).
+- **Vertex flags** at shared nodes: `0x430` where both edges pass
+  through, `0x470` on the edge passed through by another edge's end or
+  by an arc, `0x800002` on a start that is another edge's end. Arc
+  vertices carry `0x10F0000` (also in companions). Flags are history
+  elsewhere (MIST12); whether Civil 3D needs these exact values in a
+  site container is untested.
+- **The site's extent point P** (tail, `BD3`) is (min x, max y) of the
+  geometry. With an arc it is not the arc's true top: S360 has
+  P = (0, 60.3553) = the arc piece (50,0)–(100,50): chord midpoint
+  y 25 + half the chord 35.3553. So Civil 3D bounds an arc piece by
+  the circle on its chord; one sample, so a hypothesis.
+- **Nothing else changes.** Neither alignment record changes when they
+  meet or part, apart from the two container references of the one that
+  moves (and one bit in S360/S361's arc element, MIST24). No new node or
+  face object is made for a crossing.
+
+Moving the crossing alignment out (S355, S357, S359, S361):
+
+- Its edge entry is freed (`BL 2`); its nodes go, and so does the shared
+  node, removed from the remaining edge, which is back to two vertices.
+  The node counter is not lowered (IDs are never reused).
+- The remaining edge's start flags change (178 → 242 in S355, S359,
+  S361; unchanged 178 in S357) and S359's edge flags 0x890 → 0x810:
+  history, as in MIST12.
+- Civil 3D makes a new companion (8DC6, 8DD1, 8DDC, 8DE9) for the
+  alignment and drops the freed entries of the two old empty
+  companions 8C4E, 8C57; the registry 12F9 gains the new companion.
+  The loop's node is renumbered to a node of the remaining part.
+- P drops to the remaining geometry: (0, 0).
+
+Our writers (2026-11-13): `site_move_in` refuses all four copies ("crosses
+or touches", or arcs), and `site_move_out` refuses all four originals
+("the edge crosses another…"), as designed. The samples give everything a
+crossing move needs: intersection points, one shared node per point,
+inserted vertices, arc pieces with their bulges, merged loops. The open
+question for a writer is whether the vertex flags matter (an experiment:
+S354's crossing written by civil3drust with plain flags, `0x30`/`0x10`).
+
 ## Write experiments (S332–S340, `examples/exp_site.rs`)
 
 **Results so far**
@@ -371,8 +436,9 @@ record and round-trips every container of S101–S112 and S313–S353.
 - Parcel records beyond their tail and references (their graphics,
   area, label, number, name template).
 
-- Feature lines into and out of a site; members that cross (crossing
-  nodes, faces, parcels); spirals and arc crossing tests in moves;
+- Crossing writes: whether Civil 3D needs the vertex flags of S354–S361
+  at shared nodes; the loop's node rule.
+- Feature lines into and out of a site; closed regions and parcels; spirals and arc crossing tests in moves;
   deleting a site with its members (FRT-4).
 
 ## Reader gaps found — fixed at round close

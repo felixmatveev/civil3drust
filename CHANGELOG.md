@@ -6,6 +6,17 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Documentation
+- Site study group 1 (S354–S361, owner): two alignments crossing, a
+  T, end to end and an arc crossing a line, each with a copy in which
+  Civil 3D moved the second alignment out. `docs/site-object.md`
+  ("Crossing and touching members"): one shared node per meeting point,
+  inserted as a vertex into each edge (no split), arcs cut into kind-1
+  pieces, one loop per connected part, the vertex flags at shared
+  nodes, the site extent for arcs, and what moving out undoes. MIST24:
+  one bit of an arc element changes when its alignment leaves. The
+  MIST22/MIST23 rows were missing from the mysteries index.
+
 ### Changed
 - The add-in's commands are `C3DUMP` and `C3DCONFIG` only (owner); the
   earlier names `C3DDUMP`, `C3DDUMPCONFIG` and the two aliases are
