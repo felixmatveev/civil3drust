@@ -21,6 +21,9 @@ versions follow [Semantic Versioning](https://semver.org/).
   `docs/civil3d-rebuilds.md`).
 - Experiment S366 (`exp_site_cross … none`): the crossing move with no
   shared node, to learn whether Civil 3D computes crossings itself.
+  Accepted (clean open, AUDIT clean); its re-save S367 has the
+  crossing node Civil 3D computed, the container byte for byte that of
+  S365. A writer need not compute crossings in a site.
 
 ### Documentation
 - Site study group 1 (S354–S361, owner): two alignments crossing, a

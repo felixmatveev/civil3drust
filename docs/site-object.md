@@ -405,7 +405,20 @@ same move with no shared node: the two edges keep their own nodes
 `(3, 0)` and `(6, 0)`, as if they did not cross. The question: does
 Civil 3D compute crossings itself (then a writer never needs them, arcs
 and spirals included), keep the container as written, or report it in
-AUDIT? Civil 3D 2024 (owner): pending.
+AUDIT? Civil 3D 2024 (owner): **accepted** — clean open, AUDIT clean,
+no issues. **Re-save S367: Civil 3D computed the crossing itself.** Its
+container 8C43 is byte for byte the one of S365 (Civil 3D's re-save of
+S363, where we wrote the crossing): nodes 9, 10, 12, 13 and a shared
+node 14 at (50,0) inserted into both edges, one loop `(10, 0)`, edge
+IDs 2 and 3 kept.
+
+So **a writer does not need to compute crossings**: Civil 3D rebuilds
+the site's planar graph from its members when it loads or saves the
+drawing, crossings included. Writing each member as its own edge with
+its own nodes and loop — what `move_into_site` already writes for a
+non-crossing alignment — is enough. One X of two straight alignments
+proves it; tees, end-to-end joins and arcs are the same rebuild and
+are worth one check each before relying on them.
 
 For each: does it open without RECOVER, is AUDIT clean, what does
 Prospector show (sites, the alignment's site), and a re-save. The
