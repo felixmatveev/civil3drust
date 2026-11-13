@@ -21,6 +21,12 @@ versions follow [Semantic Versioning](https://semver.org/).
   S368's edge — from S371's six points Civil 3D rebuilt the spiral
   pieces. A member's edge geometry in a site is a cache: element ends
   are enough for a writer.
+- Site study group 3 (S374, S375, owner): deleting a site deletes its
+  members — the alignment with its `*_LABEL_GROUP` records and the
+  feature line — then the site and its container; the site list goes
+  to the zero-site form. The `AECC_ALIGNMENT_VAGEOMPOINT_LABELING`
+  record stays with its alignment reference nulled; our
+  `delete_alignment` leaves such a reference dangling (gap, to fix).
 
 ### Added
 - Crossing experiment (S362, S363): `examples/exp_site_cross.rs` moves a

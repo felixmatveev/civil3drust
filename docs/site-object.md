@@ -1,4 +1,4 @@
-# Sites — record, container, collection, parcels (S101–S112, S313–S371)
+# Sites — record, container, collection, parcels (S101–S112, S313–S375)
 
 A site in the file is four things:
 
@@ -391,6 +391,42 @@ reference and its edge ID in the alignment, nodes for its vertices, a
 loop in the site's face — and any reasonable polyline of the alignment;
 the element ends are enough (owner: if we don't use it, we don't need
 it). Parcels built from members are untested.
+
+## Deleting a site with members (S374, S375, owner, Civil 3D 2024)
+
+S374: site `TEST SITE` 8C44 (container 8C45) with two members — alignment
+(1) 8C4B, a line (0,0)–(100,0), edge 2, and a feature line 8C53, edge 1
+(edge flags 0x10030, three vertices); two separate parts, two loops.
+S375: the site deleted in Prospector. **Deleting a site deletes its
+contents** (owner; as S331 showed for a feature line).
+
+Removed: the site 8C44, its container 8C45, the alignment 8C4B, six of
+its seven label groups (station, geometry point, station equation,
+design speed, superelevation, minor station — all `*_LABEL_GROUP`), and
+the feature line 8C53. Changed:
+
+- the site list C43 → the zero-site form `BL 0, BL 0`, no name strings,
+  the last-created pointer null (as S338/S346);
+- `AECC_ALIGNMENT_VAGEOMPOINT_LABELING` 8C50 (the vertical geometry
+  point labels) **stays**, with its reference to the alignment (the 4th,
+  code 4) set to null — Civil 3D does not delete it with the alignment;
+- registry 12F9: 16 bits of its header region change (no reference
+  removed; the alignment was in the site, not in the registry);
+- the old emptied companion 8C4A stays as it was.
+
+Unrelated to the delete (as S229): the class node 8BF0 and its
+`AECC_USER_DEFINED_ATTRIBUTE_CLASSIFICATION` 8BF1 are written again
+under new handles (8D83, 8D84), and style/criteria records change as on
+any save.
+
+For a writer, deleting a site with members = deleting each member as
+Civil 3D does (the alignment with its label groups; the feature line)
+and then the empty site (`delete_site`, S338). The alignment deletion
+differs from the siteless one (D-062) only in that there is no companion
+to empty. **Gap found:** `aecc_delete::delete_alignment` removes the
+`*_LABEL_GROUP` records and leaves `*_LABELING` records that point at
+the alignment as they are; Civil 3D nulls that reference (S375 8C50). To
+fix at round close, for siteless deletes too.
 
 ## Write experiments (S332–S340, `examples/exp_site.rs`)
 
