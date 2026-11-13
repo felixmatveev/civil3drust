@@ -1,4 +1,4 @@
-# Sites — record, container, collection, parcels (S101–S112, S313–S361)
+# Sites — record, container, collection, parcels (S101–S112, S313–S371)
 
 A site in the file is four things:
 
@@ -337,6 +337,52 @@ crossing move needs: intersection points, one shared node per point,
 inserted vertices, arc pieces with their bulges, merged loops. The open
 question for a writer is whether the vertex flags matter (an experiment:
 S354's crossing written by civil3drust with plain flags, `0x30`/`0x10`).
+
+## Spirals in a site (S368, S369, owner, Civil 3D 2024)
+
+One alignment 8C49 — line, Free Spiral-Curve-Spiral (L 38.69, R 40.4944,
+L 38.69), line — in `TEST SITE` (S368) and moved to `<None>` (S369).
+
+- **A spiral is stored as arc pieces.** The container's edge (S368) has
+  24 vertices: the first line, then **10 kind-1 pieces per spiral**, the
+  circular arc as **one** piece (bulge −0.04934, its 11.30°), and the
+  last line. Each spiral is cut into 5 parts of equal length L/5, each
+  part drawn as two arcs; the pieces' turning angles (4·atan|bulge|) are
+  k × 0.3650° with k = 1, 2, 4, 5, 7, 8, 10, 11, 13, 14 for the spiral
+  into the curve (the reverse for the one out of it), and add up to the
+  spiral's own deflection L / 2R = 27.37° to 4 decimals. A cache of the
+  geometry, computed by Civil 3D.
+- **The companion holds the same edge** (S369, 8C48): the same 24
+  points and bulges, bit for bit, with companion flags (vertices 10,
+  a = b = 0, no face) and new node IDs 19–42. Moving in or out copies
+  the edge between companion and container.
+- **The site's point P** (S368: (0, 0.0041)) fits a refined rule: per
+  arc piece, the chord's bounding box grown on both sides by the
+  sagitta (|bulge| · chord / 2) along the chord's normal; P = (min x,
+  max y) over all pieces. It also gives S360's 60.3553. A cache: Civil 3D
+  sets it on save (S342).
+- **Decoder gap found:** civil3drust's element decoder places this free
+  spiral-curve-spiral at the stored end of the first line (TS x = 53.49),
+  so the group lands 264.73 too far back and the last line is not
+  tangent to it. Civil 3D fits the group between the two lines (TS x =
+  318.2213 in the container, the last line at −66.04° = the curve's exit
+  direction). The free spiral between two lines (S165) is fitted that
+  way already; the free spiral-curve-spiral is not (fix at round close).
+
+**Experiments (S370, S371; `examples/exp_site_spiral.rs`, 2026-11-13).**
+S369's alignment moved back into the empty site by civil3drust, its edge
+taken from its own companion (`aecc_site_edit::move_into_site_with`,
+hidden, experiments only):
+
+| sample | the container's edge | Civil 3D 2024 (owner) |
+|---|---|---|
+| S370 | the companion's 24 vertices as they are (Civil 3D's arc pieces) | pending |
+| S371 | only the element ends from the companion (start, TS, SC, CS, ST, end): each spiral a straight chord, the curve its one arc | pending |
+
+S370 tests a writer that moves the edge between companion and container
+(no spiral maths at all). S371 tests whether Civil 3D rebuilds the
+pieces from the alignment, as it rebuilt crossings (S366): if it does,
+a writer needs only the element ends.
 
 ## Write experiments (S332–S340, `examples/exp_site.rs`)
 

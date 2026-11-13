@@ -6,6 +6,18 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Documentation
+- Site study group 2 (S368, S369, owner): a spiral alignment in a site
+  and out of it. The container and the companion store each spiral as 10
+  arc pieces (5 equal parts, two arcs each) and the curve as one piece;
+  moving copies the edge between them. A refined rule for the site's
+  point P. Decoder gap: a free spiral-curve-spiral between two lines is
+  placed at the first line's stored end instead of fitted.
+- Experiments S370, S371 (`examples/exp_site_spiral.rs`): the spiral
+  alignment moved into the site with its companion's edge, or with only
+  the element ends. `aecc_site_edit::move_into_site_with` and `PathFrom`
+  (hidden, experiments only).
+
 ### Added
 - Crossing experiment (S362, S363): `examples/exp_site_cross.rs` moves a
   straight alignment into a site where it crosses straight members, as

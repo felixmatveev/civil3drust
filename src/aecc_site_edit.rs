@@ -1079,7 +1079,33 @@ fn alignment_refs(
 /// change, the site's extent point is refreshed. Refused when the
 /// alignment would cross or touch a member, and for spirals.
 pub fn move_into_site(doc: &mut acadrust::CadDocument, al: u64, site: u64) -> Res<Moved> {
-    move_in(doc, al, site, true)
+    move_in(doc, al, site, true, PathFrom::Elements)
+}
+
+/// Where an experimental move takes the alignment's path from.
+#[doc(hidden)]
+#[derive(Debug, Clone)]
+pub enum PathFrom {
+    /// Decoded from the alignment's elements (lines and arcs only).
+    Elements,
+    /// The edge of the alignment's own companion, vertex for vertex
+    /// (spirals as Civil 3D's arc pieces; S368/S369).
+    Companion,
+    /// Given points and the bulge of the segment starting at each.
+    Points(Vec<(f64, f64)>, Vec<Option<f64>>),
+}
+
+/// [`move_into_site`] for experiments (S370, S371): `check` = the
+/// crossing test, `path` = where the edge's geometry comes from.
+#[doc(hidden)]
+pub fn move_into_site_with(
+    doc: &mut acadrust::CadDocument,
+    al: u64,
+    site: u64,
+    check: bool,
+    path: PathFrom,
+) -> Res<Moved> {
+    move_in(doc, al, site, check, path)
 }
 
 /// [`move_into_site`] without the crossing test, for the crossing
@@ -1087,10 +1113,34 @@ pub fn move_into_site(doc: &mut acadrust::CadDocument, al: u64, site: u64) -> Re
 /// the shared nodes and merges the loops. Not for use outside experiments.
 #[doc(hidden)]
 pub fn move_into_site_unchecked(doc: &mut acadrust::CadDocument, al: u64, site: u64) -> Res<Moved> {
-    move_in(doc, al, site, false)
+    move_in(doc, al, site, false, PathFrom::Elements)
 }
 
-fn move_in(doc: &mut acadrust::CadDocument, al: u64, site: u64, check: bool) -> Res<Moved> {
+/// The companion's edge as points and bulges.
+pub(crate) fn companion_path(t: &Topology) -> Res<Path> {
+    let e = t.edges.iter().flatten().next().ok_or("empty companion")?;
+    let mut pts = Vec::new();
+    let mut bulges = Vec::new();
+    for v in &e.vertices {
+        let n = t
+            .nodes
+            .iter()
+            .find(|n| n.0 == v.node)
+            .ok_or("vertex without node")?;
+        pts.push((n.1, n.2));
+        bulges.push(v.bulge);
+    }
+    bulges.pop();
+    Ok((pts, bulges))
+}
+
+fn move_in(
+    doc: &mut acadrust::CadDocument,
+    al: u64,
+    site: u64,
+    check: bool,
+    from: PathFrom,
+) -> Res<Moved> {
     let r = rec(doc, "AECC_ALIGNMENT", al)?;
     let comp_h = refs_of(&r)[2].1;
     let comp = rec(doc, CONT, comp_h)?;
@@ -1106,7 +1156,11 @@ fn move_in(doc: &mut acadrust::CadDocument, al: u64, site: u64, check: bool) -> 
             "the site has parcels: which face the alignment lies in is not worked out".into(),
         );
     }
-    let (pts, bulges) = alignment_path(&r)?;
+    let (pts, bulges) = match from {
+        PathFrom::Elements => alignment_path(&r)?,
+        PathFrom::Companion => companion_path(&ct)?,
+        PathFrom::Points(p, b) => (p, b),
+    };
     // Crossing anything already in the site is not handled.
     let chords = |pts: &[(f64, f64)]| -> Vec<[(f64, f64); 2]> {
         pts.windows(2).map(|w| [w[0], w[1]]).collect()
