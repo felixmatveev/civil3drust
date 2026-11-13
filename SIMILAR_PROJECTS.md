@@ -54,3 +54,16 @@ problem therefore remains ours to solve.
 
 LandXML is currently low priority (alignment creation in DWG comes first). When it starts: port the alignment and profile parts of `landxml.js` (lines and curves; spirals come from civil3drust's own geometry) and add the
 Node oracle test.
+
+---
+
+## Civil 3D MCP servers (tooling)
+
+- **barbosaihan/civil3d-mcp** (https://github.com/barbosaihan/civil3d-mcp, reviewed at `344ad15`, MIT): runs any C#
+  inside Civil 3D through Roslyn. Candidate code for automated sample variants.
+- **Sacred-G/Civil3D-mcp** (https://github.com/Sacred-G/Civil3D-mcp, reviewed at `9e437a3`, MIT): 219 fixed design
+  tools. Reference C# for API calls only.
+
+Neither decodes DWG/AECC data; they drive Civil 3D's public API. Not a source of format findings. Plan and notes:
+`docs/automated-samples.md` (FRT-5).
+

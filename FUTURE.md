@@ -99,3 +99,17 @@ with members.
 - Deleting a site with its members, as Civil 3D does (S331 deleted the
   feature line with the site).
 - More built-in name IDs (MIST22) when a site reads as unnamed.
+
+## FRT-5: Automated sample extraction
+
+**Status:** parked (2026-11-12). Samples stay hand-made while the broad
+skeleton is mapped.
+
+**Plan.** `docs/automated-samples.md`: a Roslyn executor and a
+save-as call inside `tools/c3d_api_dump/` (taken from the MIT
+barbosaihan/civil3d-mcp), driven by a runner that makes one-change
+variants of a baseline, dumps and diffs them.
+
+**Use first on.** Mystery blocks and field fine tuning: MIST1
+(fingerprint sweeps), deletion cascades, marker-value field searches.
+

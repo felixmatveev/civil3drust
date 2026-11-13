@@ -26,6 +26,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   every save, dropped and counted), with `--class`, `--handle`,
   `--filter` and `--out`. New **API** tab: the selected object's entry
   from the dump next to the drawing, filters, Save filtered….
+- `docs/automated-samples.md`: plan (parked) for scripted one-change
+  sample variants through the Civil 3D API, with a review of two Civil 3D
+  MCP servers (barbosaihan/civil3d-mcp, Sacred-G/Civil3D-mcp); FRT-5 in
+  `FUTURE.md`; both listed in `SIMILAR_PROJECTS.md`.
 - Sites are writable (D-079): `aecc_site_edit` with `create_site`,
   `rename_site`, `delete_site`, `move_into_site`, `move_out_of_site`,
   `create_site_with_builtin_name`, `describe`, and the decoded
