@@ -399,6 +399,14 @@ unchanged. So a crossing is written with plain flags: what Civil 3D
 needs is the shared node in both edges and one loop per connected
 part.
 
+**Without the crossing point (S366, `exp_site_cross … none`).** The
+same move with no shared node: the two edges keep their own nodes
+(alignment 1: 3 → 4, alignment 2: 6 → 7) and the face has two loops,
+`(3, 0)` and `(6, 0)`, as if they did not cross. The question: does
+Civil 3D compute crossings itself (then a writer never needs them, arcs
+and spirals included), keep the container as written, or report it in
+AUDIT? Civil 3D 2024 (owner): pending.
+
 For each: does it open without RECOVER, is AUDIT clean, what does
 Prospector show (sites, the alignment's site), and a re-save. The
 re-saves show what Civil 3D rebuilds (graphics, keys, vertex flags, the

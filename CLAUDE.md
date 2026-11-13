@@ -98,7 +98,7 @@ samples and steps that produced it.
 - `cargo run --release --example exp_companion -- in.dwg out.dwg <alignment hex> ...` (companions in the rebuilt form, edge 0x10, MIST12; experiments S238, S239)
 - `cargo run --release --example exp_site_name -- in.dwg out.dwg <old> <new>` (rename a site in its record and the site list; experiment S318, MIST21)
 - `cargo run --release --example exp_site -- rename|create|delete|move-in|move-out|pool|show in.dwg [out.dwg args...]` (the site writers of `aecc_site_edit`, also `c3dr sites|site_create|site_rename|site_delete|site_move_in|site_move_out`, D-079: name/description, clone an empty site, delete an empty site, move a non-crossing alignment into a site and back, `pool <id hex> ...` = one site per built-in name ID; experiments S332–S340, S352, `docs/site-object.md`)
-- `cargo run --release --example exp_site_cross -- in.dwg out.dwg <alignment hex> <site hex> plain|civil` (move a straight alignment into a site where it crosses straight members: shared node inserted into both edges; experiments S362, S363)
+- `cargo run --release --example exp_site_cross -- in.dwg out.dwg <alignment hex> <site hex> plain|civil|none` (move a straight alignment into a site where it crosses straight members: shared node inserted into both edges, or none; experiments S362, S363, S366)
 - `cargo run --release --example fingerprint -- file.dwg [roundtrip.dwg]` (raw-record hashes, for comparing acadrust versions; **writes** a round trip of file.dwg to roundtrip.dwg, overwriting it)
 - `cargo run --release --example edit_elements -- in.dwg out.dwg <alignment> remove <id> | curve <tangent id> <radius>`
 - `cargo run --release --example sites -- file.dwg` (sites and each alignment's site)

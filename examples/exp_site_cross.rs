@@ -7,6 +7,8 @@
 //! Usage: exp_site_cross in.dwg out.dwg <alignment hex> <site hex> plain|civil
 //!   plain: inserted vertices get the flags of a plain middle vertex (50)
 //!   civil: they get Civil 3D's crossing flags of S354 (0x430 = 1072)
+//!   none:  no shared node: the edges keep their own nodes and loops,
+//!          as if they did not cross (S366: does Civil 3D add the node?)
 
 use civil3drust::aecc_site_edit::{self as edit, Topology, Vertex};
 use civil3drust::raw;
@@ -41,16 +43,22 @@ fn cross(a: [(f64, f64); 2], b: [(f64, f64); 2]) -> Option<((f64, f64), f64, f64
 fn main() {
     let a: Vec<String> = std::env::args().collect();
     if a.len() != 6 {
-        fail("usage: exp_site_cross in.dwg out.dwg <alignment hex> <site hex> plain|civil");
+        fail("usage: exp_site_cross in.dwg out.dwg <alignment hex> <site hex> plain|civil|none");
     }
     let flags = match a[5].as_str() {
         "plain" => 50,
         "civil" => 0x430,
+        "none" => 0,
         m => fail(format!("unknown mode {m}")),
     };
     let (al, site) = (hex(&a[3]), hex(&a[4]));
     let mut o = raw::open(&a[1]).unwrap_or_else(|e| fail(e));
     let m = edit::move_into_site_unchecked(&mut o.doc, al, site).unwrap_or_else(|e| fail(e));
+    if flags == 0 {
+        println!("{al:X} → site {site:X}: no shared node written");
+        acadrust::DwgWriter::write_to_file(&a[2], &o.doc).unwrap_or_else(|e| fail(e));
+        return println!("wrote {}", a[2]);
+    }
     let cont = raw::records(&o.doc, "AECC_FEATURE_STYLE")
         .into_iter()
         .find(|r| r.handle == m.container)

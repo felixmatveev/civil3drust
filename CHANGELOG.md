@@ -19,6 +19,8 @@ versions follow [Semantic Versioning](https://semver.org/).
   container with its own; a crossing needs the shared node in both edges
   and one loop per connected part (`docs/site-object.md`,
   `docs/civil3d-rebuilds.md`).
+- Experiment S366 (`exp_site_cross … none`): the crossing move with no
+  shared node, to learn whether Civil 3D computes crossings itself.
 
 ### Documentation
 - Site study group 1 (S354–S361, owner): two alignments crossing, a
