@@ -376,13 +376,21 @@ hidden, experiments only):
 
 | sample | the container's edge | Civil 3D 2024 (owner) |
 |---|---|---|
-| S370 | the companion's 24 vertices as they are (Civil 3D's arc pieces) | pending |
-| S371 | only the element ends from the companion (start, TS, SC, CS, ST, end): each spiral a straight chord, the curve its one arc | pending |
+| S370 | the companion's 24 vertices as they are (Civil 3D's arc pieces) | **accepted**: clean open, AUDIT clean. **Re-save S372** |
+| S371 | only the element ends from the companion (start, TS, SC, CS, ST, end): each spiral a straight chord, the curve its one arc | **accepted**: clean open, AUDIT clean. **Re-save S373** |
 
-S370 tests a writer that moves the edge between companion and container
-(no spiral maths at all). S371 tests whether Civil 3D rebuilds the
-pieces from the alignment, as it rebuilt crossings (S366): if it does,
-a writer needs only the element ends.
+**Result: the container's geometry is a cache.** Both re-saves hold the
+same 24-vertex edge as Civil 3D's own S368 (points to 10⁻⁶, bulges to
+10⁻⁹): from S371's six points Civil 3D rebuilt the spiral pieces from the
+alignment, with new node IDs and its own flags, and set P = (0, 0.0041)
+as in S368. With S366 (crossings rebuilt) this settles it: the edge's
+points, pieces, shared nodes and flags are Civil 3D's planar-graph cache
+for parcel boundaries, computed from the members. What a writer must
+write is the structure — one edge entry per member with the member's
+reference and its edge ID in the alignment, nodes for its vertices, a
+loop in the site's face — and any reasonable polyline of the alignment;
+the element ends are enough (owner: if we don't use it, we don't need
+it). Parcels built from members are untested.
 
 ## Write experiments (S332–S340, `examples/exp_site.rs`)
 

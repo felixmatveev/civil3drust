@@ -17,6 +17,10 @@ versions follow [Semantic Versioning](https://semver.org/).
   alignment moved into the site with its companion's edge, or with only
   the element ends. `aecc_site_edit::move_into_site_with` and `PathFrom`
   (hidden, experiments only).
+  Both accepted (clean open, AUDIT clean); re-saves S372, S373 hold
+  S368's edge — from S371's six points Civil 3D rebuilt the spiral
+  pieces. A member's edge geometry in a site is a cache: element ends
+  are enough for a writer.
 
 ### Added
 - Crossing experiment (S362, S363): `examples/exp_site_cross.rs` moves a
