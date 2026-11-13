@@ -374,6 +374,23 @@ another drawing; `create` clones the drawing's first site.
 | S339 | `create` S322: `NEW SITE` | clone of an empty site: handles (site, site + 1), key, name, empty tail and container, list entry, last-created pointer |
 | S340 | `create` S331: `A SITE` | clone of a site with members: tail reset, **graphics stripped**, the template's date stamp kept |
 
+**Crossing (S362, S363; `examples/exp_site_cross.rs`, 2026-11-13).** S355
+with alignment (2) moved back into the site by civil3drust, crossing
+alignment (1) as in S354: the move without the crossing test
+(`move_into_site_unchecked`), then one new node 8 = (50,0) inserted as a
+middle vertex into edge 2 (alignment 1: 3 → 8 → 4) and the new edge 3
+(alignment 2: 6 → 8 → 7), and the new edge's loop dropped (one connected
+part, one loop `(3, 0)`). The two drawings differ only in the inserted
+vertices' flags — the question these settle:
+
+| sample | inserted vertex flags | Civil 3D 2024 (owner) |
+|---|---|---|
+| S362 | 50, as our other middle vertices (plain) | pending |
+| S363 | 1072 (`0x430`), as Civil 3D writes a crossing in S354 | pending |
+
+If S362 is accepted, crossings are written with plain flags; if only
+S363 is, the flags at shared nodes are data.
+
 For each: does it open without RECOVER, is AUDIT clean, what does
 Prospector show (sites, the alignment's site), and a re-save. The
 re-saves show what Civil 3D rebuilds (graphics, keys, vertex flags, the

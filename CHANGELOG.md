@@ -6,6 +6,14 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Crossing experiment (S362, S363): `examples/exp_site_cross.rs` moves a
+  straight alignment into a site where it crosses straight members, as
+  S354 stores it (one shared node inserted into both edges, one loop),
+  with plain (50) or Civil 3D's (1072) vertex flags at the shared node.
+  `aecc_site_edit::move_into_site_unchecked` (hidden, experiments only)
+  is the move without the crossing test.
+
 ### Documentation
 - Site study group 1 (S354–S361, owner): two alignments crossing, a
   T, end to end and an arc crossing a line, each with a copy in which

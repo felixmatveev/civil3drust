@@ -1079,6 +1079,18 @@ fn alignment_refs(
 /// change, the site's extent point is refreshed. Refused when the
 /// alignment would cross or touch a member, and for spirals.
 pub fn move_into_site(doc: &mut acadrust::CadDocument, al: u64, site: u64) -> Res<Moved> {
+    move_in(doc, al, site, true)
+}
+
+/// [`move_into_site`] without the crossing test, for the crossing
+/// experiments (`examples/exp_site_cross.rs`, S362/S363): the caller makes
+/// the shared nodes and merges the loops. Not for use outside experiments.
+#[doc(hidden)]
+pub fn move_into_site_unchecked(doc: &mut acadrust::CadDocument, al: u64, site: u64) -> Res<Moved> {
+    move_in(doc, al, site, false)
+}
+
+fn move_in(doc: &mut acadrust::CadDocument, al: u64, site: u64, check: bool) -> Res<Moved> {
     let r = rec(doc, "AECC_ALIGNMENT", al)?;
     let comp_h = refs_of(&r)[2].1;
     let comp = rec(doc, CONT, comp_h)?;
@@ -1118,12 +1130,13 @@ pub fn move_into_site(doc: &mut acadrust::CadDocument, al: u64, site: u64) -> Re
             .iter()
             .flatten()
             .any(|e| e.vertices.iter().any(|v| v.bulge.is_some()));
-    if !existing.is_empty() && arcs {
+    if check && !existing.is_empty() && arcs {
         return Err("arcs in a site that already has members: crossing test not written".into());
     }
-    if chords(&pts)
-        .iter()
-        .any(|s| existing.iter().any(|o| segments_touch(*s, *o)))
+    if check
+        && chords(&pts)
+            .iter()
+            .any(|s| existing.iter().any(|o| segments_touch(*s, *o)))
     {
         return Err("the alignment crosses or touches a member of the site".into());
     }

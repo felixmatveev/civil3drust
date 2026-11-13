@@ -372,6 +372,8 @@ Civil 3D files were saved by Autodesk Civil 3D 2024 (build U.202, AutoCAD
 | S359 | `S359_S358_end_to_end_second_out.dwg` | Civil 3D 2024 | Owner: S358 with alignment (2) moved to `<None>`, saved. Site study group 1 (crossings, `docs/site-object.md`). | 965104 | `6e47c5db18eb92af` |
 | S360 | `S360_site_arc_cross.dwg` | Civil 3D 2024 | Owner (01D_arc): alignment (2) is a 180° arc, R 50, centre (100,0), from (100,−50) through (50,0) to (100,50): it crosses alignment (1) at (50,0). Site study group 1 (crossings, `docs/site-object.md`). | 963948 | `a5cfffe6576a8536` |
 | S361 | `S361_S360_arc_second_out.dwg` | Civil 3D 2024 | Owner: S360 with alignment (2) moved to `<None>`, saved. Site study group 1 (crossings, `docs/site-object.md`). | 963078 | `1927faabfec0681c` |
+| S362 | `S362_S355_exp_cross_plain_flags.dwg` | civil3drust | Experiment: `exp_site_cross S355 … 8C58 8C42 plain` — alignment (2) moved back into `TEST SITE`, crossing alignment (1) at (50,0): shared node 8 inserted into both edges with flags 50, one loop. To check: opens, AUDIT, re-save. | 944870 | `47b8a61aa2e40f4a` |
+| S363 | `S363_S355_exp_cross_civil_flags.dwg` | civil3drust | Experiment: as S362 with the inserted vertices' flags 1072 (`0x430`, Civil 3D's in S354). | 944870 | `133df7ff1550acb0` |
 | S351 | `S351_S345_resaved.dwg` | Civil 3D 2024 | Owner: S345 opened and saved (API dump `S351_S345_resaved.api.txt`: both alignments in site `A`). The container has each alignment once: edge 2 (8D8C) and edge 3 (8D6A) on the nodes civil3drust wrote (15–17), the alignment's edge ID field still 3 — no second edge as in S344. | 973431 | `01697b2478863fd0` |
 
 Comparison pairs used so far: S2→S4 (Civil 3D re-save of a patched file),
