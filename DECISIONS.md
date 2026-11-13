@@ -1671,3 +1671,18 @@ and converts on its own save (S337 → S350).
 **Why.** Cleanroom: the table can only grow from observed behaviour
 (harvest drawings such as S352). Writing literals keeps the writer
 independent of the table.
+
+## D-081: Quiet tests; Clippy only before major commits
+Date: 2026-11-12 · Status: accepted
+
+**Context.** The pre-commit checks (fmt, test, clippy) were often the
+slowest step of a change, and verbose test output had to be read on
+every run.
+
+**Decision.** Tests run as `cargo test -q` before every commit. `cargo
+clippy --all-targets` runs only before major commits (a feature, a batch
+closing, a refactor, a dependency bump). Trial: the owner may revert to
+the earlier rule (supersede this entry).
+
+**Alternatives.** Clippy before every commit (the earlier rule: slower,
+more fix loops on small edits); no Clippy at all (lint debt builds up).

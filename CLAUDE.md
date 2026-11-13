@@ -4,8 +4,11 @@
 - Only the owner and Claude work on this repo. Commit and push directly to
   `main`; no feature branches or pull requests needed. If work happens on a
   branch, fast-forward merge it into `main` and push without asking.
-- Before every commit: `cargo fmt`, `cargo test`, `cargo clippy --all-targets`
-  clean.
+- Before every commit: `cargo fmt` and `cargo test -q` (quiet: only
+  failures and the summary are printed) clean.
+- `cargo clippy --all-targets` clean only before major commits (a feature,
+  a batch closing, a refactor, a dependency bump), not after small edits
+  (D-081).
 - Every change: a descriptive commit message, a `CHANGELOG.md` entry under
   `[Unreleased]`, and a `DECISIONS.md` entry when a design choice is made.
 - Work in batches (owner): while samples are coming in, analyse them with

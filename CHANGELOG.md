@@ -6,6 +6,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- Workflow (`CLAUDE.md`, D-081): tests run as `cargo test -q`; `cargo
+  clippy --all-targets` runs only before major commits.
+
 ### Added
 - Dump on save and change reports (D-080). The Civil 3D add-in
   (`tools/c3d_api_dump`): `C3DDUMPCONFIG` → `Auto` writes
