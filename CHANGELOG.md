@@ -13,6 +13,12 @@ versions follow [Semantic Versioning](https://semver.org/).
   with plain (50) or Civil 3D's (1072) vertex flags at the shared node.
   `aecc_site_edit::move_into_site_unchecked` (hidden, experiments only)
   is the move without the crossing test.
+- S362 and S363 accepted by Civil 3D 2024 (clean open, AUDIT clean,
+  both alignments in the site); re-saves S364, S365 with API dumps.
+  The vertex flags at a shared node are not data: Civil 3D rebuilds the
+  container with its own; a crossing needs the shared node in both edges
+  and one loop per connected part (`docs/site-object.md`,
+  `docs/civil3d-rebuilds.md`).
 
 ### Documentation
 - Site study group 1 (S354–S361, owner): two alignments crossing, a

@@ -385,11 +385,19 @@ vertices' flags — the question these settle:
 
 | sample | inserted vertex flags | Civil 3D 2024 (owner) |
 |---|---|---|
-| S362 | 50, as our other middle vertices (plain) | pending |
-| S363 | 1072 (`0x430`), as Civil 3D writes a crossing in S354 | pending |
+| S362 | 50, as our other middle vertices (plain) | **accepted**: no RECOVER, AUDIT clean; API: both alignments `SiteName: TEST SITE`, the site's `GetAlignmentIds()` = 8C4F, 8C58. **Re-save S364** |
+| S363 | 1072 (`0x430`), as Civil 3D writes a crossing in S354 | **accepted**, the same API values. **Re-save S365** |
 
-If S362 is accepted, crossings are written with plain flags; if only
-S363 is, the flags at shared nodes are data.
+**Result: the flags at shared nodes are not data.** Both re-saves have the
+same model: Civil 3D rebuilt the container from the alignments on its
+save — new node IDs (9–13 in S364; 9, 10, 12–14 in S365), one shared node
+at (50,0) inserted into both edges as we wrote it, its own flags
+(edge flags 0xB0 / 0x30, start 178, end 10, crossing 1072 on both edges
+in S364, 1136 and 1072 in S365 — history again, MIST12), face flags 7,
+one loop `(10, 0)`, the edge IDs 2 and 3 kept, alignment records
+unchanged. So a crossing is written with plain flags: what Civil 3D
+needs is the shared node in both edges and one loop per connected
+part.
 
 For each: does it open without RECOVER, is AUDIT clean, what does
 Prospector show (sites, the alignment's site), and a re-save. The
@@ -453,8 +461,9 @@ record and round-trips every container of S101–S112 and S313–S353.
 - Parcel records beyond their tail and references (their graphics,
   area, label, number, name template).
 
-- Crossing writes: whether Civil 3D needs the vertex flags of S354–S361
-  at shared nodes; the loop's node rule.
+- Crossing writes: tees, end-to-end joins and arcs written by
+  civil3drust (only an X of two straight alignments is proved, S362);
+  the loop's node rule.
 - Feature lines into and out of a site; closed regions and parcels; spirals and arc crossing tests in moves;
   deleting a site with its members (FRT-4).
 
