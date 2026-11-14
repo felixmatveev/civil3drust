@@ -694,14 +694,17 @@ static COMMANDS: &[Command] = &[
     },
     Command {
         name: "site_delete",
-        help: "delete an empty site",
-        args: &[SITE],
+        help: "delete a site; with --with-members its alignments and feature lines go too, as in Civil 3D (S375)",
+        args: &[
+            SITE,
+            opt("--with-members", K::Flag, "also delete the site's alignments and feature lines"),
+        ],
         edits: true,
         run: run_site_delete,
     },
     Command {
         name: "site_move_in",
-        help: "move a siteless alignment that crosses nothing into a site",
+        help: "move a siteless alignment into a site (crossings and spirals included; Civil 3D adds the crossing points)",
         args: &[ALIGNMENT, SITE],
         edits: true,
         run: run_site_move_in,
@@ -830,8 +833,25 @@ fn run_site_rename(doc: &mut CadDocument, a: &Args) -> Result<String, String> {
 
 fn run_site_delete(doc: &mut CadDocument, a: &Args) -> Result<String, String> {
     let site = site_arg(doc, a)?;
-    crate::aecc_site_edit::delete_site(doc, site.handle).map_err(|e| e.to_string())?;
-    Ok(format!("deleted site {}", site_label(&site)))
+    if !a.flag("--with-members") {
+        crate::aecc_site_edit::delete_site(doc, site.handle).map_err(|e| e.to_string())?;
+        return Ok(format!("deleted site {}", site_label(&site)));
+    }
+    let d = crate::aecc_site_edit::delete_site_with_members(doc, site.handle)
+        .map_err(|e| e.to_string())?;
+    let hx = |v: &[u64]| {
+        v.iter()
+            .map(|h| format!("{h:X}"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    Ok(format!(
+        "deleted site {} with alignments [{}], feature lines [{}], label groups [{}]",
+        site_label(&site),
+        hx(&d.alignments),
+        hx(&d.feature_lines),
+        hx(&d.label_groups)
+    ))
 }
 
 fn run_site_move_in(doc: &mut CadDocument, a: &Args) -> Result<String, String> {

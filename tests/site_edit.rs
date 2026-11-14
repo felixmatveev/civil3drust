@@ -218,44 +218,194 @@ fn site_commands_chain() {
     let _ = std::fs::remove_file(path);
 }
 
-/// Moving in is refused where the alignment would cross a member, and
-/// for a site with parcels.
+/// Crossing members are written without crossing points: Civil 3D adds
+/// them (S366 → S367). The library's move of S355 is S366 record for
+/// record (its edge copied from the companion). Sites with parcels are
+/// still refused.
 #[test]
-fn crossing_move_is_refused() {
-    let mut o = open("S324_site_second_alignment_in_site.dwg");
-    run_line(&mut o.doc, "site_move_out 8D6A").unwrap();
-    // Lay 8D6A across the first segment of 8D8C, which stays in the site.
-    let s = &sites(&o.doc)[0];
-    let c = raw::records(&o.doc, CONT)
-        .into_iter()
-        .find(|r| Some(r.handle) == s.container)
-        .unwrap();
-    let g = civil3drust::aecc_topology::graph(&c.data).unwrap();
-    let p = civil3drust::aecc_topology::edge_points(&g, &g.edges[0]);
-    let (mx, my) = ((p[0].x + p[1].x) / 2.0, (p[0].y + p[1].y) / 2.0);
-    let (dx, dy) = (p[1].x - p[0].x, p[1].y - p[0].y);
-    let l = dx.hypot(dy);
-    let (nx, ny) = (-dy / l, dx / l);
-    let pis = format!(
-        "{},{} {},{} {},{}",
-        mx - 20.0 * nx,
-        my - 20.0 * ny,
-        mx + 20.0 * nx,
-        my + 20.0 * ny,
-        mx + 40.0 * nx + 10.0 * dx / l,
-        my + 40.0 * ny + 10.0 * dy / l
-    );
-    run_line(&mut o.doc, &format!("set_pis 8D6A \"{pis}\"")).unwrap();
-    let e = run_line(&mut o.doc, "site_move_in 8D6A A").unwrap_err();
-    assert!(e.contains("crosses"), "{e}");
+fn crossing_moves() {
+    let mut o = open("S355_S354_cross_second_out.dwg");
+    run_line(&mut o.doc, "site_move_in 8C58 \"TEST SITE\"").unwrap();
+    // The container equals S366's but for the last digits of one node
+    // (the companion's −50 where S366 decoded −49.999…).
+    let theirs = open("S366_S355_exp_cross_no_node.dwg");
+    let topo = |d: &acadrust::CadDocument| {
+        let r = raw::records(d, CONT)
+            .into_iter()
+            .find(|r| r.handle == 0x8C43)
+            .unwrap();
+        Topology::parse(&r).unwrap()
+    };
+    let (mut a, b) = (topo(&o.doc), topo(&theirs.doc));
+    assert_eq!(a.nodes.len(), b.nodes.len());
+    for (x, y) in a.nodes.iter().zip(&b.nodes) {
+        assert!(x.0 == y.0 && (x.1 - y.1).abs() < 1e-9 && (x.2 - y.2).abs() < 1e-9);
+    }
+    a.nodes = b.nodes.clone();
+    assert_eq!(a, b);
+
+    // Out of Civil 3D's own crossing (S354, S356, S358, S360): the shared
+    // node stays for the remaining edge, one loop per part.
+    for name in [
+        "S354_site_cross.dwg",
+        "S356_site_tee.dwg",
+        "S358_site_end_to_end.dwg",
+        "S360_site_arc_cross.dwg",
+    ] {
+        let mut o = open(name);
+        let m =
+            edit::move_out_of_site(&mut o.doc, 0x8C58).unwrap_or_else(|e| panic!("{name}: {e}"));
+        let c = raw::records(&o.doc, CONT)
+            .into_iter()
+            .find(|r| r.handle == m.container)
+            .unwrap();
+        let t = Topology::parse(&c).unwrap();
+        assert_eq!(t.members, [0x8C4F], "{name}");
+        let live: Vec<_> = t.edges.iter().flatten().collect();
+        assert_eq!(live.len(), 1, "{name}");
+        assert!(
+            live[0]
+                .vertices
+                .iter()
+                .all(|v| t.nodes.iter().any(|n| n.0 == v.node)),
+            "{name}"
+        );
+        assert_eq!(t.faces[0].loops.len(), 1, "{name}");
+        assert!(
+            live[0]
+                .vertices
+                .iter()
+                .any(|v| v.node == t.faces[0].loops[0].0),
+            "{name}"
+        );
+        // The alignment's companion holds the edge it had in the site.
+        let comp = raw::records(&o.doc, CONT)
+            .into_iter()
+            .find(|r| r.handle == m.companion)
+            .unwrap();
+        let ct = Topology::parse(&comp).unwrap();
+        assert_eq!(ct.members, [0x8C58], "{name}");
+        assert_eq!(
+            edit::describe(&o.doc).unwrap().matches("DIFFERS").count(),
+            0,
+            "{name}"
+        );
+    }
 
     // S326: a closed region (parcel) in the site.
     let mut o = open("S326_site_closed_region_parcel.dwg");
     let site = sites(&o.doc)[0].handle;
     let al = raw::records(&o.doc, "AECC_ALIGNMENT")[0].handle;
-    // Its members cross each other: none can leave, none can enter.
     assert!(edit::move_out_of_site(&mut o.doc, al).is_err());
     assert!(edit::delete_site(&mut o.doc, site).is_err());
+    assert!(edit::delete_site_with_members(&mut o.doc, site).is_err());
     // A site with parcels is no template for a new site either.
     assert!(edit::create_site(&mut o.doc, "Other").is_err());
+}
+
+/// Spiral alignments move with their companion's edge (S370 accepted);
+/// moving out gives the companion the container's edge.
+#[test]
+fn spiral_moves() {
+    let mut o = open("S369_site_spiral_out.dwg");
+    edit::move_into_site(&mut o.doc, 0x8C49, 0x8C42).unwrap();
+    same_civil_records(&o.doc, "S370_S369_exp_spiral_companion.dwg");
+
+    let mut o = open("S368_site_spiral_in.dwg");
+    let m = edit::move_out_of_site(&mut o.doc, 0x8C49).unwrap();
+    let comp = raw::records(&o.doc, CONT)
+        .into_iter()
+        .find(|r| r.handle == m.companion)
+        .unwrap();
+    let e = Topology::parse(&comp).unwrap();
+    let e = e.edges.iter().flatten().next().unwrap();
+    assert_eq!(e.vertices.len(), 24);
+    assert_eq!(e.vertices.iter().filter(|v| v.bulge.is_some()).count(), 21);
+}
+
+/// A free spiral-curve-spiral between two lines is fitted at the lines'
+/// intersection (S368: the first line's stored end is not the PI). The
+/// decoded points are those of Civil 3D's site container.
+#[test]
+fn free_scs_is_fitted_between_lines() {
+    let o = open("S368_site_spiral_in.dwg");
+    let r = &raw::records(&o.doc, "AECC_ALIGNMENT")[0];
+    let d = civil3drust::aecc_elements::decode_elements(r).unwrap();
+    let ends: Vec<(f64, f64)> = d
+        .elements
+        .iter()
+        .map(|e| (e.segment.end().x, e.segment.end().y))
+        .collect();
+    let want = [
+        (318.2213, 0.0),
+        (356.0390, -6.0618),
+        (362.7239, -10.4066),
+        (383.6184, -42.5039),
+        (550.1067, -417.1977),
+    ];
+    assert_eq!(ends.len(), want.len());
+    for (g, w) in ends.iter().zip(want) {
+        assert!(
+            (g.0 - w.0).abs() < 1e-3 && (g.1 - w.1).abs() < 1e-3,
+            "{g:?} vs {w:?}"
+        );
+    }
+}
+
+/// Deleting a site with its members gives S375 (Civil 3D's delete of
+/// S374): the same records, the labeling record's alignment reference
+/// nulled. Only the class node Civil 3D re-writes under new handles on
+/// any save differs.
+#[test]
+fn delete_site_with_members_matches_civil3d() {
+    let mut o = open("S374_site_with_members.dwg");
+    let r = run_line(&mut o.doc, "site_delete \"TEST SITE\"");
+    assert!(
+        r.is_err(),
+        "without --with-members a site with members stays"
+    );
+    run_line(&mut o.doc, "site_delete \"TEST SITE\" --with-members").unwrap();
+    let theirs = open("S375_S374_site_deleted.dwg");
+    let classes = [
+        "AECC_ALIGNMENT",
+        "AECC_PARCEL",
+        "AECC_PARCEL_NODE",
+        "AECC_FEATURE_LINE",
+        "AECC_ALIGNMENT_VAGEOMPOINT_LABELING",
+        "AECC_ALIGNMENT_STATION_LABEL_GROUP",
+        "AECC_ALIGNMENT_GEOMPOINT_LABEL_GROUP",
+    ];
+    for c in classes {
+        let trim = |r: &RawRecord| {
+            (
+                r.handle,
+                civil3drust::handle_refs::trim_padding(&r.data, r.handle_bits, r.handle),
+            )
+        };
+        let a: Vec<_> = raw::records(&o.doc, c).iter().map(trim).collect();
+        let b: Vec<_> = raw::records(&theirs.doc, c).iter().map(trim).collect();
+        assert_eq!(a, b, "{c}");
+    }
+    assert!(sites(&o.doc).is_empty());
+}
+
+/// Deleting a siteless alignment nulls the `*_LABELING` references to it
+/// (as S375), instead of leaving them dangling.
+#[test]
+fn delete_alignment_nulls_labeling_refs() {
+    let mut o = open("S369_site_spiral_out.dwg");
+    let refs = |doc: &acadrust::CadDocument| -> Vec<u64> {
+        raw::records(doc, "AECC_ALIGNMENT_VAGEOMPOINT_LABELING")
+            .iter()
+            .flat_map(civil3drust::handle_refs::of_record)
+            .map(|x| x.handle)
+            .collect()
+    };
+    assert!(
+        refs(&o.doc).contains(&0x8C49),
+        "the sample has a labeling record for 8C49"
+    );
+    civil3drust::aecc_delete::delete_alignment(&mut o.doc, 0x8C49).unwrap();
+    assert!(!refs(&o.doc).contains(&0x8C49));
+    assert!(!raw::records(&o.doc, "AECC_ALIGNMENT_VAGEOMPOINT_LABELING").is_empty());
 }

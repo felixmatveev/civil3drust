@@ -1,21 +1,26 @@
 //! Site edits (docs/site-object.md): create, rename, describe and delete
-//! a site, and move a non-crossing alignment into a site and back.
+//! a site (also with its members), and move an alignment into a site and
+//! back.
 //!
 //! Each writer was proved in Civil 3D 2024 (no RECOVER, clean AUDIT, the
 //! re-save reads back to the same model): create S339/S340 → S347/S348,
 //! rename/describe S336/S337 → S349/S350, delete S338 → S346, move in
-//! S332/S345 → S342/S351, move out S333/S334 → S341/S343 (D-079).
+//! S332/S345 → S342/S351, move out S333/S334 → S341/S343 (D-079); moves
+//! across crossings and with spirals S366 → S367, S370 → S372; delete
+//! with members matches Civil 3D's S375 (D-082).
 //!
 //! Three records make a site: the site (`AECC_PARCEL`, strings
 //! `AeccImpFace`, `""`, name (optional), description, user), its container
 //! (`AECC_FEATURE_STYLE`, handle site + 1: nodes, edge entries, faces) and
 //! the site list (`AECC_PARCEL_NODE`: keys in hash order, names, site
 //! references). A member alignment points at the container twice and
-//! stores the ID of its edge there. Caches (site graphics) are dropped,
-//! not written; Civil 3D rebuilds them.
+//! stores the ID of its edge there. Caches (site graphics, the edge
+//! geometry's crossing points and spiral pieces) are not computed: the
+//! edge is copied between companion and container and Civil 3D rebuilds
+//! the rest (S366, S371).
 //!
-//! Not handled: members that cross or touch (crossing nodes, parcels),
-//! feature lines, spirals, deleting a site with members.
+//! Not handled: sites with parcels (closed regions), moving feature
+//! lines.
 
 use crate::aecc_build::Bits;
 use crate::aecc_elements::{decode_elements, Segment};
@@ -453,25 +458,80 @@ impl Topology {
     /// Free `slot`: its nodes, loops and member reference go.
     fn remove_edge(&mut self, slot: usize) -> Res<()> {
         let e = self.edges[slot].clone().ok_or("slot already free")?;
-        let ids: Vec<i32> = e.vertices.iter().map(|v| v.node).collect();
-        let shared = self
-            .edges
-            .iter()
-            .enumerate()
-            .filter(|(i, _)| *i != slot)
-            .filter_map(|(_, e)| e.as_ref())
-            .any(|o| o.vertices.iter().any(|v| ids.contains(&v.node)));
-        if shared || self.faces.len() > 1 || !e.after.is_empty() {
-            return Err("the edge crosses another, bounds a parcel or has elevation points".into());
+        if self.faces.len() > 1 {
+            return Err("the site has parcels (not handled)".into());
+        }
+        if !e.after.is_empty() {
+            return Err("the edge has elevation points (a feature line)".into());
         }
         let m = self.member_index(slot);
         self.members.remove(m);
         self.edges[slot] = None;
-        self.nodes.retain(|n| !ids.contains(&n.0));
-        for f in &mut self.faces {
-            f.loops.retain(|l| !ids.contains(&l.0));
-        }
+        // Nodes another edge still uses stay (crossings, shared ends:
+        // S354–S361); a crossing vertex left in the other edge is cache
+        // that Civil 3D rebuilds (S366, S371).
+        let used: Vec<i32> = self
+            .edges
+            .iter()
+            .flatten()
+            .flat_map(|e| e.vertices.iter().map(|v| v.node))
+            .collect();
+        self.nodes.retain(|n| used.contains(&n.0));
+        self.relink_loops();
         Ok(())
+    }
+
+    /// One loop per connected part of the live edges (S354–S361: the
+    /// loop's node is a node of that part); loops whose node is gone or
+    /// whose part already has one are dropped, parts without one get the
+    /// first node of their first edge.
+    fn relink_loops(&mut self) {
+        let edges: Vec<Vec<i32>> = self
+            .edges
+            .iter()
+            .flatten()
+            .map(|e| e.vertices.iter().map(|v| v.node).collect())
+            .collect();
+        // Connected parts by shared nodes (union of edges).
+        let mut part: Vec<usize> = (0..edges.len()).collect();
+        fn root(p: &mut [usize], i: usize) -> usize {
+            let mut i = i;
+            while p[i] != i {
+                p[i] = p[p[i]];
+                i = p[i];
+            }
+            i
+        }
+        for a in 0..edges.len() {
+            for b in a + 1..edges.len() {
+                if edges[a].iter().any(|n| edges[b].contains(n)) {
+                    let (ra, rb) = (root(&mut part, a), root(&mut part, b));
+                    part[ra] = rb;
+                }
+            }
+        }
+        let part_of = |node: i32, part: &mut Vec<usize>| -> Option<usize> {
+            let i = edges.iter().position(|e| e.contains(&node))?;
+            Some(root(part, i))
+        };
+        let Some(face) = self.faces.first_mut() else {
+            return;
+        };
+        let mut seen = Vec::new();
+        face.loops.retain(|l| match part_of(l.0, &mut part) {
+            Some(p) if !seen.contains(&p) => {
+                seen.push(p);
+                true
+            }
+            _ => false,
+        });
+        for (i, e) in edges.iter().enumerate() {
+            let p = root(&mut part, i);
+            if !seen.contains(&p) {
+                seen.push(p);
+                face.loops.push((e[0], 0));
+            }
+        }
     }
 
     /// A one-line summary (for reports).
@@ -529,15 +589,6 @@ fn alignment_path(r: &RawRecord) -> Res<Path> {
     let e = d.elements.last().ok_or("no elements")?.segment.end();
     pts.push((e.x, e.y));
     Ok((pts, bulges))
-}
-
-fn segments_touch(a: [(f64, f64); 2], b: [(f64, f64); 2]) -> bool {
-    let o = |p: (f64, f64), q: (f64, f64), r: (f64, f64)| {
-        (q.0 - p.0) * (r.1 - p.1) - (q.1 - p.1) * (r.0 - p.0)
-    };
-    let (d1, d2) = (o(b[0], b[1], a[0]), o(b[0], b[1], a[1]));
-    let (d3, d4) = (o(a[0], a[1], b[0]), o(a[0], a[1], b[1]));
-    d1 * d2 <= 0.0 && d3 * d4 <= 0.0
 }
 
 // -------------------------------------------------------------- site record
@@ -856,6 +907,52 @@ pub fn delete_site(doc: &mut acadrust::CadDocument, site: u64) -> Res<()> {
     if t.edges.iter().any(|e| e.is_some()) {
         return Err("the site has members; move them out first".into());
     }
+    remove_site(doc, site, cont)
+}
+
+/// What [`delete_site_with_members`] removed.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct DeletedSite {
+    pub alignments: Vec<u64>,
+    pub feature_lines: Vec<u64>,
+    /// Label groups removed with the alignments.
+    pub label_groups: Vec<u64>,
+}
+
+/// Delete a site and everything in it, as Civil 3D does (S374 → S375):
+/// each member alignment with its label groups (`*_LABELING` records
+/// that point at it are kept with the reference nulled), each member
+/// feature line, then the site, its container and its list entry.
+/// Refused for a site with parcels.
+pub fn delete_site_with_members(doc: &mut acadrust::CadDocument, site: u64) -> Res<DeletedSite> {
+    let cont = container_of(doc, site)?;
+    let t = Topology::parse(&rec(doc, CONT, cont)?)?;
+    if t.faces.len() > 1 {
+        return Err("the site has parcels (not handled)".into());
+    }
+    let mut out = DeletedSite::default();
+    for &m in &t.members {
+        match raw::class_of(doc, m).as_deref() {
+            Some("AECC_ALIGNMENT") => {
+                let groups = crate::aecc_delete::remove_alignment_entities(doc, m)
+                    .map_err(|e| e.to_string())?;
+                out.alignments.push(m);
+                out.label_groups.extend(groups);
+            }
+            Some("AECC_FEATURE_LINE") => {
+                doc.remove_entity(Handle::new(m))
+                    .ok_or(format!("feature line {m:X} not removable"))?;
+                out.feature_lines.push(m);
+            }
+            c => return Err(format!("member {m:X} of class {c:?} (not handled)").into()),
+        }
+    }
+    remove_site(doc, site, cont)?;
+    Ok(out)
+}
+
+/// The site entity, its container and its list entry.
+fn remove_site(doc: &mut acadrust::CadDocument, site: u64, cont: u64) -> Res<()> {
     let mut l = site_list(doc)?;
     let i = l
         .sites
@@ -1072,14 +1169,15 @@ fn alignment_refs(
     put(doc, r.handle, d, hb)
 }
 
-/// Move a siteless alignment that crosses nothing into a site, as Civil 3D
-/// does (S323; S332/S342, S345/S351): its edge goes to the site container
-/// with new nodes and a loop of the site's face, the companion is emptied
-/// and kept, the alignment's two container references and its edge ID
-/// change, the site's extent point is refreshed. Refused when the
-/// alignment would cross or touch a member, and for spirals.
+/// Move a siteless alignment into a site, as Civil 3D does (S323;
+/// S332/S342, S345/S351): its companion's edge goes to the site container
+/// as it stands (spiral pieces included, S370) with new nodes and a loop of
+/// the site's face, the companion is emptied and kept, the alignment's two
+/// container references and its edge ID change, the site's extent point
+/// is refreshed. Crossings with other members are not written; Civil 3D
+/// adds them (S366 → S367, D-082). Refused for a site with parcels.
 pub fn move_into_site(doc: &mut acadrust::CadDocument, al: u64, site: u64) -> Res<Moved> {
-    move_in(doc, al, site, true, PathFrom::Elements)
+    move_in(doc, al, site, PathFrom::Companion)
 }
 
 /// Where an experimental move takes the alignment's path from.
@@ -1095,30 +1193,37 @@ pub enum PathFrom {
     Points(Vec<(f64, f64)>, Vec<Option<f64>>),
 }
 
-/// [`move_into_site`] for experiments (S370, S371): `check` = the
-/// crossing test, `path` = where the edge's geometry comes from.
+/// [`move_into_site`] for experiments (S370, S371): `path` = where the
+/// edge's geometry comes from. `_check` is kept for the experiments'
+/// command lines; moves no longer test crossings (D-082).
 #[doc(hidden)]
 pub fn move_into_site_with(
     doc: &mut acadrust::CadDocument,
     al: u64,
     site: u64,
-    check: bool,
+    _check: bool,
     path: PathFrom,
 ) -> Res<Moved> {
-    move_in(doc, al, site, check, path)
+    move_in(doc, al, site, path)
 }
 
-/// [`move_into_site`] without the crossing test, for the crossing
-/// experiments (`examples/exp_site_cross.rs`, S362/S363): the caller makes
-/// the shared nodes and merges the loops. Not for use outside experiments.
+/// [`move_into_site`] with the edge decoded from the alignment's elements
+/// instead of copied from its companion, for the crossing experiments
+/// (`examples/exp_site_cross.rs`, S362/S363/S366). Not for use outside
+/// experiments.
 #[doc(hidden)]
 pub fn move_into_site_unchecked(doc: &mut acadrust::CadDocument, al: u64, site: u64) -> Res<Moved> {
-    move_in(doc, al, site, false, PathFrom::Elements)
+    move_in(doc, al, site, PathFrom::Elements)
 }
 
 /// The companion's edge as points and bulges.
 pub(crate) fn companion_path(t: &Topology) -> Res<Path> {
     let e = t.edges.iter().flatten().next().ok_or("empty companion")?;
+    edge_path(t, e)
+}
+
+/// An edge of `t` as points and bulges.
+fn edge_path(t: &Topology, e: &Edge) -> Res<Path> {
     let mut pts = Vec::new();
     let mut bulges = Vec::new();
     for v in &e.vertices {
@@ -1134,13 +1239,7 @@ pub(crate) fn companion_path(t: &Topology) -> Res<Path> {
     Ok((pts, bulges))
 }
 
-fn move_in(
-    doc: &mut acadrust::CadDocument,
-    al: u64,
-    site: u64,
-    check: bool,
-    from: PathFrom,
-) -> Res<Moved> {
+fn move_in(doc: &mut acadrust::CadDocument, al: u64, site: u64, from: PathFrom) -> Res<Moved> {
     let r = rec(doc, "AECC_ALIGNMENT", al)?;
     let comp_h = refs_of(&r)[2].1;
     let comp = rec(doc, CONT, comp_h)?;
@@ -1156,44 +1255,14 @@ fn move_in(
             "the site has parcels: which face the alignment lies in is not worked out".into(),
         );
     }
+    // The edge's geometry is Civil 3D's cache (S366, S371): the
+    // companion's edge as it stands is copied; crossings with other
+    // members are not computed (Civil 3D adds them, S367).
     let (pts, bulges) = match from {
         PathFrom::Elements => alignment_path(&r)?,
-        PathFrom::Companion => companion_path(&ct)?,
+        PathFrom::Companion => companion_path(&ct).or_else(|_| alignment_path(&r))?,
         PathFrom::Points(p, b) => (p, b),
     };
-    // Crossing anything already in the site is not handled.
-    let chords = |pts: &[(f64, f64)]| -> Vec<[(f64, f64); 2]> {
-        pts.windows(2).map(|w| [w[0], w[1]]).collect()
-    };
-    let existing: Vec<[(f64, f64); 2]> = t
-        .edges
-        .iter()
-        .flatten()
-        .flat_map(|e| {
-            let p: Vec<(f64, f64)> = e
-                .vertices
-                .iter()
-                .filter_map(|v| t.nodes.iter().find(|n| n.0 == v.node))
-                .map(|n| (n.1, n.2))
-                .collect();
-            chords(&p)
-        })
-        .collect();
-    let arcs = bulges.iter().any(|b| b.is_some())
-        || t.edges
-            .iter()
-            .flatten()
-            .any(|e| e.vertices.iter().any(|v| v.bulge.is_some()));
-    if check && !existing.is_empty() && arcs {
-        return Err("arcs in a site that already has members: crossing test not written".into());
-    }
-    if check
-        && chords(&pts)
-            .iter()
-            .any(|s| existing.iter().any(|o| segments_touch(*s, *o)))
-    {
-        return Err("the alignment crosses or touches a member of the site".into());
-    }
     // Container: nodes, edge (as Civil 3D writes a moved alignment), loop.
     let first = t.add_edge(&pts, &bulges, 0x810, true);
     let ids = (
@@ -1232,11 +1301,13 @@ fn move_in(
 }
 
 /// Move an alignment out of its site, back to siteless (S333/S341,
-/// S334/S343): its edge entry is freed, its nodes and loop go, and an
-/// emptied companion of the registry is refilled with it (Civil 3D makes
-/// a new companion; refilling is the smaller change and Civil 3D accepts
-/// it). Refused when its edge shares a node, bounds a parcel or no
-/// emptied companion exists.
+/// S334/S343): its edge entry is freed, its nodes go unless another edge
+/// uses them (a crossing or shared end, S354–S361), the face's loops are
+/// relinked (one per connected part), and an emptied companion of the
+/// registry is refilled with the edge as it stood in the container
+/// (Civil 3D makes a new companion; refilling is the smaller change and
+/// Civil 3D accepts it). Refused for a site with parcels, a feature
+/// line's edge, or when no emptied companion exists.
 pub fn move_out_of_site(doc: &mut acadrust::CadDocument, al: u64) -> Res<Moved> {
     let r = rec(doc, "AECC_ALIGNMENT", al)?;
     let cont_h = refs_of(&r)[2].1;
@@ -1255,6 +1326,9 @@ pub fn move_out_of_site(doc: &mut acadrust::CadDocument, al: u64) -> Res<Moved> 
         .find(|&s| t.edges[s].is_some() && t.member_index(s) == m)
         .ok_or("member slot")?;
     let old_id = t.edges[slot].as_ref().map_or(1, |e| e.id);
+    // The companion gets the edge as it stands in the container (cache,
+    // spirals included: S368/S369).
+    let path = edge_path(&t, t.edges[slot].as_ref().ok_or("member slot")?)?;
     t.remove_edge(slot)?;
     let (d, hb) = t.write(&cont)?;
     put(doc, cont_h, d, hb)?;
@@ -1267,7 +1341,7 @@ pub fn move_out_of_site(doc: &mut acadrust::CadDocument, al: u64) -> Res<Moved> 
             t.owner.0 != 8 && t.styles.is_empty() && t.nodes.is_empty() && t.members.is_empty()
         })
         .ok_or("no emptied companion to refill")?;
-    let (pts, bulges) = alignment_path(&r)?;
+    let (pts, bulges) = path;
     let faced = !ct.faces.is_empty();
     let first = ct.add_edge(&pts, &bulges, if faced { 0x810 } else { 0x10 }, faced);
     ct.members.push(al);

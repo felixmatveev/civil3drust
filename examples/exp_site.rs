@@ -7,7 +7,7 @@
 //!   rename   <site hex> <new name> [description]   name (and description) strings
 //!   create   <name>                                 a new empty site, cloned from the first site
 //!   delete   <site hex>                             an empty site, its container and list entry
-//!   move-in  <alignment hex> <site hex>             a siteless alignment that crosses nothing
+//!   move-in  <alignment hex> <site hex>             a siteless alignment (crossings, spirals)
 //!   move-out <alignment hex>                        back to siteless (an emptied companion is refilled)
 //!   pool     <id hex> ...                           one empty site per built-in name ID (MIST22, S352)
 //!   show                                            print sites, containers and companions (no out.dwg)

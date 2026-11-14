@@ -1686,3 +1686,31 @@ the earlier rule (supersede this entry).
 
 **Alternatives.** Clippy before every commit (the earlier rule: slower,
 more fix loops on small edits); no Clippy at all (lint debt builds up).
+
+## D-082: Site members are written as structure; their geometry is copied, not computed
+
+**Context.** Civil 3D accepted crossing alignments in a site written
+without the crossing point and added it on save (S366 → S367), and a
+spiral alignment written with straight chords had its spiral pieces
+rebuilt (S371 → S373). The vertex flags at shared nodes are history
+(S362/S363). Deleting a site deletes its members (S374 → S375).
+
+**Decision.** A site member's edge is written as structure: one edge
+entry with its ID, the member reference, nodes for its points, a loop
+per new part. The points are copied from where the alignment already
+has them — its companion when moving in, the container when moving
+out — so no crossing, arc or spiral geometry is computed and nothing is
+refused for crossing. Moving out keeps the nodes other edges use and
+relinks the loops (one per connected part). Deleting a site with
+`--with-members` deletes each member as Civil 3D does (alignment with
+its label groups, `*_LABELING` references nulled; feature line) and then
+the site. Sites with parcels stay refused (FRT-4).
+
+**Why.** D-049: the edge geometry is Civil 3D's cache for parcel
+boundaries, rebuilt from the members; copying it is exact and free, and
+writing only the structure keeps the code minimal. Copying avoids the
+decoder entirely, so a decoder gap (S368) cannot reach a site.
+
+**Alternatives.** Computing intersections and spiral pieces (written for
+experiment S362; correct but unneeded); keeping the crossing refusal
+(blocks ordinary drawings, where alignments in a site meet).

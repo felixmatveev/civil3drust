@@ -48,34 +48,80 @@ pub fn delete_alignment(doc: &mut CadDocument, handle: u64) -> Result<Deleted, D
         Membership::Siteless { companion } => companion,
         _ => return Err(err("the alignment is in a site (not supported yet)")),
     };
-    // Label groups pointing at the alignment (S229: FA3, FA4).
-    let label_groups: Vec<u64> = crate::inventory::aecc_classes(doc)
-        .into_iter()
-        .filter(|c| c.dxf_name.ends_with("_LABEL_GROUP"))
-        .flat_map(|c| raw::records(doc, &c.dxf_name))
-        .filter(|r| refers_to(r, handle))
-        .map(|r| r.handle)
-        .collect();
     if companion != 0 {
         let comp = raw::records(doc, "AECC_FEATURE_STYLE")
             .into_iter()
             .find(|r| r.handle == companion)
             .ok_or_else(|| err(format!("companion {companion:X} not found")))?;
-        let (data, hb) = empty_companion(&comp)
-            .ok_or_else(|| err(format!("companion {companion:X}: form not known")))?;
+        // The one-edge form as Civil 3D empties it (S229); any other
+        // companion (arc pieces of spirals, S369) emptied through its
+        // decoded graph, as a move into a site empties it (S332, S370).
+        let (data, hb) = match empty_companion(&comp) {
+            Some(x) => x,
+            None => {
+                let mut t = crate::aecc_site_edit::Topology::parse(&comp)
+                    .map_err(|e| err(format!("companion {companion:X}: {e}")))?;
+                t.nodes.clear();
+                t.edges.iter_mut().for_each(|e| *e = None);
+                t.members.clear();
+                t.faces.iter_mut().for_each(|f| f.loops.clear());
+                t.write(&comp)
+                    .map_err(|e| err(format!("companion {companion:X}: {e}")))?
+            }
+        };
         if !raw::set_record(doc, companion, data, hb) {
             return Err(err("could not write the companion"));
+        }
+    }
+    let label_groups = remove_alignment_entities(doc, handle)?;
+    Ok(Deleted {
+        alignment: handle,
+        label_groups,
+        companion,
+    })
+}
+
+/// Remove an alignment entity as Civil 3D does, whatever its site: its
+/// label groups (`*_LABEL_GROUP` records pointing at it; S229, S375) go
+/// with it, and the `*_LABELING` records that point at it (the vertical
+/// geometry point labels) stay with that reference nulled (S375). The
+/// companion or site container is the caller's. Returns the label groups.
+pub fn remove_alignment_entities(
+    doc: &mut CadDocument,
+    handle: u64,
+) -> Result<Vec<u64>, DeleteError> {
+    let classes = crate::inventory::aecc_classes(doc);
+    let label_groups: Vec<u64> = classes
+        .iter()
+        .filter(|c| c.dxf_name.ends_with("_LABEL_GROUP"))
+        .flat_map(|c| raw::records(doc, &c.dxf_name))
+        .filter(|r| refers_to(r, handle))
+        .map(|r| r.handle)
+        .collect();
+    let labelings: Vec<RawRecord> = classes
+        .iter()
+        .filter(|c| c.dxf_name.ends_with("_LABELING"))
+        .flat_map(|c| raw::records(doc, &c.dxf_name))
+        .filter(|r| refers_to(r, handle))
+        .collect();
+    for r in labelings {
+        let at: Vec<usize> = handle_refs::of_record(&r)
+            .iter()
+            .enumerate()
+            .filter(|(_, x)| x.handle == handle)
+            .map(|(i, _)| i)
+            .collect();
+        let (d, hb) = handle_refs::trim_padding(&r.data, r.handle_bits, r.handle);
+        let (data, hb) = handle_refs::null_refs(&d, hb, r.handle, &at);
+        if !raw::set_record(doc, r.handle, data, hb) {
+            return Err(err(format!("could not write {:X}", r.handle)));
         }
     }
     for h in label_groups.iter().chain(std::iter::once(&handle)) {
         doc.remove_entity(Handle::new(*h))
             .ok_or_else(|| err(format!("entity {h:X} not removable")))?;
     }
-    Ok(Deleted {
-        alignment: handle,
-        label_groups,
-        companion,
-    })
+    Ok(label_groups)
 }
 
 fn refers_to(r: &RawRecord, target: u64) -> bool {

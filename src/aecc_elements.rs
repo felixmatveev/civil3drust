@@ -1274,6 +1274,17 @@ fn spiral_segment(g: SpiralGeometry) -> Segment {
     }
 }
 
+/// Where the line through `p` along `u` meets the line through `q` along
+/// `v`; `None` when they are parallel.
+fn line_meet(p: Point2, u: (f64, f64), q: Point2, v: (f64, f64)) -> Option<Point2> {
+    let den = cross(u, v);
+    if den.abs() < 1e-12 {
+        return None;
+    }
+    let t = cross((q.x - p.x, q.y - p.y), v) / den;
+    Some(Point2::new(p.x + t * u.0, p.y + t * u.1))
+}
+
 /// The parts of a group record placed between its neighbours (S173):
 /// `before` is the resolved element before it (end state), `prev_line`
 /// and `next_line` the stored lines around it.
@@ -1359,9 +1370,12 @@ fn place_group(
         }
         GroupDef::SpiralCurveSpiral { l1, radius, l2 } => {
             let (a, b) = (prev_line?, next_line?);
-            let pi = a.end;
             let u1 = unit((a.end.x - a.start.x, a.end.y - a.start.y))?;
             let u2 = unit((b.end.x - b.start.x, b.end.y - b.start.y))?;
+            // The PI is where the two lines meet: the stored end of the
+            // first line is the PI when the lines were drawn to it, but
+            // not always (S368: the first line ends 264.73 before it).
+            let pi = line_meet(a.end, u1, b.start, u2).unwrap_or(a.end);
             let d = cross(u1, u2).atan2(u1.0 * u2.0 + u1.1 * u2.1);
             let ccw = d > 0.0;
             let delta = d.abs();

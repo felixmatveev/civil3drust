@@ -367,7 +367,8 @@ L 38.69), line — in `TEST SITE` (S368) and moved to `<None>` (S369).
   tangent to it. Civil 3D fits the group between the two lines (TS x =
   318.2213 in the container, the last line at −66.04° = the curve's exit
   direction). The free spiral between two lines (S165) is fitted that
-  way already; the free spiral-curve-spiral is not (fix at round close).
+  way already; the free spiral-curve-spiral was not — **fixed** (round
+close 2026-11-13): the group is placed at the lines' intersection.
 
 **Experiments (S370, S371; `examples/exp_site_spiral.rs`, 2026-11-13).**
 S369's alignment moved back into the empty site by civil3drust, its edge
@@ -423,10 +424,11 @@ For a writer, deleting a site with members = deleting each member as
 Civil 3D does (the alignment with its label groups; the feature line)
 and then the empty site (`delete_site`, S338). The alignment deletion
 differs from the siteless one (D-062) only in that there is no companion
-to empty. **Gap found:** `aecc_delete::delete_alignment` removes the
-`*_LABEL_GROUP` records and leaves `*_LABELING` records that point at
-the alignment as they are; Civil 3D nulls that reference (S375 8C50). To
-fix at round close, for siteless deletes too.
+to empty. **Gap found and fixed** (round close 2026-11-13):
+`aecc_delete::delete_alignment` removed the `*_LABEL_GROUP` records and
+left `*_LABELING` records pointing at the deleted alignment; it now
+nulls those references as Civil 3D does (S375 8C50), for siteless
+deletes too (`remove_alignment_entities`).
 
 ## Write experiments (S332–S340, `examples/exp_site.rs`)
 
@@ -520,7 +522,7 @@ member is refused (straight members only once the site has members);
 spirals are refused; `delete` takes empty sites only; `create` needs a
 site without parcels to clone.
 
-## In the library (round closed 2026-11-12, D-078, D-079)
+## In the library (rounds closed 2026-11-12 and 2026-11-13, D-078, D-079, D-082)
 
 What the round settled, in one place:
 
@@ -533,6 +535,9 @@ What the round settled, in one place:
 | The alignment stores the ID of its edge; a stale value is an AUDIT error and Civil 3D adds a second edge | S335 → S344, S345 → S351 | `move_into_site`, `move_out_of_site`; `docs/civil3d-rejects.md` |
 | Site record tail: extent point, flags (99 empty, 122 used), optional entry, three values | S321–S331 | `aecc_site_edit` (internal), `describe` |
 | Civil 3D rebuilds: site graphics, the container graph (new node IDs, freed entries dropped), list order, the pooled form of a built-in name | S341–S351 | `docs/civil3d-rebuilds.md` |
+| A member's edge geometry is cache: crossings (shared nodes) and spiral pieces are computed by Civil 3D from the members; a writer copies the edge between companion and container | S354–S373 | `move_into_site`, `move_out_of_site` (D-082) |
+| Deleting a site deletes its members (alignments with their label groups, feature lines); `*_LABELING` references to a deleted alignment are nulled | S374 → S375 | `delete_site_with_members`, `aecc_delete::remove_alignment_entities` |
+| A free spiral-curve-spiral between two lines sits at the lines' intersection, not at the first line's stored end | S368 | `aecc_elements` (`place_group`) |
 
 Library calls and `c3dr` commands (the workbench runs the same commands):
 
@@ -542,17 +547,29 @@ Library calls and `c3dr` commands (the workbench runs the same commands):
 | Create an empty site | `create_site` (clones the first site without parcels) | `site_create <name>` | S339/S340 → S347/S348 |
 | Rename, describe | `rename_site` | `site_rename <site> <name\|-> [--description t]` | S336/S337 → S349/S350 |
 | Delete an empty site | `delete_site` | `site_delete <site>` | S338 → S346 |
-| Alignment into a site | `move_into_site` | `site_move_in <alignment> <site>` | S332/S345 → S342/S351 |
-| Alignment back to siteless | `move_out_of_site` | `site_move_out <alignment>` | S333/S334 → S341/S343 |
+| Delete a site with its members | `delete_site_with_members` | `site_delete <site> --with-members` | equals Civil 3D's S375 (`tests/site_edit.rs`); check drawing S377 |
+| Alignment into a site (crossings, arcs and spirals included) | `move_into_site` | `site_move_in <alignment> <site>` | S332/S345 → S342/S351; crossing S366 → S367; spiral S370 → S372 |
+| Alignment back to siteless (also out of a crossing) | `move_out_of_site` | `site_move_out <alignment>` | S333/S334 → S341/S343; check drawings S376 (crossing), S378 (spiral) |
 | Site under a built-in name ID | `create_site_with_builtin_name` | (`exp_site pool`) | S352 → S353 |
 
-Refused, with a message: a move that would cross or touch a member; a
-site with parcels as target or as template; alignments with spirals;
-arcs when the site already has members (no arc crossing test); moving
-out an edge that shares a node or has elevation points; deleting a site
-with members; moving out when the registry has no emptied companion to
-refill. `tests/site_edit.rs` regenerates S336–S339 and S345 record for
-record and round-trips every container of S101–S112 and S313–S353.
+Refused, with a message: a site with parcels (as target, source,
+template or for deleting with members); moving out a feature line's
+edge (elevation points); deleting a site with members without
+`--with-members`; moving out when the registry has no emptied companion
+to refill; members other than alignments and feature lines.
+`tests/site_edit.rs` regenerates S336–S339, S345, S366 and S370 record
+for record, matches S375 for a site deleted with its members, and
+round-trips every container of S101–S112 and S313–S375.
+
+**Second round (2026-11-13, D-082).** Moves no longer test crossings and
+no longer refuse arcs or spirals: the container's edge is copied from the
+companion as it stands (spiral pieces included) and back; crossing points
+are not written — Civil 3D adds them (S366 → S367). Moving out of a
+crossing keeps the nodes the remaining edges use (the crossing vertex in
+them is cache) and relinks the face's loops, one per connected part.
+Check drawings made by the library for the owner: S376 (move out of
+S354's crossing), S377 (delete S374's site with members), S378 (move
+S368's spiral alignment out).
 
 ## Open
 
@@ -572,11 +589,11 @@ record and round-trips every container of S101–S112 and S313–S353.
 - Parcel records beyond their tail and references (their graphics,
   area, label, number, name template).
 
-- Crossing writes: tees, end-to-end joins and arcs written by
-  civil3drust (only an X of two straight alignments is proved, S362);
-  the loop's node rule.
-- Feature lines into and out of a site; closed regions and parcels; spirals and arc crossing tests in moves;
-  deleting a site with its members (FRT-4).
+- Crossing moves: only an X of two straight alignments is proved
+  (S362–S367); tees, end-to-end joins and arcs rely on the same rebuild.
+- Civil 3D's verdict on S376–S378 (library writers not yet opened).
+- Feature lines into and out of a site; closed regions and parcels
+  (FRT-4).
 
 ## Reader gaps found — fixed at round close
 

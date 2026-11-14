@@ -6,6 +6,35 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- Site moves (D-082, round close of the site study, 2026-11-13):
+  `move_into_site` copies the alignment's edge from its companion as it
+  stands and no longer refuses crossings, arcs or spirals — Civil 3D
+  computes the crossing points and spiral pieces (S366 → S367, S371 →
+  S373). `move_out_of_site` gives the companion the container's edge,
+  works out of crossings (nodes other edges use stay; loops relinked,
+  one per connected part). The `site_move_in` / `site_move_out`
+  commands follow. `COMPATIBILITY.md`, `README.md`, `FUTURE.md` (FRT-4)
+  updated.
+
+### Added
+- `aecc_site_edit::delete_site_with_members` and `site_delete <site>
+  --with-members`: a site deleted with its alignments (and their label
+  groups) and feature lines, as Civil 3D does — equal to S375 in
+  `tests/site_edit.rs`. `aecc_delete::remove_alignment_entities`.
+- Check drawings made by the library for Civil 3D: S376 (move out of a
+  crossing), S377 (delete a site with members), S378 (move a spiral
+  alignment out).
+
+### Fixed
+- `aecc_elements`: a free spiral-curve-spiral between two lines is placed
+  at the lines' intersection instead of the first line's stored end
+  (S368: it landed 264.73 too early, the last line not tangent).
+- `aecc_delete::delete_alignment`: `*_LABELING` records pointing at the
+  deleted alignment get the reference nulled, as Civil 3D does (S375),
+  instead of left dangling; companions in any edge form (spiral pieces)
+  are emptied.
+
 ### Documentation
 - Site study group 2 (S368, S369, owner): a spiral alignment in a site
   and out of it. The container and the companion store each spiral as 10

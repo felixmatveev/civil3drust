@@ -76,28 +76,27 @@ applied.
 - Apply the answer in `point_at_station` / `sample_3d` and in a profile
   writer.
 
-## FRT-4: Sites — crossing members, parcels, feature lines
+## FRT-4: Sites — parcels and feature lines
 
-**Status:** open (2026-11-12, round close of the site study).
+**Status:** open (2026-11-12; crossings, spirals and deleting with
+members done 2026-11-13, D-082).
 
 **What civil3drust does now.** `aecc_site_edit` creates, renames and
-deletes empty sites and moves an alignment that crosses nothing into a
-site and back (D-079). It refuses a move where the alignment would cross
-or touch a member, any move into a site with parcels, alignments with
-spirals, arcs when the site already has members, and deleting a site
-with members.
+deletes sites (also with their alignments and feature lines) and moves
+alignments into a site and back, crossings, arcs and spirals included:
+the edge geometry is copied, Civil 3D computes the crossings (S366,
+S371). It refuses sites with parcels and moving feature lines.
 
 **Needed.**
-- The planar arrangement: crossing nodes (vertex flags 1072/1136),
-  splitting the faces, the loop selector k, and parcel records for closed
-  regions (S325, S326 are the references; MIST23 for the counters — a
-  sample with the Numbering counters set to distinct values).
-- Feature lines as members (S327, S329: edge flags, elevation points in
-  `after`, the hard null references).
-- An arc–segment crossing test, and spirals as chords or true curves in
-  the container (not sampled: a spiral alignment in a site).
-- Deleting a site with its members, as Civil 3D does (S331 deleted the
-  feature line with the site).
+- Parcels: closed regions formed by members (S325, S326 are the
+  references; MIST23 for the counters — a sample with the Numbering
+  counters set to distinct values). First question: does Civil 3D also
+  rebuild the faces and parcel records from the members, as it rebuilds
+  crossings?
+- Feature lines as members moved in and out (S327, S329: edge flags,
+  elevation points in `after`, the hard null references).
+- Civil 3D checks of tees, end-to-end joins and arcs written as
+  separate edges (only an X is proved, S366).
 - More built-in name IDs (MIST22) when a site reads as unnamed.
 
 ## FRT-5: Automated sample extraction

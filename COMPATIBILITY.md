@@ -30,7 +30,7 @@ Anything not listed is Passthrough.
 | &nbsp;&nbsp;Rail Diverted Alignments | — (no API value known) | Passthrough |
 | &nbsp;&nbsp;Miscellaneous Alignments | `aecc_build::TYPE_MISCELLANEOUS` (4; API "Utility") | Supported |
 | Feature Lines | Read: name, description, site, points with elevations, arcs (bulges), elevation points, from the site topology (S313–S317) | Partial |
-| Sites | Read: `aecc_site::sites` (name, description, container, key), `membership`, container graph (`aecc_site_edit::Topology`). Write (`aecc_site_edit`, `c3dr site_*`, D-079): create an empty site, rename/describe, delete an empty site, move an alignment that crosses nothing into a site and back (S332–S351). Not yet: crossing members, parcels, feature lines, spirals in moves, deleting a site with members; new alignments are created siteless and alignment delete is siteless only (D-038, D-062). Built-in site names read for the 19 IDs seen in samples (D-078, MIST22) | Partial |
+| Sites | Read: `aecc_site::sites` (name, description, container, key), `membership`, container graph (`aecc_site_edit::Topology`). Write (`aecc_site_edit`, `c3dr site_*`, D-079, D-082): create an empty site, rename/describe, delete a site (empty, or with its alignments and feature lines as Civil 3D does), move an alignment into a site and back — crossing members, arcs and spirals included, Civil 3D computes the crossings (S332–S378). Not yet: parcels (sites with closed regions are refused), moving feature lines; new alignments are created siteless and alignment delete is siteless only (D-038, D-062). Built-in site names read for the 19 IDs seen in samples (D-078, MIST22) | Partial |
 | Turnouts and Crossovers | — | Passthrough |
 | &nbsp;&nbsp;Crossover Groups | — | Passthrough |
 | &nbsp;&nbsp;Turnouts | — | Passthrough |
@@ -63,7 +63,7 @@ alignment record itself.
 | Curves (fixed, floating, free, three-point) | `aecc_elements`; `aecc_arc_edit::set_free_arc_radius`; `aecc_element_edit::add_free_curve` | Supported for free curves; other curve kinds read-only |
 | Removing / replacing elements | `aecc_element_edit::remove_element`, `replace_elements` | Partial — refused on alignments with spirals |
 | Spirals (line+spiral, spiral, free spiral) | `aecc_elements` | Read-only — editing refused |
-| Spiral groups (SCS, SC, SL …) | `aecc_elements`, `aecc_layout_solve`; written as typed parameters (D-059) | Partial — read, re-encoded when copied; not editable |
+| Spiral groups (SCS, SC, SL …) | `aecc_elements`, `aecc_layout_solve`; written as typed parameters (D-059) | Partial — read (a free spiral-curve-spiral between lines placed at their intersection, S368), re-encoded when copied; not editable |
 | Spiral types | `spiral_type` | Read-only — 7 shapes drawn; NSW Cubic Parabola (264) drawn as a clothoid (FRT-1) |
 | Start station | `aecc_station::start_station`, `set_start_station`, `move_start_station` | Supported |
 | Station equations | `aecc_station_refs::station_equations`, `display_station`, `set_station_equations` | Supported (S250–S254, D-070; also inside JSON groups, S253) — stations with equations applied; (S243, S247, S248: raw back, back, ahead, Increase/Decrease, comment and number strings; 18 leading bits a fixed marker, MIST18); kept when speeds are rewritten |
@@ -78,7 +78,7 @@ alignment record itself.
 | Sample Line Groups | — | Passthrough |
 | Station equation label group | `aecc_create` (`AECC_ALIGNMENT_STAEQU_LABEL_GROUP`) | Partial — optionally created with a new alignment |
 | Other label groups (station, minor station, geometry point, design speed) | — | Passthrough — not created for new alignments |
-| Site companion and registry entry | `aecc_topology`, `aecc_registry` | Supported — rebuilt on create and delete (D-064) |
+| Site companion and registry entry | `aecc_topology`, `aecc_registry`, `aecc_site_edit::Topology` | Supported — rebuilt on create and delete (D-064); emptied or refilled when moving to and from a site, any edge form (spiral pieces, D-082) |
 
 ## Settings (styles and settings)
 

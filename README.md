@@ -38,12 +38,12 @@ sample drawings (`samples/README.md`) and the evidence for each finding are in
 | Long spiral groups held by the JSON layout (SSCSS, SSCS, SCSS between two fixed elements) | ✓ solved from their typed parameters (D-061) | ✓ as JSON (Civil 3D solves the pieces) |
 | Create an alignment (PIs + fillet radii, or empty) | | ✓ — style, label set, site-less, type, registry and companion |
 | Remove elements, add a free curve, change a length / radius / PIs | | ✓ |
-| Delete an alignment | | ✓ siteless alignments (D-062) |
+| Delete an alignment | | ✓ siteless alignments (D-062); alignments in a site with their site (D-082) |
 | Name, description, style, display components | ✓ | ✓ |
 | Start station, design speeds (incl. on curves), design criteria flags, parameter locks | ✓ | ✓ |
 | Alignment type (centerline, miscellaneous) | ✓ | ✓ |
 | Implied PI display option | ✓ | ✓ (`set_pi_display`) |
-| Sites and parcels | ✓ sites, membership, container graph | ✓ sites: create, rename, delete (empty), move a non-crossing alignment in and out (D-079); parcels read-only |
+| Sites and parcels | ✓ sites, membership, container graph | ✓ sites: create, rename, delete (with members), move alignments in and out, crossings and spirals included (D-079, D-082); parcels read-only |
 | Detached pieces after deleting an interior element | ✓ | kept as placeholders (D-037) |
 | Widening (offset alignments with widening regions and transitions) | not sampled yet | — |
 | Offset, curb return and rail alignments; station equations | not sampled yet | — |
