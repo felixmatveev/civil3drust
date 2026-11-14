@@ -547,9 +547,9 @@ Library calls and `c3dr` commands (the workbench runs the same commands):
 | Create an empty site | `create_site` (clones the first site without parcels) | `site_create <name>` | S339/S340 → S347/S348 |
 | Rename, describe | `rename_site` | `site_rename <site> <name\|-> [--description t]` | S336/S337 → S349/S350 |
 | Delete an empty site | `delete_site` | `site_delete <site>` | S338 → S346 |
-| Delete a site with its members | `delete_site_with_members` | `site_delete <site> --with-members` | equals Civil 3D's S375 (`tests/site_edit.rs`); check drawing S377 |
+| Delete a site with its members | `delete_site_with_members` | `site_delete <site> --with-members` | equals Civil 3D's S375 (`tests/site_edit.rs`); S377 → S380 |
 | Alignment into a site (crossings, arcs and spirals included) | `move_into_site` | `site_move_in <alignment> <site>` | S332/S345 → S342/S351; crossing S366 → S367; spiral S370 → S372 |
-| Alignment back to siteless (also out of a crossing) | `move_out_of_site` | `site_move_out <alignment>` | S333/S334 → S341/S343; check drawings S376 (crossing), S378 (spiral) |
+| Alignment back to siteless (also out of a crossing) | `move_out_of_site` | `site_move_out <alignment>` | S333/S334 → S341/S343; crossing S376 → S379; spiral S378 → S381 |
 | Site under a built-in name ID | `create_site_with_builtin_name` | (`exp_site pool`) | S352 → S353 |
 
 Refused, with a message: a site with parcels (as target, source,
@@ -567,9 +567,11 @@ companion as it stands (spiral pieces included) and back; crossing points
 are not written — Civil 3D adds them (S366 → S367). Moving out of a
 crossing keeps the nodes the remaining edges use (the crossing vertex in
 them is cache) and relinks the face's loops, one per connected part.
-Check drawings made by the library for the owner: S376 (move out of
-S354's crossing), S377 (delete S374's site with members), S378 (move
-S368's spiral alignment out).
+Check drawings made by the library: S376 (move out of S354's crossing),
+S377 (delete S374's site with members), S378 (move S368's spiral
+alignment out) — **all accepted** (owner: clean open, AUDIT clean);
+re-saves S379–S381. In S379 Civil 3D dropped the crossing node the
+remaining edge kept: cache, as expected.
 
 ## Open
 
@@ -591,7 +593,6 @@ S368's spiral alignment out).
 
 - Crossing moves: only an X of two straight alignments is proved
   (S362–S367); tees, end-to-end joins and arcs rely on the same rebuild.
-- Civil 3D's verdict on S376–S378 (library writers not yet opened).
 - Feature lines into and out of a site; closed regions and parcels
   (FRT-4).
 

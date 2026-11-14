@@ -25,6 +25,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 - Check drawings made by the library for Civil 3D: S376 (move out of a
   crossing), S377 (delete a site with members), S378 (move a spiral
   alignment out).
+  All three accepted by Civil 3D 2024 (clean open, AUDIT clean); re-saves
+  S379–S381.
 
 ### Fixed
 - `aecc_elements`: a free spiral-curve-spiral between two lines is placed
